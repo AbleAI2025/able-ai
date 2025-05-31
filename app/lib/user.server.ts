@@ -226,7 +226,6 @@ export async function updateUserAppContext(
     console.warn("Updating lastViewVisited without lastRoleUsed might lead to ambiguity. Please provide lastRoleUsed.");
   }
 
-  console.log("Updating user app context in PG:", { firebaseUid, updateData });
   try {
     const updatedUsers = await db
       .update(UsersTable)

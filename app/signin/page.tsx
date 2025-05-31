@@ -20,7 +20,8 @@ export default function SignInPage() {
       toast.success(`Welcome back ${user?.displayName || user?.email || 'user'}!`);
       router.push("/select-role");
     }
-  }, [user?.isAuthenticated, loadingAuth, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.isAuthenticated, loadingAuth]);
 
   const handleCloseError = () => {
     setError(null);

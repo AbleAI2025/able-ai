@@ -1,20 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useRef, FormEvent, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppContext } from '@/app/hooks/useAppContext'; // Corrected path
+import { usePathname } from 'next/navigation';
+import { useAppContext } from '@/app/hooks/useAppContext'; 
 
-import ChatBotLayout from '@/app/components/onboarding/ChatBotLayout'; // Corrected path
-import MessageBubble from '@/app/components/onboarding/MessageBubble'; // Corrected path
+import ChatBotLayout from '@/app/components/onboarding/ChatBotLayout'; 
+import MessageBubble from '@/app/components/onboarding/MessageBubble';
 import InputBubble from '@/app/components/onboarding/InputBubble'; // Corrected path
 import TextAreaBubble from '@/app/components/onboarding/TextAreaBubble'; // Corrected path
 // import FileUploadBubble from '@/app/components/onboarding/FileUploadBubble'; // Corrected path - Uncomment if used
 import WorkerCard, { WorkerData } from '@/app/components/onboarding/WorkerCard'; // Import shared WorkerCard and WorkerData
 
-// import styles from './OnboardBuyerPage.module.css';
 import Loader from '@/app/components/shared/Loader';
 
-const BOT_AVATAR_SRC = "/images/logo-placeholder.svg";
+import pageStyles from './page.module.css';
 
 interface OnboardingStep {
   id: number;
@@ -100,16 +99,13 @@ const baseInitialSteps: OnboardingStep[] = [
 
 
 export default function OnboardBuyerPage() {
-  const router = useRouter();
-  const { isLoading: loadingAuth } = useAppContext();
+  const pathname = usePathname();
+  const { isLoading: loadingAuth, user, updateUserContext } = useAppContext();
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const isViewQA = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("isViewQA") === "true";
-  }, []);
+  const isQA = !!user?.isQA;
 
-  const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>(baseInitialSteps.map(s => ({...s, isComplete: false})));
+  const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>(baseInitialSteps.map(s => ({ ...s, isComplete: false })));
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [chatMessages, setChatMessages] = useState<OnboardingStep[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,41 +113,51 @@ export default function OnboardBuyerPage() {
   const [workerName, setWorkerName] = useState<string | null>(null); // Added state
   const [workerPrice, setWorkerPrice] = useState<number | null>(null); // Added state
 
+  // QA mode: fill formData and steps with mock data if isQA
   useEffect(() => {
-    if (isViewQA) {
+    if (isQA) {
       const qaFormData: Record<string, any> = {};
       baseInitialSteps.forEach(step => {
         if (step.inputName) {
           switch (step.inputType) {
             case 'file': qaFormData[step.inputName] = `sample-${step.inputName}.pdf`; break;
             case 'date': qaFormData[step.inputName] = new Date().toISOString().split('T')[0]; break;
+            case 'number': qaFormData[step.inputName] = 15; break;
             default: qaFormData[step.inputName] = `QA: ${step.inputLabel || step.inputName || 'Sample'}`;
           }
         }
       });
       setFormData(qaFormData);
+      setOnboardingSteps(baseInitialSteps.map(s => ({ ...s, isComplete: true })));
     } else {
-      setOnboardingSteps(baseInitialSteps.map(s => ({...s, isComplete: false})));
+      setOnboardingSteps(baseInitialSteps.map(s => ({ ...s, isComplete: false })));
       setFormData({});
     }
-  }, [isViewQA]);
+  }, [isQA]);
 
   useEffect(() => {
-    const newMessages: OnboardingStep[] = [];
-    if (isViewQA) {
+    if (!loadingAuth && user?.isAuthenticated) {
+      updateUserContext({ lastRoleUsed: 'BUYER', lastViewVisited: pathname });
+    }
+  }, [isQA]);
+
+  useEffect(() => {
+    if (isQA) {
+      // QA mode: show all steps and user responses as complete
+      const newMessages: OnboardingStep[] = [];
       let currentStepIdForDependency = 0;
       baseInitialSteps.forEach(step => {
         const messageToAdd = { ...step, content: step.content, isComplete: true, dependsOn: currentStepIdForDependency };
         newMessages.push(messageToAdd);
         currentStepIdForDependency = step.id;
-
         if (step.inputName && (step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker' || step.type === 'terms')) {
           let qaValue = formData[step.inputName];
           if (qaValue === undefined) {
-             switch (step.inputType) {
-                case 'file': qaValue = `sample-${step.inputName}.pdf`; break;
-                case 'date': qaValue = new Date().toISOString().split('T')[0]; break;
-                default: qaValue = `QA: ${step.inputLabel || step.inputName || 'Sample Answer'}`;
+            switch (step.inputType) {
+              case 'file': qaValue = `sample-${step.inputName}.pdf`; break;
+              case 'date': qaValue = new Date().toISOString().split('T')[0]; break;
+              case 'number': qaValue = 15; break;
+              default: qaValue = `QA: ${step.inputLabel || step.inputName || 'Sample Answer'}`;
             }
           }
           newMessages.push({
@@ -163,71 +169,67 @@ export default function OnboardBuyerPage() {
             dependsOn: currentStepIdForDependency,
           });
           currentStepIdForDependency = step.id + 0.5;
-        } else if (step.type === 'workerCard') { // For QA mode, worker cards are just part of the flow
-            // No user response display needed for worker cards in QA
         }
       });
-    } else {
-      let firstUncompletedInputFound = false;
-      let nextFocusTargetSet = false;
-      for (let i = 0; i < onboardingSteps.length; i++) {
-        const step = onboardingSteps[i];
-        if (step.dependsOn) {
-          const dependentStep = onboardingSteps.find(s => s.id === step.dependsOn);
-          if (dependentStep && !dependentStep.isComplete && step.type !== 'workerCard') { // Worker cards can show even if prev input not done
-            break;
-          }
-           // Allow worker cards to show if their direct dependency (bot message) is shown
-          if (step.type === 'workerCard' && dependentStep && !newMessages.some(nm => nm.id === dependentStep.id)) {
-            break;
-          }
+      setChatMessages(newMessages);
+      return;
+    }
+    let firstUncompletedInputFound = false;
+    let nextFocusTargetSet = false;
+    const newMessages: OnboardingStep[] = [];
+    for (let i = 0; i < onboardingSteps.length; i++) {
+      const step = onboardingSteps[i];
+      if (step.dependsOn) {
+        const dependentStep = onboardingSteps.find(s => s.id === step.dependsOn);
+        if (dependentStep && !dependentStep.isComplete && step.type !== 'workerCard') { // Worker cards can show even if prev input not done
+          break;
         }
-        newMessages.push({ ...step, value: formData[step.inputName || ''] });
-
-        if ((step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker') && !step.isComplete && !firstUncompletedInputFound) {
-          firstUncompletedInputFound = true;
-          if (!currentFocusedInputName && !nextFocusTargetSet) {
-            setCurrentFocusedInputName(step.inputName || null);
-            nextFocusTargetSet = true;
-          }
-        }
-        if ((step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker') && !step.isComplete) {
+        if (step.type === 'workerCard' && dependentStep && !newMessages.some(nm => nm.id === dependentStep.id)) {
           break;
         }
       }
+      newMessages.push({ ...step, value: formData[step.inputName || ''] });
+      if ((step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker') && !step.isComplete && !firstUncompletedInputFound) {
+        firstUncompletedInputFound = true;
+        if (!currentFocusedInputName && !nextFocusTargetSet) {
+          setCurrentFocusedInputName(step.inputName || null);
+          nextFocusTargetSet = true;
+        }
+      }
+      if ((step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker') && !step.isComplete) {
+        break;
+      }
     }
     setChatMessages(newMessages);
-  }, [onboardingSteps, formData, isViewQA]);
+  }, [onboardingSteps, formData, isQA]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-    if (!isViewQA && currentFocusedInputName) {
-        const inputElement = document.querySelector(`[name="${currentFocusedInputName}"]`) as HTMLElement;
-        inputElement?.focus();
+    if (!isQA && currentFocusedInputName) {
+      const inputElement = document.querySelector(`[name="${currentFocusedInputName}"]`) as HTMLElement;
+      inputElement?.focus();
     }
-  }, [chatMessages, currentFocusedInputName, isViewQA]);
+  }, [chatMessages, currentFocusedInputName, isQA]);
 
   const handleInputChange = (name: string, value: any) => {
-    if (isViewQA) return;
+    if (isQA) return; // Disable editing in QA mode
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleInputSubmit = (stepId: number, inputName: string) => {
-    if (isViewQA) return;
+    if (isQA) return; // Disable submission in QA mode
     if (formData[inputName] === undefined || formData[inputName] === '') {
         const stepBeingSubmitted = onboardingSteps.find(s => s.id === stepId);
         if (stepBeingSubmitted?.inputType !== 'file' && stepBeingSubmitted?.inputType !== 'date') {
             return;
         }
     }
-
     const stepIndex = onboardingSteps.findIndex(s => s.id === stepId);
     if (stepIndex !== -1) {
       const updatedSteps = [...onboardingSteps];
       updatedSteps[stepIndex].isComplete = true;
-
       if (formData[inputName] !== undefined && formData[inputName] !== '') {
         const userResponseStep: OnboardingStep = {
           id: Date.now(),
@@ -268,7 +270,7 @@ export default function OnboardBuyerPage() {
   };
 
   const handleBookWorker = (name: string, price: number) => {
-    if (isViewQA) return;
+    if (isQA) return; // Disable booking in QA mode
     setWorkerName(name);
     setWorkerPrice(price);
     // Mark all preceding steps as complete to show final message
@@ -299,7 +301,8 @@ export default function OnboardBuyerPage() {
   };
 
   const handleFinalSubmit = async (event?: FormEvent) => {
-    if (isViewQA && !workerName) return; // Allow final submit in QA if a worker was "booked"
+    if (isQA) return; // Disable submission in QA mode
+    if (!workerName) return; // Allow final submit in QA if a worker was "booked"
     event?.preventDefault();
     setIsSubmitting(true);
     console.log("Mock Buyer Onboarding Data:", formData, "Booked Worker:", workerName, "Price:", workerPrice);
@@ -344,105 +347,78 @@ export default function OnboardBuyerPage() {
   };
 
   const allInteractiveStepsComplete = useMemo(() => {
-    if (isViewQA) return true;
-    const interactiveSteps = onboardingSteps.filter(step => 
-        step.type !== 'userResponseDisplay' && 
-        step.type !== 'botMessage' && 
-        step.type !== 'workerCard' && // Worker cards are not "inputs" for completion
-        (step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker' || step.type === 'discountCode')
+    if (isQA) return true;
+    const interactiveSteps = onboardingSteps.filter(step =>
+      step.type !== 'userResponseDisplay' &&
+      step.type !== 'botMessage' &&
+      step.type !== 'workerCard' && // Worker cards are not "inputs" for completion
+      (step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker' || step.type === 'discountCode')
     );
     return interactiveSteps.every(step => step.isComplete);
-  }, [onboardingSteps, isViewQA]);
+  }, [onboardingSteps, isQA]);
 
   if (loadingAuth) {
     return <Loader />;
   }
 
-  return ( 
-    <ChatBotLayout ref={chatContainerRef} onScroll={(e: React.UIEvent<HTMLDivElement>) => {}}>
-      {/* {isViewQA && (
+  return (
+    <>
+      {isQA && (
         <div style={{ background: 'rgba(255,220,220,0.8)', borderBottom: '1px solid rgba(200,0,0,0.3)', color: '#8B0000', textAlign: 'center', padding: '8px 5px', fontSize: '0.85em', fontWeight: '500' }}>
           QA Mode: Full Chat Preview
         </div>
-      )} */}
-      {chatMessages.map((step) => {
-        const key = `step-${step.id}-${step.senderType || step.type}-${step.inputName || Math.random()}`;
-
-        if (step.type === 'botMessage') {
-          return <MessageBubble key={key} text={step.content as string} senderType="bot" avatarSrc={BOT_AVATAR_SRC} />;
-        }
-        if (step.type === 'userResponseDisplay' && step.senderType === 'user') {
-            return <MessageBubble key={key} text={step.content as string} senderType="user" showAvatar={false} />;
-        }
-        if (step.type === 'discountCode') { // Render discount code as a specific message bubble or styled text
-            return <MessageBubble key={key} text={step.content as string} senderType="user" showAvatar={false} />; // Example: user "says" their discount code
-        }
-        if (step.type === 'workerCard' && step.workerData) {
-            return <WorkerCard key={key} worker={step.workerData} onBook={handleBookWorker} />;
-        }
-
-        if (!isViewQA && (step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker') && !step.isComplete) {
-          const commonProps = {
-            id: step.inputName,
-            name: step.inputName,
-            label: step.inputLabel,
-            value: formData[step.inputName!] || '',
-            disabled: isSubmitting,
-            onFocus: () => setCurrentFocusedInputName(step.inputName || null),
-            onBlur: () => {
-                if(formData[step.inputName!] || step.inputType === 'date' || step.inputType === 'file'){
-                    handleInputSubmit(step.id, step.inputName!);
-                }
-            },
-            onKeyPress: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-              if (e.key === 'Enter' && (step.inputType === 'text' || step.inputType === 'email' || step.inputType === 'number')) {
-                e.preventDefault();
-                handleInputSubmit(step.id, step.inputName!);
-              }
-            }
-          };
-
-          if (step.inputType === 'textarea') {
-            return <TextAreaBubble key={key} {...commonProps} placeholder={step.inputPlaceholder} rows={3} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange(step.inputName!, e.target.value)} ref={(el: HTMLTextAreaElement | null) => { if (el && currentFocusedInputName === step.inputName) el.focus(); }}/>;
-          }
-          // FileUploadBubble rendering was removed in user's provided code, add back if needed
-          // if (step.inputType === 'file') { ... } 
-          if (step.inputType === 'text' || step.inputType === 'email' || step.inputType === 'number' || step.inputType === 'date') {
-            return <InputBubble key={key} {...commonProps} type={step.inputType} placeholder={step.inputPlaceholder} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(step.inputName!, e.target.value)} ref={(el: HTMLInputElement | null) => { if (el && currentFocusedInputName === step.inputName) el.focus(); }}/>;
-          }
-        }
-        return null;
-      })}
-
-      {/* Removed the generic "Confirm & Proceed" button as booking is per card now */}
-      {/* {allInteractiveStepsComplete && !isSubmitting && !isViewQA && onboardingSteps[onboardingSteps.length-1]?.type !== 'botMessage' && ( ... )} */}
-      
-      {isSubmitting && !isViewQA && (
-        <MessageBubble key="submitting-msg" text="Processing..." senderType="bot" avatarSrc={BOT_AVATAR_SRC} />
       )}
-      {/* <input
-        type="text"
-        placeholder="Type your message..."
-        onKeyPress={(e) => {
-          if (e.key === 'Enter') {
-            const target = e.target as HTMLInputElement;
-            if (isViewQA) {
-              console.log('QA Mode Message:', target.value);
-            } else {
-              // TODO: Send message to backend
-              console.log('Send message to backend:', target.value);
-            }
-            target.value = '';
+      <ChatBotLayout ref={chatContainerRef} onScroll={(e: React.UIEvent<HTMLDivElement>) => { }} tag='Looking for an experienced bartender' className={pageStyles.container}>
+        {chatMessages.map((step) => {
+          const key = `step-${step.id}-${step.senderType || step.type}-${step.inputName || Math.random()}`;
+
+          if (step.type === 'botMessage') {
+            return <MessageBubble key={key} text={step.content as string} senderType="bot" />;
           }
-        }}
-        style={{
-          width: '100%',
-          padding: '10px',
-          border: '1px solid #ccc',
-          borderRadius: '5px',
-          marginTop: '10px',
-        }}
-      /> */}
-    </ChatBotLayout>
+          if (step.type === 'userResponseDisplay' && step.senderType === 'user') {
+            return <MessageBubble key={key} text={step.content as string} senderType="user" showAvatar={false} />;
+          }
+          if (step.type === 'discountCode') { // Render discount code as a specific message bubble or styled text
+            return <MessageBubble key={key} text={step.content as string} senderType="user" showAvatar={false} />; // Example: user "says" their discount code
+          }
+          if (step.type === 'workerCard' && step.workerData) {
+            return <WorkerCard key={key} worker={step.workerData} onBook={isQA ? (() => {}) : handleBookWorker} />;
+          }
+
+          if ((step.type === 'userInput' || step.type === 'fileUpload' || step.type === 'datePicker') && !step.isComplete && !isQA) {
+            const commonProps = {
+              id: step.inputName,
+              name: step.inputName,
+              label: step.inputLabel,
+              value: formData[step.inputName!] || '',
+              disabled: isSubmitting || isQA,
+              onFocus: () => setCurrentFocusedInputName(step.inputName || null),
+              onBlur: () => {
+                if (formData[step.inputName!] || step.inputType === 'date' || step.inputType === 'file') {
+                  handleInputSubmit(step.id, step.inputName!);
+                }
+              },
+              onKeyPress: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                if (e.key === 'Enter' && (step.inputType === 'text' || step.inputType === 'email' || step.inputType === 'number')) {
+                  e.preventDefault();
+                  handleInputSubmit(step.id, step.inputName!);
+                }
+              }
+            };
+
+            if (step.inputType === 'textarea') {
+              return <TextAreaBubble key={key} {...commonProps} placeholder={step.inputPlaceholder} rows={3} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange(step.inputName!, e.target.value)} ref={(el: HTMLTextAreaElement | null) => { if (el && currentFocusedInputName === step.inputName) el.focus(); }} />;
+            }
+            if (step.inputType === 'text' || step.inputType === 'email' || step.inputType === 'number' || step.inputType === 'date') {
+              return <InputBubble key={key} {...commonProps} type={step.inputType} placeholder={step.inputPlaceholder} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(step.inputName!, e.target.value)} ref={(el: HTMLInputElement | null) => { if (el && currentFocusedInputName === step.inputName) el.focus(); }} />;
+            }
+          }
+          return null;
+        })}
+        {isSubmitting && !isQA && (
+          <MessageBubble key="submitting-msg" text="Processing..." senderType="bot" />
+        )}
+      </ChatBotLayout>
+    </>
   );
 }

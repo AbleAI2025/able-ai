@@ -85,3 +85,66 @@
 .switchInput:checked + .switchSlider::before {
   transform: translateX(18px);
 }
+
+/* New styles for button-based role toggle */
+.roleToggleContainer {
+  display: flex;
+  align-items: center;
+  background: #111;
+  border-radius: 9999px;
+  padding: 2px;
+  border: 1.5px solid #111;
+  width: fit-content;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.activeRole,
+.inactiveRole {
+  border: none;
+  padding: 0.5rem 1.2rem;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+/* Left button (GIGEE) */
+.roleToggleContainer button:first-child {
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Right button (BUYER) */
+.roleToggleContainer button:last-child {
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.activeRole {
+  background: #e5e5e5;
+  color: #888;
+  font-weight: bold;
+  cursor: default;
+  z-index: 1;
+  border: 1.5px solid #ddd;
+}
+
+.inactiveRole {
+  background: transparent;
+  color: #fff;
+  font-weight: normal;
+  cursor: pointer;
+  z-index: 0;
+}
+
+.inactiveRole:hover:not(:disabled) {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+/* Remove separator styling */
+.separator {
+  display: none;
+}

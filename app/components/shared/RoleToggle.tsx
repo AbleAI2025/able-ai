@@ -1,50 +1,60 @@
-// app/components/shared/RoleToggle.tsx
 "use client";
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppContext } from '@/app/hooks/useAppContext';
-import styles from './RoleToggle.module.css';
+import React from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ExtendedUser } from "@/app/hooks/useAppContext";
+import styles from "./RoleToggle.module.css";
 
-const RoleToggle: React.FC<{ lastViewVisited?: string }> = ({ lastViewVisited }) => {
-    const router = useRouter();
-    const { updateUserContext, user } = useAppContext();
-    const currentActiveRole = user?.isBuyerMode ? 'BUYER' : user?.isWorkerMode ? 'GIG_WORKER' : 'QA';
+const RoleToggle: React.FC<{ lastViewVisited?: string, user: ExtendedUser }> = ({
+  user,
+  lastViewVisited,
+}) => {
+  const router = useRouter();
+  const currentActiveRole = user?.isBuyerMode
+    ? "BUYER"
+    : user?.isWorkerMode
+      ? "GIG_WORKER"
+      : "QA";
 
-    const handleToggle = async (newRole: 'BUYER' | 'GIG_WORKER') => {
-        console.log({ newRole, currentActiveRole})
-        if (newRole === currentActiveRole && !lastViewVisited) return;
+  const handleToggle = async (newRole: "BUYER" | "GIG_WORKER") => {
+    if (newRole === currentActiveRole && !lastViewVisited) return;
 
-        try {
-            const newAppRole = newRole === 'BUYER' ? 'worker' : 'buyer';
-            // Assuming setCurrentActiveRole updates the context and potentially the backend
-            await updateUserContext({ lastRoleUsed: newRole, lastViewVisited: lastViewVisited ?? newAppRole });
-            // Save to localStorage for immediate client-side persistence
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('currentActiveRole', newRole);
-            }
-            // Redirect based on the new role
-            router.push(newAppRole);
-        } catch (error) {
-            console.error("Failed to switch role:", error);
-            // Optionally show an error to the user
-        }
-    };
+    try {
+      // Redirect based on the new role
+      if (user?.lastRoleUsed === "BUYER" && !user?.canBeGigWorker) {
+        toast.error("You cannot switch to worker mode, please complete onboarding first.");
+        router.push(`/user/${user?.uid}/worker/onboarding`);
+        return;
+      }
+      router.push(newRole === "GIG_WORKER" ? "worker" : "buyer");
+    } catch (error) {
+      console.error("Failed to switch role:", error);
+      toast.error("Failed to switch roles. Please try again.");
+    }
+  };
 
-    return (
-        <div className={styles.toggleContainer}>
-            <label className={styles.switchLabel}>
-            <span>Switch to {currentActiveRole === 'BUYER' ? 'worker' : 'buyer'}</span>
-            <input
-                type="checkbox"
-                onChange={() =>
-                handleToggle(currentActiveRole === 'BUYER' ? 'GIG_WORKER' : 'BUYER')
-                }
-                className={styles.switchInput}
-            />
-            <span className={styles.switchSlider}></span>
-            </label>
-            
-        </div>
-    );
+  return (
+    <div className={styles.roleToggleContainer}>
+      <button
+        type="button"
+        className={currentActiveRole === "GIG_WORKER" ? styles.activeRole : styles.inactiveRole}
+        disabled={currentActiveRole === "GIG_WORKER"}
+        onClick={() => handleToggle("GIG_WORKER")}
+        aria-pressed={currentActiveRole === "GIG_WORKER"}
+      >
+        GIGEE
+      </button>
+      <button
+        type="button"
+        className={currentActiveRole === "BUYER" ? styles.activeRole : styles.inactiveRole}
+        disabled={currentActiveRole === "BUYER"}
+        onClick={() => handleToggle("BUYER")}
+        aria-pressed={currentActiveRole === "BUYER"}
+      >
+        BUYER
+      </button>
+    </div>
+  );
 };
-export default RoleToggle;
+
+export default React.memo(RoleToggle);

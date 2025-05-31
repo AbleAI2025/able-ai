@@ -1,24 +1,30 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppContext } from '@/app/hooks/useAppContext';
-import Link from 'next/link';
+import React, { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAppContext } from "@/app/hooks/useAppContext";
+import Link from "next/link";
 
-// Import shared components (ensure paths are correct)
-import AiSuggestionBanner from '@/app/components/shared/AiSuggestionBanner';
-import IconGrid from '@/app/components/shared/IconGrid';
-import ReferralBanner from '@/app/components/shared/ReferralBanner';
-import RoleToggle from '@/app/components/shared/RoleToggle';
-import SettingsButton from '@/app/components/shared/SettingsButton';
+// Import shared components
+import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
+import IconGrid from "@/app/components/shared/IconGrid";
+import ReferralBanner from "@/app/components/shared/ReferralBanner";
+import RoleToggle from "@/app/components/shared/RoleToggle";
+import SettingsButton from "@/app/components/shared/SettingsButton";
 
 // Import Lucide icons as needed for the specific dashboard
-import { UserCircle, Briefcase, CalendarCheck2, DollarSign } from 'lucide-react';
+import {
+  UserCircle,
+  Briefcase,
+  CalendarCheck2,
+  DollarSign,
+} from "lucide-react";
 
-import styles from './HomePage.module.css'; // Create this CSS Module
-import Image from 'next/image';
-import Loader from '@/app/components/shared/Loader';
-import Logo from '@/app/components/brand/Logo';
+import styles from "./HomePage.module.css";
+import Image from "next/image";
+import Loader from "@/app/components/shared/Loader";
+import Logo from "@/app/components/brand/Logo";
+import { Toaster } from "sonner";
 
 // Define this interface if you add the optional summary section
 // interface UpcomingGigSummary {
@@ -29,36 +35,54 @@ import Logo from '@/app/components/brand/Logo';
 //   link: string;
 // }
 
-export default function WorkerDashboardPage() { // Renamed for clarity
+export default function WorkerDashboardPage() {
+  // Renamed for clarity
   const router = useRouter();
-  // const { isAuthenticated, isLoading: loadingAuth, isBuyerMode, isWorkerMode, user: userPublicProfile } = useAppContext();
-  const currentActiveRole = 'GIG_WORKER';
-  const THIS_HOME_ROLE = 'GIG_WORKER';
+  const pathname = usePathname();
+  const {
+    isLoading: loadingAuth,
+    user: userPublicProfile,
+    updateUserContext,
+  } = useAppContext();
 
-  // useEffect(() => {
-  //   if (!loadingAuth) {
-  //     if (!isAuthenticated) {
-  //       router.replace('/signin');
-  //     } else if (currentActiveRole !== THIS_HOME_ROLE) {
-  //       // Attempt to switch or redirect based on actual capabilities
-  //       if (userPublicProfile?.isBuyer) { // Check if user *can* be a buyer
-  //         router.push('buyer'); // Redirect to buyer home
-  //       } else {
-  //         router.replace('/select-role'); // Fallback if current role doesn't match expected and cannot be buyer
-  //       }
-  //     }
-  //   }
-  // }, [isAuthenticated, loadingAuth, currentActiveRole, userPublicProfile, router, THIS_HOME_ROLE]);
+  useEffect(() => {
+    if (!loadingAuth && userPublicProfile?.isAuthenticated) {
+      if (userPublicProfile?.canBeGigWorker) {
+        updateUserContext({
+          lastRoleUsed: "GIG_WORKER", // Ensure the context reflects the current role
+          lastViewVisited: pathname, // Update last view visited
+        });
+      } else {
+        router.replace("/select-role");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userPublicProfile?.isAuthenticated, loadingAuth]);
 
-  const uid = 'test';
+  const uid = userPublicProfile?.uid;
   // Define actionItems specific to the role (Worker)
   const actionItems = [
-    { label: "Gigfolio", icon: <UserCircle size={28} />, to: `/user/${uid}/worker/profile` },
-    { label: "Offers", icon: <Briefcase size={28} />, to: `/user/${uid}/worker/offers` },
-    { label: "Calendar & Gigs", icon: <CalendarCheck2 size={28} />, to: `/user/${uid}/worker/calendar` },
-    { label: "Earnings & History", icon: <DollarSign size={28} />, to: `/user/${uid}/worker/earnings` },
+    {
+      label: "Gigfolio",
+      icon: <UserCircle size={28} />,
+      to: `/user/${uid}/worker/profile`,
+    },
+    {
+      label: "Offers",
+      icon: <Briefcase size={28} />,
+      to: `/user/${uid}/worker/offers`,
+    },
+    {
+      label: "Calendar & Gigs",
+      icon: <CalendarCheck2 size={28} />,
+      to: `/user/${uid}/worker/calendar`,
+    },
+    {
+      label: "Earnings & History",
+      icon: <DollarSign size={28} />,
+      to: `/user/${uid}/worker/earnings`,
+    },
   ];
-
 
   // Optional: Fetch summary data for upcoming gigs/offers
   // const [summaryData, setSummaryData] = useState<UpcomingGigSummary[]>([]);
@@ -68,9 +92,9 @@ export default function WorkerDashboardPage() { // Renamed for clarity
   //   }
   // }, [isAuthenticated, currentActiveRole, THIS_HOME_ROLE]);
 
-  // if (loadingAuth || !isAuthenticated || currentActiveRole !== THIS_HOME_ROLE) {
-  //   return <Loader />
-  // }
+  if (loadingAuth || !userPublicProfile?.isAuthenticated) {
+    return <Loader />
+  }
 
   return (
     <div className={styles.container}>
@@ -82,12 +106,15 @@ export default function WorkerDashboardPage() { // Renamed for clarity
                   Welcome back, {userPublicProfile.displayName}!
               </p>
           )} */}
-        <Logo width={60} height={60} />
+          <Logo width={60} height={60} />
           {/* Notification Icon */}
           {uid && (
             <Link href={`/user/${uid}/notifications`} passHref>
-              <button className={styles.notificationButton} aria-label="Notifications">
-                <Image 
+              <button
+                className={styles.notificationButton}
+                aria-label="Notifications"
+              >
+                <Image
                   src="/images/notifications.svg"
                   alt="Notifications"
                   width={45}
@@ -122,15 +149,13 @@ export default function WorkerDashboardPage() { // Renamed for clarity
         )}
         */}
 
-
-        <ReferralBanner
-          title="Refer a worker and earn £5!"
-        />
+        <ReferralBanner title="Refer a worker and earn £5!" />
 
         <footer className={styles.pageFooter}>
-          <RoleToggle />
+        <RoleToggle user={userPublicProfile}/>
           <SettingsButton />
         </footer>
+        <Toaster />
       </div>
     </div>
   );

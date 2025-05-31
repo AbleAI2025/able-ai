@@ -24,7 +24,6 @@ export default function SelectRolePage() {
       if (user?.isBuyerMode) {
         if (user?.lastViewVisitedBuyer) {
           router.push(user?.lastViewVisitedBuyer);
-          toast('loaded your last location')
         } else {
           router.push(`user/${user?.uid || 'this_user'}/buyer`);
         }
@@ -37,6 +36,7 @@ export default function SelectRolePage() {
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.isAuthenticated, loadingAuth, router]);
 
   const handleRoleSelection = async (role: "BUYER" | "GIG_WORKER") => {
@@ -55,9 +55,15 @@ export default function SelectRolePage() {
 
       if (role === "BUYER") {
         if (user?.canBeBuyer) {
-          router.push(`user/${user?.uid || 'this_user'}/buyer`);
-        } else {
+          if (user?.lastViewVisitedBuyer) {
+            router.push(user?.lastViewVisitedBuyer);
+          }
           router.push(`user/${user?.uid || 'this_user'}/buyer/gigs/new`);
+        } else {
+          toast.error(
+            "You are not eligible to be a buyer. Please contact support."
+          );
+          setIsLoading(false);
         }
       } else if (role === "GIG_WORKER") {
         if (user?.canBeGigWorker) {
