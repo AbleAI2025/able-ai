@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExtendedUser } from "@/app/hooks/useAppContext";
 import styles from "./RoleToggle.module.css";
+import { useApp } from "@/app/context/AppContext";
 
 const RoleToggle: React.FC<{ lastViewVisited?: string, user: ExtendedUser }> = ({
   user,
   lastViewVisited,
 }) => {
   const router = useRouter();
+  const { updateUserContext } = useApp();
   const currentActiveRole = user?.isBuyerMode
     ? "BUYER"
     : user?.isWorkerMode
@@ -26,6 +28,11 @@ const RoleToggle: React.FC<{ lastViewVisited?: string, user: ExtendedUser }> = (
         router.push(`/user/${user?.uid}/worker/onboarding`);
         return;
       }
+      // Update user context with the new role
+      await updateUserContext({
+        lastRoleUsed: newRole,
+        lastViewVisited: lastViewVisited || (newRole === "GIG_WORKER" ? "/worker" : "/buyer"),
+      });
       router.push(newRole === "GIG_WORKER" ? "worker" : "buyer");
     } catch (error) {
       console.error("Failed to switch role:", error);
