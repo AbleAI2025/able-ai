@@ -1,4 +1,4 @@
-import { geminiAIAgent, GeminiAIOptions, SUPPORTED_GEMINI_MODELS } from "@/app/lib/firebase/ai";
+import { geminiAIAgent, GeminiAIOptions, SUPPORTED_GEMINI_MODELS } from "@/lib/firebase/ai";
 import { Schema } from "@firebase/ai";
 
 // --- Suggestion Schema ---

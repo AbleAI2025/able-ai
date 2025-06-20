@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 
 import { 
     Trophy, Star,Martini,
@@ -12,63 +12,6 @@ import CloseButton from '@/app/components/profile/CloseButton';
 import HireButton from '@/app/components/profile/HireButton';
 
 // --- INTERFACES (Copied from plan) ---
-interface SkillSpecificReview {
-  id: string;
-  reviewerName: string;
-  date: string; // "YYYY-MM-DD"
-  comment: string;
-  // rating?: number; // If applicable
-}
-
-interface SkillSpecificRecommendation {
-  id: string;
-  recommenderName: string;
-  date: string;
-  comment: string;
-}
-
-interface SkillSpecificBadge {
-  id: string;
-  name: string;
-  icon: React.ElementType; // Lucide icon or custom SVG
-}
-
-interface PortfolioMedia {
-  id: string;
-  type: 'image' | 'video';
-  thumbnailUrl: string;
-  fullUrl?: string; // For lightbox or separate page
-  caption?: string;
-}
-
-interface PublicSkillProfile {
-  workerId: string;
-  workerName: string;
-  workerProfileImageUrl?: string; // For the header image/video thumbnail
-  skillId: string;
-  skillName: string; // e.g., "Bartender"
-  isFavoritedByCurrentUser?: boolean; // For the star icon state
-
-  skillHashtags?: string[]; // For the blue pill badge, e.g., ["#licensedbarmanager", ...]
-  
-  skillRelatedReviewSummary?: string; // e.g., "Customer reviews: Profesional, charming and lively"
-
-  // Skill-specific quick stats
-  skillAbleGigs?: number | string;
-  skillExperience?: string; // e.g., "8 years"
-  skillEph?: number | string; // Hourly rate for this skill
-
-  skillPortfolio?: PortfolioMedia[];
-  
-  skillRelevantBadges?: SkillSpecificBadge[];
-  
-  skillRelevantQualifications?: string[];
-  
-  skillTotalReviews?: number;
-  skillReviews?: SkillSpecificReview[]; // Array of actual reviews for this skill
-  
-  skillRecommendations?: SkillSpecificRecommendation[];
-}
 
 const skillProfile = {
   name: "Benji",
@@ -169,10 +112,8 @@ const skillProfile = {
 
 // --- COMPONENT ---
 export default function PublicSkillProfilePage() {
-  const router = useRouter();
   const params = useParams();
   const workerIdToView = params.workerId as string;
-  const skillIdToView = params.skillId as string;
 
   // Use this if auth context is needed, e.g., for hire button logic
 

@@ -1,17 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link"; // For Home button
 import Image from "next/image"; // For notification icons
 
 // Using Lucide Icons
-import {
-  AlertTriangle,
-  ChevronRight,
-  Info,
-  ChevronLeft,
-} from "lucide-react";
+import { AlertTriangle, ChevronRight, Info, ChevronLeft } from "lucide-react";
 
 import styles from "./NotificationsPage.module.css";
 import Loader from "@/app/components/shared/Loader"; // Assuming you have a Loader component
@@ -143,13 +138,9 @@ const formatTimestamp = (isoString: string) => {
 export default function NotificationsPage() {
   const router = useRouter();
   const params = useParams();
-  const pathname = usePathname();
   const pageUserId = params.userId as string;
 
-  const {
-    user,
-    loading: loadingAuth,
-  } = useAuth();
+  const { user } = useAuth();
   const authUserId = user?.uid;
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -197,17 +188,14 @@ export default function NotificationsPage() {
       // If lastRoleUsed is not set, or user is not available, fallback to previous page or a default
       // For now, let's try to go to select-role if user exists but no role, else back.
       if (user) {
-        router.push('/select-role');
+        router.push("/select-role");
       } else {
         router.back();
       }
     }
   };
 
-  if (
-    (!user) ||
-    (authUserId && authUserId !== pageUserId)
-  ) {
+  if (!user || (authUserId && authUserId !== pageUserId)) {
     return <Loader />; // Show loader while checking auth
   }
 

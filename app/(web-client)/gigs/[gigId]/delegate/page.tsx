@@ -95,9 +95,14 @@ export default function DelegateGigPage() {
         } else {
             throw new Error("Failed to delegate gig.");
         }
-    } catch (err: any) {
-        setError(err.message || "An error occurred while delegating.");
-        alert(err.message || "An error occurred while delegating.");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message || "An error occurred while delegating.");
+          alert(err.message || "An error occurred while delegating.");
+        } else {
+          setError("An unknown error occurred.");
+          alert("An unknown error occurred.");
+        }
     } finally {
         setDelegatingWorkerId(null);
     }

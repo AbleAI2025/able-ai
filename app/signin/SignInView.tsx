@@ -48,11 +48,15 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
 
         router.push("/select-role");
       }
-    } catch (err: any) {
-      console.error("Login failed:", err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Login error:", err);
+      } else {
+        console.error("Unexpected error during login:", err);
+      }
       onError(
         <>
-          {err?.message || "An unexpected error occurred."}
+          {err instanceof Error ? err.message : "An unexpected error occurred."}
           <a href="/reset-password" className={styles.errorLink}>
             Reset password?
           </a>

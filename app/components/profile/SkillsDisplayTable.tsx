@@ -1,7 +1,6 @@
 import React from 'react';
 import PillBadge from '../shared/PillBadge';
 import styles from './SkillsDisplayTable.module.css';
-import { is } from 'drizzle-orm';
 
 interface SkillItem {
   name: string;

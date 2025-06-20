@@ -125,8 +125,12 @@ const GigDetailsComponent = ({ gig, setGig }: GigDetailsProps) => {
             // Show success message
         }
         // Handle other actions
-        } catch (err: any) {
-            console.log(err.message || `Failed to ${action} gig.`);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.error(err.message || `Failed to ${action} gig.`);
+            } else {
+                console.error(`Unknown error performing action ${action} on gig:`, err);
+            }
         } finally {
             setIsActionLoading(false);
         }

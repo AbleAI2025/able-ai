@@ -1,4 +1,4 @@
-import React, { FocusEvent, ReactNode } from 'react';
+import React, { FocusEvent } from 'react';
 import DatePicker, { DatePickerProps } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import styles from './CalendarPickerBubble.module.css';

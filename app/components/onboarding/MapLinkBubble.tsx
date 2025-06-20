@@ -11,7 +11,7 @@ interface MapLinkBubbleProps {
     // Add other props needed for a map component integration
 }
 
-const MapLinkBubble: React.FC<MapLinkBubbleProps> = ({ id, name, label, value, onChange, disabled }) => {
+const MapLinkBubble: React.FC<MapLinkBubbleProps> = ({ id, name, label, value }) => {
     // This is a mock implementation. Replace with a real map component later.
     return (
         <div className={styles.mapLinkBubbleWrapper}>

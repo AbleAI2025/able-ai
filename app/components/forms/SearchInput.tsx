@@ -1,6 +1,5 @@
 import React from 'react';
 import styles from './SearchInput.module.css';
-import { Search } from 'lucide-react'; // Optional search icon
 
 interface SearchInputProps {
   value: string;

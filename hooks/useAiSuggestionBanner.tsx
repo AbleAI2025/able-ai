@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Suggestion, SuggestedAction } from '../components/shared/AiSuggestionBanner'; // Assuming Suggestion type is exported here
-import { generateSuggestions } from '../lib/agents/suggestionBannerAgent'; // Updated path
+import { SuggestedAction, Suggestion } from '@/app/components/shared/AiSuggestionBanner';
+import { generateSuggestions } from '@/lib/agents/suggestionBannerAgent';
 
 interface UseAiSuggestionBannerProps {
   role: 'buyer' | 'worker';

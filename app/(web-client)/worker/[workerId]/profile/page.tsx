@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
 import {
-  Award as AwardIconLucide, UserCircle, Loader2, ThumbsUp, MessageCircleCode, X } from 'lucide-react';
+  Award as AwardIconLucide, UserCircle, Loader2, ThumbsUp, MessageCircleCode } from 'lucide-react';
 import styles from './page.module.css'; // Use page.module.css
 import WorkerProfile from '@/app/components/profile/WorkerProfile';
 
@@ -64,7 +64,7 @@ export default function PublicWorkerProfilePage() {
   const params = useParams();
   const workerProfileIdToView = params.workerId as string;
 
-  const { loading: loadingAuth, user: authUser } = useAuth();
+  const { loading: loadingAuth } = useAuth();
 
   const [workerProfile, setWorkerProfile] = useState<PublicWorkerProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -92,13 +92,6 @@ export default function PublicWorkerProfilePage() {
       setIsLoadingProfile(false);
     }
   }, [workerProfileIdToView]);
-
-  const handleSendMessage = () => {
-    if (!workerProfile) return;
-    // Placeholder for message functionality
-    console.log(`Initiate chat with ${workerProfile.displayName}`);
-    // router.push(`/chat?contactId=${workerProfile.id}`); // Example chat route
-  };
 
   if (loadingAuth || isLoadingProfile) {
     return <div className={styles.pageLoadingContainer}><Loader2 className="animate-spin" size={48} /> Loading Profile...</div>;

@@ -98,13 +98,13 @@ const AppCalendar = <TEvent extends object>({
 
   // Wrap onSelectEvent to match the expected signature
   const handleSelectEvent = onSelectEvent
-    ? (event: object, _e: React.SyntheticEvent) => onSelectEvent(event as TEvent)
+    ? (event: object) => onSelectEvent(event as TEvent)
     : undefined;
 
   // Wrap eventPropGetter to match the expected signature
   const handleEventPropGetter = eventPropGetter
-    ? (event: object, ...args: any[]) => eventPropGetter(event as TEvent)
-    : (defaultEventPropGetter as any);
+    ? (event: object) => eventPropGetter(event as TEvent)
+    : (defaultEventPropGetter);
 
   return (
     <div className={styles.calendarWrapper} style={{ height }}>

@@ -1,6 +1,6 @@
 // File: app/lib/user.server.ts
-import { db } from "@/app/lib/drizzle/db"; // Correct path to your Drizzle instance
-import { UsersTable, GigWorkerProfilesTable, BuyerProfilesTable, userAppRoleEnum, activeRoleContextEnum } from "@/app/lib/drizzle/schema"; // Import specific tables
+import { db } from "@/lib/drizzle/db"; // Correct path to your Drizzle instance
+import { UsersTable, GigWorkerProfilesTable, BuyerProfilesTable, userAppRoleEnum, activeRoleContextEnum } from "@/lib/drizzle/schema"; // Import specific tables
 import { eq } from "drizzle-orm";
 
 // Define a comprehensive AppUser type

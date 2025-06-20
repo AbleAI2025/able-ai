@@ -24,6 +24,7 @@ export default function CancelOrAmendGigDetailsPage() {
   const [isEditingDetails, setIsEditingDetails] = useState(false); // Add state for edit mode
   const [editedGigDetails, setEditedGigDetails] = useState(gigDetailsData); // State for edited details
   const lastRoleUsed = getLastRoleUsed()
+  /*
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditedGigDetails((prevDetails) => ({
@@ -31,6 +32,7 @@ export default function CancelOrAmendGigDetailsPage() {
       [name]: value,
     }));
   };
+  */
 
   const handleEditDetails = () => {
     // Logic for editing gig details - perhaps opens a modal or navigates

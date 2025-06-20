@@ -1,7 +1,5 @@
 import React, { ReactNode } from 'react';
-import Image from 'next/image';
 import styles from './MessageBubble.module.css';
-import chatStyles from '../../styles/chat.module.css'; // Import global styles
 
 interface MessageBubbleProps {
   text: ReactNode;
@@ -13,8 +11,6 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   text,
   senderType = 'bot',
-  avatarSrc,
-  showAvatar = false,
 }) => {
   const isBot = senderType === 'bot';
   const bubbleClass = isBot ? styles.bubbleBot : styles.bubbleUser;

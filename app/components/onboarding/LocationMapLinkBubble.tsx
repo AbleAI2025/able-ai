@@ -1,4 +1,4 @@
-import React, { ChangeEvent, ReactNode } from 'react';
+import React from 'react';
 import styles from './LocationMapLinkBubble.module.css';
 import { MapPin, ExternalLink } from 'lucide-react';
 // import InputBubble from './InputBubble'; // If using InputBubble internally
@@ -19,8 +19,6 @@ interface LocationMapLinkBubbleProps {
 
 const LocationMapLinkBubble = React.forwardRef<HTMLDivElement, LocationMapLinkBubbleProps>( // Ref could be for a wrapper or a specific input if added
   ({
-    id,
-    name,
     label = "Location",
     mapUrl,
     linkText = "View on Map",

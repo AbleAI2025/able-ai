@@ -1,7 +1,7 @@
 // File: app/lib/db/vector.server.ts
-import { db as drizzleDB } from '@/app/lib/drizzle/db'; // Corrected path
-import { VectorEmbeddingsTable } from '@/app/lib/drizzle/schema/vector';
-import { vectorEntityTypeEnum } from '@/app/lib/drizzle/schema/enums'; // Assuming this is where your enum is
+import { db as drizzleDB } from '@/lib/drizzle/db'; // Corrected path
+import { VectorEmbeddingsTable } from '@/lib/drizzle/schema/vector';
+import { vectorEntityTypeEnum } from '@/lib/drizzle/schema/enums'; // Assuming this is where your enum is
 import { sql, desc, gt, cosineDistance, eq, and } from 'drizzle-orm';
 
 interface EmbeddingSearchResult {

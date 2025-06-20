@@ -1,5 +1,5 @@
 "use server";
-import { findOrCreatePgUserAndUpdateRole } from "@/app/lib/user.server";
+import { findOrCreatePgUserAndUpdateRole } from "@/lib/user.server";
 import { authServer } from "@/lib/firebase/firebase-server";
 
 type RegisterUserData = {

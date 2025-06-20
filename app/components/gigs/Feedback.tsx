@@ -98,7 +98,8 @@ export default function Feedback() {
     }
 
     setLastRoleUsed("GIG_WORKER");
-  }, [user, loadingAuth, authUserId, pageUserId, router, pathname]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.claims.role, loadingAuth, authUserId, pageUserId, router, pathname, lastRoleUsed]);
 
   const handleThumbsUp = () =>
     setFormData({ ...formData, wouldWorkAgain: true });
@@ -122,13 +123,6 @@ export default function Feedback() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-
-  const handleGigAmend = () => {
-    console.log("Amending gig timing or adding tips...");
-    // Implement the logic to handle gig amendments here
-    // For now, just redirecting to the earnings page
-    
-  }
 
   // if (loading) {
   //     return <div className={styles.loadingContainer}>Loading...</div>;

@@ -7,6 +7,7 @@ import SubmitButton from "@/app/components/form/SubmitButton";
 import styles from "@/app/signin/SignInPage.module.css";
 import { useRouter } from 'next/navigation';
 import { registerUserAction } from "@/actions/auth/signup";
+import { isPasswordCommon } from "./actions";
 
 interface RegisterViewProps {
     onToggleRegister: () => void;
@@ -71,6 +72,15 @@ const RegisterView: React.FC<RegisterViewProps> = ({ onToggleRegister, onError }
             setLoading(false);
             return;
         }
+
+        const validatePassword = await isPasswordCommon(password.trim());
+
+        if (validatePassword) {
+            onError("Password is too common. Please choose a more secure password.");
+            setLoading(false);
+            return;
+        }
+
         const result = await registerUserAction({email: email.trim(), password: password.trim(), name: name.trim(), phone: phone.trim()});
         setLoading(false);
 

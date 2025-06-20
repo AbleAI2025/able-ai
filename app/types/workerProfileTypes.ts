@@ -34,7 +34,7 @@ export default interface PublicWorkerProfile {
 
     statistics?: Statistic[];
 
-    skills: Skill[];
+    skills?: Skill[];
 
     awards?: Award[];
     feedbackSummary?: string;

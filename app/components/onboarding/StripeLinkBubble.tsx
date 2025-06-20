@@ -10,7 +10,7 @@ interface StripeLinkBubbleProps {
     disabled?: boolean;
 }
 
-const StripeLinkBubble: React.FC<StripeLinkBubbleProps> = ({ id, name, label, stripeLink, disabled }) => {
+const StripeLinkBubble: React.FC<StripeLinkBubbleProps> = ({ label, stripeLink, disabled }) => {
     // This is a mock implementation. Replace with a real Stripe onboarding link later.
     return (
         <div className={styles.stripeLinkBubbleWrapper}>

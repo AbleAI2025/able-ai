@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "sonner";
 import Image from "next/image";
 import { Users, CalendarDays, CreditCard, LayoutDashboard } from "lucide-react";
 
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
-import { useAiSuggestionBanner } from "../../../../hooks/useAiSuggestionBanner";
 import IconGrid from "@/app/components/shared/IconGrid";
 import ReferralBanner from "@/app/components/shared/ReferralBanner";
 import RoleToggle from "@/app/components/shared/RoleToggle";
@@ -18,12 +16,11 @@ import Logo from "@/app/components/brand/Logo";
 
 import styles from "./HomePage.module.css";
 import { useAuth } from "@/context/AuthContext";
+import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
 
 export default function BuyerDashboardPage() {
   const {
-    user: userPublicProfile,
-    loading: loadingAuth,
-    // TODO: Handle authError if necessary
+    user: userPublicProfile
   } = useAuth();
 
   const uid = userPublicProfile?.uid;

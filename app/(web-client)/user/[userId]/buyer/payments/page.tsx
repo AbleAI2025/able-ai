@@ -7,7 +7,7 @@ import Link from 'next/link';
 // Using Lucide Icons
 import { Home, Filter, FileText, Repeat, ArrowLeft, Loader2, Wine, Utensils, Briefcase } from 'lucide-react';
 // Import Recharts components
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 import styles from './PaymentsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
@@ -53,19 +53,6 @@ const getChartData = (payments: Payment[]) => {
     }
   });
   return Object.entries(monthlyTotals).map(([name, total]) => ({ name, total })).reverse(); // Newest first
-};
-
-// Custom tooltip component for the chart
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className={styles.chartTooltip}>
-        <p className={styles.tooltipLabel}>{label}</p>
-        <p className={styles.tooltipValue}>£{payload[0].value.toFixed(2)}</p>
-      </div>
-    );
-  }
-  return null;
 };
 
 export default function BuyerPaymentsPage() {
@@ -276,10 +263,6 @@ export default function BuyerPaymentsPage() {
                   tick={{ fill: '#a0a0a0', fontSize: 12 }}
                   axisLine={{ stroke: '#3a3a3a' }}
                   tickLine={{ stroke: '#3a3a3a' }}
-                />
-                <Tooltip 
-                  content={<CustomTooltip />}
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                 />
                 <Bar 
                   dataKey="total" 

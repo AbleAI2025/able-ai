@@ -140,8 +140,15 @@ export default function BuyerFeedbackPage() {
       setSuccessMessage(
         `Feedback for ${gigData.workerName} submitted successfully!`
       );
-    } catch (err: any) {
-      setError(err.message || "Failed to submit feedback.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Error submitting feedback:", err);
+        setError(err.message || "Failed to submit feedback.");
+
+      } else {
+        console.error("Unknown error submitting feedback:", err);
+        setError("Failed to submit feedback.");
+      }
     } finally {
       setIsSubmitting(false);
     }

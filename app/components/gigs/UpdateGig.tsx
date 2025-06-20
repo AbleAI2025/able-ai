@@ -1,6 +1,5 @@
 import { Pencil } from 'lucide-react';
 import styles from './UpdateGig.module.css';
-import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 
 interface GigDetailsData {
@@ -22,8 +21,7 @@ interface GigDetailsProps {
 }
 
 const AmendGig = ({gigDetailsData, editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm }: GigDetailsProps) => {
-    const { user } = useAuth();
-  const lastRoleUsed = getLastRoleUsed()
+    const lastRoleUsed = getLastRoleUsed()
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

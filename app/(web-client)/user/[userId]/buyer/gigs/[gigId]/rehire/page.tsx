@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 
 import ChatBotLayout from "@/app/components/onboarding/ChatBotLayout"; // Reusing
@@ -80,13 +80,10 @@ async function fetchRehireData(
 }
 
 export default function RehirePage() {
-  const router = useRouter();
   const params = useParams();
-  const pageBuyerUserId = params.userId as string;
   const gigId = params.gigId as string;
 
   const { user, loading: loadingAuth } = useAuth();
-  const pathname = usePathname(); // Added for potential redirect query param
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const [originalGigInfo, setOriginalGigInfo] =
@@ -133,7 +130,7 @@ export default function RehirePage() {
             setError("Could not load details for rehire.");
           }
         })
-        .catch((err) => setError("Error loading rehire information."))
+        .catch(() => setError("Error loading rehire information."))
         .finally(() => setIsLoadingData(false));
     }
   }, [user, user?.uid, gigId]);
@@ -199,12 +196,20 @@ export default function RehirePage() {
         },
       ]);
       // router.push(`/user/${newGig.id}`); // Navigate to new gig details
-    } catch (err: any) {
-      setError(err.message);
-      setChatMessages((prev) => [
-        ...prev,
-        { id: Date.now(), type: "bot", content: `Error: ${err.message}` },
-      ]);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+        setChatMessages((prev) => [
+          ...prev,
+          { id: Date.now(), type: "bot", content: `Error: ${err.message}` },
+        ]);
+      } else {
+        setError("An unknown error occurred while booking the worker.");
+        setChatMessages((prev) => [
+          ...prev,
+          { id: Date.now(), type: "bot", content: "Error: An unknown error occurred." },
+        ]);
+      }
     } finally {
       setIsBooking(false);
     }

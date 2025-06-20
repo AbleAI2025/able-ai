@@ -17,7 +17,7 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   allDay?: boolean;
-  resource?: any;
+  resource?: Record<string, unknown>;
   status?:
     | "PENDING"
     | "ACCEPTED"
@@ -34,30 +34,6 @@ interface CalendarEvent {
 }
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
-
-const MOCK_EVENTS: CalendarEvent[] = [
-  {
-    title: "Gig Accepted",
-    start: new Date(2023, 11, 18, 9, 0),
-    end: new Date(2023, 11, 18, 10, 30),
-    status: "ACCEPTED",
-    isBuyerAccepted: true,
-    buyerName: "Jerimiah Jones",
-  },
-  {
-    title: "Bartender, Central Station",
-    start: new Date(2023, 11, 18, 13, 0),
-    end: new Date(2023, 11, 18, 21, 0),
-    status: "OFFER",
-  },
-  {
-    title: "Bartender, Central Station",
-    start: new Date(2023, 11, 18, 13, 0),
-    end: new Date(2023, 11, 18, 21, 0),
-    status: "ACCEPTED",
-    workerName: "Jessica Hersey",
-  },
-];
 
 const BuyerCalendarPage = () => {
   const pathname = usePathname();

@@ -32,7 +32,7 @@ export interface ChatMessage {
   contextType: 'onboarding' | 'support' | 'expand_view' | 'edit' | 'gig' | 'admin_support';
   gigId?: string; // ID of the relevant gig (if contextType is 'gig')
   sessionId?: string; // Optional ID for grouping related non-gig chats
-  metadata?: any; // Optional JSON object for additional context
+  metadata?: Record<string, unknown>; // Optional JSON object for additional context
   // Note: senderFirebaseUid from old GigMessage is now senderId
 }
 
@@ -43,7 +43,7 @@ export interface UserAIChat {
   userId: string; // The owner of this AI chat session
   contextType: 'onboarding' | 'support' | 'expand_view' | 'edit';
   createdAt: FirestoreTimestamp;
-  metadata?: any;
+  metadata?: Record<string, unknown>; // Optional JSON object for additional context
   status?: string; // e.g., 'OPEN', 'CLOSED'
 }
 
@@ -53,7 +53,7 @@ export interface AdminChat {
   createdAt: FirestoreTimestamp;
   status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; // Status of the admin support case
   adminUserId?: string; // The admin currently assigned
-  metadata?: any;
+  metadata?: Record<string, unknown>; // Optional JSON object for additional context
 }
 
 export interface UserProfile {

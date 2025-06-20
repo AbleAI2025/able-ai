@@ -182,7 +182,7 @@ export default function RecommendationPage() {
 
         <div className={styles.recommendationCard}>
           <p className={styles.prompt}>
-            {workerDetails.name} is available for hire on Able! Please provide a reference for {workerDetails.name}'s skills as a {workerDetails.primarySkill}.
+            {workerDetails.name} is available for hire on Able! Please provide a reference for {workerDetails.name}&apos;s skills as a {workerDetails.primarySkill}.
             Your feedback will be added to their public profile after review.
           </p>
 

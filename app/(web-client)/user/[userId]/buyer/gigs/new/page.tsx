@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, FormEvent, useMemo } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import ChatBotLayout from "@/app/components/onboarding/ChatBotLayout";
 import MessageBubble from "@/app/components/onboarding/MessageBubble";
@@ -178,9 +178,8 @@ const baseInitialSteps: OnboardingStep[] = [
 ];
 
 export default function OnboardBuyerPage() {
-  const pathname = usePathname();
   const router = useRouter();
-  const { user, loading: loadingAuth } = useAuth();
+  const { user } = useAuth();
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const isQA = user?.claims.role === "QA";
@@ -571,7 +570,7 @@ export default function OnboardBuyerPage() {
       )}
       <ChatBotLayout
         ref={chatContainerRef}
-        onScroll={(e: React.UIEvent<HTMLDivElement>) => {}}
+        onScroll={() => {}}
         onHomeClick={handleHomeClick}
         className={pageStyles.container}
       >

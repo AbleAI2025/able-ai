@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './ShareLinkBubble.module.css';
-import { Link, Copy, CheckCircle, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 
 interface ShareLinkBubbleProps {
   label?: string;
@@ -11,7 +11,6 @@ interface ShareLinkBubbleProps {
 }
 
 const ShareLinkBubble: React.FC<ShareLinkBubbleProps> = ({
-  label = "Share this link:",
   linkUrl,
   linkText,
   disabled,

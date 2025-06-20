@@ -57,7 +57,7 @@ const getEarningsChartData = (earnings: Earning[]) => {
 // Custom tooltip component for the chart
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; stroke: string; fill: string; dataKey: string; payload: any }>;
+  payload?: Array<{ name: string; value: number; stroke: string; fill: string; dataKey: string; payload: { name: string; total: number } }>;
   label?: string | number;
 }
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
@@ -120,6 +120,7 @@ export default function WorkerEarningsPage() {
       setEarnings([]);
       // Error message or redirect is handled by the primary auth useEffect
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loadingAuth, authUserId, pageUserId, filterGigType]);
   
   const chartData = useMemo(() => getEarningsChartData(earnings), [earnings]);

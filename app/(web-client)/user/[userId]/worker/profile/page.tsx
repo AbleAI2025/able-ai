@@ -13,6 +13,7 @@ import WorkerProfile from "@/app/components/profile/WorkerProfile";
 import CloseButton from "@/app/components/profile/CloseButton";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
+import PublicWorkerProfile from "@/app/types/workerProfileTypes";
 
 // Mock data for QA testing
 const qaMockProfileData = {
@@ -92,7 +93,7 @@ export default function WorkerOwnedProfilePage() {
 
   const { user, loading: loadingAuth } = useAuth();
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<PublicWorkerProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isSelfView = true;
@@ -104,10 +105,13 @@ export default function WorkerOwnedProfilePage() {
       experience: "3 years",
       eph: 20,
     };
-    setProfile({
-      ...profile,
-      skills: [...(profile.skills || []), newSkill],
-    });
+    if (profile) {
+      setProfile({
+        ...profile,
+        id: profile.id || "",
+        skills: [...(profile.skills || []), newSkill],
+      });
+    }
   };
 
   useEffect(() => {
@@ -131,7 +135,8 @@ export default function WorkerOwnedProfilePage() {
         router.replace("/select-role");
       }
     }
-  }, [loadingAuth, user, userId, pathname, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingAuth, user?.claims.role, userId, pathname, router, lastRoleUsed]);
 
   const handleSkillDetails = (name: string) => {
     return router.push(`/user/${userId}/worker/profile/skills/${name}`);

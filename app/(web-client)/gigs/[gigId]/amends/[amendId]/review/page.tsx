@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { AlertCircle, Bot, MessageSquare } from 'lucide-react';
+import { AlertCircle, MessageSquare } from 'lucide-react';
 import styles from './ConfirmAmendedGigDetailsPage.module.css';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import UpdateGig from '@/app/components/gigs/UpdateGig';

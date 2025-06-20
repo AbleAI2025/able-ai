@@ -9,7 +9,7 @@ import ReviewCardItem from '@/app/components/shared/ReviewCardItem';
 import RecommendationCardItem from '@/app/components/shared/RecommendationCardItem';
 import React from 'react';
 
-type Profile = {
+export type Profile = {
   name: string;
   title: string;
   hashtags: string;
@@ -26,7 +26,7 @@ type Profile = {
   badges: {
     id: string | number;
     icon: React.ElementType;
-    textLines: string;
+    textLines: string[] | string;
   }[];
   qualifications: string[];
   buyerReviews: {
@@ -41,7 +41,7 @@ type Profile = {
   };
 };
 
-const SkillSplashScreen = ({profile}: {profile: any}) => {
+const SkillSplashScreen = ({profile}: {profile: Profile}) => {
     const params = useParams();
     const skill = params?.skillId as string;
 
@@ -123,12 +123,12 @@ const SkillSplashScreen = ({profile}: {profile: any}) => {
         <h3 className={styles.sectionTitle}>Badges Awarded</h3>
         <div className={styles.badges}>
           
-            {profile.badges.map((badge: any) => {
+            {profile.badges.map((badge: Profile["badges"][number]) => {
               return (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
                     icon={badge.icon}
-                    textLines={badge.textLines}
+                    textLines={badge.textLines as string}
                   />
                 </div>
             )})}   
@@ -149,7 +149,7 @@ const SkillSplashScreen = ({profile}: {profile: any}) => {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
         {
-          profile.buyerReviews.map((review: any, index: number) => (
+          profile.buyerReviews.map((review: Profile["buyerReviews"][number], index: number) => (
             // <div className={styles.reviewCard} key={index}>
             //   <p><strong>{review.name} - {review.date}</strong></p>
             //   <p>“{review.text}”</p>

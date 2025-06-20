@@ -15,7 +15,7 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   allDay?: boolean;
-  resource?: any;
+  resource?: string;
   status?: 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'UNAVAILABLE' | 'OFFER';
   eventType?: 'gig' | 'offer' | 'unavailability';
   buyerName?: string;
@@ -78,7 +78,7 @@ const WorkerCalendarPage = () => {
         setView('day');
       }
     }
-  }, [activeFilter]);
+  }, [activeFilter, realEvents]);
 
   // Calendar navigation handler
   const handleNavigate = (action: 'TODAY' | 'PREV' | 'NEXT') => {

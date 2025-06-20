@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
 import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming shared location
@@ -10,10 +10,10 @@ import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
 import { Loader2, Inbox, Calendar } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
 import Logo from "@/app/components/brand/Logo";
-import { useAiSuggestionBanner } from "@/app/hooks/useAiSuggestionBanner";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
+import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
 
 interface GigOffer {
   id: string;
@@ -34,7 +34,7 @@ interface GigOffer {
 // Mock function to fetch data - returns both offers and accepted gigs
 async function fetchWorkerData(
   userId: string,
-  filters?: any
+  filters?: string[],
 ): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
   console.log(
     "Fetching worker data for workerId:",
@@ -171,9 +171,7 @@ export default function WorkerOffersPage() {
       (lastRoleUsed === "GIG_WORKER" || user?.claims.role === "QA")
     ) {
       setIsLoadingData(true);
-      fetchWorkerData(pageUserId, {
-        /* pass filters if any */
-      })
+      fetchWorkerData(pageUserId)
         .then((data) => {
           setOffers(data.offers);
           setAcceptedGigs(data.acceptedGigs);
@@ -206,7 +204,7 @@ export default function WorkerOffersPage() {
       setAcceptedGigs([]);
       // Error message or redirect is handled by the primary auth useEffect
     }
-  }, [user, loadingAuth, authUserId, pageUserId /* add filter state if any */]);
+  }, [user, loadingAuth, authUserId, pageUserId, lastRoleUsed]);
 
   const handleAcceptOffer = async (
     e: React.MouseEvent<HTMLButtonElement>,

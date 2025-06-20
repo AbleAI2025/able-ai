@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import styles from './GigDetailsPage.module.css';
@@ -60,28 +60,8 @@ async function fetchWorkerGigDetails(userId: string, gigId: string): Promise<Gig
   return null; // Or throw an error
 }
 
-
-// Helper to format date and time
-const formatGigDate = (isoDate: string) => new Date(isoDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-const formatGigTime = (isoTime: string) => new Date(isoTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
-const calculateDuration = (startIso: string, endIso: string): string => {
-    const startDate = new Date(startIso);
-    const endDate = new Date(endIso);
-    const diffMs = endDate.getTime() - startDate.getTime();
-    if (diffMs <= 0) return "N/A";
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    let durationStr = "";
-    if (hours > 0) durationStr += `${hours} hour${hours > 1 ? 's' : ''}`;
-    if (minutes > 0) durationStr += ` ${minutes} minute${minutes > 1 ? 's' : ''}`;
-    return durationStr.trim() || "N/A";
-};
-
-
 export default function WorkerGigDetailsPage() {
-  const router = useRouter();
   const params = useParams();
-  const pathname = usePathname();
   const pageUserId = params.userId as string; // This is the worker's ID from the URL
   const gigId = params.gigId as string;
 
@@ -91,7 +71,6 @@ export default function WorkerGigDetailsPage() {
   const [gig, setGig] = useState<GigDetails | null>(null);
   const [isLoadingGig, setIsLoadingGig] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Fetch Gig Details
   useEffect(() => {
@@ -119,7 +98,7 @@ export default function WorkerGigDetailsPage() {
   }, [loadingAuth, user, authUserId, pageUserId, gigId, setIsLoadingGig]);
 
 
-  
+  /*
   const getStatusBadgeClass = (status: GigDetails['status']) => {
     switch (status) {
         case 'ACCEPTED': return styles.statusAccepted;
@@ -130,6 +109,7 @@ export default function WorkerGigDetailsPage() {
         default: return '';
     }
   }
+  */
 
   if (isLoadingGig) {
     return <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={32} /> Loading Gig Details...</div>;

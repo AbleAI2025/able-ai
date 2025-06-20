@@ -12,7 +12,7 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   allDay?: boolean;
-  resource?: any;
+  resource?: Record<string, unknown>;
   status?:
     | "PENDING"
     | "ACCEPTED"

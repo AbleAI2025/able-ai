@@ -6,14 +6,6 @@ import { useParams } from "next/navigation"; // Added useParams
 import GigDetailsComponent from "@/app/components/gigs/GigDetails";
 import type GigDetails from "@/app/types/GigDetailsTypes"; // Assuming you have this type defined
 
-
-const stepLabels = [
-  "Gig accepted",
-  "Benji has started the gig",
-  "Mark as complete, pay Benji",
-  "Gigee Paid",
-];
-
 async function fetchBuyerGigDetails(userId: string, gigId: string): Promise<GigDetails | null> {
   console.log("Fetching gig details for worker:", userId, "gig:", gigId);
   // API call: GET /api/gigs/worker/${gigId} (ensure backend auth checks worker owns this gig)

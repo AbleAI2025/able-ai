@@ -1,8 +1,8 @@
 // Gemini AI Agent Utility - Scaffolding
 
 import { ai } from "@/lib/firebase/clientApp";
-import { getGenerativeModel } from "@firebase/ai";
-import { logClient, logServer, ERROR_CODES, AppLogError } from "@/app/lib/log";
+import { getGenerativeModel, Schema } from "@firebase/ai";
+import { logClient, logServer, ERROR_CODES, AppLogError } from "@/lib/log";
 
 // --- Supported Models ---
 export const SUPPORTED_GEMINI_MODELS = [
@@ -15,15 +15,15 @@ export type SupportedGeminiModel = typeof SUPPORTED_GEMINI_MODELS[number];
 // --- Type Definitions ---
 export type GeminiAIOptions = {
   prompt: string;
-  responseSchema: any; // Schema object from @firebase/ai
+  responseSchema: Schema; // Schema object from @firebase/ai
   isStream?: boolean;
-  generationConfig?: Record<string, any>;
+  generationConfig?: Record<string, unknown>;
   // ...extend as needed
 };
 
 export type GeminiAIResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string; code?: number; details?: any };
+  | { ok: false; error: string; code?: number; details?: unknown };
 
 export type GeminiAIErrorHook = (error: AppLogError) => void;
 
@@ -124,9 +124,16 @@ export async function geminiAIAgent<T>(
       }
       // Optionally, could add runtime validation here if needed
       return { ok: true, data };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle model errors
-      const error = { ...ERROR_CODES.AI_API_ERROR, details: { err, model: currentModel, attempt } };
+      const error = { 
+        ...ERROR_CODES.AI_API_ERROR, 
+        details: { 
+          err: err instanceof Error ? err.message : String(err), 
+          model: currentModel, 
+          attempt 
+        } 
+      };
       logClient(error);
       logServer(error);
       errorHook(error);

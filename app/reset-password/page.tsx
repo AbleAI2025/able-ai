@@ -22,9 +22,14 @@ export default function ResetPasswordPage() {
     try {
       await sendPasswordResetEmail(authClient, email);
       setSuccess(true);
-    } catch (err: any) {
-      console.error("Password Reset Error:", err);
-      setError(err.message || "Failed to send reset email.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Password Reset Error:", err);
+        setError(err.message || "Failed to send reset email.");
+      } else {
+        console.error("Password Reset Error:", err);
+        setError("An unknown error occurred while sending the reset email.");
+      }
     }
     setLoading(false);
   };
@@ -42,7 +47,10 @@ export default function ResetPasswordPage() {
         <div className={styles.header}>
           <h1>Reset Password</h1>
           {!success && (
-            <p>Enter your email address and we'll send you a link to reset your password.</p>
+            <p>
+              Enter your email address and we&#39;ll send you a link to reset your
+              password.
+            </p>
           )}
         </div>
 
@@ -75,7 +83,10 @@ export default function ResetPasswordPage() {
             {error && (
               <div className={styles.errorMessage}>
                 <p>{error}</p>
-                <span className={styles.errorCloseBtn} onClick={handleCloseError}>
+                <span
+                  className={styles.errorCloseBtn}
+                  onClick={handleCloseError}
+                >
                   X
                 </span>
               </div>

@@ -6,7 +6,6 @@ import Link from "next/link";
 
 // Import shared components
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
-import { useAiSuggestionBanner } from "../../../../hooks/useAiSuggestionBanner";
 import IconGrid from "@/app/components/shared/IconGrid";
 import ReferralBanner from "@/app/components/shared/ReferralBanner";
 import RoleToggle from "@/app/components/shared/RoleToggle";
@@ -26,6 +25,7 @@ import Loader from "@/app/components/shared/Loader";
 import Logo from "@/app/components/brand/Logo";
 import { Toaster } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
 
 // Define this interface if you add the optional summary section
 // interface UpcomingGigSummary {
@@ -41,8 +41,7 @@ export default function WorkerDashboardPage() {
   const pageUserId = params.userId as string;
 
   const {
-    user,
-    loading: loadingAuth,
+    user
     // TODO: Handle authError if necessary
   } = useAuth();
   const authUserId = user?.uid;

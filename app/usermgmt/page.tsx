@@ -177,7 +177,7 @@ const UserMgmtPage: React.FC = () => {
 
   // https://blog.logrocket.com/send-custom-email-templates-firebase-react-express/
   const handleSignIn = useCallback(
-    async (currentActionCode: string, currentContinueUrl: string | null) => {
+    async (currentActionCode: string ) => {
       setIsLoading(true);
       setError(null);
       try {
@@ -209,7 +209,7 @@ const UserMgmtPage: React.FC = () => {
           }
           // The client SDK will parse the code from the link for you.
           signInWithEmailLink(authClient, email, window.location.href)
-            .then((result) => {
+            .then(() => {
               // Clear email from storage.
               window.localStorage.removeItem("emailForSignIn");
               // You can access the new user by importing getAdditionalUserInfo
@@ -220,7 +220,7 @@ const UserMgmtPage: React.FC = () => {
               // You can check if the user is new or existing:
               // getAdditionalUserInfo(result)?.isNewUser
             })
-            .catch((error) => {
+            .catch(() => {
               // Some error occurred, you can inspect the code: error.code
               // Common errors could be invalid email and invalid or expired OTPs.
             });
@@ -234,6 +234,7 @@ const UserMgmtPage: React.FC = () => {
       }
       setIsLoading(false);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -266,13 +267,14 @@ const UserMgmtPage: React.FC = () => {
         handleVerifyEmail(actionCodeParam, continueUrlParam);
         break;
       case "signIn":
-        handleSignIn(actionCodeParam, continueUrlParam);
+        handleSignIn(actionCodeParam);
         break;
       default:
         setError(`Invalid mode: ${modeParam}. Please check the link.`);
         setUiState("error");
         setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     searchParams,
     handleResetPassword,

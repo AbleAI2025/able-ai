@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, FormEvent, ChangeEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import styles from './ReportIssuePage.module.css';
 
@@ -63,8 +63,14 @@ export default function ReportIssuePage() {
       // const response = await fetch('/api/report-issue', { method: 'POST', body: formData });
       // if (!response.ok) throw new Error('Failed to submit issue.');
       setSubmitSuccess(true);
-    } catch (error: any) {
-      setSubmitError(error.message || 'An unknown error occurred.');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error submitting issue:", error);
+        setSubmitError(error.message || 'An unknown error occurred.');
+      } else {
+        console.error("Unknown error submitting issue:", error);
+        setSubmitError('An unknown error occurred.');
+      }
     } finally {
       setIsSubmitting(false);
     }
