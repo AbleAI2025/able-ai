@@ -5,38 +5,16 @@ import AppCalendar from '@/app/components/shared/AppCalendar';
 import CalendarHeader from '@/app/components/shared/CalendarHeader';
 import CalendarEventComponent from '@/app/components/shared/CalendarEventComponent';
 import { View } from 'react-big-calendar';
+import { useAuth } from '@/context/AuthContext';
+import { CalendarEvent } from '@/app/types/CalendarEventTypes';
+import { getCalendarEvents } from '@/actions/events/get-calendar-events';
 // Import the CSS module for this page
 import styles from './WorkerCalendarPage.module.css';
-
-// Define the interface for calendar events (should be consistent with BuyerCalendarPage)
-interface CalendarEvent {
-  id?: string;
-  title: string;
-  start: Date;
-  end: Date;
-  allDay?: boolean;
-  resource?: string;
-  status?: 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'UNAVAILABLE' | 'OFFER';
-  eventType?: 'gig' | 'offer' | 'unavailability';
-  buyerName?: string;
-  workerName?: string;
-  isMyGig?: boolean;
-  isBuyerAccepted?: boolean;
-}
 
 const FILTERS = [
   'Manage availability',
   'Accepted gigs',
   'See gig offers',
-];
-
-const MOCK_EVENTS: CalendarEvent[] = [
-  { title: 'Shift at cafe: Waiter', start: new Date(new Date().setHours(10, 0, 0, 0)), end: new Date(new Date().setHours(11, 30, 0, 0)), status: 'ACCEPTED', workerName: 'You' },
-  { title: 'Bartender, Central Station', start: new Date(new Date().setHours(13, 0, 0, 0)), end: new Date(new Date().setHours(21, 0, 0, 0)), status: 'OFFER' },
-  { title: 'Unavailable: Doctor Appointment', start: new Date(new Date().setHours(8, 0, 0, 0)), end: new Date(new Date().setHours(9, 30, 0, 0)), status: 'UNAVAILABLE' },
-  { title: 'Gig in progress', start: new Date(new Date().setHours(12, 0, 0, 0)), end: new Date(new Date().setHours(14, 0, 0, 0)), status: 'IN_PROGRESS' },
-  { title: 'Completed gig', start: new Date(new Date().setHours(15, 0, 0, 0)), end: new Date(new Date().setHours(17, 0, 0, 0)), status: 'COMPLETED' },
-  { title: 'Cancelled gig', start: new Date(new Date().setHours(18, 0, 0, 0)), end: new Date(new Date().setHours(19, 0, 0, 0)), status: 'CANCELLED' },
 ];
 
 // Helper to filter events based on active filter
@@ -54,8 +32,7 @@ function filterEvents(events: CalendarEvent[], filter: string): CalendarEvent[] 
 }
 
 const WorkerCalendarPage = () => {
-  // Real events would be fetched or passed in here
-  const realEvents: CalendarEvent[] = [];
+  const { user } = useAuth();
 
   // Set default view based on screen size
   const [view, setView] = useState<View>(() => {
@@ -66,19 +43,32 @@ const WorkerCalendarPage = () => {
   });
   const [date, setDate] = useState<Date>(new Date());
   const [activeFilter, setActiveFilter] = useState<string>(FILTERS[1]);
-  const [events, setEvents] = useState<CalendarEvent[]>(realEvents);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !realEvents.length) {
+    const fetchEvents = async () => {
+      if (!user) return;
+
       const isViewQA = localStorage.getItem('isViewQA') === 'true';
-      const baseEvents = isViewQA ? MOCK_EVENTS : realEvents;
-      setEvents(filterEvents(baseEvents, activeFilter));
-      // Ensure view is 'day' on mobile after mount (for SSR safety)
-      if (window.innerWidth < 768) {
-        setView('day');
-      }
+      const res = await getCalendarEvents({ userId: user.uid, role: 'worker', isViewQA });
+
+      if(res.error) throw new Error(res.error);
+
+      const data: CalendarEvent[] = res.events;
+
+      const parsed = data.map((event: any) => ({ ...event, start: new Date(event.start), end: new Date(event.end) }));
+      setEvents(filterEvents(parsed, activeFilter));
+    };
+
+    fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilter]);
+
+  useEffect(() => {
+    // Ensure view is 'day' on mobile after mount (for SSR safety)
+    if (window.innerWidth < 768) {
+      setView('day');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilter]);
 
   // Calendar navigation handler
@@ -102,11 +92,7 @@ const WorkerCalendarPage = () => {
   // When filter changes, update events
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
-    if (typeof window !== 'undefined') {
-      const isViewQA = localStorage.getItem('isViewQA') === 'true';
-      const baseEvents = isViewQA ? MOCK_EVENTS : realEvents;
-      setEvents(filterEvents(baseEvents, filter));
-    }
+    setEvents(filterEvents(events, filter));
   };
 
   return (
@@ -122,11 +108,16 @@ const WorkerCalendarPage = () => {
       />
       <main className={styles.mainContent}>
         <AppCalendar
+          date={date}
           events={events}
           view={view}
           onView={setView}
           onNavigate={setDate}
-          components={{ event: (props: any) => <CalendarEventComponent {...props} userRole="worker" /> }}
+          components={{
+            event: (props: any) => (
+              <CalendarEventComponent {...props} userRole="worker" />
+            )
+          }}
           hideToolbar={true}
         />
       </main>

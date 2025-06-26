@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import React from 'react';
-import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar';
+import { Calendar as BigCalendar, Formats, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import styles from './AppCalendar.module.css';
@@ -9,6 +9,7 @@ const localizer = momentLocalizer(moment);
 
 type AppCalendarProps<TEvent> = {
   events: TEvent[];
+  date: Date;
   view?: View;
   defaultView?: View;
   onSelectEvent?: (event: TEvent) => void;
@@ -20,11 +21,13 @@ type AppCalendarProps<TEvent> = {
   components?: Record<string, React.ComponentType<unknown>>;
   height?: string;
   hideToolbar?: boolean;
+  formats?: Formats | undefined;
 };
 
 const AppCalendar = <TEvent extends object>({
   events = [],
   view,
+  date,
   defaultView = 'month',
   onSelectEvent,
   onNavigate,
@@ -35,6 +38,9 @@ const AppCalendar = <TEvent extends object>({
   components,
   height = "70vh",
   hideToolbar = false,
+  formats = {
+    eventTimeRangeFormat: () => ''
+  },
 }: AppCalendarProps<TEvent>) => {
   const defaultEventPropGetter = (event: TEvent) => {
     const style: React.CSSProperties = {
@@ -111,6 +117,7 @@ const AppCalendar = <TEvent extends object>({
       <BigCalendar
         localizer={localizer}
         events={events}
+        date={date}
         view={view}
         startAccessor={(event: TEvent) => (event as { start: Date }).start}
         endAccessor={(event: TEvent) => (event as { end: Date }).end}
@@ -126,6 +133,7 @@ const AppCalendar = <TEvent extends object>({
         max={maxTime}
         eventPropGetter={handleEventPropGetter}
         components={calendarComponents}
+        formats={formats}
         popup
       />
     </div>
