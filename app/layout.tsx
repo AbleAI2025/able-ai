@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 import RouteTracker from "./components/route-tracker/RouteTracker";
+import { Toaster } from "sonner";
 
 export const metadata = {
   title: "AbleAI",
@@ -24,6 +25,7 @@ export default async function RootLayout({
       <body>
         <AuthProvider>
           <RouteTracker />
+          <Toaster position="bottom-right" richColors />
           {children}
         </AuthProvider>
       </body>

@@ -57,6 +57,9 @@ export const UsersTable = pgTable("users", {
   isBanned: boolean("is_banned").default(false).notNull(),
   isDisabled: boolean("is_disabled").default(false).notNull(),
 
+  // Privacy Settings
+  profileVisibility: boolean("profile_visibility").default(false).notNull(),
+
   // Timestamps
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)

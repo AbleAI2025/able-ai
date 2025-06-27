@@ -6,6 +6,7 @@ export * from './interactions';
 export * from './payments';
 export * from './admin';
 export * from './vector';
+export * from './notification-preferences'
 
 // It's generally cleaner to keep relations in their own file (relations.ts)
 // and import them separately in your db instance setup.

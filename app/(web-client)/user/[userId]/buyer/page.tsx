@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { Toaster } from "sonner";
 import Image from "next/image";
 import { Users, CalendarDays, CreditCard, LayoutDashboard } from "lucide-react";
 
@@ -127,7 +126,6 @@ export default function BuyerDashboardPage() {
           <SettingsButton />
         </footer>
       </div>
-      <Toaster />
     </div>
   );
 }

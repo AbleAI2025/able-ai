@@ -23,7 +23,6 @@ import styles from "./HomePage.module.css";
 import Image from "next/image";
 import Loader from "@/app/components/shared/Loader";
 import Logo from "@/app/components/brand/Logo";
-import { Toaster } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
 
@@ -179,7 +178,6 @@ export default function WorkerDashboardPage() {
           <RoleToggle />
           <SettingsButton />
         </footer>
-        <Toaster />
       </div>
     </div>
   );

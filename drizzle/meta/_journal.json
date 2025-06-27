@@ -15,6 +15,13 @@
       "when": 1749068568289,
       "tag": "0001_add_ai_support",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751052274338,
+      "tag": "0002_mighty_toxin",
+      "breakpoints": true
     }
   ]
 }

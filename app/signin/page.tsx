@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import Logo from "@/app/components/brand/Logo";
 import styles from "./SignInPage.module.css";
 import SignInView from "@/app/signin/SignInView";
@@ -75,7 +75,6 @@ export default function SignInPage() {
         )}
 
       </div>
-      <Toaster />
     </div>
   );
 }

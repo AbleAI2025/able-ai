@@ -32,6 +32,7 @@ import {
   escalatedIssues, // Added escalatedIssues
 } from "./admin";
 import { VectorEmbeddingsTable } from "./vector";
+import { NotificationPreferencesTable } from "./notification-preferences";
 
 // --- USER DOMAIN RELATIONS ---
 
@@ -83,6 +84,10 @@ export const usersRelations = relations(UsersTable, ({ one, many }) => ({
   userAiUsage: many(userAiUsage), // User -> UserAiUsage (1-to-many)
   reportedIssues: many(escalatedIssues, { relationName: "UserAsReporterOfIssue" }), // User -> EscalatedIssues (1-to-many, as reporter)
   assignedIssues: many(escalatedIssues, { relationName: "UserAsAssignedAdminOfIssue" }), // User -> EscalatedIssues (1-to-many, as assigned admin)
+  notificationPreferences: one(NotificationPreferencesTable, {
+    fields: [UsersTable.id],
+    references: [NotificationPreferencesTable.userId],
+  }),
 }));
 
 export const gigWorkerProfilesRelations = relations(

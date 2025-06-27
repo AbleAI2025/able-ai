@@ -27,7 +27,7 @@ const ChatWidget: React.FC = () => {
   return (
     <div className={styles.chatWidgetCard}>
       <div className={styles.chatHeader}>
-        <Image src="/images/able-chat-avatar.png" alt="Able Bot Avatar" width={40} height={40} className={styles.botAvatar} />
+        <Image src="/images/ableai.png" alt="Able Bot Avatar" width={40} height={40} className={styles.botAvatar} />
         <h2 className={styles.chatTitle}>Chat with Able</h2>
       </div>
       <div className={styles.messageDisplayArea}>

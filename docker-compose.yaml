@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: drizzle_postgres
+    restart: unless-stopped
+    ports:
+      - "5438:5432"
+    environment:
+      POSTGRES_USER: drizzle
+      POSTGRES_PASSWORD: drizzle
+      POSTGRES_DB: drizzle_db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+volumes:
+  pg_data:

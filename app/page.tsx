@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import { Toaster } from 'sonner'
 import styles from "./page.module.css";
 import { useState } from "react";
 import Link from "next/link";
@@ -262,7 +261,6 @@ const toggleIsViewQA = async () => {
           </button>
         </section>
       </main>
-      <Toaster />
     </div>
   );
 }
