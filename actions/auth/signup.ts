@@ -15,7 +15,7 @@ export async function registerUserAction(data: RegisterUserData) {
     const firebaseUser = await authServer.createUser({
       email: data.email,
       password: data.password,
-      //displayName: data.name,
+      displayName: data.name,
     });
 
     await findOrCreatePgUserAndUpdateRole({

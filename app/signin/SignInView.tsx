@@ -23,7 +23,7 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    onError(null); // Limpiar errores anteriores
+    onError(null);
 
     try {
       const userCredential = await signInWithEmailAndPassword(authClient, email, password);

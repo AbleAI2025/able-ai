@@ -13,8 +13,6 @@ export async function signInWithFirebaseAction(uid: string) {
     });
 
     const customClaims = {
-      name: pgUser?.fullName,
-      email: pgUser?.email,
       role: pgUser?.appRole,
     };
 

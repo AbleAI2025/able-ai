@@ -10,12 +10,7 @@ import {
 import { authClient } from "@/lib/firebase/clientApp";
 
 type Claims = {
-  name: string;
   role: string;
-  companyId: string;
-  companyName: string;
-  plan: string;
-  lastRoleUsed: string
 };
 
 export type User = FirebaseUser & {
@@ -55,6 +50,9 @@ async function fetchTokenResultWithPolling(
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  console.log(user);
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(authClient, async (firebaseUser) => {
