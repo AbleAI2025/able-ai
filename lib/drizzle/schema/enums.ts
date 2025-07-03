@@ -82,3 +82,11 @@ export const vectorEntityTypeEnum = pgEnum("vector_entity_type_enum", [
   "GIG_REQUIREMENT_DESCRIPTION",
   "USER_REVIEW_TEXT",
 ]);
+
+export const stripeAccountStatusEnum = pgEnum("stripe_account_status_enum", [
+  "connected",
+  "pending_verification",
+  "incomplete",
+  "restricted",
+  "disabled",
+]);

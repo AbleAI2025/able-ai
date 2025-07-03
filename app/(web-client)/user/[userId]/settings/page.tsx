@@ -26,6 +26,8 @@ import {
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { authClient } from "@/lib/firebase/clientApp";
+import { createAccountLink } from "@/app/actions/stripe/create-account-link";
+import { createPortalSession } from "@/app/actions/stripe/create-portal-session";
 import { FirebaseError } from "firebase/app";
 
 // Define a type for user settings fetched from backend
@@ -36,12 +38,12 @@ interface UserSettingsData {
   // Stripe Connect related fields (essential for Gig Workers, optional for Buyers unless they also act as sellers)
   stripeAccountId: string | null; // The Stripe Connect Account ID
   stripeAccountStatus:
-    | "connected"
-    | "pending_verification"
-    | "incomplete"
-    | "restricted"
-    | "disabled"
-    | null;
+  | "connected"
+  | "pending_verification"
+  | "incomplete"
+  | "restricted"
+  | "disabled"
+  | null;
   canReceivePayouts: boolean; // Derived on backend, true if Stripe account is fully setup and can receive payouts
 
   notificationPreferences: {
@@ -160,7 +162,7 @@ export default function SettingsPage() {
       };
       fetchSettings();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]); // Update dependency array
 
   const clearMessages = () => {
@@ -300,22 +302,20 @@ export default function SettingsPage() {
 
   // Stripe Connect Onboarding
   const handleStripeConnect = async () => {
+    if (!user) return
+
     clearMessages();
     setIsConnectingStripe(true);
     try {
-      // TODO: API call to POST /api/stripe/create-connect-account
-      console.log("Initiating Stripe Connect onboarding...");
-      // Simulate API call and redirect
-      await new Promise((res) => setTimeout(res, 1500));
-      const mockStripeOnboardingUrl =
-        "https://connect.stripe.com/setup/acct_123abc"; // Replace with actual URL from API
-      window.location.href = mockStripeOnboardingUrl;
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to initiate Stripe Connect.");
-      } else {
-        setError("Failed to initiate Stripe Connect.");
+      const response = await createAccountLink(user?.uid);
+      if (response.error && response.status === 500) throw new Error(response.error);
+
+      if (response.status === 200 && response.url) {
+        window.location.href = response.url;
       }
+
+    } catch (err: any) {
+      setError(err.message || "Failed to initiate Stripe Connect.");
     } finally {
       setIsConnectingStripe(false);
     }
@@ -323,22 +323,21 @@ export default function SettingsPage() {
 
   // Manage Stripe Account / Payment Settings
   const handleManageStripeAccount = async () => {
+    if (!user) return
+
     clearMessages();
     // setIsConnectingStripe(true); // Use a different loading state if needed
     try {
-      // TODO: API call to POST /api/stripe/create-portal-session
-      console.log("Opening Stripe Portal...");
-      // Simulate API call and redirect
-      await new Promise((res) => setTimeout(res, 1500));
-      const mockStripePortalUrl =
-        "https://billing.stripe.com/p/session/test_..."; // Replace with actual URL from API
-      window.location.href = mockStripePortalUrl;
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to open Stripe Portal.");
-      } else {
-        setError("Failed to open Stripe Portal.");
+      const response = await createPortalSession(user?.uid);
+
+      if (response.error && response.status === 500) throw new Error(response.error);
+
+      if (response.status === 200 && response.url) {
+        window.location.href = response.url;
       }
+
+    } catch (err: any) {
+      setError(err.message || "Failed to open Stripe Portal.");
     } finally {
       // setIsConnectingStripe(false); // Reset loading state
     }
@@ -542,7 +541,7 @@ export default function SettingsPage() {
               <CreditCard size={20} style={{ marginRight: "0.5rem" }} /> Payment
               Settings
             </h2>
-            {userSettings?.stripeAccountId && userSettings.canReceivePayouts ? (
+            {!userSettings?.stripeAccountId && !userSettings.canReceivePayouts ? (
               <div className={styles.settingItem}>
                 <span className={styles.settingLabel}>
                   Manage your payouts and bank details.

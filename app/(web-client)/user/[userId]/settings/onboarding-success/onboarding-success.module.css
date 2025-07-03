@@ -1,0 +1,10 @@
+.buttonWrapper {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 1em;
+    padding-top: 1em;
+}
+
+.buttonLink {
+    text-decoration: none;
+}
