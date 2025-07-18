@@ -17,6 +17,7 @@ import {
   userAppRoleEnum,
   activeRoleContextEnum,
   rtwKycStatusEnum,
+  stripeAccountStatusEnum,
 } from "./enums"; // Assuming enums.ts is in the same directory
 
 // --- USERS TABLE ---
@@ -46,6 +47,8 @@ export const UsersTable = pgTable("users", {
   stripeConnectAccountId: varchar("stripe_connect_account_id", {
     length: 255,
   }).unique(), // For Workers
+  canReceivePayouts: boolean("can_receive_payouts").default(false).notNull(),
+  stripeAccountStatus: stripeAccountStatusEnum("stripe_account_status"),
 
   // KYC/RTW Status
   rtwStatus: rtwKycStatusEnum("rtw_status").default("NOT_SUBMITTED"),

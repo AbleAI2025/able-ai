@@ -1368,6 +1368,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "can_receive_payouts": {
+          "name": "can_receive_payouts",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "stripe_account_status": {
+          "name": "stripe_account_status",
+          "type": "stripe_account_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "rtw_status": {
           "name": "rtw_status",
           "type": "rtw_kyc_status_enum",
@@ -1405,13 +1419,6 @@
         },
         "is_disabled": {
           "name": "is_disabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "profile_visibility": {
-          "name": "profile_visibility",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -2503,6 +2510,17 @@
         "PENDING",
         "VERIFIED",
         "REJECTED"
+      ]
+    },
+    "public.stripe_account_status_enum": {
+      "name": "stripe_account_status_enum",
+      "schema": "public",
+      "values": [
+        "connected",
+        "pending_verification",
+        "incomplete",
+        "restricted",
+        "disabled"
       ]
     },
     "public.user_app_role_enum": {

@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
+import { authClient } from "@/lib/firebase/clientApp";
+import { createAccountLink } from "@/app/actions/stripe/create-account-link";
+import { createPortalSession } from "@/app/actions/stripe/create-portal-session";
 import { FirebaseError } from "firebase/app";
 import SwitchControl from "@/app/components/shared/SwitchControl";
 import Logo from "@/app/components/brand/Logo";
@@ -295,24 +298,44 @@ export default function SettingsPage() {
 
   // Stripe Connect Onboarding
   const handleStripeConnect = async () => {
+    if (!user) return
+
     clearMessages();
     setIsConnectingStripe(true);
     try {
-      // TODO: API call to POST /api/stripe/create-connect-account
-      console.log("Initiating Stripe Connect onboarding...");
-      // Simulate API call and redirect
-      await new Promise((res) => setTimeout(res, 1500));
-      const mockStripeOnboardingUrl =
-        "https://connect.stripe.com/setup/acct_123abc"; // Replace with actual URL from API
-      window.location.href = mockStripeOnboardingUrl;
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to initiate Stripe Connect.");
-      } else {
-        setError("Failed to initiate Stripe Connect.");
+      const response = await createAccountLink(user?.uid);
+      if (response.error && response.status === 500) throw new Error(response.error);
+
+      if (response.status === 200 && response.url) {
+        window.location.href = response.url;
       }
+
+    } catch (err: any) {
+      setError(err.message || "Failed to initiate Stripe Connect.");
     } finally {
       setIsConnectingStripe(false);
+    }
+  };
+
+  // Manage Stripe Account / Payment Settings
+  const handleManageStripeAccount = async () => {
+    if (!user) return
+
+    clearMessages();
+    // setIsConnectingStripe(true); // Use a different loading state if needed
+    try {
+      const response = await createPortalSession(user?.uid);
+
+      if (response.error && response.status === 500) throw new Error(response.error);
+
+      if (response.status === 200 && response.url) {
+        window.location.href = response.url;
+      }
+
+    } catch (err: any) {
+      setError(err.message || "Failed to open Stripe Portal.");
+    } finally {
+      // setIsConnectingStripe(false); // Reset loading state
     }
   };
 
