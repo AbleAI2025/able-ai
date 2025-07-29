@@ -178,14 +178,14 @@ export const PasswordRecoveryRequestsTable = pgTable(
   }
 );
 
-export const BuyerSkillsTable = pgTable("gig_worker_skills", {
+export const WorkerSkillsTable = pgTable("gig_worker_skills", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  buyerProfileId: uuid("buyer_profile_id")
+  userId: uuid("user_id")
     .notNull()
-    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
-
+    .references(() => UsersTable.id, { onDelete: "cascade" })
+    .unique(),
   name: varchar("name", { length: 255 }).notNull(),
   ableGigs: varchar("able_gigs", { length: 255 }),
   experience: varchar("experience", { length: 255 }),
@@ -196,14 +196,14 @@ export const BuyerSkillsTable = pgTable("gig_worker_skills", {
     .notNull(),
 });
 
-export const BuyerStatisticsTable = pgTable("gig_worker_statistics", {
+export const WorkerStatisticsTable = pgTable("gig_worker_statistics", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  buyerProfileId: uuid("buyer_profile_id")
+  userId: uuid("user_id")
     .notNull()
-    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
-
+    .references(() => UsersTable.id, { onDelete: "cascade" }) // If user is deleted, their specific profiles are too
+    .unique(),
   icon: varchar("icon", { length: 255 }).notNull(),
   value: varchar("value", { length: 255 }).notNull(),
   label: varchar("label", { length: 255 }).notNull(),
@@ -214,14 +214,14 @@ export const BuyerStatisticsTable = pgTable("gig_worker_statistics", {
     .notNull(),
 });
 
-export const BuyerAwardsTable = pgTable("gig_worker_awards", {
+export const WorkerAwardsTable = pgTable("gig_worker_awards", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  buyerProfileId: uuid("buyer_profile_id")
+  userId: uuid("user_id")
     .notNull()
-    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
-
+    .references(() => UsersTable.id, { onDelete: "cascade" })
+    .unique(),
   icon: varchar("icon", { length: 255 }).notNull(),
   textLines: text("text_lines").notNull(),
 
@@ -230,12 +230,12 @@ export const BuyerAwardsTable = pgTable("gig_worker_awards", {
     .notNull(),
 });
 
-export const BuyerWorkerReviewsTable = pgTable("gig_worker_worker_reviews", {
+export const WorkerReviewsTable = pgTable("gig_worker_worker_reviews", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  buyerProfileId: uuid("buyer_profile_id")
+  userId: uuid("user_id")
     .notNull()
-    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
-
+    .references(() => UsersTable.id, { onDelete: "cascade" }) // If user is deleted, their specific profiles are too
+    .unique(),
   workerName: varchar("worker_name", { length: 255 }).notNull(),
   reviewText: text("review_text").notNull(),
   rating: integer("rating").notNull(),
