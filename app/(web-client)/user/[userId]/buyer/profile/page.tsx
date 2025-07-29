@@ -90,7 +90,7 @@ const mockDashboardData: DashboardData = {
         { id: "rw1", workerName: "Benji A.", date: "2023-10-15", reviewText: "Alexander is a great manager, very clear with instructions and fair. Always a pleasure to work for Friendship Cafe!", rating: 5, workerAvatarUrl: "/images/benji.jpeg" },
         { id: "rw2", workerName: "Sarah K.", date: "2023-09-20", reviewText: "Professional environment and prompt payment. Would definitely work with Alexander again.", rating: 4, workerAvatarUrl: "/images/jessica.jpeg" },
     ],
-};
+}; // TODO: Replace with real data fetching logic
 
 
 export default function BuyerProfilePage() {

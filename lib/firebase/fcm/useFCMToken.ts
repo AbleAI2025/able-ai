@@ -4,11 +4,13 @@ import { getToken, isSupported } from "firebase/messaging";
 import useNotificationPermission from "./useNotificationPermission";
 import { subscribeFcmTopicAction } from "@/actions/notifications/notifications";
 import { useFirebase } from "@/context/FirebaseContext";
+import { useAuth } from "@/context/AuthContext";
 
 const useFCMToken = () => {
   const permission = useNotificationPermission();
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const { messaging } = useFirebase();
+  const {user} = useAuth();
 
   useEffect(() => {
     const retrieveToken = async () => {
@@ -27,7 +29,7 @@ const useFCMToken = () => {
             serviceWorkerRegistration: registration,
           })
           setFcmToken(fcmToken);
-          subscribeFcmTopicAction(fcmToken)
+          subscribeFcmTopicAction(user?.token || "", fcmToken)
         }
       }
     };

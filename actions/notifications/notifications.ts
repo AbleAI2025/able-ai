@@ -6,12 +6,12 @@ import { isUserAuthenticated } from "@/lib/user.server";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { Notification, NotificationStatus, NotificationType, VALID_NOTIFICATION_TYPES } from "@/app/types/NotificationTypes";
 
-export const subscribeFcmTopicAction = async (token: string) => {
+export const subscribeFcmTopicAction = async (token: string, fcmToken: string) => {
   try {
     const messaging = getMessaging();
-    if (!token) throw "Token required";
+    if (!token || fcmToken) throw "Token and FCM are required";
     const topicSubscribed = await messaging.subscribeToTopic(
-      token,
+      fcmToken,
       "general"
     );
 
@@ -19,7 +19,7 @@ export const subscribeFcmTopicAction = async (token: string) => {
     if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
     let uidSubscribed = null;
-    if (token) {
+    if (fcmToken) {
       uidSubscribed = await messaging.subscribeToTopic(token, uid);
     }
 

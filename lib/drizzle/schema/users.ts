@@ -9,6 +9,7 @@ import {
   boolean,
   jsonb,
   decimal,
+  integer,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm"; // Import sql for default values like CURRENT_TIMESTAMP
 
@@ -116,6 +117,18 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
     length: 100,
   }),
   billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
+  feedbackSummary: text("feedback_summary"),
+  qualifications: jsonb("qualifications"), // array<string>
+  equipment: jsonb("equipment"), // array<string>
+  ableGigsCompleted: decimal("able_gigs_completed"),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
+  reviewCount: integer("review_count"),
+  generalAvailability: varchar("general_availability", { length: 255 }),
+  experienceYears: varchar("experience_years", { length: 255 }),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  viewCalendarLink: varchar("view_calendar_link", { length: 512 }),
+  introVideoThumbnailUrl: varchar("intro_video_thumbnail_url", { length: 512 }),
+  introVideoUrl: varchar("intro_video_url", { length: 512 }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -164,6 +177,75 @@ export const PasswordRecoveryRequestsTable = pgTable(
       .notNull(),
   }
 );
+
+export const BuyerSkillsTable = pgTable("buyer_skills", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  buyerProfileId: uuid("buyer_profile_id")
+    .notNull()
+    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
+
+  name: varchar("name", { length: 255 }).notNull(),
+  ableGigs: varchar("able_gigs", { length: 255 }),
+  experience: varchar("experience", { length: 255 }),
+  eph: varchar("eph", { length: 255 }),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const BuyerStatisticsTable = pgTable("buyer_statistics", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  buyerProfileId: uuid("buyer_profile_id")
+    .notNull()
+    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
+
+  icon: varchar("icon", { length: 255 }).notNull(),
+  value: varchar("value", { length: 255 }).notNull(),
+  label: varchar("label", { length: 255 }).notNull(),
+  iconColor: varchar("icon_color", { length: 255 }),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const BuyerAwardsTable = pgTable("buyer_awards", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  buyerProfileId: uuid("buyer_profile_id")
+    .notNull()
+    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
+
+  icon: varchar("icon", { length: 255 }).notNull(),
+  textLines: text("text_lines").notNull(),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const BuyerWorkerReviewsTable = pgTable("buyer_worker_reviews", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  buyerProfileId: uuid("buyer_profile_id")
+    .notNull()
+    .references(() => BuyerProfilesTable.id, { onDelete: "cascade" }),
+
+  workerName: varchar("worker_name", { length: 255 }).notNull(),
+  reviewText: text("review_text").notNull(),
+  rating: integer("rating").notNull(),
+  date: timestamp("date", { withTimezone: true }).notNull(),
+  workerAvatarUrl: varchar("worker_avatar_url", { length: 512 }),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
 
 // --- TODO: Define relations for these tables in relations.ts or schema/index.ts ---
 // For example:
