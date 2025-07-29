@@ -94,6 +94,18 @@ export const GigWorkerProfilesTable = pgTable("gig_worker_profiles", {
   }),
   availabilityJson: jsonb("availability_json"), // Stores complex availability rules
   semanticProfileJson: jsonb("semantic_profile_json"), // For AI matching data
+  feedbackSummary: text("feedback_summary"),
+  qualifications: jsonb("qualifications"), // array<string>
+  equipment: jsonb("equipment"), // array<string>
+  ableGigsCompleted: decimal("able_gigs_completed"),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
+  reviewCount: integer("review_count"),
+  generalAvailability: varchar("general_availability", { length: 255 }),
+  experienceYears: varchar("experience_years", { length: 255 }),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  viewCalendarLink: varchar("view_calendar_link", { length: 512 }),
+  introVideoThumbnailUrl: varchar("intro_video_thumbnail_url", { length: 512 }),
+  introVideoUrl: varchar("intro_video_url", { length: 512 }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -117,18 +129,6 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
     length: 100,
   }),
   billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
-  feedbackSummary: text("feedback_summary"),
-  qualifications: jsonb("qualifications"), // array<string>
-  equipment: jsonb("equipment"), // array<string>
-  ableGigsCompleted: decimal("able_gigs_completed"),
-  averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
-  reviewCount: integer("review_count"),
-  generalAvailability: varchar("general_availability", { length: 255 }),
-  experienceYears: varchar("experience_years", { length: 255 }),
-  isVerified: boolean("is_verified").default(false).notNull(),
-  viewCalendarLink: varchar("view_calendar_link", { length: 512 }),
-  introVideoThumbnailUrl: varchar("intro_video_thumbnail_url", { length: 512 }),
-  introVideoUrl: varchar("intro_video_url", { length: 512 }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -178,7 +178,7 @@ export const PasswordRecoveryRequestsTable = pgTable(
   }
 );
 
-export const BuyerSkillsTable = pgTable("buyer_skills", {
+export const BuyerSkillsTable = pgTable("gig_worker_skills", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
@@ -196,7 +196,7 @@ export const BuyerSkillsTable = pgTable("buyer_skills", {
     .notNull(),
 });
 
-export const BuyerStatisticsTable = pgTable("buyer_statistics", {
+export const BuyerStatisticsTable = pgTable("gig_worker_statistics", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
@@ -214,7 +214,7 @@ export const BuyerStatisticsTable = pgTable("buyer_statistics", {
     .notNull(),
 });
 
-export const BuyerAwardsTable = pgTable("buyer_awards", {
+export const BuyerAwardsTable = pgTable("gig_worker_awards", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
@@ -230,7 +230,7 @@ export const BuyerAwardsTable = pgTable("buyer_awards", {
     .notNull(),
 });
 
-export const BuyerWorkerReviewsTable = pgTable("buyer_worker_reviews", {
+export const BuyerWorkerReviewsTable = pgTable("gig_worker_worker_reviews", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   buyerProfileId: uuid("buyer_profile_id")
     .notNull()
