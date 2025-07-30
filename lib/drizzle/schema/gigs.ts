@@ -38,6 +38,7 @@ export const SkillsTable = pgTable("skills", {
   agreedRate: decimal("agreed_rate", { precision: 10, scale: 2 }).notNull(),
   skillVideoUrl: text("skill_video_url"),
   adminTags: text("admin_tags").array(),
+  ableGigs: integer("able_gigs"),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -148,6 +149,9 @@ export const GigSkillsRequiredTable = pgTable(
     gigId: uuid("gig_id")
       .notNull()
       .references(() => GigsTable.id, { onDelete: "cascade" }),
+    skillId: uuid("skill_id").references(() => SkillsTable.id, {
+      onDelete: "no action",
+    }),
     skillName: varchar("skill_name", { length: 100 }).notNull(), // Name of the skill required for THIS gig
     isRequired: boolean("is_required").default(true),
     notes: text("notes"), // e.g. "Must have 3+ years experience in this specific skill for this gig"

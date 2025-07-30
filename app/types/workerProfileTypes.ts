@@ -45,7 +45,6 @@ export default interface PublicWorkerProfile {
     ableGigsCompleted?: number;
     averageRating?: number;
     reviewCount?: number;
-    generalAvailability?: string;
     experienceYears?: number | string;
     isVerified?: boolean;
     viewCalendarLink?: string;
