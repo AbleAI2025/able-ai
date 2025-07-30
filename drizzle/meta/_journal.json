@@ -22,20 +22,6 @@
       "when": 1751052274338,
       "tag": "0002_mighty_toxin",
       "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1753800060055,
-      "tag": "0003_slimy_karma",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1753897537552,
-      "tag": "0004_open_expediter",
-      "breakpoints": true
     }
   ]
 }
