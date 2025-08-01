@@ -1,51 +1,96 @@
-interface Skill {
-    name: string;
-    ableGigs?: number | string;
-    experience?: string;
-    eph?: number | string;
+export interface Skill {
+  id: string;
+  workerProfileId: string;
+  name: string;
+  experienceMonths: number;
+  agreedRate: string;
+  skillVideoUrl?: string;
+  adminTags?: string[];
+  ableGigs?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface Statistic {
-    id: string;
-    icon: React.ElementType;
-    value: string;
-    label: string;
-    iconColor?: string;
+export interface Award {
+  id: string;
+  name: string;
+  description: string;
+  iconUrlOrLucideName: string;
+  type: string;
+  criteriaJson?: {
+    min_skills?: number;
+    experience_months?: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface Award {
-    id: string;
-    icon: React.ElementType;
-    textLines: string;
+export interface Equipment {
+  id: string;
+  workerProfileId: string;
+  name: string;
+  description: string;
+  isVerifiedByAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Review {
+  id: string;
+  gigId: string;
+  authorUserId: string;
+  targetUserId: string;
+  rating: number;
+  comment: string;
+  wouldWorkAgain: boolean;
+  awardedBadgeNamesToTargetJson: string[];
+  isPublic: boolean;
+  type: string;
+  moderationStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Qualification {
+  id: string;
+  workerProfileId: string;
+  title: string;
+  institution: string;
+  yearAchieved: number;
+  description: string;
+  documentUrl: string;
+  isVerifiedByAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Availability {
+  days: string[];
+  hours: string;
+}
+
+export interface SemanticProfile {
+  tags: string[];
 }
 
 export default interface PublicWorkerProfile {
-    id: string;
-    displayName: string;
-    userHandle?: string;
-    profileHeadline?: string;
-    bio?: string;
-    avatarUrl?: string;
-    profileImageUrl?: string;
-    qrCodeUrl?: string;
-    location?: string;
+  id: string;
+  userId: string;
 
-    primaryRole?: string;
+  fullBio: string;
+  privateNotes?: string;
 
-    statistics?: Statistic[];
+  responseRateInternal: string;
 
-    skills?: Skill[];
+  availabilityJson?: Availability;
+  semanticProfileJson?: SemanticProfile;
 
-    awards?: Award[];
-    feedbackSummary?: string;
+  createdAt: string;
+  updatedAt: string;
 
-    qualifications?: string[];
-    equipment?: string[];
-
-    ableGigsCompleted?: number;
-    averageRating?: number;
-    reviewCount?: number;
-    experienceYears?: number | string;
-    isVerified?: boolean;
-    viewCalendarLink?: string;
+  awards?: Award[];
+  equipment?: Equipment[];
+  skills?: Skill[];
+  reviews?: Review[];
+  qualifications?: Qualification[];
 }

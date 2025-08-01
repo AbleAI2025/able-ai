@@ -1,16 +1,10 @@
 import React from 'react';
 import PillBadge from '../shared/PillBadge';
 import styles from './SkillsDisplayTable.module.css';
-
-interface SkillItem {
-  name: string;
-  ableGigs?: number | string;
-  experience?: string;
-  eph?: number | string;
-}
+import { Skill } from '@/app/types/workerProfileTypes';
 
 interface SkillsDisplayTableProps {
-  skills: SkillItem[];
+  skills: Skill[];
   title?: string;
   isSelfView?: boolean;
   handleAddSkill?: () => void;
@@ -24,11 +18,10 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
   handleSkillDetails,
 }) => {
   const hasAbleGigs = skills.length > 0 && skills[0].ableGigs !== undefined;
-  const hasExperience = skills.length > 0 && skills[0].experience !== undefined;
+  const hasExperience = skills.length > 0 && skills[0].experienceMonths !== undefined;
   const hasEph = skills.length > 0 && skills[0].eph !== undefined;
 
   
-
   return (
     <div className={styles.skillsCard}>
       <table className={styles.skillsTable}>
@@ -47,7 +40,7 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
                   <PillBadge className={styles.skill} text={skill.name} variant="dark" handleSkillDetails={handleSkillDetails}/>
                 </td>
                 {hasAbleGigs && <td>{skill.ableGigs}</td>}
-                {hasExperience && <td>{skill.experience}</td>}
+                {hasExperience && <td>{skill.experienceMonths / 12}</td>}
                 {hasEph && <td>£{skill.eph}</td>}
               </tr>
           ))}
