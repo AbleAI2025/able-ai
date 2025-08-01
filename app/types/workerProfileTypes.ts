@@ -12,7 +12,7 @@ export interface Skill {
 }
 
 export interface Award {
-  id: string; // id del link, o badgeId (elige cuál quieres)
+  id: string;
   userId: string;
   badgeId: string;
   gigId?: string | null;
@@ -52,11 +52,11 @@ export interface Qualification {
   id: string;
   workerProfileId: string;
   title: string;
-  institution?: string | null;      // <- nullable ahora
-  yearAchieved?: number | null;     // <- nullable ahora
-  description?: string | null;      // <- nullable ahora
-  documentUrl?: string | null;      // <- nullable ahora
-  isVerifiedByAdmin?: boolean | null; // <- nullable ahora
+  institution?: string | null;
+  yearAchieved?: number | null;
+  description?: string | null;
+  documentUrl?: string | null;
+  isVerifiedByAdmin?: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 }
