@@ -5,7 +5,7 @@ import { useRouter, useParams, usePathname } from "next/navigation";
 import {
   ThumbsUp,
   MessageCircleCode,
-  Award as AwardIconLucide,
+  Award,
   UserCircle,
 } from "lucide-react";
 import styles from "./page.module.css";
@@ -25,26 +25,10 @@ export default function WorkerOwnedProfilePage() {
 
   const { user, loading: loadingAuth } = useAuth();
 
-  const [profile, setProfile] = useState<PublicWorkerProfile | null>(null);
+  const [profile, setProfile] = useState<PublicWorkerProfile | undefined | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isSelfView = true;
-
-  const handleAddSkill = () => {
-    const newSkill = {
-      name: "developer",
-      ableGigs: 2,
-      experience: "3 years",
-      eph: 20,
-    };
-    if (profile) {
-      setProfile({
-        ...profile,
-        id: profile.id || "",
-        skills: [...(profile.skills || []), newSkill],
-      });
-    }
-  };
 
   useEffect(() => {
     if (!loadingAuth && user) {
@@ -55,7 +39,6 @@ export default function WorkerOwnedProfilePage() {
         setLoadingProfile(true);
           getGigWorkerProfile(user.token)
           .then((data) => {
-            console.log(data.data);
             setProfile(data.data);
             setError(null);
           })
@@ -104,7 +87,7 @@ export default function WorkerOwnedProfilePage() {
       <WorkerProfile
         workerProfile={profile}
         isSelfView={isSelfView}
-        handleAddSkill={handleAddSkill}
+        handleAddSkill={() => {}}
         handleSkillDetails={handleSkillDetails}
       />
     </div>

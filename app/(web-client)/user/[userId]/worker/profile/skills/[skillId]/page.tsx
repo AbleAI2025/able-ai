@@ -99,7 +99,7 @@ const fetchSkillData = async (skillId: string, userId: string): Promise<SkillPro
       resolve(mockSkillProfile);
     }, 1000);
   });
-};
+}; // TODO: get real data
 
 export default function WorkerSkillDetailPage() {
   const router = useRouter();
@@ -114,6 +114,7 @@ export default function WorkerSkillDetailPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /*
   useEffect(() => {
     if (loadingUser) {
       return; // Wait for user context to load
@@ -167,16 +168,15 @@ export default function WorkerSkillDetailPage() {
         setLoadingData(false);
     }
   }, [user, loadingUser, pageUserId, skillId, router, pathname]);
-
   if (loadingUser || loadingData) {
     return (
       <div className={styles.loadingContainer}>
-        <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
-        <p>Loading skill details...</p>
+      <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
+      <p>Loading skill details...</p>
       </div>
     );
   }
-
+  
   if (error) {
     return (
       <div className={styles.errorContainer}>
@@ -187,8 +187,9 @@ export default function WorkerSkillDetailPage() {
       </div>
     );
   }
+  */
 
-  if (!skillProfile) {
+  if (!mockSkillProfile) {
     // This case should ideally be covered by error state if fetching fails
     // or loading state if data is not yet available.
     // If skillProfile is null after loading and no error, it implies data wasn't found.
@@ -202,5 +203,5 @@ export default function WorkerSkillDetailPage() {
     );
   }
 
-  return <SkillSplashScreen profile={skillProfile} />;
+  return <SkillSplashScreen profile={mockSkillProfile} />;
 }

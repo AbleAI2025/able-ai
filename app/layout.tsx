@@ -24,7 +24,7 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <ClientProviders>
-          <Debuggur />
+          {/*<Debuggur />*/}
           {children}
         </ClientProviders>
       </body>

@@ -19,7 +19,7 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
 }) => {
   const hasAbleGigs = skills.length > 0 && skills[0].ableGigs !== undefined;
   const hasExperience = skills.length > 0 && skills[0].experienceMonths !== undefined;
-  const hasEph = skills.length > 0 && skills[0].eph !== undefined;
+  const hasEph = skills.length > 0 && skills[0].agreedRate !== undefined;
 
   
   return (
@@ -41,7 +41,7 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
                 </td>
                 {hasAbleGigs && <td>{skill.ableGigs}</td>}
                 {hasExperience && <td>{skill.experienceMonths / 12}</td>}
-                {hasEph && <td>£{skill.eph}</td>}
+                {hasEph && <td>£{skill.agreedRate}</td>}
               </tr>
           ))}
           <tr>

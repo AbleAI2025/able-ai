@@ -15,13 +15,13 @@ import styles from "./WorkerProfile.module.css";
 import {
   CalendarDays,
   BadgeCheck,
-  UserCircle,
   MapPin,
   Share2,
-  Award,
+  ThumbsUp,
+  MessageSquare,
 } from "lucide-react";
 
-import PublicWorkerProfile from "@/app/types/workerProfileTypes";
+import PublicWorkerProfile, { Review } from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
 
 const WorkerProfile = ({
@@ -42,7 +42,7 @@ const WorkerProfile = ({
       <div className={styles.profileHeaderImageSection}>
         <div className={styles.profileImageVideo}>
           <Avatar
-            src={workerProfile.profileImageUrl}
+            src={"http://localhost/example"}
             alt={`${user?.displayName}'s profile`}
             width={180}
             height={169}
@@ -51,9 +51,9 @@ const WorkerProfile = ({
           {/* Add play icon if it's a video */}
         </div>
         <div className={styles.profileHeaderRightCol}>
-          {workerProfile.qrCodeUrl && (
+          {true && (
             <Image
-              src={workerProfile.qrCodeUrl}
+              src={"http://localhost/example"}
               alt="QR Code"
               width={90}
               height={90}
@@ -61,10 +61,10 @@ const WorkerProfile = ({
             />
           )}
           <div className={styles.locationShareContainer}>
-            {workerProfile.location && (
+            {workerProfile && (
               <div className={styles.locationInfo}>
                 <MapPin size={16} color="#ffffff" className={styles.mapPin} />
-                <span>{workerProfile.location}</span>
+                <span>{"Colombi"}</span>
               </div>
             )}
             <button
@@ -81,24 +81,24 @@ const WorkerProfile = ({
       <div className={styles.userInfoBar}>
         <div className={styles.userInfoLeft}>
           <h1 className={styles.workerName}>
-            {workerProfile.displayName}
-            {workerProfile.isVerified && (
+            {user?.displayName}
+            {true && (
               <BadgeCheck size={22} className={styles.verifiedBadgeWorker} />
             )}
           </h1>
         </div>
         <div className={styles.workerInfo}>
-          {workerProfile.userHandle && (
+          {false && (
             <PillBadge
-              text={workerProfile.userHandle}
+              text={"true"}
               variant="neutral"
               className={styles.userHandleBadge}
               handleSkillDetails={handleSkillDetails}
             />
           )}
-          {workerProfile.viewCalendarLink && (
+          {true && (
             <Link
-              href={workerProfile.viewCalendarLink}
+              href={"http://localhost/example"}
               className={styles.viewCalendarLink}
               aria-label="View calendar"
             >
@@ -111,21 +111,32 @@ const WorkerProfile = ({
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
         {/* Statistics Section (Benji Image Style) */}
-        {workerProfile.statistics && workerProfile.statistics.length > 0 && (
-          // <ContentCard title="Statistics" className={styles.statisticsCard}>
+        <ContentCard title="Statistics" className={styles.statisticsCard}>
           <div className={styles.statisticsItemsContainer}>
-            {workerProfile.statistics.map((stat) => (
+            {workerProfile?.responseRateInternal && (
               <StatisticItemDisplay
-                key={stat.id}
-                icon={stat.icon}
-                value={stat.description}
-                label={stat.name}
-                iconColor={"red"}
+                stat={{
+                  id: 1,
+                  icon: ThumbsUp,
+                  value: workerProfile.responseRateInternal,
+                  label: "Would work with Benji again",
+                  iconColor: "#0070f3",
+                }}
               />
-            ))}
+            )}
+            {workerProfile?.averageRating && (
+              <StatisticItemDisplay
+                stat={{
+                  id: 2,
+                  icon: MessageSquare,
+                  value: workerProfile.averageRating,
+                  label: "Response rate",
+                  iconColor: "#0070f3",
+                }}
+              />
+            )}
           </div>
-          // </ContentCard>
-        )}
+        </ContentCard>
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
         {workerProfile.skills && workerProfile.skills.length > 0 && (
@@ -138,7 +149,7 @@ const WorkerProfile = ({
         )}
 
         {/* Awards & Feedback Section (Benji Image Style) */}
-        {(workerProfile.awards || workerProfile.feedbackSummary) && ( // Only show section if there are awards or feedback
+        {workerProfile.awards && ( // Only show section if there are awards or feedback
           <div className={styles.awardsFeedbackGrid}>
             {workerProfile.awards && workerProfile.awards.length > 0 && (
               // <ContentCard title="Awards:" className={styles.awardsCard}>
@@ -148,8 +159,7 @@ const WorkerProfile = ({
                   {workerProfile.awards.map((award) => (
                     <AwardDisplayBadge
                       key={award.id}
-                      icon={award.iconUrlOrLucideName}
-                      textLines={award.textLines}
+                      textLines={award.notes || ""}
                       color="#eab308"
                       border="3px solid #eab308"
                     />
@@ -160,15 +170,15 @@ const WorkerProfile = ({
             )}
             <div>
               <h3 className={styles.contentTitle}>Feedbacks:</h3>
-                {workerProfile.reviews && workerProfile.reviews.length > 0 ? (
+              {workerProfile.reviews && workerProfile.reviews.length > 0 ? (
                 workerProfile.reviews.map((review: Review) => (
                   <p key={review.id} className={styles.feedbackText}>
-                  {review.comment}
+                    {review.comment}
                   </p>
                 ))
-                ) : (
+              ) : (
                 <p className={styles.feedbackText}>No feedback available.</p>
-                )}
+              )}
             </div>
           </div>
         )}
@@ -181,7 +191,9 @@ const WorkerProfile = ({
               <h3 className={styles.contentTitle}>Qualifications:</h3>
               <ul className={styles.listSimple}>
                 {workerProfile.qualifications.map((q, index) => (
-                  <li key={index}>{q.title}: {q.description}</li>
+                  <li key={index}>
+                    {q.title}: {q.description}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -202,9 +214,7 @@ const WorkerProfile = ({
 
         {/* Bio Text (if used) */}
         {workerProfile.fullBio && (
-          <ContentCard
-            title={`About ${user?.displayName.split(" ")[0]}`}
-          >
+         <ContentCard title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}>
             <p className={styles.bioText}>{workerProfile.fullBio}</p>
           </ContentCard>
         )}

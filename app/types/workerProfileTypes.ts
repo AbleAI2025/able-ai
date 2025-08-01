@@ -4,35 +4,32 @@ export interface Skill {
   name: string;
   experienceMonths: number;
   agreedRate: string;
-  skillVideoUrl?: string;
-  adminTags?: string[];
-  ableGigs?: number;
-  createdAt: string;
-  updatedAt: string;
+  skillVideoUrl?: string | null;
+  adminTags?: string[] | null;
+  ableGigs?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Award {
-  id: string;
-  name: string;
-  description: string;
-  iconUrlOrLucideName: string;
-  type: string;
-  criteriaJson?: {
-    min_skills?: number;
-    experience_months?: number;
-  };
-  createdAt: string;
-  updatedAt: string;
+  id: string; // id del link, o badgeId (elige cuál quieres)
+  userId: string;
+  badgeId: string;
+  gigId?: string | null;
+  notes?: string | null;
+  awardedAt: Date;
+  awardedBySystem?: boolean | null;
+  awardedByUserId?: string | null;
 }
 
 export interface Equipment {
   id: string;
   workerProfileId: string;
   name: string;
-  description: string;
-  isVerifiedByAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
+  description?: string | null;
+  isVerifiedByAdmin?: boolean | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Review {
@@ -41,27 +38,27 @@ export interface Review {
   authorUserId: string;
   targetUserId: string;
   rating: number;
-  comment: string;
-  wouldWorkAgain: boolean;
-  awardedBadgeNamesToTargetJson: string[];
+  comment: string | null;
+  wouldWorkAgain?: boolean | null;
+  awardedBadgeNamesToTargetJson?: string[] | unknown;
   isPublic: boolean;
   type: string;
   moderationStatus: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Qualification {
   id: string;
   workerProfileId: string;
   title: string;
-  institution: string;
-  yearAchieved: number;
-  description: string;
-  documentUrl: string;
-  isVerifiedByAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
+  institution?: string | null;      // <- nullable ahora
+  yearAchieved?: number | null;     // <- nullable ahora
+  description?: string | null;      // <- nullable ahora
+  documentUrl?: string | null;      // <- nullable ahora
+  isVerifiedByAdmin?: boolean | null; // <- nullable ahora
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Availability {
@@ -74,19 +71,20 @@ export interface SemanticProfile {
 }
 
 export default interface PublicWorkerProfile {
-  id: string;
-  userId: string;
+  id?: string | undefined;
+  userId?: string | undefined;
 
-  fullBio: string;
+  fullBio: string | undefined;
   privateNotes?: string;
+  averageRating?: number | undefined;
 
-  responseRateInternal: string;
+  responseRateInternal?: string | undefined;
 
   availabilityJson?: Availability;
   semanticProfileJson?: SemanticProfile;
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: Date | undefined;
+  updatedAt?: Date | undefined;
 
   awards?: Award[];
   equipment?: Equipment[];
