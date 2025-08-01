@@ -1,5 +1,7 @@
+"use server";
+
 import { db } from "@/lib/drizzle/db";
-import { UsersTable } from "@/lib/drizzle/schema";
+import { EquipmentTable, GigWorkerProfilesTable, QualificationsTable, ReviewsTable, SkillsTable, UsersTable } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { eq } from "drizzle-orm";
@@ -21,27 +23,41 @@ export const getGigWorkerProfile = async (token: string) => {
       throw new Error("User not found");
     }
 
-    const badge = await db.query.BadgeDefinitionsTable.findMany({
-      where: eq(UsersTable.id, uid),
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
     });
 
-    const skill = await db.query.SkillsTable.findMany({
-      where: eq(UsersTable.id, uid),
-    });
+    let skills;
+    let equipment;
+    let qualifications;
 
-    const gigWorkerProfile = await db.query.GigWorkerProfilesTable.findMany({
-      where: eq(UsersTable.id, uid),
-    });
+    if (workerProfile) {
+      skills = await db.query.SkillsTable.findMany({
+        where: eq(SkillsTable.workerProfileId, workerProfile.id),
+      });
+  
+      equipment = await db.query.EquipmentTable.findMany({
+        where: eq(EquipmentTable.workerProfileId, workerProfile.id),
+      });
+  
+      qualifications = await db.query.QualificationsTable.findMany({
+        where: eq(QualificationsTable.workerProfileId, workerProfile.id),
+      });
+    }
+
+    const awards = await db.query.BadgeDefinitionsTable.findMany();
 
     const reviews = await db.query.ReviewsTable.findMany({
-      where: eq(UsersTable.id, uid),
+      where: eq(ReviewsTable.targetUserId, user.id),
     });
 
     const data = {
-      badge,
-      skill,
-      gigWorkerProfile,
+      ...workerProfile,
+      awards,
+      equipment,
+      skills,
       reviews,
+      qualifications
     };
 
     return { success: true, data };

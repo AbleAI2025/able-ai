@@ -30,15 +30,6 @@ import {
 } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
 
-// Define this interface if you add the optional summary section
-// interface UpcomingGigSummary {
-//   id: string;
-//   title: string;
-//   partnerName: string; // Worker name for buyer, Buyer name for worker
-//   dateTime: string;
-//   link: string;
-// }
-
 export default function WorkerDashboardPage() {
   const params = useParams();
   const pageUserId = params.userId as string;
