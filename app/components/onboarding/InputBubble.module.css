@@ -6,6 +6,33 @@
   width: 100%; /* Make the wrapper take space */
 }
 
+.inputBubbleWrapperNew {
+  animation: slideInFromRight 0.5s ease-out;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Focus animation for input bubble */
+.inputBubbleContent {
+  transition: all 0.3s ease;
+}
+
+.inputBubbleContent:focus-within {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+}
+
 .alignUser {
   align-self: flex-end; /* Input bubbles are from the user */
   /* flex-direction: row-reverse; /* If you want avatar on the right */

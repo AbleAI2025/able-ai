@@ -5,6 +5,30 @@
   max-width: 90%; /* Bubbles don't take full width */
 }
 
+.messageWrapperNew {
+  animation: slideIn 0.4s ease-out;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animation for multiple new messages */
+.messageWrapperNew:nth-child(1) { animation-delay: 0.1s; }
+.messageWrapperNew:nth-child(2) { animation-delay: 0.2s; }
+.messageWrapperNew:nth-child(3) { animation-delay: 0.3s; }
+.messageWrapperNew:nth-child(4) { animation-delay: 0.4s; }
+.messageWrapperNew:nth-child(5) { animation-delay: 0.5s; }
+
 .alignBot {
   align-self: flex-start;
 }

@@ -1,4 +1,20 @@
 /* app/onboard-buyer/OnboardBuyerPage.module.css */
+
+/* Chat container fade-in animation */
+.container {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .finalSubmitButton {
   background-color: var(--primary-color);
   color: white;

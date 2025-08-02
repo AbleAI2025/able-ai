@@ -8,7 +8,6 @@ interface TextAreaBubbleProps {
   placeholder?: string;
   value?: string;
   onChange?: (event: ChangeEvent<HTMLTextAreaElement>) => void;
-  label?: string;
   required?: boolean;
   disabled?: boolean;
   rows?: number;
@@ -24,7 +23,6 @@ const TextAreaBubble = React.forwardRef<HTMLTextAreaElement, TextAreaBubbleProps
     placeholder,
     value,
     onChange,
-    label,
     required = false,
     disabled = false,
     rows = 3,
@@ -35,7 +33,6 @@ const TextAreaBubble = React.forwardRef<HTMLTextAreaElement, TextAreaBubbleProps
     return (
       <div className={`${styles.textAreaBubbleWrapper} ${styles.alignUser}`}>
         <div className={styles.textAreaBubbleContent}>
-          {label && <label htmlFor={id || name} className={styles.label}>{label}</label>}
           <textarea
             id={id || name}
             name={name}

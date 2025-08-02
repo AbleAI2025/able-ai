@@ -5,16 +5,16 @@ import chatStyles from '../../styles/chat.module.css'; // Import global styles
 interface InputBubbleProps {
   id?: string;
   name?: string;
-  type?: 'text' | 'email' | 'number' | 'password' | 'tel' | 'date'; // Added 'date' for consistency
+  type?: 'text' | 'email' | 'number' | 'password' | 'tel' | 'date' | 'time'; // Added 'date' and 'time' for consistency
   placeholder?: string;
   value?: string | number;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
-  label?: string;
   required?: boolean;
   disabled?: boolean;
   onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
   onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
   onKeyPress?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  isNew?: boolean; // Track if this input is new for animation
 }
 
 const InputBubble = React.forwardRef<HTMLInputElement, InputBubbleProps>(
@@ -25,17 +25,17 @@ const InputBubble = React.forwardRef<HTMLInputElement, InputBubbleProps>(
     placeholder,
     value,
     onChange,
-    label,
     required = false,
     disabled = false,
     onFocus,
     onBlur,
     onKeyPress,
+    isNew = false,
   }, ref) => {
+    const animationClass = isNew ? styles.inputBubbleWrapperNew : '';
     return (
-      <div className={`${styles.inputBubbleWrapper} ${styles.alignUser}`}>
+      <div className={`${styles.inputBubbleWrapper} ${styles.alignUser} ${animationClass}`}>
         <div className={styles.inputBubbleContent}>
-          {label && <label htmlFor={id || name} className={styles.label}>{label}</label>}
           <input
             id={id || name}
             name={name}

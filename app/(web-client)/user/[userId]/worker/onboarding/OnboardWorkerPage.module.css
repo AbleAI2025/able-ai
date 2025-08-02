@@ -1,4 +1,21 @@
 /* app/onboard-worker/OnboardWorkerPage.module.css */
+
+/* Chat container fade-in animation */
+.container {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .finalSubmitButton {
   background-color: var(--primary-color);
   color: white;
@@ -9,16 +26,32 @@
   cursor: pointer;
   align-self: center;
   margin-top: 1.5rem;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
 }
 
 .finalSubmitButton:hover:not(:disabled) {
-  background-color: var(--primary-color-dark); /* Assuming a darker primary color variable */
+  background-color: var(--primary-color-dark);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
 }
 
 .finalSubmitButton:disabled {
   background-color: #555;
   cursor: not-allowed;
+  animation: none;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(15, 118, 110, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0);
+  }
 }
 
 .loadingContainer {
@@ -26,8 +59,84 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #161616; /* Matches ChatBotLayout background */
+  background-color: #161616;
   color: white;
   font-size: 1.2rem;
   text-align: center;
+}
+
+/* Summary container styling - matching gig creation */
+.summaryContainer {
+  background: #222;
+  color: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px #0002;
+}
+
+.summaryContainer h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #0f766e;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.summaryFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryField {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+}
+
+.summaryField:last-child {
+  border-bottom: none;
+}
+
+.summaryField strong {
+  color: #0f766e;
+  font-weight: 600;
+  min-width: 120px;
+  margin-right: 12px;
+  text-transform: capitalize;
+}
+
+.summaryField span {
+  color: #e5e5e5;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Confirm button styling - matching gig creation */
+.confirmButton {
+  margin: 8px 0;
+  background: #0f766e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  transform: scale(1);
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: #0d5a52;
+  transform: scale(1.05);
+}
+
+.confirmButton:disabled {
+  background: #555;
+  cursor: not-allowed;
+  animation: none;
 }

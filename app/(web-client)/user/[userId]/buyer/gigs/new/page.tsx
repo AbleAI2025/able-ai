@@ -17,7 +17,7 @@ import Loader from "@/app/components/shared/Loader";
 
 import pageStyles from "./page.module.css";
 import { useAuth } from "@/context/AuthContext";
-import { StepInputConfig } from "@/app/types/form";
+import { StepInputConfig, FormInputType } from "@/app/types/form";
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { useFirebase } from '@/context/FirebaseContext';
 import { Schema } from '@firebase/ai';
@@ -185,12 +185,72 @@ const baseInitialSteps: OnboardingStep[] = [
 
 // Define required fields and their configs
 const requiredFields = [
-  { name: "gigDescription", type: "text", label: "Gig Description:", defaultPrompt: "Hi! Tell me about yourself and what gig or gigs you need filling - we can assemble a team if you need one!" },
-  { name: "additionalInstructions", type: "textarea", label: "Additional Instructions:", defaultPrompt: "We have some great bartenders available. Do you need any special skills or do you have instructions for your hire?" },
-  { name: "hourlyRate", type: "number", label: "Hourly Rate:", defaultPrompt: "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team!" },
-  { name: "gigLocation", type: "text", label: "Gig Location:", defaultPrompt: "Where is the gig? What time and day do you need someone and for how long?" },
-  { name: "gigDate", type: "date", label: "Date of Gig:", defaultPrompt: "What is the date of the gig?" },
+  { name: "additionalInstructions", type: "text", placeholder: "Any specific requirements or instructions?", defaultPrompt: "Do you need any special skills or do you have instructions for your hire?", rows: 3 },
+  { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team!" },
+  { name: "gigLocation", type: "text", placeholder: "Where is the gig?", defaultPrompt: "Where is the gig? What time and day do you need someone and for how long?" },
+  { name: "gigDate", type: "date", defaultPrompt: "What is the date of the gig?" },
+  { name: "gigTime", type: "time", defaultPrompt: "What time does the gig start?" },
 ];
+
+// Function to generate context-aware prompts based on gig description
+async function generateContextAwarePrompt(fieldName: string, gigDescription: string, ai: any): Promise<string> {
+  try {
+    const promptSchema = Schema.object({
+      properties: {
+        prompt: Schema.string(),
+      },
+    });
+
+    const prompt = `You are Able, a GIG CREATION ASSISTANT. Your ONLY job is to help users create gig listings (job postings) on a gig platform. You are NOT a general assistant, therapist, or friend. You ONLY help with gig creation.
+
+CRITICAL: This is a GIG CREATION FLOW. The user is creating a job posting to hire someone for work. They are the BUYER/EMPLOYER posting a job. You are helping them create a gig listing.
+
+Previous conversation context:
+Gig Description: "${gigDescription}"
+
+Next field to ask about: "${fieldName}"
+
+Generate a friendly, contextual prompt for the next question. The prompt should:
+1. Be conversational and natural - avoid repetitive phrases like "Awesome, a [gig type] gig!"
+2. Reference what they've already shared about their gig in a fresh way
+3. Be specific to the field being asked about
+4. Include relevant emojis to make it engaging
+5. Provide helpful context or examples when appropriate
+6. Vary your language - don't start every message the same way
+7. ALWAYS stay focused on gig creation - this is for creating a job posting
+
+Field-specific guidance:
+- additionalInstructions: Ask about specific skills, requirements, or preferences for the job
+- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone
+- gigLocation: Ask about location with context about finding nearby workers
+- gigDate: Ask about timing with context about availability
+- gigTime: Ask about the specific start time of the gig
+
+GIG CREATION CONTEXT: Remember, this user is creating a job posting to hire someone. They are the employer/buyer. Keep responses focused on gig creation only.
+
+Be creative and natural in your responses. Don't repeat the same phrases or structure. Make each message feel fresh and conversational.`;
+
+    const result = await geminiAIAgent(
+      "gemini-2.0-flash",
+      {
+        prompt,
+        responseSchema: promptSchema,
+        isStream: false,
+      },
+      ai
+    );
+
+    if (result.ok) {
+      const data = result.data as { prompt: string };
+      return data.prompt;
+    }
+  } catch (error) {
+    console.error('AI prompt generation failed:', error);
+  }
+  
+  // Fallback prompt
+  return `Tell me more about your ${fieldName}! I'm here to help you create the perfect gig listing! ✨`;
+}
 
 const gigStepSchema = Schema.object({
   properties: {
@@ -206,6 +266,7 @@ const gigSummarySchema = Schema.object({
     hourlyRate: Schema.number(),
     gigLocation: Schema.string(),
     gigDate: Schema.string(),
+    gigTime: Schema.string(),
     discountCode: Schema.string(),
     selectedWorker: Schema.string(),
   },
@@ -237,10 +298,14 @@ Respond as a single message, as if you are the bot in a chat.`;
 
 type ChatStep = {
   id: number;
-  type: "bot" | "user" | "input";
+  type: "bot" | "user" | "input" | "sanitized" | "typing";
   content?: string;
   inputConfig?: StepInputConfig;
   isComplete?: boolean;
+  sanitizedValue?: string | any; // Allow objects for coordinates
+  originalValue?: string | any; // Allow objects for coordinates
+  fieldName?: string;
+  isNew?: boolean; // Track if this step is new for animation purposes
 };
 
 // Define the onboarding steps statically, following the original order and messages
@@ -248,7 +313,7 @@ const staticOnboardingSteps: ChatStep[] = [
   {
     id: 1,
     type: "bot",
-    content: "Hi! Tell me about yourself and what gig or gigs you need filling - we can assemble a team if you need one!",
+    content: "Hi! I'm Able, your friendly AI assistant! 🎉 I'm here to help you create the perfect gig listing. Tell me what kind of work you need help with - whether it's bartending for a wedding, web development for your business, or anything else! What's your gig all about?",
   },
   {
     id: 2,
@@ -333,15 +398,84 @@ function extractCoordsFromGoogleMapsUrl(url: string) {
 
 // Typing indicator component
 const TypingIndicator: React.FC = () => (
-  <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', color: '#0f766e', fontWeight: 600 }}>
-    <span className="typing-dot" style={{ animation: 'blink 1s infinite' }}>.</span>
-    <span className="typing-dot" style={{ animation: 'blink 1s infinite 0.2s' }}>.</span>
-    <span className="typing-dot" style={{ animation: 'blink 1s infinite 0.4s' }}>.</span>
+  <div style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    padding: '12px 16px', 
+    color: '#0f766e', 
+    fontWeight: 600,
+    animation: 'slideIn 0.3s ease-out',
+    opacity: 0,
+    animationFillMode: 'forwards'
+  }}>
+    <div style={{ 
+      display: 'flex', 
+      gap: '4px',
+      background: 'rgba(15, 118, 110, 0.1)',
+      padding: '8px 12px',
+      borderRadius: '20px',
+      border: '1px solid rgba(15, 118, 110, 0.2)'
+    }}>
+      <span className="typing-dot" style={{ 
+        animation: 'typingBounce 1.4s infinite ease-in-out',
+        fontSize: '18px',
+        lineHeight: '1'
+      }}>●</span>
+      <span className="typing-dot" style={{ 
+        animation: 'typingBounce 1.4s infinite ease-in-out 0.2s',
+        fontSize: '18px',
+        lineHeight: '1'
+      }}>●</span>
+      <span className="typing-dot" style={{ 
+        animation: 'typingBounce 1.4s infinite ease-in-out 0.4s',
+        fontSize: '18px',
+        lineHeight: '1'
+      }}>●</span>
+    </div>
     <style>{`
-      @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes typingBounce {
+        0%, 60%, 100% {
+          transform: translateY(0);
+          opacity: 0.4;
+        }
+        30% {
+          transform: translateY(-8px);
+          opacity: 1;
+        }
+      }
     `}</style>
   </div>
 );
+
+// Add a helper to safely extract AI response properties
+type AIResponse = {
+  sufficient?: boolean;
+  clarificationPrompt?: string;
+  sanitized?: string;
+  summary?: string;
+  nextField?: string;
+  nextPrompt?: string;
+};
+function parseAIResponse(data: any): Required<AIResponse> {
+  return {
+    sufficient: typeof data.sufficient === 'boolean' ? data.sufficient : false,
+    clarificationPrompt: typeof data.clarificationPrompt === 'string' ? data.clarificationPrompt : '',
+    sanitized: typeof data.sanitized === 'string' ? data.sanitized : '',
+    summary: typeof data.summary === 'string' ? data.summary : '',
+    nextField: typeof data.nextField === 'string' ? data.nextField : '',
+    nextPrompt: typeof data.nextPrompt === 'string' ? data.nextPrompt : '',
+  };
+}
 
 export default function OnboardBuyerPage() {
   const router = useRouter();
@@ -363,7 +497,6 @@ export default function OnboardBuyerPage() {
     inputConfig: {
       type: "text",
       name: "gigDescription",
-      label: "Gig Description:",
     },
     isComplete: false,
   }]);
@@ -371,6 +504,8 @@ export default function OnboardBuyerPage() {
   const [expandedSummaryFields, setExpandedSummaryFields] = useState<Record<string, boolean>>({});
   // Add state for typing animation
   const [isTyping, setIsTyping] = useState(false);
+  // Update state to track reformulation
+  const [reformulateField, setReformulateField] = useState<string | null>(null);
 
   // Helper to get next required field not in formData
   function getNextRequiredField(formData: Record<string, any>) {
@@ -379,105 +514,359 @@ export default function OnboardBuyerPage() {
 
   // Helper to determine if this is the active input step
   function isActiveInputStep(step: ChatStep, idx: number) {
-    // The last input step in chatSteps and not complete
-    return step.type === 'input' && !step.isComplete && idx === chatSteps.length - 1 && !isTyping;
+    // Find the last incomplete input step
+    const lastIncompleteInputStep = chatSteps
+      .filter(s => s.type === 'input' && !s.isComplete)
+      .pop();
+    
+    // This step is active if it's the last incomplete input step
+    return step.id === lastIncompleteInputStep?.id;
   }
 
+  // Remove staticOnboardingSteps and requiredFields logic for dynamic AI-driven flow
+  // Only the first question is hardcoded
+  const FIRST_QUESTION = "Hi! Tell me about yourself and what gig or gigs you need filling - we can assemble a team if you need one!";
+
+  // Date and time formatting functions
+  function formatDateForDisplay(dateValue: any): string {
+    if (!dateValue) return '';
+    
+    try {
+      // Handle ISO string format (e.g., "2025-07-30T16:00:00.000Z")
+      if (typeof dateValue === 'string' && dateValue.includes('T')) {
+        const date = new Date(dateValue);
+        return date.toLocaleDateString('en-GB', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      // Handle date input format (e.g., "2025-07-30")
+      if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const date = new Date(dateValue);
+        return date.toLocaleDateString('en-GB', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      // Handle Date object
+      if (dateValue instanceof Date) {
+        return dateValue.toLocaleDateString('en-GB', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      return String(dateValue);
+    } catch (error) {
+      return String(dateValue);
+    }
+  }
+
+  function formatTimeForDisplay(timeValue: any): string {
+    if (!timeValue) return '';
+    
+    try {
+      // Handle time input format (e.g., "08:00")
+      if (typeof timeValue === 'string' && timeValue.match(/^\d{2}:\d{2}$/)) {
+        const [hours, minutes] = timeValue.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours), parseInt(minutes));
+        return date.toLocaleTimeString('en-GB', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+      }
+      
+      // Handle time with seconds (e.g., "08:00:00")
+      if (typeof timeValue === 'string' && timeValue.match(/^\d{2}:\d{2}:\d{2}$/)) {
+        const [hours, minutes] = timeValue.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours), parseInt(minutes));
+        return date.toLocaleTimeString('en-GB', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+      }
+      
+      return String(timeValue);
+    } catch (error) {
+      return String(timeValue);
+    }
+  }
+
+  // AI-powered validation function using Gemini
+  async function simpleAICheck(field: string, value: any, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | any }> {
+    if (!value) {
+      return { 
+        sufficient: false, 
+        clarificationPrompt: 'Please provide some information so I can help you create the perfect gig listing!' 
+      };
+    }
+
+
+
+    const trimmedValue = String(value).trim();
+    
+    // Use AI for all validation
+    try {
+      const validationSchema = Schema.object({
+        properties: {
+          isAppropriate: Schema.boolean(),
+          isGigRelated: Schema.boolean(),
+          isSufficient: Schema.boolean(),
+          clarificationPrompt: Schema.string(),
+          sanitizedValue: Schema.string(),
+        },
+      });
+
+      const prompt = `You are Able, a GIG CREATION ASSISTANT. Your ONLY job is to help users create gig listings (job postings) on a gig platform. You are NOT a general assistant, therapist, or friend. You ONLY help with gig creation.
+
+CRITICAL: This is a GIG CREATION FLOW. The user is creating a job posting to hire someone for work. They are the BUYER/EMPLOYER posting a job. You are helping them create a gig listing.
+
+Previous context from this conversation:
+${Object.entries(formData).filter(([key, value]) => value && key !== field).map(([key, value]) => `${key}: ${value}`).join(', ')}
+
+Current field being validated: "${field}"
+User input: "${trimmedValue}"
+Input type: "${type}"
+
+Validation criteria:
+1. isAppropriate: Check if the content is appropriate for a professional gig platform (no offensive language, profanity, or inappropriate content)
+2. isGigRelated: Check if the content is related to gig work, events, services, or job requirements (be lenient - most gig descriptions are broad)
+3. isSufficient: Check if the content provides basic information (at least 3 characters for text, valid numbers for rates, coordinates for locations)
+
+IMPORTANT: For location fields (gigLocation), coordinate objects with lat/lng properties are ALWAYS valid and sufficient. Do not ask for additional location details if coordinates are provided.
+
+Special handling:
+- For coordinates (lat/lng): Accept any valid coordinate format like "Lat: 14.7127059, Lng: 120.9341704" or coordinate objects
+- For location objects: If the input is an object with lat/lng properties, accept it as valid location data
+- For numbers (hourlyRate): Accept reasonable rates (£5-500 per hour)
+- For text: Be lenient and accept most gig-related content
+- For dates: Accept any valid date format
+- For location fields: Accept coordinates, addresses, venue names, or any location information
+
+If validation passes, respond with:
+- isAppropriate: true
+- isGigRelated: true
+- isSufficient: true
+- clarificationPrompt: ""
+- sanitizedValue: string (cleaned version of the input)
+
+If validation fails, respond with:
+- isAppropriate: boolean
+- isGigRelated: boolean
+- isSufficient: boolean
+- clarificationPrompt: string (provide a friendly, contextual response that references what they've already shared and guides them naturally)
+- sanitizedValue: string
+
+GIG CREATION CONTEXT: Remember, this user is creating a job posting to hire someone. They are the employer/buyer. Keep responses focused on gig creation only.
+
+Be conversational and reference their previous inputs when possible. For example:
+- If they mentioned "web developer" earlier: "Great! I see you need a web developer. Could you tell me more about what kind of web development skills you're looking for?"
+- If they mentioned "wedding": "Perfect! A wedding is such a special occasion. What specific help do you need for your wedding day?"
+- If they mentioned "restaurant": "Excellent! Restaurant work can be fast-paced and exciting. What role are you looking to fill?"
+
+Make the conversation feel natural and build on what they've already told you.`;
+
+      const result = await geminiAIAgent(
+        "gemini-2.0-flash",
+        {
+          prompt,
+          responseSchema: validationSchema,
+          isStream: false,
+        },
+        ai
+      );
+
+      if (result.ok) {
+        const validation = result.data as {
+          isAppropriate: boolean;
+          isGigRelated: boolean;
+          isSufficient: boolean;
+          clarificationPrompt: string;
+          sanitizedValue: string;
+        };
+        
+        if (!validation.isAppropriate || !validation.isGigRelated || !validation.isSufficient) {
+          return {
+            sufficient: false,
+            clarificationPrompt: validation.clarificationPrompt || 'Please provide appropriate gig-related information.',
+          };
+        }
+        
+        // For coordinate objects, preserve the original object
+        if (value && typeof value === 'object' && 'lat' in value && 'lng' in value) {
+          return {
+            sufficient: true,
+            sanitized: value, // Keep the original coordinate object
+          };
+        }
+        
+        // For date fields, ensure proper date format
+        if (field === 'gigDate') {
+          try {
+            // If it's already a valid date string without time, keep it
+            if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              return {
+                sufficient: true,
+                sanitized: value,
+              };
+            }
+            // If it's an ISO string with time, extract just the date part
+            if (typeof value === 'string' && value.includes('T')) {
+              return {
+                sufficient: true,
+                sanitized: value.split('T')[0],
+              };
+            }
+            // If it's a Date object, convert to date string
+            if (value instanceof Date) {
+              return {
+                sufficient: true,
+                sanitized: value.toISOString().split('T')[0], // Get just the date part
+              };
+            }
+          } catch (error) {
+            console.error('Date validation error:', error);
+          }
+        }
+        
+        // For time fields, ensure proper time format
+        if (field === 'gigTime') {
+          try {
+            // If it's already a valid time string, keep it
+            if (typeof value === 'string' && value.match(/^\d{2}:\d{2}$/)) {
+              return {
+                sufficient: true,
+                sanitized: value,
+              };
+            }
+            // If it's a Date object, extract time
+            if (value instanceof Date) {
+              const hours = value.getHours().toString().padStart(2, '0');
+              const minutes = value.getMinutes().toString().padStart(2, '0');
+              return {
+                sufficient: true,
+                sanitized: `${hours}:${minutes}`,
+              };
+            }
+          } catch (error) {
+            console.error('Time validation error:', error);
+          }
+        }
+        
+        return {
+          sufficient: true,
+          sanitized: validation.sanitizedValue || trimmedValue,
+        };
+      }
+    } catch (error) {
+      console.error('AI validation failed:', error);
+    }
+    
+    // Simple fallback - accept most inputs
+    return { sufficient: true, sanitized: trimmedValue };
+  }
+
+
+
+  // Update handleInputSubmit to use AI validation
   async function handleInputSubmit(stepId: number, inputName: string) {
     if (!formData[inputName]) return;
-    // Prepare updated formData with the just-submitted value
-    const updatedFormData = { ...formData };
-    setChatSteps((prev) => {
-      const updated = prev.map((step) =>
-        step.id === stepId ? { ...step, isComplete: true } : step
-      );
-      const userMsg: ChatStep = {
-        id: Date.now(),
-        type: "user",
-        content: updatedFormData[inputName],
-      };
-      return [...updated, userMsg];
-    });
-    setIsTyping(true);
-    // Check if all required fields are collected and non-empty (using updatedFormData)
-    const allFilled = requiredFields.every(f => updatedFormData[f.name]);
-    if (allFilled) {
-      setTimeout(() => {
-        setChatSteps((prev) => {
-          if (!prev.some(s => s.type === 'bot' && s.content?.startsWith('Thank you!'))) {
-            return [
-              ...prev,
-              {
-                id: Date.now() + 1,
-                type: "bot",
-                content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
-              },
-            ];
+    
+    // Find the current step to get its type
+    const currentStep = chatSteps.find(s => s.id === stepId);
+    const inputType = currentStep?.inputConfig?.type || 'text';
+    
+    // Mark the current step as complete to disable the input
+    setChatSteps((prev) => prev.map((step) =>
+      step.id === stepId ? { ...step, isComplete: true } : step
+    ));
+    
+    // Add typing indicator for AI processing
+    setChatSteps((prev) => [
+      ...prev,
+      {
+        id: Date.now() + 1,
+        type: "typing",
+        isNew: true,
+      },
+    ]);
+    
+    try {
+      // Use AI validation
+      const aiResult = await simpleAICheck(inputName, formData[inputName], inputType);
+      
+      setChatSteps((prev) => {
+        // Remove typing indicator
+        const filtered = prev.filter(s => s.type !== 'typing');
+        
+        if (!aiResult.sufficient) {
+          // Add clarification and repeat input
+          return [
+            ...filtered,
+            { 
+              id: Date.now() + 2, 
+              type: 'bot', 
+              content: aiResult.clarificationPrompt,
+              isNew: true
+            },
+            { 
+              id: Date.now() + 3, 
+              type: 'input', 
+              inputConfig: currentStep?.inputConfig, 
+              isComplete: false,
+              isNew: true
+            },
+          ];
+        }
+        
+        // Show sanitized confirmation step
+        return [
+          ...filtered,
+          { 
+            id: Date.now() + 3, 
+            type: 'sanitized', 
+            fieldName: inputName, 
+            sanitizedValue: aiResult.sanitized, 
+            originalValue: formData[inputName],
+            isNew: true
           }
-          return prev;
-        });
-        setIsTyping(false);
-      }, 700);
-      return;
-    }
-    // Determine the next required field in order
-    const nextRequiredIdx = requiredFields.findIndex(f => !updatedFormData[f.name]);
-    const nextField = requiredFields[nextRequiredIdx];
-    // Call AI to get next prompt, but instruct it to always proceed in order
-    const aiPrompt = `Here is the data collected so far: ${JSON.stringify(updatedFormData)}. The required fields, in order, are: gigDescription, additionalInstructions, hourlyRate, gigLocation, gigDate. The next required field is: ${nextField.name}. Please ask for this, or ask a brief clarifying question if needed, but always proceed in this order. Respond as a JSON object: { field: string, prompt: string, isComplete: boolean, isClarification?: boolean }`;
-    const result = await geminiAIAgent(
-      "gemini-2.5-flash-preview-05-20",
-      { prompt: aiPrompt, responseSchema: gigStepSchema },
-      ai
-    );
-    let aiField: string | undefined;
-    let aiPromptText: string | undefined;
-    let isClarification = false;
-    if (result.ok) {
-      const aiData: any = result.data;
-      aiField = aiData.field;
-      aiPromptText = aiData.prompt;
-      if (aiField && aiField !== nextField.name && !updatedFormData[aiField]) {
-        isClarification = true;
-      } else if (aiField !== nextField.name) {
-        setIsTyping(false);
-        return;
-      }
-      if (aiField === nextField.name && updatedFormData[aiField]) {
-        setIsTyping(false);
-        return;
-      }
-    }
-    if (!aiField) {
-      aiField = nextField.name;
-      aiPromptText = nextField.defaultPrompt;
-    }
-    if (aiField !== nextField.name) {
-      aiField = nextField.name;
-      aiPromptText = nextField.defaultPrompt;
-    }
-    setTimeout(() => {
-      if (aiField) {
-        const botMsg: ChatStep = {
-          id: Date.now() + 2,
-          type: "bot",
-          content: aiPromptText,
-        };
-        const inputStep: ChatStep = {
-          id: Date.now() + 3,
-          type: "input",
-          inputConfig: {
-            type: nextField.type as any,
-            name: aiField,
-            label: aiPromptText,
+        ];
+      });
+    } catch (error) {
+      console.error('AI validation error:', error);
+      // Fallback to basic validation
+      setChatSteps((prev) => {
+        const filtered = prev.filter(s => s.type !== 'typing');
+        return [
+          ...filtered,
+          { 
+            id: Date.now() + 2, 
+            type: 'bot', 
+            content: 'I\'m having trouble processing that. Please try again with a clear description of your gig needs.',
+            isNew: true
           },
-          isComplete: false,
-        };
-        setCurrentFocusedInputName(aiField);
-        setChatSteps((prev) => [...prev, botMsg, inputStep]);
-      }
-      setIsTyping(false);
-    }, 700);
+          { 
+            id: Date.now() + 3, 
+            type: 'input', 
+            inputConfig: currentStep?.inputConfig, 
+            isComplete: false,
+            isNew: true
+          },
+        ];
+      });
+    }
   }
 
   // After the last input, show a summary message (optionally call AI for summary)
@@ -493,8 +882,177 @@ export default function OnboardBuyerPage() {
   //   }
   // }, [chatSteps.length, formData]);
 
+  // Remove complex AI useEffect - no longer needed
+
+  // Update sanitized confirmation effect to use AI's next question or summary
+  useEffect(() => {
+    if (reformulateField) {
+      // Find the required field config and map to StepInputConfig (exclude defaultPrompt)
+      const fieldConfig = requiredFields.find(f => f.name === reformulateField);
+      let inputConfig: StepInputConfig | undefined;
+      if (fieldConfig) {
+        inputConfig = {
+          name: fieldConfig.name,
+          type: fieldConfig.type as FormInputType,
+        };
+        if ('placeholder' in fieldConfig && fieldConfig.placeholder) {
+          inputConfig.placeholder = fieldConfig.placeholder as string;
+        }
+        if ('rows' in fieldConfig && fieldConfig.rows) {
+          inputConfig.rows = fieldConfig.rows as number;
+        }
+      }
+      
+      if (inputConfig) {
+        // Add typing indicator first
+        setChatSteps((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 2,
+            type: "typing",
+            isNew: true,
+          },
+        ]);
+        
+        setTimeout(() => {
+          setChatSteps((prev) => {
+            // Remove typing indicator and add bot message and input
+            const filtered = prev.filter(s => s.type !== 'typing');
+            return [
+              ...filtered,
+              {
+                id: Date.now() + 3,
+                type: "bot",
+                content: `Please provide a more specific answer for "${reformulateField}".`,
+                isNew: true,
+              },
+              {
+                id: Date.now() + 4,
+                type: "input",
+                inputConfig: inputConfig,
+                isComplete: false,
+              },
+            ];
+          });
+        }, 700);
+      }
+      setReformulateField(null);
+    }
+  }, [reformulateField]);
+
+  async function handleSanitizedConfirm(fieldName: string, sanitized: string | any) {
+    // Update formData first
+    const updatedFormData = { ...formData, [fieldName]: sanitized };
+    setFormData(updatedFormData);
+    
+    // Mark sanitized step as complete
+    setChatSteps((prev) => prev.map((step) =>
+      step.type === "sanitized" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
+    ));
+    
+    // Find next required field using updated formData
+    const nextField = getNextRequiredField(updatedFormData);
+    
+    if (nextField) {
+      // Generate context-aware prompt
+      // Try to get gigDescription from formData, but if not available, use the current field value as context
+      const gigDescription = updatedFormData.gigDescription || (fieldName === 'additionalInstructions' ? (typeof sanitized === 'string' ? sanitized : JSON.stringify(sanitized)) : '');
+      
+      // Add typing indicator first
+      setChatSteps((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 2,
+          type: "typing",
+          isNew: true,
+        },
+      ]);
+      
+      // Generate AI prompt
+      const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, gigDescription, ai);
+      
+      setTimeout(() => {
+        setChatSteps((prev) => {
+          // Remove typing indicator and add bot message and input
+          const filtered = prev.filter(s => s.type !== 'typing');
+          const newInputConfig = {
+            type: nextField.type as FormInputType,
+            name: nextField.name,
+            placeholder: nextField.placeholder || nextField.defaultPrompt,
+            ...(nextField.rows && { rows: nextField.rows }),
+          };
+          
+          return [
+            ...filtered,
+            {
+              id: Date.now() + 3,
+              type: "bot",
+              content: contextAwarePrompt,
+              isNew: true,
+            },
+            {
+              id: Date.now() + 4,
+              type: "input",
+              inputConfig: newInputConfig,
+              isComplete: false,
+              isNew: true,
+            },
+          ];
+        });
+      }, 700);
+    } else {
+      // All fields collected, show summary
+      // Add typing indicator first
+      setChatSteps((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 4,
+          type: "typing",
+          isNew: true,
+        },
+      ]);
+      
+      setTimeout(() => {
+        setChatSteps((prev) => {
+          // Remove typing indicator and add summary
+          const filtered = prev.filter(s => s.type !== 'typing');
+          return [
+            ...filtered,
+            {
+              id: Date.now() + 5,
+              type: "bot",
+              content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
+              isNew: true,
+            },
+          ];
+        });
+      }, 700);
+    }
+  }
+
+  function handleSanitizedReformulate(fieldName: string) {
+    setReformulateField(fieldName);
+  }
+
   const handleInputChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Special handling for date fields to ensure only date part is stored
+    if (name === 'gigDate' && value) {
+      let processedValue = value;
+      
+      // If it's an ISO string with time, extract just the date part
+      if (typeof value === 'string' && value.includes('T')) {
+        processedValue = value.split('T')[0];
+      }
+      
+      // If it's a Date object, convert to date string
+      if (value instanceof Date) {
+        processedValue = value.toISOString().split('T')[0];
+      }
+      
+      setFormData((prev) => ({ ...prev, [name]: processedValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleBookWorker = (name: string, price: number) => {
@@ -513,7 +1071,6 @@ export default function OnboardBuyerPage() {
       setChatSteps((prev) => [...prev, bookingResponseStep]);
     }
     setIsSubmitting(false);
-    console.log(`Booking ${name} for £${price.toFixed(2)}`);
   };
 
   const handleFinalSubmit = async () => {
@@ -525,9 +1082,7 @@ export default function OnboardBuyerPage() {
       workerName: null, // No longer needed
       workerPrice: null, // No longer needed
     };
-    console.log("Mock Buyer Onboarding Data:", submissionData);
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Mock submission successful!");
 
     const contentMessage =
       "Thanks! Your request is being processed (Mocked).";
@@ -546,10 +1101,37 @@ export default function OnboardBuyerPage() {
   useEffect(() => {
     if (endOfChatRef.current) {
       setTimeout(() => {
-        endOfChatRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 0);
+        endOfChatRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end',
+          inline: 'nearest'
+        });
+      }, 100); // Small delay to ensure animations have started
     }
   }, [chatSteps, isTyping]);
+
+  // Initialize chat with AI greeting
+  useEffect(() => {
+    if (chatSteps.length === 0) {
+      setChatSteps([
+        {
+          id: 1,
+          type: "bot",
+          content: FIRST_QUESTION,
+        },
+        {
+          id: 2,
+          type: "input",
+          inputConfig: {
+            type: "text" as FormInputType,
+            name: "gigDescription",
+            placeholder: "Tell me about your gig...",
+          },
+          isComplete: false,
+        },
+      ]);
+    }
+  }, []);
 
   if (!user) {
     return <Loader />;
@@ -616,18 +1198,54 @@ export default function OnboardBuyerPage() {
                           <span>
                             {value && typeof value === 'object' && 'lat' in value && 'lng' in value
                               ? `Lat: ${value.lat}, Lng: ${value.lng}`
-                              : typeof value === 'object'
-                                ? JSON.stringify(value)
-                                : String(value)}
+                              : field === 'gigDate'
+                                ? formatDateForDisplay(value)
+                                : field === 'gigTime'
+                                  ? formatTimeForDisplay(value)
+                                  : typeof value === 'object'
+                                    ? JSON.stringify(value)
+                                    : String(value)}
                           </span>
                         </li>
                       );
                     })}
                   </ul>
                   <button
-                    style={{ marginTop: 16, background: "#0f766e", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 600 }}
+                    style={{ 
+                      marginTop: 16, 
+                      background: "#0f766e", 
+                      color: "#fff", 
+                      border: "none", 
+                      borderRadius: 8, 
+                      padding: "8px 16px", 
+                      fontWeight: 600,
+                      transition: 'all 0.3s ease',
+                      transform: 'scale(1)',
+                      animation: 'pulse 2s infinite'
+                    }}
                     onClick={() => router.push(`/user/${user?.uid || "this_user"}/buyer/dashboard`)}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.background = '#0d5a52';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.background = '#0f766e';
+                    }}
                   >
+                    <style>{`
+                      @keyframes pulse {
+                        0% {
+                          box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.7);
+                        }
+                        70% {
+                          box-shadow: 0 0 0 10px rgba(15, 118, 110, 0);
+                        }
+                        100% {
+                          box-shadow: 0 0 0 0 rgba(15, 118, 110, 0);
+                        }
+                      }
+                    `}</style>
                     Confirm & Go to Dashboard
                   </button>
                 </div>
@@ -663,13 +1281,14 @@ export default function OnboardBuyerPage() {
           }
           if (step.type === "input" && !step.isComplete) {
             const inputConf = step.inputConfig!;
+            const isActive = isActiveInputStep(step, idx);
+            const isProcessing = chatSteps.some(s => s.type === 'typing');
+            
             // Custom UI for gigLocation
             if (inputConf.name === "gigLocation") {
-              const isActive = isActiveInputStep(step, idx);
-            return (
+              return (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <LocationPickerBubble
-                    label={inputConf.label}
                     value={formData.gigLocation}
                     onChange={val => handleInputChange('gigLocation', val)}
                     showConfirm={!!formData.gigLocation && isActive}
@@ -680,7 +1299,6 @@ export default function OnboardBuyerPage() {
             }
             // Custom UI for gigDate (calendar picker)
             if (inputConf.name === "gigDate") {
-              const isActive = isActiveInputStep(step, idx);
               return (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <CalendarPickerBubble
@@ -689,8 +1307,26 @@ export default function OnboardBuyerPage() {
                   />
                   {isActive && formData.gigDate && (
                     <button
-                      style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+                      style={{ 
+                        margin: '8px 0', 
+                        background: '#0f766e', 
+                        color: '#fff', 
+                        border: 'none', 
+                        borderRadius: 8, 
+                        padding: '6px 16px', 
+                        fontWeight: 600,
+                        transition: 'all 0.3s ease',
+                        transform: 'scale(1)'
+                      }}
                       onClick={() => handleInputSubmit(step.id, 'gigDate')}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.background = '#0d5a52';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.background = '#0f766e';
+                      }}
                     >
                       Confirm
                     </button>
@@ -701,24 +1337,68 @@ export default function OnboardBuyerPage() {
             // Only allow supported types for InputBubble
             const allowedTypes = ["number", "text", "email", "password", "date", "tel"];
             const safeType = allowedTypes.includes(inputConf.type) ? inputConf.type : "text";
-            const isActive = isActiveInputStep(step, idx);
+            
+            // Handle textarea inputs
+            if (inputConf.type === "textarea") {
               return (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <TextAreaBubble
+                    id={inputConf.name}
+                    name={inputConf.name}
+                    value={formData[inputConf.name] || ""}
+                    disabled={isSubmitting || isProcessing}
+                    placeholder={inputConf.placeholder}
+                    rows={inputConf.rows || 3}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      handleInputChange(inputConf.name, e.target.value)
+                    }
+                    onFocus={() => setCurrentFocusedInputName(inputConf.name)}
+                    onBlur={() => {}}
+                    onKeyPress={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                      if (e.key === "Enter" && e.ctrlKey && !isProcessing) {
+                        e.preventDefault();
+                        handleInputSubmit(step.id, inputConf.name);
+                      }
+                    }}
+                    ref={undefined}
+                  />
+                  {isActive && formData[inputConf.name] && !isProcessing && (
+                    <button
+                      style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+                      onClick={() => handleInputSubmit(step.id, inputConf.name)}
+                    >
+                      Confirm
+                    </button>
+                  )}
+                </div>
+              );
+            }
+            
+            return (
               <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <InputBubble
                   id={inputConf.name}
                   name={inputConf.name}
-                  label={inputConf.label}
-                  value={formData[inputConf.name] || ""}
-                  disabled={isSubmitting}
+                  value={(() => {
+                    const val = formData[inputConf.name];
+                    if (val && typeof val === 'object' && 'lat' in val && 'lng' in val) {
+                      return `Lat: ${val.lat.toFixed(6)}, Lng: ${val.lng.toFixed(6)}`;
+                    } else if (typeof val === 'object') {
+                      return JSON.stringify(val);
+                    } else {
+                      return val || "";
+                    }
+                  })()}
+                  disabled={isSubmitting || isProcessing}
                   type={safeType as "number" | "text" | "email" | "password" | "date" | "tel"}
                   placeholder={inputConf.placeholder}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange(inputConf.name, e.target.value)
-                  }
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    handleInputChange(inputConf.name, e.target.value);
+                  }}
                   onFocus={() => setCurrentFocusedInputName(inputConf.name)}
                   onBlur={() => {}}
                   onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                    if (e.key === "Enter") {
+                    if (e.key === "Enter" && !isProcessing) {
                       e.preventDefault();
                       handleInputSubmit(step.id, inputConf.name);
                     }
@@ -727,7 +1407,7 @@ export default function OnboardBuyerPage() {
                     if (el && currentFocusedInputName === inputConf.name) el.focus();
                   }}
                 />
-                {isActive && formData[inputConf.name] && (
+                {isActive && formData[inputConf.name] && !isProcessing && (
                   <button
                     style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
                     onClick={() => handleInputSubmit(step.id, inputConf.name)}
@@ -738,9 +1418,114 @@ export default function OnboardBuyerPage() {
               </div>
             );
           }
+          // Show completed inputs as read-only text bubbles
+          if (step.type === "input" && step.isComplete) {
+            const inputConf = step.inputConfig!;
+            const value = formData[inputConf.name];
+            
+            if (!value) return null;
+            
+            // Format the value properly to handle objects
+            const displayValue = (() => {
+              if (value && typeof value === 'object' && 'lat' in value && 'lng' in value) {
+                return `Lat: ${value.lat}, Lng: ${value.lng}`;
+              } else if (typeof value === 'object') {
+                return JSON.stringify(value);
+              } else {
+                return String(value);
+              }
+            })();
+            
+            return (
+              <div key={key} style={{ 
+                background: '#2a2a2a', 
+                color: '#e5e5e5', 
+                borderRadius: 8, 
+                padding: 12, 
+                margin: '8px 0',
+                border: '1px solid #404040',
+                fontSize: '14px',
+                lineHeight: '1.4'
+              }}>
+                <div style={{ color: '#0f766e', fontWeight: 600, marginBottom: 4, fontSize: '12px' }}>
+                  {inputConf.label}
+                </div>
+                <div>{displayValue}</div>
+              </div>
+            );
+          }
           // Typing animation
-          if (isTyping && idx === chatSteps.length - 1) {
-            return <MessageBubble key={key + '-typing'} text={<TypingIndicator />} senderType="bot" />;
+          if (step.type === "typing") {
+            return <MessageBubble key={key} text={<TypingIndicator />} senderType="bot" />;
+          }
+          // Handle the new sanitized step type
+          if (step.type === "sanitized" && step.fieldName) {
+            // Format the sanitized value properly
+            const displayValue = (() => {
+              const sanitizedValue = step.sanitizedValue as any; // Type assertion since it can be object or string
+              
+              // Handle coordinate objects
+              if (sanitizedValue && typeof sanitizedValue === 'object' && 'lat' in sanitizedValue && 'lng' in sanitizedValue) {
+                const lat = sanitizedValue.lat;
+                const lng = sanitizedValue.lng;
+                
+                // Format coordinates with proper number handling
+                const latStr = typeof lat === 'number' ? lat.toFixed(6) : String(lat);
+                const lngStr = typeof lng === 'number' ? lng.toFixed(6) : String(lng);
+                return `Lat: ${latStr}, Lng: ${lngStr}`;
+              } 
+              
+              // Handle string that might contain coordinates
+              if (typeof sanitizedValue === 'string') {
+                // Check if it's a JSON string containing coordinates
+                try {
+                  const parsed = JSON.parse(sanitizedValue);
+                  if (parsed && typeof parsed === 'object' && 'lat' in parsed && 'lng' in parsed) {
+                    const lat = parsed.lat;
+                    const lng = parsed.lng;
+                    const latStr = typeof lat === 'number' ? lat.toFixed(6) : String(lat);
+                    const lngStr = typeof lng === 'number' ? lng.toFixed(6) : String(lng);
+                    return `Lat: ${latStr}, Lng: ${lngStr}`;
+                  }
+                } catch (e) {
+                  // Not JSON, return as string
+                }
+                return sanitizedValue;
+              }
+              
+              // Handle other objects
+              if (typeof sanitizedValue === 'object') {
+                return JSON.stringify(sanitizedValue);
+              }
+              
+              // Handle other types
+              return String(sanitizedValue || '');
+            })();
+            
+            return (
+              <div key={key} style={{ background: '#1a1a1a', borderRadius: 12, padding: 16, margin: '16px 0', boxShadow: '0 4px 12px rgba(15, 118, 110, 0.2)', border: '1px solid #0f766e' }}>
+                <div style={{ marginBottom: 8, color: '#0f766e', fontWeight: 600, fontSize: '14px' }}>This is what you wanted?</div>
+                <div style={{ marginBottom: 16, fontStyle: 'italic', color: '#e5e5e5', fontSize: '15px', lineHeight: '1.4' }}>{displayValue}</div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button
+                    style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                    onClick={() => handleSanitizedConfirm(step.fieldName!, step.sanitizedValue!)}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#0d5a52'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#0f766e'}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    style={{ background: 'transparent', color: '#0f766e', border: '1px solid #0f766e', borderRadius: 8, padding: '8px 16px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onClick={() => handleSanitizedReformulate(step.fieldName!)}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#0f766e'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#0f766e'; }}
+                  >
+                    Reformulate
+                  </button>
+                </div>
+              </div>
+            );
           }
           return null;
         })}
