@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import styles from './ChatBotLayout.module.css';
 import Logo from '../brand/Logo';
 import TextAreaBubble from './TextAreaBubble';
+import ChatInput from './ChatInput';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -11,16 +12,26 @@ interface ChatBotLayoutProps {
   onScroll?: (event: React.UIEvent<HTMLDivElement>) => void;
   className?: string;
   onHomeClick?: () => void;
+  onSendMessage?: (message: string) => void;
+  role?: 'BUYER' | 'GIG_WORKER';
+  showChatInput?: boolean;
 }
 
 const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
-  ({ children, onScroll, className, onHomeClick }, ref) => {
+  ({ children, onScroll, className, onHomeClick, onSendMessage, role = 'GIG_WORKER', showChatInput = false }, ref) => {
 
     const router = useRouter();
     const { user } = useAuth();
     const onHomeClickInternal = () => {
       router.push(`/user/${user?.uid}/worker`);
     }
+
+    const handleSendMessage = (message: string) => {
+      if (onSendMessage) {
+        onSendMessage(message);
+      }
+    };
+
     return (
       <div className={`${styles.chatContainerWrapper} ${className}`}>
         <div className={styles.chatContainer} onScroll={onScroll} ref={ref}>
@@ -29,30 +40,13 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
             <Logo width={50} height={50} />
           </div>
           <div className={styles.chatContent}>{children}</div>
-          {/* <div className={styles.footer}>
-            <TextAreaBubble placeholder='Chat with Able here ...' onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                const target = e.target as HTMLInputElement;
-                // TODO: Send message to backend
-                console.log('Send message to backend:', target.value);
-                target.value = '';
-              }
-            }} />
-            <button 
-              onClick={onHomeClick || onHomeClickInternal}
-              style={{ 
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Image src='/images/home.svg' width={40} height={40} alt='home' style={{ margin: 'auto' }} />
-            </button>
-          </div> */}
+          {showChatInput && (
+            <ChatInput 
+              onSend={handleSendMessage}
+              role={role}
+              placeholder="Type your message..."
+            />
+          )}
         </div>
       </div>
     );

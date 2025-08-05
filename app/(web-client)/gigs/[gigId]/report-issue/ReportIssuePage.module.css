@@ -4,6 +4,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  max-width: 450px;
+  margin: auto;
 }
 .screenHeader {
   background-color: #1F1F1F;
@@ -29,10 +31,8 @@
   margin: 0;
 }
 .formCard {
-  background-color: #2B2B2B;
   margin: 1rem;
   padding: 1.5rem;
-  border-radius: 16px;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -43,8 +43,11 @@
   gap: 0.5rem;
 }
 .fieldLabel {
-  font-size: 0.9rem;
-  color: #e0e0e0;
+  font-size: 1rem;
+  color: #ffffff;
+  font-family: "Roboto";
+  font-weight: 400;
+  line-height: 19px;
 }
 .selectContainer {
   position: relative;
@@ -106,14 +109,15 @@
   color: #ffffff;
 }
 .submitButton {
-  background-color: #4A4A4A;
+  background-color: #808080;
   color: #ffffff;
-  padding: 0.85rem 1.5rem;
+  padding: 0.85rem 1rem;
   border: none;
   border-radius: 9999px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
+  margin-top: 1rem;
   transition: background-color 0.2s ease;
 }
 .submitButton:hover:not(:disabled) {

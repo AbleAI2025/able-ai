@@ -1,9 +1,6 @@
 import React, { useState } from "react";
-import Feedback, {
-  GigDetails,
-  WorkerFeedbackFormData,
-  BuyerFeedbackFormData,
-} from "./Feedback";
+import Feedback from "./Feedback";
+import { BuyerFeedbackFormData, GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
 
 // Add user type for claims
 interface User {
@@ -77,11 +74,11 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
     setFormData((prev: WorkerFeedbackFormData | BuyerFeedbackFormData) => ({ ...prev, teamBuilder: !prev.teamBuilder }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      onSubmit(formData);
+      await onSubmit(formData);
     } finally {
       setSubmitting(false);
     }

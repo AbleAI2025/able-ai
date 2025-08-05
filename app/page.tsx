@@ -491,6 +491,43 @@ export default function Home() {
                 In Progress
               </span>
             </div>
+            {/* Add link to Able AI Chat page here */}
+            <div className={styles.pageItem}>
+              <Link
+                href="/user/test-user-id/able-ai"
+                className={styles.pageName}
+              >
+                /user/[userId]/able-ai
+              </Link>
+              <span className={styles.badge} data-status="in-progress">
+                In Progress
+              </span>
+            </div>
+           
+            {/* Add new Chat page entry */}
+            <div className={styles.pageItem}>
+              <Link
+                href="/user/test-user-id/chat"
+                className={styles.pageName}
+              >
+                /user/[userId]/chat (New)
+              </Link>
+              <span className={styles.badge} data-status="in-progress">
+                In Progress
+              </span>
+            </div>
+            {/* Add Worker Chat page entry */}
+            <div className={styles.pageItem}>
+              <Link
+                href="/user/test-user-id/worker/chat"
+                className={styles.pageName}
+              >
+                /user/[userId]/worker/chat
+              </Link>
+              <span className={styles.badge} data-status="in-progress">
+                In Progress
+              </span>
+            </div>
           </div>
         </section>
 

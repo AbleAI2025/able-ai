@@ -16,19 +16,23 @@ const LabelledFileUploadButton: React.FC<LabelledFileUploadButtonProps> = ({ lab
   };
 
   return (
-    <div className={styles.fileUploadButton}>
-      <input
-        type="file"
-        id="fileUpload"
-        multiple
-        onChange={handleChange}
-        className={styles.fileInputHidden}
-      />
-      <label htmlFor="fileUpload" className={styles.fileUploadLabel}>
-        {fileCount > 0 ? `${fileCount} file(s) selected` : label}
-        <Paperclip size={20} className={styles.fileUploadIcon} />
-      </label>
-    </div>
+    <>
+      <span className={styles.fieldLabel}>Attach Files</span>
+      <div className={styles.fileUploadButton}>
+        <input
+          type="file"
+          id="fileUpload"
+          multiple
+          onChange={handleChange}
+          className={styles.fileInputHidden}
+        />
+        <label htmlFor="fileUpload" className={styles.fileUploadLabel}>
+          {fileCount > 0 ? `${fileCount} file(s) selected` : label}
+          <Paperclip size={20} className={styles.fileUploadIcon} />
+        </label>
+      </div>
+    </>
+    
   );
 };
 export default LabelledFileUploadButton; 

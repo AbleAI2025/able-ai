@@ -1,7 +1,9 @@
 import React from "react";
 import { ThumbsUp, ThumbsDown, Trophy, Star, Send, Paperclip } from "lucide-react";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
-import { WorkerFeedbackFormData, GigDetails } from "./Feedback";
+import { GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
+import styles from "@/app/(web-client)/user/[userId]/buyer/gigs/[gigId]/feedback/FeedbackPage.module.css";
+import stylesFeed from "@/app/components/gigs/Feedback.module.css";
 
 type WorkerFeedbackFieldsProps = {
   gigDetails: GigDetails;
@@ -25,11 +27,11 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
   submitting,
 }) => (
   <>
-    <div className="mb-4">
+    <div className={stylesFeed.textareaContainer}>
       <textarea
         id="feedbackText"
         name="feedbackText"
-        className="w-full border rounded p-2 min-h-[80px]"
+        className={stylesFeed.textareaContainer}
         placeholder="Share your experience...Provide feedback to earn awards"
         value={formData.feedbackText}
         onChange={onChange}
@@ -101,7 +103,7 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
     <div className="flex justify-end gap-2 mt-6">
       <button
         type="submit"
-        className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
+        className={stylesFeed.submitButton}
         disabled={submitting}
         aria-label="Submit for payment"
       >

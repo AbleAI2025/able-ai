@@ -6,6 +6,70 @@
   width: 100%; /* Make the wrapper take space */
 }
 
+.inputBubbleWrapperNew {
+  animation: slideInFromRightPrimary 0.6s ease-out;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+@keyframes slideInFromRightPrimary {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+    filter: drop-shadow(0 0 0 rgba(65, 161, 232, 0));
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-2px);
+    filter: drop-shadow(0 4px 12px rgba(65, 161, 232, 0.3));
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: drop-shadow(0 2px 8px rgba(65, 161, 232, 0.1));
+  }
+}
+
+/* Buyer-specific animation */
+.inputBubbleWrapperNew[data-role="BUYER"] {
+  animation: slideInFromRightSecondary 0.6s ease-out;
+}
+
+@keyframes slideInFromRightSecondary {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+    filter: drop-shadow(0 0 0 rgba(126, 238, 249, 0));
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-2px);
+    filter: drop-shadow(0 4px 12px rgba(126, 238, 249, 0.3));
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: drop-shadow(0 2px 8px rgba(126, 238, 249, 0.1));
+  }
+}
+
+/* Focus animation for input bubble */
+.inputBubbleContent {
+  transition: all 0.3s ease;
+}
+
+.inputBubbleContent:focus-within {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(65, 161, 232, 0.3), 0 0 0 1px rgba(65, 161, 232, 0.2);
+  border: 1px solid var(--primary-color);
+}
+
+/* Buyer-specific focus effect */
+.inputBubbleContent[data-role="BUYER"]:focus-within {
+  box-shadow: 0 4px 20px rgba(126, 238, 249, 0.3), 0 0 0 1px rgba(126, 238, 249, 0.2);
+  border: 1px solid var(--secondary-color);
+}
+
 .alignUser {
   align-self: flex-end; /* Input bubbles are from the user */
   /* flex-direction: row-reverse; /* If you want avatar on the right */
@@ -17,6 +81,19 @@
   padding: 0.75rem 1rem;
   border-radius: 1.25rem;
   border-bottom-right-radius: 0.25rem; /* Tailed bubble */
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.inputBubbleContent:hover {
+  border-color: rgba(65, 161, 232, 0.2);
+  box-shadow: 0 2px 8px rgba(65, 161, 232, 0.1);
+}
+
+/* Buyer-specific hover effect */
+.inputBubbleContent[data-role="BUYER"]:hover {
+  border-color: rgba(126, 238, 249, 0.2);
+  box-shadow: 0 2px 8px rgba(126, 238, 249, 0.1);
 }
 
 .label {
@@ -24,6 +101,16 @@
   color: #a0a0a0;
   font-size: 0.8rem;
   margin-bottom: 0.35rem;
+  transition: color 0.3s ease;
+}
+
+.inputBubbleContent:focus-within .label {
+  color: var(--primary-color);
+}
+
+/* Buyer-specific label color */
+.inputBubbleContent[data-role="BUYER"]:focus-within .label {
+  color: var(--secondary-color);
 }
 
 .inputField {
@@ -37,8 +124,54 @@
   font-family: var(--font-family);
   line-height: 1.4;
   outline: none;
+  transition: color 0.3s ease;
+}
+
+.inputField:focus {
+  color: #e5e5e5;
 }
 
 .inputField::placeholder {
   color: #737373;
+  transition: color 0.3s ease;
+}
+
+.inputField:focus::placeholder {
+  color: rgba(65, 161, 232, 0.6);
+}
+
+/* Buyer-specific placeholder color */
+.inputField[data-role="BUYER"]:focus::placeholder {
+  color: rgba(126, 238, 249, 0.6);
+}
+
+/* Confirm button styles */
+.confirmButton {
+  background: var(--primary-color);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(65, 161, 232, 0.3);
+}
+
+.confirmButton:hover {
+  background: var(--primary-darker-color);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(65, 161, 232, 0.5);
+}
+
+/* Buyer-specific confirm button */
+.confirmButton[data-role="BUYER"] {
+  background: var(--secondary-color);
+  box-shadow: 0 2px 8px rgba(126, 238, 249, 0.3);
+}
+
+.confirmButton[data-role="BUYER"]:hover {
+  background: var(--secondary-darker-color);
+  box-shadow: 0 4px 12px rgba(126, 238, 249, 0.5);
 }

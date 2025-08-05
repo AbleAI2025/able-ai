@@ -1,51 +1,189 @@
-/* app/components/onboarding/MessageBubble.module.css */
+/* Message wrapper for positioning */
 .messageWrapper {
   display: flex;
-  gap: 0.5rem; /* Space between avatar and bubble */
-  max-width: 90%; /* Bubbles don't take full width */
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  animation: slideInPrimary 0.3s ease-out;
+  opacity: 1;
+  animation-fill-mode: forwards;
 }
 
+/* Buyer-specific animation */
+.messageWrapper[data-role="BUYER"] {
+  animation: slideInSecondary 0.3s ease-out;
+  animation-fill-mode: forwards;
+}
+
+/* Alignment classes */
 .alignBot {
-  align-self: flex-start;
+  justify-content: flex-start;
 }
 
 .alignUser {
-  align-self: flex-end;
-  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+/* Avatar container */
+.avatarContainer {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
 }
 
 .avatar {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-darker-color));
+  box-shadow: 0 2px 8px rgba(65, 161, 232, 0.3);
 }
 
+/* Buyer-specific avatar */
+.messageWrapper[data-role="BUYER"] .avatar {
+  background: linear-gradient(135deg, var(--secondary-color), var(--secondary-darker-color));
+  box-shadow: 0 2px 8px rgba(126, 238, 249, 0.3);
+}
+
+.avatarInner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.avatarText {
+  color: #000000;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1;
+}
+
+.avatarImage {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Bubble styles */
 .bubble {
-  /* padding: 0.75rem 1rem; */
-  border-radius: 1.25rem; 
-  line-height: 1.5;
-  font-family: var(--font-family);
-  font-size: 0.95rem; 
-  white-space: pre-line; 
+  max-width: 70%;
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .bubbleBot {
-  /* border-bottom-right-radius: 0.25rem; "Tailed" bubble for user */
-  color: #ffffff;
-  font-size: 14px;
-  font-family: var(--font-family); 
-  font-weight: 40;
-  line-height: 23px;
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-bottom-left-radius: 4px;
 }
 
 .bubbleUser {
-    width: auto; 
-    height: auto; 
-    padding: 0.5rem;      
-    border-radius: 1.5rem;
-    background-color: #2b2b2b; 
-    color: #c2c2c2;
-    font-size: 14px;   
-    font-family: 'Source Sans Pro';
-    line-height: 18px;
-    outline: none;
+  background-color: var(--primary-color);
+  color: #000000;
+  border: 1px solid var(--primary-darker-color);
+  border-bottom-right-radius: 4px;
+}
+
+/* Buyer-specific user bubble */
+.messageWrapper[data-role="BUYER"] .bubbleUser {
+  background-color: var(--secondary-color);
+  border: 1px solid var(--secondary-darker-color);
+}
+
+/* Hover effects */
+.bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(65, 161, 232, 0.2);
+}
+
+/* Buyer-specific hover effect */
+.bubble[data-role="BUYER"]:hover {
+  box-shadow: 0 4px 12px rgba(126, 238, 249, 0.2);
+}
+
+.bubbleUser:hover {
+  box-shadow: 0 4px 12px rgba(65, 161, 232, 0.3);
+}
+
+/* Buyer-specific user bubble hover */
+.messageWrapper[data-role="BUYER"] .bubbleUser:hover {
+  box-shadow: 0 4px 12px rgba(126, 238, 249, 0.3);
+}
+
+/* Animation for new messages */
+.messageWrapperNew {
+  animation: slideInPrimary 0.4s ease-out;
+}
+
+/* Buyer-specific new message animation */
+.messageWrapperNew[data-role="BUYER"] {
+  animation: slideInSecondary 0.4s ease-out;
+}
+
+/* Keyframe animations */
+@keyframes slideInPrimary {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInSecondary {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Confirm button styles */
+.confirmButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 8px rgba(65, 161, 232, 0.3);
+}
+
+.confirmButton:hover {
+  background-color: var(--primary-darker-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(65, 161, 232, 0.4);
+}
+
+/* Buyer-specific confirm button */
+.confirmButton[data-role="BUYER"] {
+  background-color: var(--secondary-color);
+  box-shadow: 0 2px 8px rgba(126, 238, 249, 0.3);
+}
+
+.confirmButton[data-role="BUYER"]:hover {
+  background-color: var(--secondary-darker-color);
+  box-shadow: 0 4px 12px rgba(126, 238, 249, 0.4);
+}

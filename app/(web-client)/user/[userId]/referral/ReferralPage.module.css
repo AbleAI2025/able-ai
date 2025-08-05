@@ -19,39 +19,41 @@
   display: flex;
   align-items: center;
   margin-bottom: 1.5rem; /* Consistent spacing */
-  background-color: #1f1f1f; /* Card-like background for header */
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid #2b2b2b;
 }
 
 .profileImage {
-  width: 48px; /* Slightly smaller, or use Avatar component */
-  height: 48px;
-  border-radius: 50%;
+  width: 98px;
+  height: 84px;
+  border-radius: 24px;
   margin-right: 1rem; /* More space */
   object-fit: cover;
-  border: 2px solid var(--primary-color); /* Accent for profile image */
 }
 
 .profileName {
   font-size: 1.1rem; /* Slightly larger */
   font-weight: 600;
   color: #ffffff;
+  border-radius: 24px;
+  background-color: #2b2b2b;
+  color: #c2c2c2;
+  padding: 0.5rem 1rem;
 }
 
 .referralHeading {
-  font-size: 1.75rem; /* Larger heading */
-  font-weight: 600;
   color: #ffffff;
+  font-size: 24px;
+  font-family: "Source Sans Pro";
+  font-weight: 700;
+  line-height: 30px;
   text-align: center;
-  margin-bottom: 0.5rem;
 }
 .referralSubheading {
-  font-size: 1rem;
-  color: #a0a0a0;
-  text-align: center;
-  margin-bottom: 2rem;
+  color: #ffffff;
+  font-size: 18px;
+  font-family: var(--font-family);
+  font-weight: 500;
+  line-height: 23px;
+  margin: 2rem 0 1rem;
 }
 
 

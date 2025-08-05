@@ -25,6 +25,7 @@ export const rtwKycStatusEnum = pgEnum("rtw_kyc_status_enum", [
 // Gig-related Enums
 export const gigStatusEnum = pgEnum("gig_status_enum", [
   "PENDING_WORKER_ACCEPTANCE", // Gig posted by buyer, awaiting worker
+  "PAYMENT_HELD_PENDING_ACCEPTANCE",
   "ACCEPTED", // Worker has accepted
   "DECLINED_BY_WORKER", // Worker explicitly declined
   "IN_PROGRESS", // Worker has started

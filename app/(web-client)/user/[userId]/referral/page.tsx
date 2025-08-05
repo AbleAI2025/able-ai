@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from 'react';
@@ -122,7 +123,7 @@ export default function ReferralPage() {
       <div className={styles.pageWrapper}>
         <div className={styles.profileHeader}>
           <Image
-            src={user?.photoURL || "/images/logo-placeholder.svg"} // Use user's actual image or placeholder
+            src={user?.photoURL || "/images/benji.jpeg"} // Use user's actual image or placeholder
             alt={user?.displayName || "User"}
             width={48}
             height={48}
@@ -131,9 +132,10 @@ export default function ReferralPage() {
           <span className={styles.profileName}>{user?.displayName || "User"}</span>
         </div>
 
-        <h1 className={styles.referralHeading}>Refer a New Business</h1>
-        <p className={styles.referralSubheading}>Help a business discover Able AI and earn £5 when they make their first successful hire!</p>
-
+        <h1 className={styles.referralHeading}>Refer a new business for £5</h1>
+        <p className={styles.referralSubheading}>Share this link with new venues. When they hire a worker through Able, you’ll receive a £5 reward:</p>
+        <input id="referral-link" type="text" value="https://yourdomain.com/referral?code=ABC123" readOnly />
+{/* 
         {error && <p className={styles.errorMessage}>{error}</p>}
         {successMessage && <p className={styles.successMessage}>{successMessage}</p>}
 
@@ -224,7 +226,7 @@ export default function ReferralPage() {
           <button type="submit" className={styles.submitButton} disabled={isLoading}>
             {isLoading ? <><Loader2 size={20} className="animate-spin" style={{marginRight: '0.5rem'}} /> Submitting...</> : 'Submit Referral'}
           </button>
-        </form>
+        </form> */}
       </div>
     </div>
   );

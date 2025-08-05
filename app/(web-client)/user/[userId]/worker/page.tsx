@@ -17,6 +17,7 @@ import {
   Briefcase,
   CalendarCheck2,
   DollarSign,
+  MessageCircle,
 } from "lucide-react";
 
 import styles from "./HomePage.module.css";
@@ -112,6 +113,16 @@ export default function WorkerDashboardPage() {
       label: "Earnings & History",
       icon: <DollarSign size={28} />,
       to: `/user/${uid}/worker/earnings`,
+    },
+    {
+      label: "Chat",
+      icon: <MessageCircle size={28} />,
+      to: `/user/${uid}/worker/chat`,
+    },
+    {
+      label: "AI Support",
+      icon: <MessageCircle size={28} />,
+      to: `/user/${uid}/able-ai`,
     },
   ];
 

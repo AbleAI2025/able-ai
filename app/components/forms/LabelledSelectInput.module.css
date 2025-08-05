@@ -4,22 +4,29 @@
   gap: 0.5rem;
 }
 .fieldLabel {
-  font-size: 0.9rem;
-  color: #e0e0e0;
+  color: #ffffff;
+  font-size: 1rem;
+  font-family: "Roboto";
+  font-weight: 400;
+  line-height: 19px;
 }
 .selectContainer {
   position: relative;
 }
 .selectInput {
-  background-color: #3A3A3A;
-  color: #e0e0e0;
+  background-color: #2b2b2b;
+  color: #c2c2c2;
   padding: 0.75rem 1rem;
-  border: 1px solid #4A4A4A;
+  border: 0;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   width: 100%;
   appearance: none;
   cursor: pointer;
+  font-family: "Roboto";
+  font-weight: 400;
+  line-height: 16px;
+  outline: none;
 }
 .selectContainer::after {
   content: '▼';

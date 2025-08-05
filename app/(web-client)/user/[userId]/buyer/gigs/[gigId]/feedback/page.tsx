@@ -5,11 +5,14 @@ import { useRouter, useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import FeedbackContainer from "@/app/components/gigs/FeedbackContainer";
-import { GigDetails, BuyerFeedbackFormData, WorkerFeedbackFormData } from "@/app/components/gigs/Feedback";
+import { BuyerFeedbackFormData, GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
+import { getLastRoleUsed } from "@/lib/last-role-used";
+import { processGigPayment } from "@/app/actions/stripe/process-gig-payment";
 
 async function fetchGigForBuyerFeedback(
   gigId: string
 ): Promise<GigDetails | null> {
+
   await new Promise((resolve) => setTimeout(resolve, 500));
   if (gigId === "gig123-accepted") {
     return {
@@ -24,7 +27,7 @@ async function fetchGigForBuyerFeedback(
       totalPayment: 200,
       duration: "4 hours",
       details: "Completed gig on Monday, 9:00 am. Location: Central Train station",
-      earnings: 80.0,
+      earnings: 80,
     };
   }
   return null;
@@ -35,7 +38,7 @@ export default function BuyerFeedbackPage() {
   const params = useParams();
   const pageUserId = params.userId as string;
   const gigId = params.gigId as string;
-
+  const userRole = getLastRoleUsed();
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
   const [gigData, setGigData] = useState<GigDetails | null>(null);
@@ -46,11 +49,12 @@ export default function BuyerFeedbackPage() {
 
   useEffect(() => {
     if (loadingAuth) return;
-    const shouldFetch = (user?.claims.role === "QA" && gigId) || 
-                        (user && authUserId === pageUserId && gigId);
+    const shouldFetch = (user?.claims.role === "QA" && gigId) ||
+      (user && authUserId === pageUserId && gigId);
+
     if (shouldFetch) {
       setIsLoadingGig(true);
-      fetchGigForBuyerFeedback(authUserId!)
+      fetchGigForBuyerFeedback(gigId)
         .then((data) => {
           if (data) {
             setGigData(data);
@@ -67,7 +71,7 @@ export default function BuyerFeedbackPage() {
     }
   }, [user, loadingAuth, authUserId, pageUserId, gigId]);
 
-  const handleSubmit = (data: WorkerFeedbackFormData | BuyerFeedbackFormData) => {
+  const handleSubmit = async (data: WorkerFeedbackFormData | BuyerFeedbackFormData) => {
     const buyerData = data as BuyerFeedbackFormData;
     setError(null);
     setSuccessMessage(null);
@@ -79,18 +83,28 @@ export default function BuyerFeedbackPage() {
       setError("Gig information or user ID is missing.");
       return;
     }
+    if (userRole === 'BUYER') await onProcessPayment();
+
     setIsSubmitting(true);
     // Simulate API call
     setTimeout(() => {
       setSuccessMessage(`Feedback for ${gigData.workerName} submitted successfully!`);
       setIsSubmitting(false);
-    }, 1200);
-    router.push(`/user/${user?.uid || "this_user"}/buyer`); // Redirect to buyer home
+      router.push(`/user/${user?.uid || "this_user"}/buyer`); // Redirect to buyer home
+    }, 1500);
+  };
+
+  const onProcessPayment = async () => {
+    if (!user || !gigData) return;
+
+    await processGigPayment({ firebaseUid: user?.uid, gigId, finalAmountToCaptureInCents: Number(gigData?.earnings), currency: 'usd', additionalCostInCents: 0 });
+    setSuccessMessage(`Work paid successfully!`);
   };
 
   if (loadingAuth || isLoadingGig) {
     return <div className="flex items-center justify-center h-40"><Loader2 className="animate-spin" size={32} /> Loading...</div>;
   }
+
   return (
     <FeedbackContainer
       gigData={gigData}

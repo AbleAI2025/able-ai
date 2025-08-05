@@ -4,11 +4,14 @@
   gap: 0.5rem;
 }
 .fieldLabel {
-  font-size: 0.9rem;
-  color: #e0e0e0;
+  color: #ffffff;
+  font-size: 1rem;
+  font-family: "Roboto";
+  font-weight: 400;
+  line-height: 19px;
 }
 .textareaInput {
-  background-color: #3A3A3A;
+  background-color: #2b2b2b;
   color: #e0e0e0;
   padding: 0.75rem 1rem;
   border: 1px solid #4A4A4A;
@@ -16,7 +19,9 @@
   font-size: 0.95rem;
   resize: vertical;
   min-height: 100px;
+  outline: none;
+  resize: none;
 }
 .textareaInput::placeholder {
-  color: #737373;
+  color: #c2c2c2;
 } 

@@ -11,7 +11,7 @@ const ScreenHeaderWithBack: React.FC<ScreenHeaderWithBackProps> = ({ title, onBa
   return (
     <header className={styles.header}>
       <button onClick={onBackClick} className={styles.backButton} aria-label="Go back">
-        <ArrowLeft size={24} />
+        <ArrowLeft size={20}/>
       </button>
       <h1 className={styles.title}>{title}</h1>
     </header>

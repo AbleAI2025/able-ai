@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 // fa-location-dot, fa-map-location-dot, fa-building
 
 interface LocationPickerBubbleProps {
-  label?: string;
   value?: any;
   onChange: (value: any) => void;
   showConfirm?: boolean;
@@ -19,7 +18,7 @@ function extractCoordsFromGoogleMapsUrl(url: string) {
   return null;
 }
 
-const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ label, value, onChange, showConfirm, onConfirm }) => {
+const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ value, onChange, showConfirm, onConfirm }) => {
   const [urlInput, setUrlInput] = useState('');
   const [addressInput, setAddressInput] = useState('');
   const [error, setError] = useState('');
@@ -62,7 +61,6 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ label, valu
 
   return (
     <div style={{ background: '#232323', borderRadius: 12, padding: 16, margin: '12px 0', boxShadow: '0 2px 8px #0002', maxWidth: 400 }}>
-      {label && <label style={{ color: '#fff', fontWeight: 600, marginBottom: 8, display: 'block' }}>{label}</label>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
           style={{
@@ -98,15 +96,19 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ label, valu
         {error && <div style={{ color: '#f87171', fontSize: 14 }}>{error}</div>}
         {value && (
           <div style={{ color: '#0f766e', fontSize: 15, marginTop: 8 }}>
-            Selected: {typeof value === 'object' && value.lat && value.lng ? `Lat: ${value.lat}, Lng: ${value.lng}` : String(value).slice(0, 40) + (String(value).length > 40 ? '...' : '')}
+            Selected: {typeof value === 'object' && value !== null && 'lat' in value && 'lng' in value && typeof value.lat === 'number' && typeof value.lng === 'number' 
+              ? `Lat: ${value.lat.toFixed(6)}, Lng: ${value.lng.toFixed(6)}` 
+              : String(value)}
           </div>
         )}
-        {showConfirm && (
+        {showConfirm && value && onConfirm && (
           <button
-            style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+            style={{
+              background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: 14, marginTop: 8
+            }}
             onClick={onConfirm}
           >
-            Confirm
+            Confirm Location
           </button>
         )}
       </div>

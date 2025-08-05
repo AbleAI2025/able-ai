@@ -25,16 +25,16 @@ export async function createAccountLink(firebaseUid: string) {
 
     if (!stripeAccountId) {
       const account = await stripeApi.accounts.create({
-        type: 'express', // account type connected
-        country: 'US', // adjust country
-        email: userRecord?.email || undefined,
+        type: 'express',
+        country: 'US',
+        email: userRecord?.email || '',
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
         },
         business_type: 'individual',
         individual: {
-          email: userRecord?.email || undefined,
+          email: userRecord?.email || '',
           first_name: userRecord?.fullName?.split(' ')[0],
           last_name: userRecord?.fullName?.slice(userRecord.fullName.indexOf(' ') + 1),
         },
@@ -51,7 +51,7 @@ export async function createAccountLink(firebaseUid: string) {
     }
 
     const accountLink = await stripeApi.accountLinks.create({
-      account: stripeAccountId,
+      account: stripeAccountId as string,
       refresh_url: `${originUrl}/user/${userRecord.id}/settings/onboarding-retry`,
       return_url: `${originUrl}/user/${userRecord.id}/settings/onboarding-success?account_id=${stripeAccountId}`,
       type: 'account_onboarding',

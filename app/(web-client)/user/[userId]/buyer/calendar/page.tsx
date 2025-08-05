@@ -69,8 +69,7 @@ const BuyerCalendarPage = () => {
     const fetchEvents = async () => {
       if (!user) return;
 
-      // const isViewQA = localStorage.getItem('isViewQA') === 'true';
-      const res = await getCalendarEvents({ userId: user.uid, role: 'buyer', isViewQA: true });
+      const res = await getCalendarEvents({ userId: user.uid, role: 'buyer', isViewQA: false });
 
       if (res.error) throw new Error(res.error);
 

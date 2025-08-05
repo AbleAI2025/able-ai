@@ -4,6 +4,7 @@ export type FormInputType =
   | "password"
   | "number"
   | "date"
+  | "time"
   | "file"
   | "textarea"
   | "select"

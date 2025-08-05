@@ -1,6 +1,6 @@
 import ClientProviders from "./components/shared/ClientProviders";
 import "./globals.css";
-import Debuggur from "./components/shared/Debuggur";
+import ErrorBoundary from "./components/shared/ErrorBoundary";
 
 export const metadata = {
   title: "AbleAI",
@@ -23,10 +23,12 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ClientProviders>
-          {/*<Debuggur />*/}
-          {children}
-        </ClientProviders>
+        <ErrorBoundary>
+          <ClientProviders>
+            {/* <Debuggur /> */}
+            {children}
+          </ClientProviders>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Users, CalendarDays, CreditCard, LayoutDashboard } from "lucide-react";
+import { Users, CalendarDays, CreditCard, LayoutDashboard, MessageCircle } from "lucide-react";
 
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
 import IconGrid from "@/app/components/shared/IconGrid";
@@ -102,6 +102,16 @@ export default function BuyerDashboardPage() {
       label: "Payments & History",
       icon: <CreditCard size={28} />,
       to: `/user/${uid}/buyer/payments`,
+    },
+    {
+      label: "Chat",
+      icon: <MessageCircle size={28} />,
+      to: `/user/${uid}/chat`,
+    },
+    {
+      label: "AI Support",
+      icon: <MessageCircle size={28} />,
+      to: `/user/${uid}/able-ai`,
     },
   ];
 

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
@@ -8,6 +9,7 @@ import InputField from '@/app/components/form/InputField'; // Reusing shared Inp
 import { Star, Send, Loader2 } from 'lucide-react'; // Lucide icons
 
 import styles from './RecommendationPage.module.css';
+import Logo from '@/app/components/brand/Logo';
 
 interface RecommendationFormData {
   recommendationText: string;
@@ -45,7 +47,7 @@ export default function PublicRecommendationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
+  const firstName = workerDetails?.name.split(' ')[0];
   // Fetch worker details
   useEffect(() => {
     if (workerToRecommendId) {
@@ -131,43 +133,43 @@ export default function PublicRecommendationPage() {
   return (
     <div className={styles.container}>
       <div className={styles.pageWrapper}>
-        <h1 className={styles.title}>
-          <Star size={28} className={styles.starIcon} />
-          Recommendation for {workerDetails.name}
-        </h1>
+        <header className={styles.title}>
+          <Star className={styles.starIcon} />
+          <span>Recommendation for {workerDetails.name}</span>
+        </header>
 
         <div className={styles.recommendationCard}>
           <p className={styles.prompt}>
-            {workerDetails.name} is available for hire on Able! Please provide a reference for {workerDetails.name}&apos;s skills as a {workerDetails.primarySkill}.
-            Your feedback will be added to their public profile after review.
+            {firstName} is available for hire on Able! <br /> Please provide a reference for {firstName}&apos;s skills as a {workerDetails.primarySkill}.
           </p>
+          <p className={styles.note}>Your feedback will be added to their public profile.</p>
 
           {error && <p className={styles.errorMessage}>{error}</p>}
           {successMessage && <p className={styles.successMessage}>{successMessage}</p>}
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.inputGroup}>
-              <label htmlFor="recommendationText" className={styles.label}>Your Recommendation <span style={{color: 'var(--error-color)'}}>*</span></label>
+              {/* <label htmlFor="recommendationText" className={styles.label}>Your Recommendation <span style={{color: 'var(--error-color)'}}>*</span></label> */}
               <textarea
                 id="recommendationText"
                 name="recommendationText"
                 value={formData.recommendationText}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder={`What makes ${workerDetails.name} great at ${workerDetails.primarySkill}?`}
+                placeholder={`Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${workerDetails.primarySkill}?`}
                 required
               />
             </div>
 
             <div className={styles.inputGroup}>
-              <label htmlFor="relationship" className={styles.label}>How do you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label>
+              {/* <label htmlFor="relationship" className={styles.label}>How do you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label> */}
               <textarea
                 id="relationship"
                 name="relationship"
                 value={formData.relationship}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder="e.g., Worked together at [Company/Event], Supervised them, Hired them for a gig..."
+                placeholder="Please describe how you know Benji: e.g., Worked together at [Company/Event], Supervised them, Hired them for a gig..."
                 required
               />
             </div>
@@ -204,15 +206,9 @@ export default function PublicRecommendationPage() {
         </div>
 
         <div className={styles.botMessageContainer}>
-          <Image
-            src="/images/logo-placeholder.svg" // Replace with actual bot avatar
-            alt="Able AI Agent"
-            width={40}
-            height={40}
-            className={styles.botAvatar}
-          />
+          <Logo width={60} height={60} />
           <p className={styles.botText}>
-            Thank you for helping build our community! If you need assistance or want to find talent yourself, feel free to ask.
+            Hi! I am Able AI agent - please let me know if you have any gig work needs or would like to add a skills profile to our platform
           </p>
         </div>
       </div>

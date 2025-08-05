@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import FeedbackContainer from "@/app/components/gigs/FeedbackContainer";
-import { GigDetails, WorkerFeedbackFormData, BuyerFeedbackFormData } from "@/app/components/gigs/Feedback";
+import { BuyerFeedbackFormData, GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
 import { useAuth } from "@/context/AuthContext";
 
 async function getGigData(workerUserId: string, gigId: string): Promise<GigDetails | null> {

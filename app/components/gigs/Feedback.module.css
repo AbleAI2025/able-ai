@@ -75,17 +75,17 @@
 }
 
 .feedbackTextarea {
-    width: 80%;
-    resize: vertical;
-    min-height: 105px;
-    padding: 1rem;
-    border: 0;
-    border-radius: 1.5rem;
-    background-color: #2b2b2b;
-    color: #c2c2c2;
-    font-size: 0.87rem;
-    line-height: 16px;
-    outline: none;
+  width: 80%;
+  resize: vertical;
+  min-height: 105px;
+  padding: 1rem;
+  border: 0;
+  border-radius: 1.5rem;
+  background-color: #2b2b2b;
+  color: #c2c2c2;
+  font-size: 0.87rem;
+  line-height: 16px;
+  outline: none;
 }
 
 .workAgainContainer {
@@ -93,7 +93,9 @@
   display: flex;
 }
 
-.workAgainText, .awardTitle, .expensesTitle {
+.workAgainText,
+.awardTitle,
+.expensesTitle {
   color: #ffffff;
   font-size: 1.2rem;
   font-weight: 700;
@@ -127,19 +129,19 @@
 
 .thumbButton:hover,
 .thumbButton.selected {
-    color: #5dade2;
+  color: #5dade2;
 }
 
 .badgeContainer {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.5rem;
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 .badgeButton {
-    border: none;
-    background: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
+  border: none;
+  background: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* .badgeButton:hover,
@@ -153,8 +155,8 @@
     margin-bottom: 0.25rem;
 } */
 .expensesContainer {
-    display: flex;
-    gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .expensesInput {
@@ -169,24 +171,24 @@
 }
 
 .submitButton {
-    background-color: var(--primary-color);
-    color: #fff;
-    border: none;
-    border-radius: 9999px;
-    padding: 0.85rem 1.5rem;
-    font-size: 0.87rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .submitButton:hover {
-    background-color: #4338ca;
+  background-color: #4338ca;
 }
 
 /* Style for the amend gig timing or add tips */
@@ -228,18 +230,28 @@
   align-items: center;
   justify-content: center;
   font-size: 0.875rem;
-} 
+}
 
 .releaseButton {
-    cursor: pointer;
-    width: 100%;
-    padding: 0.85rem 1.5rem;
-    border: 0;
-    border-radius: 1.5rem;
-    background-color: var(--secondary-color);
-    color: #0f0f0f;
-    font-size: 0.87rem;
-    font-weight: 700;
-    line-height: 16px;
-    outline: none;
+  cursor: pointer;
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  border: 0;
+  border-radius: 1.5rem;
+  background-color: var(--secondary-color);
+  color: #0f0f0f;
+  font-size: 0.87rem;
+  font-weight: 700;
+  line-height: 16px;
+  outline: none;
+}
+
+.releaseButton:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.loaderContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
