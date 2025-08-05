@@ -8,7 +8,7 @@ interface SkillsDisplayTableProps {
   title?: string;
   isSelfView?: boolean;
   handleAddSkill?: () => void;
-  handleSkillDetails: (name: string) => void; // Optional handler for skill details 
+  handleSkillDetails: (id: string) => void; // Optional handler for skill details 
 }
 
 const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
@@ -37,7 +37,7 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
           {skills.map((skill, index) => (
               <tr key={index}>
                 <td>
-                  <PillBadge className={styles.skill} text={skill.name} variant="dark" handleSkillDetails={handleSkillDetails}/>
+                  <PillBadge className={styles.skill} id={skill.id} text={skill.name} variant="dark" handleSkillDetails={handleSkillDetails}/>
                 </td>
                 {hasAbleGigs && <td>{skill.ableGigs}</td>}
                 {hasExperience && <td>{skill.experienceMonths / 12}</td>}

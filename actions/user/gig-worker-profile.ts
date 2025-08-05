@@ -1,6 +1,9 @@
 "use server";
 
-import PublicWorkerProfile, { Availability, SemanticProfile } from "@/app/types/workerProfileTypes";
+import PublicWorkerProfile, {
+  Availability,
+  SemanticProfile,
+} from "@/app/types/workerProfileTypes";
 import { db } from "@/lib/drizzle/db";
 import {
   EquipmentTable,
@@ -15,7 +18,9 @@ import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { eq } from "drizzle-orm";
 
-export const getGigWorkerProfile = async (token: string): Promise<{ success: true; data: PublicWorkerProfile }> => {
+export const getGigWorkerProfile = async (
+  token: string
+): Promise<{ success: true; data: PublicWorkerProfile }> => {
   try {
     if (!token) {
       throw new Error("User ID is required to fetch buyer profile");
@@ -75,7 +80,8 @@ export const getGigWorkerProfile = async (token: string): Promise<{ success: tru
       privateNotes: workerProfile?.privateNotes ?? undefined,
       responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
       availabilityJson: workerProfile?.availabilityJson as Availability,
-      semanticProfileJson: workerProfile?.semanticProfileJson as SemanticProfile,
+      semanticProfileJson:
+        workerProfile?.semanticProfileJson as SemanticProfile,
       averageRating,
       awards,
       equipment,
@@ -90,3 +96,71 @@ export const getGigWorkerProfile = async (token: string): Promise<{ success: tru
     throw error;
   }
 };
+export const getSkillDetailsWorker = async (id: string) => {
+  try {
+    const skill = await db.query.SkillsTable.findFirst({
+      where: eq(SkillsTable.id, id),
+    });
+
+    if (!skill) throw ("Skill not found");
+
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.id, skill?.workerProfileId),
+    });
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, workerProfile?.userId || ""),
+    });
+
+    const badges = await db.query.UserBadgesLinkTable.findMany({
+      where: eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""),
+    });
+
+    const qualifications = await db.query.QualificationsTable.findMany({
+      where: eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
+    });
+
+    const reviews = await db.query.ReviewsTable.findMany({
+      where: eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+    });
+
+    const reviewsData = await Promise.all(
+      reviews.map(async (review) => {
+        const author = await db.query.UsersTable.findFirst({
+          where: eq(UsersTable.id, review.authorUserId),
+        });
+
+        return {
+          name: author?.fullName || "Unknown",
+          date: review.createdAt,
+          text: review.comment,
+        };
+      })
+    );
+
+    const skillProfile = {
+      name: user?.fullName,
+      title: skill?.name,
+      hashtags: "#Licensedbarmanager #customerservice #timemanagement #mixology",
+      customerReviewsText: workerProfile?.fullBio,
+      ableGigs: skill?.ableGigs,
+      experienceYears: skill?.experienceMonths / 12,
+      Eph: skill?.agreedRate,
+      statistics: {
+        reviews: reviews?.length,
+        paymentsCollected: "£4899",
+        tipsReceived: "£767",
+      },
+      supportingImages: ["/images/bar-action.svg", "/images/bar-action.svg"],
+      badges,
+      qualifications,
+      buyerReviews: reviewsData,
+    };
+
+    return { success: true, data: skillProfile };
+  } catch (error) {
+    console.error(`Error fetching skill: ${error}`);
+    return { success: false, data: null, error };
+  }
+};
+

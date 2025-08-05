@@ -33,16 +33,16 @@ const WorkerProfile = ({
   workerProfile: PublicWorkerProfile;
   isSelfView?: boolean;
   handleAddSkill?: () => void;
-  handleSkillDetails: (name: string) => void; // Now optional
+  handleSkillDetails: (id: string) => void; // Now optional
 }) => {
   const { user } = useAuth();
   return (
-    <div>
+    <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
       <div className={styles.profileHeaderImageSection}>
         <div className={styles.profileImageVideo}>
           <Avatar
-            src={"http://localhost/example"}
+            src={"/default-avatar.png"}
             alt={`${user?.displayName}'s profile`}
             width={180}
             height={169}
@@ -53,7 +53,7 @@ const WorkerProfile = ({
         <div className={styles.profileHeaderRightCol}>
           {true && (
             <Image
-              src={"http://localhost/example"}
+              src={"/default-avatar.png"}
               alt="QR Code"
               width={90}
               height={90}
@@ -88,17 +88,9 @@ const WorkerProfile = ({
           </h1>
         </div>
         <div className={styles.workerInfo}>
-          {false && (
-            <PillBadge
-              text={"true"}
-              variant="neutral"
-              className={styles.userHandleBadge}
-              handleSkillDetails={handleSkillDetails}
-            />
-          )}
           {true && (
             <Link
-              href={"http://localhost/example"}
+              href={"/default-avatar.png"}
               className={styles.viewCalendarLink}
               aria-label="View calendar"
             >

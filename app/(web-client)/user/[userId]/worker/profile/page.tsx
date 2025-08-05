@@ -3,9 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import {
-  ThumbsUp,
-  MessageCircleCode,
-  Award,
   UserCircle,
 } from "lucide-react";
 import styles from "./page.module.css";
@@ -54,8 +51,8 @@ export default function WorkerOwnedProfilePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingAuth, user?.claims.role, userId, pathname, router, lastRoleUsed]);
 
-  const handleSkillDetails = (name: string) => {
-    return router.push(`/user/${userId}/worker/profile/skills/${name}`);
+  const handleSkillDetails = (id: string) => {
+    return router.push(`/user/${userId}/worker/profile/skills/${id}`);
   };
 
   if (loadingAuth || loadingProfile) {

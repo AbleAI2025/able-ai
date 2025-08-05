@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { Star, Paperclip } from 'lucide-react';
-import styles from './SkillSplashScreen.module.css';
-import { useParams } from 'next/navigation';
-import AwardDisplayBadge from './AwardDisplayBadge';
-import ReviewCardItem from '@/app/components/shared/ReviewCardItem';
-import RecommendationCardItem from '@/app/components/shared/RecommendationCardItem';
-import React from 'react';
+import Image from "next/image";
+import { Star, Paperclip } from "lucide-react";
+import styles from "./SkillSplashScreen.module.css";
+import { useParams } from "next/navigation";
+import AwardDisplayBadge from "./AwardDisplayBadge";
+import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
+import RecommendationCardItem from "@/app/components/shared/RecommendationCardItem";
+import React, { useEffect, useState } from "react";
+import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
+import { Star as DefaultBadgeIcon } from "lucide-react";
 
 export type Profile = {
   name: string;
@@ -28,7 +30,11 @@ export type Profile = {
     icon: React.ElementType;
     textLines: string[] | string;
   }[];
-  qualifications: string[];
+  qualifications: {
+    name: string;
+    date: string;
+    text: string;
+  }[];
   buyerReviews: {
     name: string;
     date: string;
@@ -41,28 +47,57 @@ export type Profile = {
   };
 };
 
-const SkillSplashScreen = ({profile}: {profile: Profile}) => {
-    const params = useParams();
-    const skill = params?.skillId as string;
+const SkillSplashScreen = () => {
+  const params = useParams();
+  const skillId = params?.skillId as string;
+  const [profile, setProfile] = useState<Profile | null>(null);
 
-    const handleAddImage = () => {
-        // Logic to handle adding an image
-        // open file picker or modal to select an image
-        console.log("Add image button clicked");
-    }
+  useEffect(() => {
+    const fetchSkillData = async () => {
+      if (!skillId) return;
+      try {
+        const { success, data } = await getSkillDetailsWorker(skillId);
+        if (success && data) {
+          // Fallback icon if not present
+          const updatedBadges = (data.badges ?? []).map((badge: any) => ({
+            ...badge,
+            icon: badge.icon || DefaultBadgeIcon,
+          }));
+          setProfile({ ...data, badges: updatedBadges });
+        }
+      } catch (error) {
+        console.error("Error fetching skill profile:", error);
+      }
+    };
+
+    fetchSkillData();
+  }, [skillId]);
+
+  const handleAddImage = () => {
+    console.log("Add image button clicked");
+  };
+
+  if (!profile) return <p className={styles.loading}>Loading...</p>;
+
   return (
     <div className={styles.skillSplashContainer}>
       {/* Header */}
       <div className={styles.header}>
-        <Image src="/images/benji.jpeg" alt="Profile picture" width={115} height={86} className={styles.profileImage} />
-        <h2 className={styles.name}>{profile.name}: {skill}</h2>
+        <Image
+          src="/images/benji.jpeg"
+          alt="Profile picture"
+          width={115}
+          height={86}
+          className={styles.profileImage}
+        />
+        <h2 className={styles.name}>
+          {profile.name}: {skillId}
+        </h2>
         <Star className={styles.icon} />
       </div>
 
       {/* Hashtags */}
-      <div className={styles.hashtags}>
-        {profile.hashtags}
-      </div>
+      <div className={styles.hashtags}>{profile.hashtags}</div>
 
       {/* Customer reviews */}
       <p className={styles.review}>
@@ -91,16 +126,35 @@ const SkillSplashScreen = ({profile}: {profile: Profile}) => {
         <h3>{profile.name}’s statistics</h3>
         <div className={styles.statistics}>
           <div className={styles.stats}>
-            <Image src="/images/reviews.svg" alt="Reviews" width={27} height={32} />
-            <p>{profile.statistics.reviews}<span>Customer reveiws</span></p>
+            <Image
+              src="/images/reviews.svg"
+              alt="Reviews"
+              width={27}
+              height={32}
+            />
+            <p>
+              {profile.statistics.reviews}
+              <span>Customer reviews</span>
+            </p>
           </div>
           <div className={styles.stats}>
-            <Image src="/images/payments.svg" alt="Payments" width={38} height={31} />
-            <p>{profile.statistics.paymentsCollected}<span>Payments collceted</span></p>
+            <Image
+              src="/images/payments.svg"
+              alt="Payments"
+              width={38}
+              height={31}
+            />
+            <p>
+              {profile.statistics.paymentsCollected}
+              <span>Payments collected</span>
+            </p>
           </div>
           <div className={styles.stats}>
             <Image src="/images/tips.svg" alt="Tips" width={46} height={30} />
-            <p>{profile.statistics.tipsReceived}<span>Tips received</span></p>
+            <p>
+              {profile.statistics.tipsReceived}
+              <span>Tips received</span>
+            </p>
           </div>
         </div>
       </div>
@@ -108,12 +162,18 @@ const SkillSplashScreen = ({profile}: {profile: Profile}) => {
       {/* Image placeholders */}
       <div className={styles.supportingImages}>
         <div className={styles.images}>
-          { profile.supportingImages.map((image: string, index: number) => (
-              <Image key={index} src={image} alt={`Supporting image ${index + 2}`} width={109} height={68} />
+          {profile.supportingImages.map((image: string, index: number) => (
+            <Image
+              key={index}
+              src={image}
+              alt={`Supporting image ${index + 1}`}
+              width={109}
+              height={68}
+            />
           ))}
         </div>
         <button className={styles.attachButton} onClick={handleAddImage}>
-          <Paperclip size={29} color='#ffffff'/>
+          <Paperclip size={29} color="#ffffff" />
         </button>
         <input type="file" accept="image/*" className={styles.hiddenInput} />
       </div>
@@ -122,16 +182,14 @@ const SkillSplashScreen = ({profile}: {profile: Profile}) => {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Badges Awarded</h3>
         <div className={styles.badges}>
-          
-            {profile.badges.map((badge: Profile["badges"][number]) => {
-              return (
-                <div className={styles.badge} key={badge.id}>
-                  <AwardDisplayBadge
-                    icon={badge.icon}
-                    textLines={badge.textLines as string}
-                  />
-                </div>
-            )})}   
+          {profile.badges.map((badge) => (
+            <div className={styles.badge} key={badge.id}>
+              <AwardDisplayBadge
+                icon={badge.icon}
+                textLines={badge.textLines}
+              />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -139,41 +197,38 @@ const SkillSplashScreen = ({profile}: {profile: Profile}) => {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
         <ul className={styles.list}>
-          <li>Bachelor’s Degree in Graphic Design</li>
-          <li>Licensed bar manager</li>
-          <li>Cocktail preparation diploma</li>
+          {profile.qualifications.map((q, index) => (
+            <li key={index}>{q.name}</li>
+          ))}
         </ul>
       </div>
 
       {/* Buyer Reviews */}
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
-        {
-          profile.buyerReviews.map((review: Profile["buyerReviews"][number], index: number) => (
-            // <div className={styles.reviewCard} key={index}>
-            //   <p><strong>{review.name} - {review.date}</strong></p>
-            //   <p>“{review.text}”</p>
-            // </div>
-            <ReviewCardItem key={index} reviewerName={review.name} date={review.date} comment={review.text} />
-          ))
-        }
+        {profile?.buyerReviews?.map((review, index) => (
+          <ReviewCardItem
+            key={index}
+            reviewerName={review?.name}
+            date={review?.date.toString()}
+            comment={review?.text}
+          />
+        ))}
       </div>
 
       {/* Recommendations */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Recommendations</h3>
-        {
-          profile.recommendation && (
-            <RecommendationCardItem
-              recommenderName={profile.recommendation.name}
-              date={profile.recommendation.date}
-              comment={profile.recommendation.text}
-            />
-          )
-        }
-      </div>
+      {profile.recommendation && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Recommendations</h3>
+          <RecommendationCardItem
+            recommenderName={profile.recommendation.name}
+            date={profile.recommendation.date}
+            comment={profile.recommendation.text}
+          />
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default SkillSplashScreen
+export default SkillSplashScreen;
