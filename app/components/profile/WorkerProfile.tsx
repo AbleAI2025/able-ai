@@ -60,10 +60,10 @@ const WorkerProfile = ({
             />
           )}
           <div className={styles.locationShareContainer}>
-            {workerProfile && (
+            {workerProfile && workerProfile.location &&  (
               <div className={styles.locationInfo}>
                 <MapPin size={16} color="#ffffff" className={styles.mapPin} />
-                <span>{"Colombi"}</span>
+                <span>{workerProfile.location}</span>
               </div>
             )}
             <button

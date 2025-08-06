@@ -77,6 +77,10 @@ export default interface PublicWorkerProfile {
   fullBio: string | undefined;
   privateNotes?: string;
   averageRating?: number | undefined;
+  location?: string | undefined;
+  address?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
 
   responseRateInternal?: string | undefined;
 
