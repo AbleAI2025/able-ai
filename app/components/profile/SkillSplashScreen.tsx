@@ -3,13 +3,10 @@
 import Image from "next/image";
 import { Star, Paperclip } from "lucide-react";
 import styles from "./SkillSplashScreen.module.css";
-import { useParams } from "next/navigation";
 import AwardDisplayBadge from "./AwardDisplayBadge";
 import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import RecommendationCardItem from "@/app/components/shared/RecommendationCardItem";
-import React, { useEffect, useState } from "react";
-import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
-import { Star as DefaultBadgeIcon } from "lucide-react";
+import React from "react";
 
 export type Profile = {
   name: string;
@@ -19,6 +16,10 @@ export type Profile = {
   ableGigs: number;
   experienceYears: number;
   Eph: number;
+  location: string;
+  address: string;
+  latitude: number;
+  longitude: number;
   statistics: {
     reviews: number;
     paymentsCollected: string;
@@ -47,32 +48,7 @@ export type Profile = {
   };
 };
 
-const SkillSplashScreen = () => {
-  const params = useParams();
-  const skillId = params?.skillId as string;
-  const [profile, setProfile] = useState<Profile | null>(null);
-
-  useEffect(() => {
-    const fetchSkillData = async () => {
-      if (!skillId) return;
-      try {
-        const { success, data } = await getSkillDetailsWorker(skillId);
-        if (success && data) {
-          // Fallback icon if not present
-          const updatedBadges = (data.badges ?? []).map((badge: any) => ({
-            ...badge,
-            icon: badge.icon || DefaultBadgeIcon,
-          }));
-          setProfile({ ...data, badges: updatedBadges });
-        }
-      } catch (error) {
-        console.error("Error fetching skill profile:", error);
-      }
-    };
-
-    fetchSkillData();
-  }, [skillId]);
-
+const SkillSplashScreen = ({profile, skillId}:{profile: Profile | null, skillId: string | null}) => {
   const handleAddImage = () => {
     console.log("Add image button clicked");
   };

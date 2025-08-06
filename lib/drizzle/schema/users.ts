@@ -85,6 +85,11 @@ export const GigWorkerProfilesTable = pgTable("gig_worker_profiles", {
     .references(() => UsersTable.id, { onDelete: "cascade" }) // If user is deleted, their specific profiles are too
     .unique(), // A user can only have one gig worker profile
   fullBio: text("full_bio"),
+  location: text("location"),
+  address: text("address"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  hashtags: jsonb("hash_tags"),
   privateNotes: text("private_notes"), // Notes by the worker for themselves
   responseRateInternal: decimal("response_rate_internal", {
     // Calculated by backend

@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
-import {
-  Award as AwardIconLucide, UserCircle, Loader2, ThumbsUp, MessageCircleCode } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import styles from './page.module.css'; // Use page.module.css
 import WorkerProfile from '@/app/components/profile/WorkerProfile';
 
@@ -13,33 +12,6 @@ import PublicWorkerProfile from '@/app/types/workerProfileTypes';
 import CloseButton from '@/app/components/profile/CloseButton';
 import HireButton from '@/app/components/profile/HireButton';
 import { useAuth } from '@/context/AuthContext';
-
-// --- MOCK FUNCTION (Updated with new data points) ---
-async function fetchPublicWorkerProfile(workerIdToView: string): Promise<any | null> {
-  console.log("Fetching public profile for worker:", workerIdToView);
-  await new Promise(resolve => setTimeout(resolve, 700));
-  if (workerIdToView === "benji-asamoah-id") {
-    return {
-      id: "benji-asamoah-id",
-      displayName: "Benji Asamoah",
-      userHandle: "@benjiasamoah",
-      profileHeadline: "Expert Mixologist & Event Bartender",
-      avatarUrl: "/images/avatar-benji.jpg",
-      profileImageUrl: "/images/benji.jpeg",
-      qrCodeUrl: "/images/qr.svg",
-      location: "Streatham, London",
-      isVerified: true,
-      viewCalendarLink: "#view-calendar",
-
-      statistics: [
-        { id: "s1", icon: ThumbsUp, value: "100%", label: "Would work with Benji again" },
-        { id: "s2", icon: MessageCircleCode, value: "100%", label: "Response rate" },
-      ],
-      feedbackSummary: "Professional, charming and lively",
-    };
-  }
-  return null;
-}
 
 // --- COMPONENT ---
 export default function PublicWorkerProfilePage() {

@@ -4,7 +4,6 @@ import Link from "next/link";
 
 // --- SHARED & HELPER COMPONENTS ---
 import Avatar from "@/app/components/shared/Avatar";
-import PillBadge from "@/app/components/shared/PillBadge";
 import ContentCard from "@/app/components/shared/ContentCard";
 import SkillsDisplayTable from "@/app/components/profile/SkillsDisplayTable";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
@@ -90,7 +89,7 @@ const WorkerProfile = ({
         <div className={styles.workerInfo}>
           {true && (
             <Link
-              href={"/default-avatar.png"}
+              href={workerProfile?.userId || ""}
               className={styles.viewCalendarLink}
               aria-label="View calendar"
             >
