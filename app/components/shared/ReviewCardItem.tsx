@@ -4,7 +4,7 @@ import styles from './ReviewCardItem.module.css';
 interface ReviewCardItemProps {
   reviewerName: string;
   date: string;
-  comment: string;
+  comment?: string | null;
   // rating?: number; // Add if rating is included later
 }
 

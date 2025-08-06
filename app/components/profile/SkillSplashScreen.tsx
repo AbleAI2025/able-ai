@@ -7,48 +7,9 @@ import AwardDisplayBadge from "./AwardDisplayBadge";
 import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import RecommendationCardItem from "@/app/components/shared/RecommendationCardItem";
 import React from "react";
+import { SkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile";
 
-export type Profile = {
-  name: string;
-  title: string;
-  hashtags: string;
-  customerReviewsText: string;
-  ableGigs: number;
-  experienceYears: number;
-  Eph: number;
-  location: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  statistics: {
-    reviews: number;
-    paymentsCollected: string;
-    tipsReceived: string;
-  };
-  supportingImages: string[];
-  badges: {
-    id: string | number;
-    icon: React.ElementType;
-    textLines: string[] | string;
-  }[];
-  qualifications: {
-    name: string;
-    date: string;
-    text: string;
-  }[];
-  buyerReviews: {
-    name: string;
-    date: string;
-    text: string;
-  }[];
-  recommendation?: {
-    name: string;
-    date: string;
-    text: string;
-  };
-};
-
-const SkillSplashScreen = ({profile, skillId}:{profile: Profile | null, skillId: string | null}) => {
+const SkillSplashScreen = ({profile}:{profile: SkillProfile | null}) => {
   const handleAddImage = () => {
     console.log("Add image button clicked");
   };
@@ -67,7 +28,7 @@ const SkillSplashScreen = ({profile, skillId}:{profile: Profile | null, skillId:
           className={styles.profileImage}
         />
         <h2 className={styles.name}>
-          {profile.name}: {skillId}
+          {profile.name}: {profile.title}
         </h2>
         <Star className={styles.icon} />
       </div>
@@ -161,8 +122,8 @@ const SkillSplashScreen = ({profile, skillId}:{profile: Profile | null, skillId:
           {profile.badges.map((badge) => (
             <div className={styles.badge} key={badge.id}>
               <AwardDisplayBadge
-                icon={badge.icon}
-                textLines={badge.textLines}
+                {...(badge?.icon ? { icon: badge.icon } : {})}
+                textLines={badge.notes}
               />
             </div>
           ))}
@@ -173,8 +134,8 @@ const SkillSplashScreen = ({profile, skillId}:{profile: Profile | null, skillId:
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
         <ul className={styles.list}>
-          {profile.qualifications.map((q, index) => (
-            <li key={index}>{q.name}</li>
+          {profile?.qualifications?.map((q, index) => (
+            <li key={index}>{q.title}: {q.description}</li>
           ))}
         </ul>
       </div>

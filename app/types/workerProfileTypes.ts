@@ -73,14 +73,11 @@ export interface SemanticProfile {
 export default interface PublicWorkerProfile {
   id?: string | undefined;
   userId?: string | undefined;
+  location?: string | undefined;
 
   fullBio: string | undefined;
   privateNotes?: string;
   averageRating?: number | undefined;
-  location?: string | undefined;
-  address?: string | undefined;
-  latitude?: number | undefined;
-  longitude?: number | undefined;
 
   responseRateInternal?: string | undefined;
 

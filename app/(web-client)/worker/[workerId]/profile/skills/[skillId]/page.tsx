@@ -8,52 +8,15 @@ import CloseButton from '@/app/components/profile/CloseButton';
 import HireButton from '@/app/components/profile/HireButton';
 import { getSkillDetailsWorker } from '@/actions/user/gig-worker-profile';
 import { Star as DefaultBadgeIcon } from "lucide-react";
+import { SkillProfile } from '@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile';
 
-export type Profile = {
-  name: string;
-  title: string;
-  hashtags: string;
-  customerReviewsText: string;
-  ableGigs: number;
-  experienceYears: number;
-  Eph: number;
-  location: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  statistics: {
-    reviews: number;
-    paymentsCollected: string;
-    tipsReceived: string;
-  };
-  supportingImages: string[];
-  badges: {
-    id: string | number;
-    icon: React.ElementType;
-    textLines: string[] | string;
-  }[];
-  qualifications: {
-    name: string;
-    date: string;
-    text: string;
-  }[];
-  buyerReviews: {
-    name: string;
-    date: string;
-    text: string;
-  }[];
-  recommendation?: {
-    name: string;
-    date: string;
-    text: string;
-  };
-};
+
 
 // --- COMPONENT ---
 export default function PublicSkillProfilePage() {
   const params = useParams();
   const skillId = params?.skillId as string;
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<SkillProfile | null>(null);
 
   useEffect(() => {
     const fetchSkillData = async () => {
@@ -66,7 +29,18 @@ export default function PublicSkillProfilePage() {
             ...badge,
             icon: badge.icon || DefaultBadgeIcon,
           }));
-          setProfile({ ...data, badges: updatedBadges });
+
+          const transformedQualifications = data?.qualifications?.map((q) => ({
+            title: q.title,
+            date: q.yearAchieved?.toString() ?? "",
+            description: q.description ?? "",
+          }));
+
+          setProfile({
+            ...data,
+            badges: updatedBadges,
+            qualifications: transformedQualifications,
+          });
         }
       } catch (error) {
         console.error("Error fetching skill profile:", error);
@@ -79,7 +53,7 @@ export default function PublicSkillProfilePage() {
   return (
     <div className={styles.skillPageContainer}>
       <CloseButton />
-      <SkillSplashScreen profile={profile} skillId={skillId}/>
+      <SkillSplashScreen profile={profile} />
       <HireButton workerId={skillId} workerName={profile?.name} />
     </div> 
   );

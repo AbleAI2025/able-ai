@@ -46,7 +46,7 @@ const SkillSpecificHeaderCard: React.FC<SkillSpecificHeaderCardProps> = ({
       {hashtags && hashtags.length > 0 && (
         <div className={styles.hashtagsContainer}>
           {hashtags.map((tag, index) => (
-            <PillBadge key={index} text={tag} variant="blue" handleSkillDetails={() => console.log(`Skill details for: ${tag}`)} />
+            <PillBadge id={index.toString()} key={index} text={tag} variant="blue" handleSkillDetails={() => console.log(`Skill details for: ${tag}`)} />
           ))}
         </div>
       )}

@@ -77,6 +77,7 @@ export const getGigWorkerProfile = async (
     const data = {
       ...workerProfile,
       fullBio: workerProfile?.fullBio ?? undefined,
+      location: workerProfile?.location ?? undefined,
       privateNotes: workerProfile?.privateNotes ?? undefined,
       responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
       availabilityJson: workerProfile?.availabilityJson as Availability,
@@ -102,14 +103,14 @@ export const getSkillDetailsWorker = async (id: string) => {
       where: eq(SkillsTable.id, id),
     });
 
-    if (!skill) throw ("Skill not found");
+    if (!skill) throw "Skill not found";
 
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.id, skill?.workerProfileId),
     });
 
     const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, workerProfile?.userId || ""),
+      where: eq(UsersTable.id, workerProfile?.userId || ""),
     });
 
     const badges = await db.query.UserBadgesLinkTable.findMany({
@@ -141,11 +142,17 @@ export const getSkillDetailsWorker = async (id: string) => {
     const skillProfile = {
       name: user?.fullName,
       title: skill?.name,
-      hashtags: "#Licensedbarmanager #customerservice #timemanagement #mixology",
+      hashtags: Array.isArray(workerProfile?.hashtags)
+        ? workerProfile.hashtags.join(" ")
+        : "",
       customerReviewsText: workerProfile?.fullBio,
       ableGigs: skill?.ableGigs,
       experienceYears: skill?.experienceMonths / 12,
       Eph: skill?.agreedRate,
+      location: workerProfile?.location || "",
+      address: workerProfile?.address || "",
+      latitude: workerProfile?.latitude ?? 0,
+      longitude: workerProfile?.longitude ?? 0,
       statistics: {
         reviews: reviews?.length,
         paymentsCollected: "£4899",
@@ -163,4 +170,3 @@ export const getSkillDetailsWorker = async (id: string) => {
     return { success: false, data: null, error };
   }
 };
-
