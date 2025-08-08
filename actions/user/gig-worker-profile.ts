@@ -80,6 +80,7 @@ export const getGigWorkerProfile = async (
       location: workerProfile?.location ?? undefined,
       privateNotes: workerProfile?.privateNotes ?? undefined,
       responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
+      videoUrl: workerProfile?.videoUrl ?? undefined,
       availabilityJson: workerProfile?.availabilityJson as Availability,
       semanticProfileJson:
         workerProfile?.semanticProfileJson as SemanticProfile,
@@ -168,5 +169,38 @@ export const getSkillDetailsWorker = async (id: string) => {
   } catch (error) {
     console.error(`Error fetching skill: ${error}`);
     return { success: false, data: null, error };
+  }
+};
+
+export const updateVideoUrlProfileAction = async (
+  token: string,
+  videoUrl: string
+) => {
+  try {
+    if (!token) {
+      throw new Error("User ID is required to fetch buyer profile");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) throw "User not found"
+
+    await db
+      .update(GigWorkerProfilesTable)
+      .set({
+        videoUrl: videoUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(GigWorkerProfilesTable.userId, user?.id));
+
+    return { success: true, data: "Url video updated successfully" };
+  } catch (error) {
+    console.log("Error saving video url", error);
+    return { success: false, data: "Url video updated successfully", error };
   }
 };

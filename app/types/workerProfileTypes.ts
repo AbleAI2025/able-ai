@@ -83,6 +83,7 @@ export default interface PublicWorkerProfile {
 
   availabilityJson?: Availability;
   semanticProfileJson?: SemanticProfile;
+  videoUrl?: string | undefined;
 
   createdAt?: Date | undefined;
   updatedAt?: Date | undefined;

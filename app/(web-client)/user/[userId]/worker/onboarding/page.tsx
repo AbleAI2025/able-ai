@@ -92,6 +92,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
+import { updateVideoUrlProfileAction } from "@/actions/user/gig-worker-profile";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
@@ -1288,6 +1289,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            updateVideoUrlProfileAction(user.token, downloadURL);
             handleInputChange(name, downloadURL);
             handleInputSubmit(stepId, name, downloadURL);
           }).catch((error) => {

@@ -98,6 +98,7 @@ export const GigWorkerProfilesTable = pgTable("gig_worker_profiles", {
   }),
   availabilityJson: jsonb("availability_json"), // Stores complex availability rules
   semanticProfileJson: jsonb("semantic_profile_json"), // For AI matching data
+  videoUrl: text("video_url"),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -121,6 +122,7 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
     length: 100,
   }),
   billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
+  videoUrl: text("video_url"),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
