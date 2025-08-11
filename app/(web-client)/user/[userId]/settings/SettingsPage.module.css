@@ -310,7 +310,6 @@
   min-height: 100vh;
   background-color: #161616;
   color: #e0e0e0;
-  padding: 1.5rem;
   font-family: var(--font-family);
   max-width: 450px;
 }
@@ -321,25 +320,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem; /* Space between sections */
+  padding: 1rem;
 }
 
-.pageHeader {
-  margin-bottom: 1rem;
-}
-
-.pageHeader h1 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.5rem;
-  color: #ffffff;
-  margin: 0;
-}
-
-.pageHeader p {
-  font-size: 0.9rem;
+.pageDescription {
   color: #c2c2c2;
-  line-height: 1rem;
-  margin-top: 0.3rem;
+  font-size: 14px;
+  font-family: var(--font-family);
+  font-weight: 400;
+  line-height: 16px;
 }
 
 .section {
