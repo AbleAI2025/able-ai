@@ -2,7 +2,6 @@
 .container {
   background-color: var(--foreground);
   border-radius: 10px;
-  padding: 1rem;
   color: #fff; /* White text */
   width: 100%;
   max-width: 450px; /* Keep max-width from previous .pageWrapper */
@@ -33,6 +32,10 @@
   border: none;
   outline: none;
   background: none;
+}
+
+.gigDetailsMain {
+  padding: 1rem;
 }
 
 .gigDetailsSection {
