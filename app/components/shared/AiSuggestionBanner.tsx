@@ -166,7 +166,7 @@ export default function AiSuggestionBanner({
         </div>
       </div>
 
-      <div className={styles.bottomControlsContainer}>
+      {/* <div className={styles.bottomControlsContainer}>
         <button
           onClick={onDismiss} // Ensure onDismiss is memoized if coming from props
           className={styles.dismissButton}
@@ -217,7 +217,7 @@ export default function AiSuggestionBanner({
         >
           <MessageSquare size={40} />{" "}
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }
