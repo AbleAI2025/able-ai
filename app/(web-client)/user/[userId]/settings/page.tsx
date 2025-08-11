@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useState, useEffect, FormEvent } from "react";
