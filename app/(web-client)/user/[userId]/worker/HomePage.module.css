@@ -5,62 +5,29 @@
   height: auto;
   min-height: 100vh;
   background-color: #000000;
+  position: relative;
 }
 
 .card {
   height: 100%;
   background-color: #161616;
   color: #e0e0e0;
-  padding: 0.75rem 1rem 0.25rem;
+  /* padding: 0.75rem 1rem 0.25rem; */
   font-family: var(--font-family);
   display: flex;
   flex-direction: column;
   position: relative;
   min-height: 100vh;
   max-width: 450px;
+  
 }
 
-.pageHeader {
-  display: flex;
-  /* align-items: center; */
-  justify-content: space-between;
-  margin-bottom: 3rem;
+.contentWrapper {
+  padding: 0 1rem;
 }
-
-.pageHeader h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
-}
-
-/* .welcomeMessage {
-    font-size: 1rem;
-    color: #a0a0a0;
-    margin-top: 0.25rem;
-} */
 
 .logo {
   object-fit: cover;
-}
-
-.notificationButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-left: auto; /* Push button to the right */
-  display: flex;
-  align-items: center;
-}
-
-.notificationButton svg {
-  fill: #ffffff;
-  transition: 0.2s ease;
-}
-
-.notificationButton svg:hover {
-  color: var(--primary-color);
-  fill: var(--primary-color);
 }
 
 .sectionTitle {
@@ -112,26 +79,12 @@
 
 
 .pageFooter {
-  margin-top: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* border-top: 1px solid #2b2b2b; */
-}
-
-.notificationBadge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background-color: red;
-  color: white;
-  border-radius: 50%;
-  width: 18;
-  height: 18;
-  font-size: 12;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  margin-top: 1rem;
+  position: fixed;
+  bottom: 2%;
+  left: 4%;
+  right: 4%;
 }

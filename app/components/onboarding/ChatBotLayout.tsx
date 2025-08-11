@@ -6,6 +6,7 @@ import ChatInput from './ChatInput';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
 
 interface ChatBotLayoutProps {
   children: ReactNode;
@@ -35,10 +36,11 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
     return (
       <div className={`${styles.chatContainerWrapper} ${className}`}>
         <div className={styles.chatContainer} onScroll={onScroll} ref={ref}>
-          <div className={styles.header}>
+          {/* <div className={styles.header}>
             <span className={styles.headerText}>Chat with Able</span>
             <Logo width={50} height={50} />
-          </div>
+          </div> */}
+          <ScreenHeaderWithBack onBackClick={() => router.back()} />
           <div className={styles.chatContent}>{children}</div>
           {showChatInput && (
             <ChatInput 
