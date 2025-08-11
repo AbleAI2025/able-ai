@@ -35,6 +35,7 @@ import { useFirebase } from "@/context/FirebaseContext";
 import StripeModal from "@/app/components/settings/stripeModal";
 import StripeElementsProvider from "@/lib/stripe/StripeElementsProvider";
 import { FlowStep, UserRole, UserSettingsData } from "@/app/types/SettingsTypes";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -139,7 +140,7 @@ export default function SettingsPage() {
   // Fetch user settings from backend API
   useEffect(() => {
     if (user) {
-      // authUserId is now derived from user?.uid
+      console.log(user, "user");
       setIsLoadingSettings(true);
       // Replace with your actual API call
       fetchSettings();
@@ -401,7 +402,7 @@ export default function SettingsPage() {
     return <Loader />;
   }
 
-  if (!user || !userSettings) {
+  if (!user) {
     return (
       <div className={styles.loadingContainer}>
         Unable to load settings. Please ensure you are logged in.
@@ -412,13 +413,9 @@ export default function SettingsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        <ScreenHeaderWithBack title="Settings" onBackClick={() => router.back()} />
         <div className={styles.pageWrapper}>
-          <header className={styles.pageHeader}>
-            <h1>Settings</h1>
-            <p>Manage your account preferences and settings</p>{" "}
-            {/* Added descriptive text */}
-          </header>
-
+          <p className={styles.pageDescription}>Manage your account preferences and settings</p>
           {error && <p className={styles.errorMessage}>{error}</p>}
           {successMessage && (
             <p className={styles.successMessage}>{successMessage}</p>
@@ -646,7 +643,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Logo width={60} height={60} />
             <div
               className={`${styles2.suggestionBanner} ${styles2.suggestionTextContainer}`}
@@ -658,7 +655,7 @@ export default function SettingsPage() {
                 How can i help?
               </p>
             </div>
-          </div>
+          </div> */}
           <section className={styles.bottomNavSection}>
             <div className={styles.bottomNav}>
               <button onClick={handleLogout} className={styles.bottomNavLink}>
