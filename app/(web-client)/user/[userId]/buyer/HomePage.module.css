@@ -23,6 +23,10 @@
 
 .contentWrapper {
   padding: 0 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .pageHeader {
@@ -119,10 +123,7 @@
   margin-top: 1rem;
   justify-content: space-between;
   align-items: center;
-  position: fixed;
-  bottom: 2%;
-  left: 4%;
-  right: 4%;
+  padding: 1rem;
 }
 
 .notificationBadge {

@@ -145,8 +145,7 @@ export default function WorkerDashboardPage() {
           unreadCount={unreadCount}
           unreadNotifications={unreadNotifications}
         />
-        <main className={styles.contentWrapper}>
-          {uid && (
+        {uid && (
             <AiSuggestionBanner
               suggestions={aiSuggestions}
               currentIndex={currentIndex}
@@ -160,6 +159,8 @@ export default function WorkerDashboardPage() {
               userId={uid}
             />
           )}
+        <main className={styles.contentWrapper}>
+          
 
           {/* <h2 className={styles.sectionTitle}>Manage Your Activity</h2> */}
           <IconGrid items={actionItems} />
@@ -182,7 +183,7 @@ export default function WorkerDashboardPage() {
           )}
           */}
 
-          <ReferralBanner title="Refer a worker and earn £5!" />
+          <ReferralBanner />
         </main> 
         <footer className={styles.pageFooter}>
           <RoleToggle />
