@@ -122,8 +122,7 @@ export default function BuyerDashboardPage() {
           unreadCount={unreadCount}
           unreadNotifications={unreadNotifications}
         />
-        <main className={styles.contentWrapper}>
-          {uid && (
+        {uid && (
             <AiSuggestionBanner
               suggestions={aiSuggestions}
               currentIndex={currentIndex}
@@ -137,6 +136,8 @@ export default function BuyerDashboardPage() {
               userId={uid}
             />
           )}
+        <main className={styles.contentWrapper}>
+          
 
           {/* <h2 className={styles.sectionTitle}>Manage Your Activity</h2> */}
            <IconGrid items={actionItems} color={"#7eeef9"} />
