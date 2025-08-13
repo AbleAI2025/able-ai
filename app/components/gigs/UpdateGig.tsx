@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 import styles from './UpdateGig.module.css';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
@@ -10,9 +10,10 @@ interface GigDetailsProps {
 	isEditingDetails?: boolean; // Optional prop to control edit mode
 	gigDetailsData: GigReviewDetailsData; // Assuming this is passed for read-only view
 	isOnConfirm?: boolean;
+	title: string;
 }
 
-const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm }: GigDetailsProps) => {
+const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
 	const lastRoleUsed = getLastRoleUsed()
 
 	const handleInputChange = (
@@ -29,9 +30,15 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 		<div className={styles.card}>
 			<div className={styles.detailsHeader}>
 				<h2 className={styles.detailsTitle}>
-					{gigDetailsData.status === 'CANCELLED' ? 'Cancelled' : 'Updated'} gig details:
+					{title}
+					{/* Uncomment if you want to show status */}
+					{/* {gigDetailsData.status === 'CANCELLED' ? 'Cancelled' : 'Updated'} gig details: */}
 				</h2>
-				<Pencil className={styles.editIcon} onClick={handleEditDetails} />
+				{!isEditingDetails ? (
+					<Pencil className={styles.editIcon} onClick={handleEditDetails} />
+				) : (
+					<X className={styles.editIcon} onClick={handleEditDetails} />
+				)}
 			</div>
 			{isEditingDetails ? (
 				/* Editable Form View */

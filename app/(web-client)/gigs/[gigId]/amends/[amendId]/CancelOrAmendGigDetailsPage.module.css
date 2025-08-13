@@ -3,10 +3,15 @@
 .viewContainer {
   background-color: #1E1E1E; /* Dark grey main content area background */
   color: #F0F0F0; /* Off-white primary text */
-  padding: 0 16px 24px 16px; /* Horizontal padding, bottom padding for button */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  max-width: 450px;
+  margin: auto;
+}
+
+.contentWrapper {
+  padding: 1rem;
 }
 
 .header {
@@ -102,7 +107,7 @@
   font-weight: bold;
   border: none;
   border-radius: 1.5rem; /* Pill-shaped */
-  padding: 14px 20px;
+  padding: 1rem;
   width: 100%;
   cursor: pointer;
   text-align: center;
@@ -112,6 +117,25 @@
   outline: none;
 }
 
+.cancelButton {
+  cursor: pointer;
+  height: 44px;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 1.5rem;
+  background-color: #808080;
+  color: #0f0f0f;
+  font-size: 0.875rem;
+  font-family: "Roboto";
+  font-weight: 700;
+  line-height: 1;
+  outline: none;
+}
+
+.cancelButton p {
+  font-style: italic;
+  font-weight: 500;
+}
 .workerBtn {
   background-color: var(--primary-color);
 }

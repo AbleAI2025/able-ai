@@ -38,11 +38,12 @@ function formatTimeRange(isoStartDateString: string, isoEndDateString: string) {
 const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContainerProps> = ({ gigId, amendId, user, lastRoleUsed }) => {
   const [gigDetails, setGigDetails] = useState<GigDetails | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
 
   const notificationMessage = lastRoleUsed ? buyerNotificationMessage : workerNotificationMessage;
 
   const handleEditDetails = () => {
-    // No-op, editing not supported in this view
+    setIsEditingDetails(!isEditingDetails);
   };
 
   const handleConfirm = () => {
@@ -99,6 +100,7 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
       handleConfirm={handleConfirm}
       handleSuggestNew={handleSuggestNew}
       handleDecline={handleDecline}
+      isEditingDetails={isEditingDetails}
     />
   );
 };
