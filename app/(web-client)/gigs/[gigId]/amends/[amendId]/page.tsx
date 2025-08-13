@@ -73,15 +73,12 @@ export default function CancelOrAmendGigDetailsPage() {
 
       <main className={styles.contentWrapper}>
         {/* Instruction Block */}
-        {/* <section className={`${styles.card} ${styles.instructionBlock}`}>
-          <div className={styles.instructionIconContainer}>
-            <Logo width={60} height={60} />
-          </div>
+        <section className={`${styles.card} ${styles.instructionBlock}`}>
           <p className={styles.instructionText}>
             What changes would you like to make to the gig?{" "}
-            Tell me or edit using the icon below
+            Tell me or edit using the icon below.
           </p>
-        </section> */}
+        </section>
 
         {/* Text Input Block */}
         {/* <section className={styles.botCard}>
