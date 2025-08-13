@@ -3,11 +3,16 @@
 .viewContainer {
   background-color: #1E1E1E; /* Dark grey main content area background */
   color: #F0F0F0; /* Off-white primary text */
-  padding: 0 16px 24px 16px; /* Horizontal padding, bottom padding for buttons */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   font-family: var(--font-family);
+  max-width: 450px;
+  margin: auto;
+}
+
+.mainContent {
+  padding: 1rem; /* Horizontal padding, bottom padding for buttons */
 }
 
 .header {
@@ -45,9 +50,6 @@
   margin-top: 16px;
 }
 
-.mainContent {
-  flex-grow: 1; /* Allows main content to take available space */
-}
 
 .card {
   background-color: #2C2C2E; /* Slightly lighter dark grey for cards */
@@ -171,6 +173,7 @@
 .actionsFooter {
   display: flex;
   flex-direction: column;
+  padding: 1rem;
   gap: 12px; /* Space between buttons */
 }
 
@@ -217,4 +220,12 @@
 .loaderContainer{
   display: flex;
   justify-content: center;
+}
+
+.buyerColor {
+  background-color: var(--secondary-color);
+}
+
+.workerColor {
+  background-color: var(--primary-color);
 }

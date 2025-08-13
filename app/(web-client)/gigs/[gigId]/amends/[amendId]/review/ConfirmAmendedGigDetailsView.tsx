@@ -1,11 +1,10 @@
 import React from 'react';
 import GigDetails, { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
-import ConfirmAmendedGigDetailsHeader from './ConfirmAmendedGigDetailsHeader';
-import ConfirmAmendedGigDetailsNotification from './ConfirmAmendedGigDetailsNotification';
-import ConfirmAmendedGigDetailsChatButton from './ConfirmAmendedGigDetailsChatButton';
 import ConfirmAmendedGigDetailsDetails from './ConfirmAmendedGigDetailsDetails';
 import ConfirmAmendedGigDetailsFooterActions from './ConfirmAmendedGigDetailsFooterActions';
 import styles from './ConfirmAmendedGigDetailsPage.module.css';
+import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
+import { useRouter } from 'next/navigation';
 
 type NotificationMessage = {
   user: string;
@@ -23,6 +22,7 @@ type ConfirmAmendedGigDetailsViewProps = {
   handleConfirm: () => void;
   handleSuggestNew: () => void;
   handleDecline: () => void;
+  isEditingDetails?: boolean; // Optional prop to control edit mode
 };
 
 const ConfirmAmendedGigDetailsView: React.FC<ConfirmAmendedGigDetailsViewProps> = ({
@@ -35,22 +35,18 @@ const ConfirmAmendedGigDetailsView: React.FC<ConfirmAmendedGigDetailsViewProps> 
   handleConfirm,
   handleSuggestNew,
   handleDecline,
+  isEditingDetails
 }) => {
+  const router = useRouter();
   return (
     <div className={styles.viewContainer}>
-      <ConfirmAmendedGigDetailsHeader />
+      <ScreenHeaderWithBack title="Confirm Amended" onBackClick={() => router.back()} />
       <main className={styles.mainContent}>
-        <ConfirmAmendedGigDetailsNotification
-          gigDetails={gigDetails}
-          isLoading={isLoading}
-          lastRoleUsed={lastRoleUsed}
-          notificationMessage={notificationMessage}
-        />
-        <ConfirmAmendedGigDetailsChatButton />
         <ConfirmAmendedGigDetailsDetails
           gigDetailsData={gigDetailsData}
           isLoading={isLoading}
           handleEditDetails={handleEditDetails}
+          isEditingDetails={isEditingDetails} // Assuming this is always false for confirmation view
         />
       </main>
       <ConfirmAmendedGigDetailsFooterActions

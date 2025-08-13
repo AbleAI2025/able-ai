@@ -80,6 +80,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 	const [isWaitingHoldPayment, setIsWaitingHoldPayment] = useState(false);
 
 	const gigDuration = calculateDuration(gig.startTime, gig.endTime);
+	const amendId = "123";
 
 	const getButtonLabel = (action: string) => {
 		const status = gig.status;
@@ -173,7 +174,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 				// Show success message
 			} else if (action === 'requestAmendment') {
 				setGig({ ...gig, status: 'REQUESTED_AMENDMENT' });
-				router.push(`/gigs/${gig.id}/amends/`);
+				router.push(`/gigs/${gig.id}/amends/${amendId}`);
 				// Show success message
 			}
 			else if (action === 'delete') {
@@ -282,7 +283,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 
 				{/* Negotiation Button - Kept from new structure */}
 				{/* Added a check to only show if gig is accepted */}
-				{(lastRoleUsed === "GIG_WORKER" && (gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED')) && (
+				{(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
 					<button className={styles.negotiationButton} onClick={() => handleGigAction('requestAmendment')}>
 						Negotiate, cancel or change gig details
 					</button>

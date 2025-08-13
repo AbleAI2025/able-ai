@@ -159,7 +159,6 @@ export default function BuyerDashboardPage() {
           */}
 
           <ReferralBanner
-            title="Refer a business and earn £5!"
             className={styles.customHover}
           />
         </main> 
