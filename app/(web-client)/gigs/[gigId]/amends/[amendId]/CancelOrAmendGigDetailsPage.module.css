@@ -36,7 +36,7 @@
 .card {
   background-color: #2C2C2E; /* Slightly lighter dark grey for cards */
   border-radius: 16px; /* Consistent rounded corners */
-  padding: 20px;
+  padding: 1rem;
   margin-bottom: 20px;
 }
 
@@ -49,21 +49,9 @@
   border-radius: 1.5rem;
 }
 
-.instructionIconContainer {
-  /* Styles for the friendly face icon, if needed directly on container */
-  flex-shrink: 0;
-}
-
-.instructionIcon {
-  color: #4A90E2; /* Blue for the icon - primary elements */
-  /* Assuming the SVG itself has white parts or they are controlled by fill/stroke */
-  width: 50px;
-  height: 50px;
-}
-
 .instructionText {
   color: #FFFFFF;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1.2;
   font-weight: 500;
   font-style: italic;

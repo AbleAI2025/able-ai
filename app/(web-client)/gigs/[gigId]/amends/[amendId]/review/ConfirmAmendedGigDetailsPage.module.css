@@ -51,10 +51,30 @@
 }
 
 
+
 .card {
   background-color: #2C2C2E; /* Slightly lighter dark grey for cards */
   border-radius: 16px; /* Consistent rounded corners */
-  padding: 20px;
+  padding: 1rem;
+  margin-bottom: 20px;
+  margin: 1rem;
+}
+
+/* Instruction Block */
+.instructionBlock {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #2b2b2b;
+  border-radius: 1.5rem;
+}
+
+.instructionText {
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  font-weight: 500;
+  font-style: italic;
 }
 
 /* Notification Block */

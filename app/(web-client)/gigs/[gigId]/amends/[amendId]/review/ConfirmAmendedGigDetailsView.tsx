@@ -41,6 +41,12 @@ const ConfirmAmendedGigDetailsView: React.FC<ConfirmAmendedGigDetailsViewProps> 
   return (
     <div className={styles.viewContainer}>
       <ScreenHeaderWithBack title="Confirm Amended" onBackClick={() => router.back()} />
+      <section className={`${styles.card} ${styles.instructionBlock}`}>
+        <p className={styles.instructionText}>
+          {gigDetails.buyerName || "Unknown"} has changed the hourly rate to £22ph, the update details are below.
+          Please accept to confirm these changes, edit to suggest new changes, or decline.
+        </p>
+      </section>
       <main className={styles.mainContent}>
         <ConfirmAmendedGigDetailsDetails
           gigDetailsData={gigDetailsData}

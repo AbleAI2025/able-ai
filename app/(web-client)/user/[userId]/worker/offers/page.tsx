@@ -267,8 +267,8 @@ export default function WorkerOffersPage() {
         <div className={styles.infoBanner}>
           {" "}
           {/* Use styles */}
-          
-          {/* <p>Accept these gigs within the time shown or we will offer them to someone else!</p> */}
+
+          {/* <p className={styles.infoText}>Accept these gigs within the time shown or we will offer them to someone else!</p> */}
           {uid && (
             <AiSuggestionBanner
               suggestions={aiSuggestions}
