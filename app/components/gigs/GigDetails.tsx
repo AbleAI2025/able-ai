@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { Calendar, Info, MessageSquare } from 'lucide-react';
 import Logo from '../brand/Logo';
 import styles from './GigDetails.module.css';
@@ -169,6 +170,10 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 			}
 			else if (action === 'confirmed') {
 				setGig({ ...gig, status: 'CONFIRMED' });
+				// Show success message
+			} else if (action === 'requestAmendment') {
+				setGig({ ...gig, status: 'REQUESTED_AMENDMENT' });
+				router.push(`/gigs/${gig.id}/amends/`);
 				// Show success message
 			}
 			else if (action === 'delete') {
@@ -377,11 +382,11 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 
 				{/* Secondary Actions Section - Adapted to new structure */}
 
-				{lastRoleUsed === "GIG_WORKER" && (
+				{/* {lastRoleUsed === "GIG_WORKER" && (
 					<button className={styles.negotiationButton} disabled>
 						Cancel, amend gig timing or add tips
 					</button>
-				)}
+				)} */}
 				<section className={`${styles.secondaryActionsSection}`}> {/* Using secondaryActionsSection class */}
 					<Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className={styles.secondaryActionButton}>
 						Terms of agreement
