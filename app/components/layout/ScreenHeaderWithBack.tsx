@@ -45,7 +45,7 @@ const ScreenHeaderWithBack: React.FC<ScreenHeaderWithBackProps> = (props) => {
         <Image src="/images/home.svg" alt="Back" width={40} height={40} />
       )}
       {title && <h1 className={styles.title}>{title}</h1>}
-      <Link href={`/users/${user?.uid}/able-ai`} className={styles.chat}>
+      <Link href={`/user/${user?.uid}/able-ai`} className={styles.chat}>
           {!isChatPage ? (
             <><span>Chat with Able</span><Logo width={30} height={30} /></> ) : (
             <Logo width={40} height={40} />
