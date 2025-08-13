@@ -1,3 +1,4 @@
+import moment from "moment";
 import { Pencil } from 'lucide-react';
 import styles from './UpdateGig.module.css';
 import { getLastRoleUsed } from '@/lib/last-role-used';
@@ -12,6 +13,34 @@ interface GigDetailsProps {
 	isOnConfirm?: boolean;
 }
 
+function calculateHoursInRange(timeRangeString: string) {
+	const parts = timeRangeString.split(' - ');
+
+	if (parts.length !== 2) {
+		throw new Error("Invalid time range format. Expected 'h:mm A - h:mm A'.");
+	}
+
+	const startTimeString = parts[0];
+	const endTimeString = parts[1];
+	const format = "h:mm A";
+
+	let startTime = moment(startTimeString, format);
+	let endTime = moment(endTimeString, format);
+
+	if (!startTime.isValid() || !endTime.isValid()) {
+		throw new Error("Invalid time format. Make sure the times are correct (e.g., '6:00 PM').");
+	}
+
+	if (endTime.isBefore(startTime)) {
+		endTime = endTime.add(1, 'day');
+	}
+
+	const duration = moment.duration(endTime.diff(startTime));
+	const totalHours = duration.asHours();
+
+	return totalHours;
+}
+
 const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm }: GigDetailsProps) => {
 	const lastRoleUsed = getLastRoleUsed()
 
@@ -19,9 +48,12 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
 		const { name, value } = e.target;
+
 		setEditedGigDetails((prevState) => ({
 			...prevState,
 			[name]: value,
+			...('payPerHour' === name ? { totalPay: (calculateHoursInRange(editedGigDetails.time) * Number(value)).toString() } : {}),
+			...('time' === name ? { totalPay: (calculateHoursInRange(value) * Number(editedGigDetails.payPerHour)).toString() } : {})
 		}));
 	};
 
