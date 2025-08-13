@@ -166,7 +166,7 @@ export default function AiSuggestionBanner({
         </div>
       </div>
 
-      {/* <div className={styles.bottomControlsContainer}>
+      <div className={styles.bottomControlsContainer}>
         <button
           onClick={onDismiss} // Ensure onDismiss is memoized if coming from props
           className={styles.dismissButton}
@@ -210,14 +210,14 @@ export default function AiSuggestionBanner({
           </div>
         )}
 
-        <button
+        {/* <button
           onClick={handleSuggestionInteraction}
           className={styles.chatButton}
           aria-label="Chat about this suggestion"
         >
           <MessageSquare size={40} />{" "}
-        </button>
-      </div> */}
+        </button> */}
+      </div>
     </div>
   );
 }

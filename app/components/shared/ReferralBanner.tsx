@@ -11,7 +11,7 @@ interface ReferralBannerProps {
   className?: string;
 }
 
-const ReferralBanner: React.FC<ReferralBannerProps> = ({ title, className }) => {
+const ReferralBanner: React.FC<ReferralBannerProps> = ({ className }) => {
   const [tooltipText, setTooltipText] = useState("Click to copy");
 
   const handleReferralClick = () => {
@@ -29,7 +29,7 @@ const ReferralBanner: React.FC<ReferralBannerProps> = ({ title, className }) => 
         <Gift size={24} />
       </div>
       <div className={styles.textWrapper}>
-        <h4 className={styles.title}>{title || "Refer a business"}</h4>
+        <h4 className={styles.title}>Refer a business and earn £5!</h4>
         {/* <p className={styles.description}>{description || "And earn £20 when they make their first hire!"}</p> */}
       </div>
        <span className={styles.tooltip}>
