@@ -210,13 +210,13 @@ export default function AiSuggestionBanner({
           </div>
         )}
 
-        <button
+        {/* <button
           onClick={handleSuggestionInteraction}
           className={styles.chatButton}
           aria-label="Chat about this suggestion"
         >
           <MessageSquare size={40} />{" "}
-        </button>
+        </button> */}
       </div>
     </div>
   );

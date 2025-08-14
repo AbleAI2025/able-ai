@@ -22,7 +22,6 @@ interface DayViewCalendarProps {
   onEventClick?: (event: Event) => void;
   onDateClick?: (date: Date) => void;
   userRole?: string;
-  activeFilter?: string;
 }
 
 const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
@@ -30,8 +29,7 @@ const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
   currentDate,
   onEventClick,
   onDateClick,
-  userRole = 'buyer',
-  activeFilter
+  userRole = 'buyer'
 }) => {
   // Generate array of hours from 6 AM to 10 PM (18 hours total)
   const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
@@ -185,10 +183,11 @@ const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '4px',
+
                   flexDirection: 'column'
                 }}
               >
-                <CalendarEventComponent event={event} userRole={userRole} activeFilter={activeFilter} />
+                <CalendarEventComponent event={event} userRole={userRole} />
               </div>
             );
           })}

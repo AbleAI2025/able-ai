@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
 import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming shared location
 import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import new component
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
-import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
 import { Loader2, Inbox, Calendar } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
 import Logo from "@/app/components/brand/Logo";
@@ -15,13 +14,25 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
-import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
-import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
-import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
-type GigOffer = WorkerGigOffer;
+interface GigOffer {
+  id: string;
+  role: string;
+  buyerName: string;
+  locationSnippet: string;
+  dateString: string;
+  timeString: string;
+  hourlyRate: number;
+  estimatedHours?: number;
+  totalPay?: number;
+  tipsExpected?: boolean;
+  expiresAt?: string; // ISO string for countdown
+  status?: "pending" | "expired" | "accepted" | string; // Added 'accepted' status
+  fullDescriptionLink?: string; // For view details
+}
 
-// Database function to fetch worker offers and accepted gigs
+// Mock function to fetch data - returns both offers and accepted gigs
 async function fetchWorkerData(
   userId: string,
   filters?: string[],
@@ -32,24 +43,80 @@ async function fetchWorkerData(
     "with filters:",
     filters
   );
+  await new Promise((resolve) => setTimeout(resolve, 700));
 
-  const result = await getWorkerOffers(userId);
-  
-  if (result.error) {
-    throw new Error(result.error);
-  }
+  const mockOffers: GigOffer[] = [
+    {
+      id: "gig456-inprogress",
+      role: "Bartender",
+      buyerName: "Central Park Bar",
+      locationSnippet: "Central Park, Beaumont Place",
+      dateString: "14/07/25",
+      timeString: "3:00 PM - 7:00 PM",
+      hourlyRate: 20,
+      totalPay: 80,
+      tipsExpected: true,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 34).toISOString(),
+      status: "pending",
+      fullDescriptionLink: "/gigs/offer1-details",
+    },
+    {
+      id: "offer2",
+      role: "Waiter",
+      buyerName: "Downtown Soho",
+      locationSnippet: "Downtown, Soho",
+      dateString: "15/07/25",
+      timeString: "5:00 PM - 7:00 PM",
+      hourlyRate: 15,
+      totalPay: 30,
+      expiresAt: new Date(Date.now() + 1000 * 87).toISOString(),
+      status: "pending",
+    },
+    // Add more pending offers if needed
+  ].sort((a, b) =>
+    a.expiresAt && b.expiresAt
+      ? new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime()
+      : a.expiresAt
+      ? -1
+      : 1
+  ); // Sort by soonest to expire
 
-  if (!result.data) {
-    throw new Error('No data received from server');
-  }
+  const mockAcceptedGigs: GigOffer[] = [
+    {
+      id: "gig123-accepted",
+      role: "Security Guard",
+      buyerName: "Event X",
+      locationSnippet: "Event Hall, City Center",
+      dateString: "20/07/25",
+      timeString: "8:00 PM - 11:00 PM",
+      hourlyRate: 25,
+      estimatedHours: 3,
+      status: "accepted",
+    },
+    {
+      id: "accepted2",
+      role: "Usher",
+      buyerName: "Concert Y",
+      locationSnippet: "Arena, Suburb",
+      dateString: "21/07/25",
+      timeString: "7:00 PM - 10:00 PM",
+      hourlyRate: 18,
+      estimatedHours: 3,
+      status: "accepted",
+    },
+    // Add more accepted gigs if needed
+  ].sort(
+    (a, b) =>
+      new Date(a.dateString + " " + a.timeString.split(" - ")[0]).getTime() -
+      new Date(b.dateString + " " + b.timeString.split(" - ")[0]).getTime()
+  ); // Sort accepted by date/time
 
-  return result.data;
+  return { offers: mockOffers, acceptedGigs: mockAcceptedGigs };
 }
 
 export default function WorkerOffersPage() {
   const router = useRouter();
   const params = useParams();
-  const pathname = usePathname();
   const pageUserId = params.userId as string;
   const lastRoleUsed = getLastRoleUsed();
 
@@ -66,8 +133,6 @@ export default function WorkerOffersPage() {
   const [processingAction, setProcessingAction] = useState<
     "accept" | "decline" | null
   >(null);
-  const [selectedGig, setSelectedGig] = useState<GigOffer | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const uid = authUserId;
 
   // AI Suggestion Banner Hook
@@ -99,22 +164,16 @@ export default function WorkerOffersPage() {
 
   // Fetch worker data (offers and accepted gigs)
   useEffect(() => {
-    // Debug logging to see what's happening
-    console.log("Debug - loadingAuth:", loadingAuth);
-    console.log("Debug - user:", user);
-    console.log("Debug - authUserId:", authUserId);
-    console.log("Debug - pageUserId:", pageUserId);
-    console.log("Debug - lastRoleUsed:", lastRoleUsed);
-    console.log("Debug - user?.claims.role:", user?.claims?.role);
-    console.log("Debug - uid variable:", uid);
-
-    // Check if user is authorized to view this page
-    if (!loadingAuth && user && authUserId === pageUserId) {
-      console.log("Debug - User authorized, fetching worker data...");
+    // Ensure user is authenticated, authorized for this page, and has necessary roles before fetching
+    if (
+      !loadingAuth &&
+      user &&
+      authUserId === pageUserId &&
+      (lastRoleUsed === "GIG_WORKER" || user?.claims.role === "QA")
+    ) {
       setIsLoadingData(true);
       fetchWorkerData(pageUserId)
         .then((data) => {
-          console.log("Debug - Data received:", data);
           setOffers(data.offers);
           setAcceptedGigs(data.acceptedGigs);
           setError(null);
@@ -126,96 +185,69 @@ export default function WorkerOffersPage() {
           setAcceptedGigs([]);
         })
         .finally(() => setIsLoadingData(false));
-    } else if (!loadingAuth && user && authUserId !== pageUserId) {
-      console.log("Debug - User not authorized for this page");
-      setError("You are not authorized to view this page. Please sign in with the correct account.");
+    } else if (
+      !loadingAuth &&
+      user &&
+      authUserId === pageUserId &&
+      !(user?.claims.role === "GIG_WORKER" || user?.claims.role === "QA")
+    ) {
+      // If user is auth'd for page, but no role, don't attempt fetch, auth useEffect handles redirect
       setIsLoadingData(false);
-      // Redirect to signin after a short delay
-      setTimeout(() => {
-        router.push(`/signin?redirect=${pathname}`);
-      }, 2000);
-    } else if (!loadingAuth && !user) {
-      console.log("Debug - No user authenticated");
-      setError("Please sign in to view this page.");
+      setOffers([]);
+      setAcceptedGigs([]);
+      setError(
+        "Access denied: You do not have the required role to view offers."
+      ); // Optional: set an error message
+    } else if (!loadingAuth && (!user || authUserId !== pageUserId)) {
+      // If not authenticated or not authorized for this page, ensure loading is false and data is clear
       setIsLoadingData(false);
-      // Redirect to signin after a short delay
-      setTimeout(() => {
-        router.push(`/signin?redirect=${pathname}`);
-      }, 2000);
+      setOffers([]);
+      setAcceptedGigs([]);
+      // Error message or redirect is handled by the primary auth useEffect
     }
   }, [user, loadingAuth, authUserId, pageUserId, lastRoleUsed]);
 
-  const handleAcceptOffer = async (offerId: string) => {
-    if (!uid) {
-      console.error("User not authenticated");
-      return;
-    }
-
-    console.log("Debug - handleAcceptOffer called with:", { offerId, uid, authUserId, pageUserId });
-    
+  const handleAcceptOffer = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    offerId: string
+  ) => {
+    e.stopPropagation();
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
     console.log("Accepting offer:", offerId);
-    
+    // TODO: API call to POST /api/gigs/offers/{offerId}/accept
     try {
-      console.log("Debug - About to call acceptGigOffer with:", { gigId: offerId, userId: uid });
-      
-      // Use the Firebase UID directly, not the page user ID
-      const result = await acceptGigOffer({ gigId: offerId, userId: uid });
-      
-      console.log("Debug - acceptGigOffer result:", result);
-      
-      if (result.error) {
-        console.error("Debug - Server returned error:", result.error);
-        throw new Error(result.error);
-      }
-
-      // On success: remove from offers list and add to accepted gigs
-      setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
-      // Find the accepted offer to add to accepted gigs
-      const acceptedOffer = offers.find(o => o.id === offerId);
-      if (acceptedOffer) {
-        const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
-        setAcceptedGigs((prev) => [...prev, acceptedGig]);
-      }
-
-      // Show success message (you can add toast here)
-      console.log("Offer accepted successfully!");
-      
-      // Optionally navigate to the accepted gig details
-      // router.push(`/user/${uid}/worker/gigs/${offerId}`);
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API
+      // On success from API:
+      setOffers((prev) => prev.filter((o) => o.id !== offerId)); // Remove from list
+      // Show success toast/message: "Offer accepted! Added to your calendar."
+      // router.push(`/user/${authUserId}/worker/gigs/${acceptedGigId}`); // Navigate to accepted gig details
     } catch (err) {
       console.error("Error accepting offer:", err);
-      // Show error message (you can add toast here)
+      // Show error toast/message
     } finally {
       setProcessingOfferId(null);
       setProcessingAction(null);
     }
   };
 
-  const handleDeclineOffer = async (offerId: string) => {
-    if (!uid) {
-      console.error("User not authenticated");
-      return;
-    }
-
+  const handleDeclineOffer = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    offerId: string
+  ) => {
+    e.stopPropagation();
     setProcessingOfferId(offerId);
     setProcessingAction("decline");
     console.log("Declining offer:", offerId);
-    
+    // TODO: API call to POST /api/gigs/offers/{offerId}/decline
     try {
-      // For declining, we can just remove it from the offers list
-      // since the worker is not assigned to the gig yet
-      setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
-      // Show success message (you can add toast here)
-      console.log("Offer declined successfully!");
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API
+      // On success from API:
+      setOffers((prev) => prev.filter((o) => o.id !== offerId)); // Remove from list
+      // Show success toast/message: "Offer declined."
     } catch (err) {
       console.error("Error declining offer:", err);
-      // Show error message (you can add toast here)
+      // Show error toast/message
     } finally {
       setProcessingOfferId(null);
       setProcessingAction(null);
@@ -223,53 +255,39 @@ export default function WorkerOffersPage() {
   };
 
   const handleViewDetails = (offerId: string) => {
-    const offer = offers.find(o => o.id === offerId);
-    if (offer) {
-      setSelectedGig(offer);
-      setIsModalOpen(true);
-    }
+    // const offer = offers.find(o => o.id === offerId);
+    router.push(`/user/${pageUserId}/worker/gigs/${offerId}`); // Navigate to offer details page
+    // if (offer?.fullDescriptionLink) {
+    //   router.push(offer.fullDescriptionLink);
+    // } else {
+    //   alert("Full details view not available for this offer yet.");
+    //   // Or open a modal with more info if data is present in offer object
+    // }
   };
   const handleGoToHome = () => {
     router.push(`/user/${pageUserId}/worker`);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedGig(null);
-  };
-
-  const handleModalAccept = (gigId: string) => {
-    // Find the offer and accept it
-    const offer = offers.find(o => o.id === gigId);
-    if (offer) {
-      handleAcceptOffer(gigId);
-      handleModalClose();
-    }
-  };
-
-  const handleModalDecline = (gigId: string) => {
-    // Find the offer and decline it
-    const offer = offers.find(o => o.id === gigId);
-    if (offer) {
-      handleDeclineOffer(gigId);
-      handleModalClose();
-    }
-  };
-
-
+  if (!user || (user?.uid && user.uid !== pageUserId)) {
+    // Use isLoading and user?.uid
+    return (
+      <div className={styles.loadingContainer}>
+        <Loader2 className="animate-spin" size={32} /> Loading...
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
-      {" "}
-      {/* Use styles */}
+      <ScreenHeaderWithBack title="Gig Offers" onBackClick={() => router.back()} />
       <div className={styles.pageWrapper}>
         {" "}
         {/* Use styles */}
         <div className={styles.infoBanner}>
           {" "}
           {/* Use styles */}
-          <Logo width={70} height={70} />
-          {/* <p>Accept these gigs within the time shown or we will offer them to someone else!</p> */}
+
+          {/* <p className={styles.infoText}>Accept these gigs within the time shown or we will offer them to someone else!</p> */}
           {uid && (
             <AiSuggestionBanner
               suggestions={aiSuggestions}
@@ -285,23 +303,9 @@ export default function WorkerOffersPage() {
             />
           )}
         </div>
-        <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Gig Offers</h1>
-          <button 
-            onClick={() => router.push(`/user/${pageUserId}/worker/calendar`)}
-            className={styles.calendarNavButton}
-            title="View Calendar"
-          >
-            <Calendar size={24} />
-            <span>Calendar</span>
-          </button>
-        </div>
         {isLoadingData ? ( // Use renamed loading state
           <div className={styles.loadingContainer}>
-            <div className={styles.loadingContent}>
-              <Loader2 className={styles.loadingSpinner} size={32} />
-              <p className={styles.loadingText}>Loading offers...</p>
-            </div>
+            <Loader2 className="animate-spin" size={28} /> Loading offers...
           </div> // Use styles
         ) : error ? (
           <div className={styles.emptyState}>{error}</div> // Use styles
@@ -335,8 +339,8 @@ export default function WorkerOffersPage() {
                     <GigOfferCard
                       key={offer.id}
                       offer={offer}
-                      onAccept={(offerId: string) => handleAcceptOffer(offerId)}
-                      onDecline={(offerId: string) => handleDeclineOffer(offerId)}
+                      onAccept={handleAcceptOffer}
+                      onDecline={handleDeclineOffer}
                       onViewDetails={handleViewDetails}
                       isProcessingAccept={
                         processingOfferId === offer.id &&
@@ -390,17 +394,6 @@ export default function WorkerOffersPage() {
           </Link>
         </footer>
       </div>
-
-      {/* Gig Details Modal */}
-      <GigDetailsModal
-        gig={selectedGig}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onAccept={handleModalAccept}
-        onDecline={handleModalDecline}
-        isProcessingAccept={processingAction === "accept"}
-        isProcessingDecline={processingAction === "decline"}
-      />
     </div>
   );
 }

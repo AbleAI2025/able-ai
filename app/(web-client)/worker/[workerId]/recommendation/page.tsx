@@ -3,13 +3,14 @@
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
 import InputField from '@/app/components/form/InputField'; // Reusing shared InputField
 import { Star, Send, Loader2 } from 'lucide-react'; // Lucide icons
 
 import styles from './RecommendationPage.module.css';
 import Logo from '@/app/components/brand/Logo';
+import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
 
 interface RecommendationFormData {
   recommendationText: string;
@@ -34,6 +35,7 @@ async function getWorkerDetails(workerId: string): Promise<{ name: string; prima
 export default function PublicRecommendationPage() {
   const params = useParams();
   const workerToRecommendId = params.workerId as string;
+  const router = useRouter();
 
   const [workerDetails, setWorkerDetails] = useState<{ name: string; primarySkill: string } | null>(null);
   const [isLoadingWorker, setIsLoadingWorker] = useState(true);
@@ -132,11 +134,12 @@ export default function PublicRecommendationPage() {
 
   return (
     <div className={styles.container}>
+      <ScreenHeaderWithBack title="Recommendation" onBackClick={() => router.back()} />
       <div className={styles.pageWrapper}>
-        <header className={styles.title}>
+        {/* <header className={styles.title}>
           <Star className={styles.starIcon} />
-          <span>Recommendation for {workerDetails.name}</span>
-        </header>
+          <span>Recommendation for {workerDetails.name}</span> */}
+        {/* </header> */}
 
         <div className={styles.recommendationCard}>
           <p className={styles.prompt}>
@@ -205,12 +208,12 @@ export default function PublicRecommendationPage() {
           </form>
         </div>
 
-        <div className={styles.botMessageContainer}>
+        {/* <div className={styles.botMessageContainer}>
           <Logo width={60} height={60} />
           <p className={styles.botText}>
             Hi! I am Able AI agent - please let me know if you have any gig work needs or would like to add a skills profile to our platform
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useState, useEffect, FormEvent } from "react";
@@ -8,21 +10,22 @@ import {
   signOut as firebaseSignOut,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  sendEmailVerification,
 } from "firebase/auth";
 import InputField from "@/app/components/form/InputField";
 import styles2 from "@/app/components/shared/AiSuggestionBanner.module.css";
+
 import styles from "./SettingsPage.module.css";
 import {
   Shield,
   LogOut,
   Save,
   CircleMinus,
-  CheckCircle,
   AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
+import { authClient } from "@/lib/firebase/clientApp";
 import { createAccountLink } from "@/app/actions/stripe/create-account-link";
 import { createPortalSession } from "@/app/actions/stripe/create-portal-session";
 import { FirebaseError } from "firebase/app";
@@ -30,10 +33,11 @@ import SwitchControl from "@/app/components/shared/SwitchControl";
 import Logo from "@/app/components/brand/Logo";
 import { toast } from "sonner";
 import { getProfileInfoUserAction, updateNotificationEmailAction, updateNotificationSmsAction, updateProfileVisibilityAction, updateUserProfileAction } from "@/actions/user/user";
+import { useFirebase } from "@/context/FirebaseContext";
 import StripeModal from "@/app/components/settings/stripeModal";
 import StripeElementsProvider from "@/lib/stripe/StripeElementsProvider";
 import { FlowStep, UserRole, UserSettingsData } from "@/app/types/SettingsTypes";
-import { authClient } from "@/lib/firebase/clientApp";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -51,8 +55,7 @@ export default function SettingsPage() {
 
   // Delete Account related states
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Privacy Settings related states
   const [profileVisibility, setProfileVisibility] = useState(false);
@@ -73,7 +76,7 @@ export default function SettingsPage() {
   const [emailGigUpdates, setEmailGigUpdates] = useState(false);
   const [emailPlatformAnnouncements, setEmailPlatformAnnouncements] =
     useState(false);
-    
+  const { authClient } = useFirebase();
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -139,7 +142,7 @@ export default function SettingsPage() {
   // Fetch user settings from backend API
   useEffect(() => {
     if (user) {
-      // authUserId is now derived from user?.uid
+      console.log(user, "user");
       setIsLoadingSettings(true);
       // Replace with your actual API call
       fetchSettings();
@@ -267,20 +270,6 @@ export default function SettingsPage() {
   };
 
   // Stripe Connect Onboarding
-      const handleResendVerification = async () => {
-    if (!user) return;
-    setIsResendingEmail(true);
-    try {
-      await sendEmailVerification(user);
-      toast.success("Verification email sent! Please check your inbox.");
-    } catch (error) {
-      toast.error("Failed to send verification email. Please try again later.");
-      console.error("Error resending verification email:", error);
-    } finally {
-      setIsResendingEmail(false);
-    }
-  };
-
   const handleStripeConnect = async () => {
     if (!user) return;
 
@@ -415,7 +404,7 @@ export default function SettingsPage() {
     return <Loader />;
   }
 
-  if (!user || !userSettings) {
+  if (!user) {
     return (
       <div className={styles.loadingContainer}>
         Unable to load settings. Please ensure you are logged in.
@@ -426,33 +415,9 @@ export default function SettingsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        <ScreenHeaderWithBack title="Settings" onBackClick={() => router.back()} />
         <div className={styles.pageWrapper}>
-          <header className={styles.pageHeader}>
-                        <h1>Settings</h1>
-
-            {/* Email Verification Section */}
-            {user && !user.emailVerified && (
-              <div className={styles.verificationSection}>
-                <div className={styles.verificationHeader}>
-                  <AlertTriangle className={styles.warningIcon} />
-                  <h2 className={styles.sectionTitle}>Verify Your Email Address</h2>
-                </div>
-                <p className={styles.verificationText}>
-                  To secure your account and access all features, please verify your email address. A verification link has been sent to <strong>{user.email}</strong>.
-                </p>
-                <button 
-                  onClick={handleResendVerification}
-                  className={styles.resendButton}
-                  disabled={isResendingEmail}
-                >
-                  {isResendingEmail ? 'Sending...' : 'Resend Verification Email'}
-                </button>
-              </div>
-            )}
-            <p>Manage your account preferences and settings</p>{" "}
-            {/* Added descriptive text */}
-          </header>
-
+          <p className={styles.pageDescription}>Manage your account preferences and settings</p>
           {error && <p className={styles.errorMessage}>{error}</p>}
           {successMessage && (
             <p className={styles.successMessage}>{successMessage}</p>
@@ -680,7 +645,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Logo width={60} height={60} />
             <div
               className={`${styles2.suggestionBanner} ${styles2.suggestionTextContainer}`}
@@ -692,7 +657,7 @@ export default function SettingsPage() {
                 How can i help?
               </p>
             </div>
-          </div>
+          </div> */}
           <section className={styles.bottomNavSection}>
             <div className={styles.bottomNav}>
               <button onClick={handleLogout} className={styles.bottomNavLink}>

@@ -92,7 +92,6 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
-import { updateVideoUrlProfileAction } from "@/actions/user/gig-worker-profile";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
@@ -106,9 +105,6 @@ const requiredFields: RequiredField[] = [
   { name: "videoIntro", type: "video", defaultPrompt: "Record a short video introduction to help clients get to know you!" },
   { name: "references", type: "text", placeholder: "Provide your references...", defaultPrompt: "Do you have any references or testimonials?", rows: 3 },
 ];
-
-// Currency note for users
-const CURRENCY_NOTE = "💡 All amounts and rates are in British Pounds (£)";
 
 // Type definitions for better type safety
 interface RequiredField {
@@ -385,7 +381,7 @@ Generate a friendly, contextual prompt for the next question. The prompt should:
 Field-specific guidance for WORKERS:
 - experience: Ask about their work history, relevant experience, or professional background as a worker
 - skills: Ask about their specific skills, certifications, or qualifications they can offer to clients
-- hourlyRate: Ask about their preferred hourly rate for their services in British Pounds (£)
+- hourlyRate: Ask about their preferred hourly rate for their services
 - location: Ask about their location with context about finding nearby gig opportunities
 - availability: Ask about when they are available to work for clients
 - time: Ask about their preferred working hours for gigs
@@ -1292,7 +1288,6 @@ Make the conversation feel natural and build on what they've already told you.`;
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            updateVideoUrlProfileAction(user.token, downloadURL);
             handleInputChange(name, downloadURL);
             handleInputSubmit(stepId, name, downloadURL);
           }).catch((error) => {
@@ -1470,8 +1465,6 @@ Make the conversation feel natural and build on what they've already told you.`;
           {error}
         </div>
       )}
-      
-
       
       {chatSteps.map((step, idx) => {
         const key = `${step.id}-${idx}`;
@@ -1896,6 +1889,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                   <button
                     style={{
                       background: isConfirming ? '#555' : 'var(--primary-color)',
+                      color: '#fff',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '8px 16px',
@@ -1925,7 +1919,8 @@ Make the conversation feel natural and build on what they've already told you.`;
               {confirmedSteps.has(step.id) && (
                 <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                   <div style={{
-                    background: 'var(--primary-color)',
+                    background: '#28a745',
+                    color: '#fff',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '8px 16px',
@@ -1995,13 +1990,13 @@ Make the conversation feel natural and build on what they've already told you.`;
                 onChange={val => handleInputChange('location', val)}
                 showConfirm={false}
                 onConfirm={() => handlePickerConfirm(step.id, 'location')}
-                role="GIG_WORKER"
               />
               {!confirmedSteps.has(step.id) && (
                 <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     style={{
                       background: isConfirming ? '#555' : 'var(--primary-color)',
+                      color: '#fff',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '8px 16px',
@@ -2031,7 +2026,8 @@ Make the conversation feel natural and build on what they've already told you.`;
               {confirmedSteps.has(step.id) && (
                 <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                   <div style={{
-                    background: 'var(--primary-color)',
+                    background: '#28a745',
+                    color: '#fff',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '8px 16px',

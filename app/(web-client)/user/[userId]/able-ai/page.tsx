@@ -1,37 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { MapPin, Clock, DollarSign, X, Calendar } from "lucide-react";
+import { MapPin, Clock, DollarSign } from "lucide-react";
 
 import ChatBotLayout from "@/app/components/onboarding/ChatBotLayout";
 import MessageBubble from "@/app/components/onboarding/MessageBubble";
 import Loader from "@/app/components/shared/Loader";
-import { useAuth } from "@/context/AuthContext";
-import { getWorkerOffers } from "@/actions/gigs/get-worker-offers";
-import pageStyles from "./AbleAIPage.module.css";
-import { useFirebase } from '@/context/FirebaseContext';
-import { geminiAIAgent } from '@/lib/firebase/ai';
-import { Schema } from '@firebase/ai';
-
-type WorkerGigOffer = {
-  id: string;
-  role: string;
-  buyerName: string;
-  locationSnippet: string;
-  dateString: string;
-  timeString: string;
-  hourlyRate: number;
-  estimatedHours?: number;
-  totalPay?: number;
-  tipsExpected?: boolean;
-  expiresAt?: string;
-  status: string;
-  fullDescriptionLink?: string;
-  gigDescription?: string;
-  notesForWorker?: string;
-};
 
 // Typing indicator component - reusing from onboarding
 const TypingIndicator: React.FC = () => (
@@ -94,45 +70,66 @@ const TypingIndicator: React.FC = () => (
   </div>
 );
 
-// Gig Card Component - Updated to use real data
+// Gig Card Component
 const GigCard: React.FC<{
-  gig: WorkerGigOffer;
-  onClick: (gig: WorkerGigOffer) => void;
-}> = ({ gig, onClick }) => (
-  <div className={pageStyles.gigCard} onClick={() => onClick(gig)}>
-    <div className={pageStyles.gigTitle}>{gig.role}</div>
+  title: string;
+  location: string;
+  price: number;
+  date: string;
+  description: string;
+}> = ({ title, location, price, date, description }) => (
+  <div className={pageStyles.gigCard}>
+    <div className={pageStyles.gigTitle}>{title}</div>
     <div className={pageStyles.gigDetails}>
       <div className={pageStyles.gigDetail}>
         <MapPin className={pageStyles.gigIcon} />
-        <span>{gig.locationSnippet}</span>
+        <span>{location}</span>
       </div>
       <div className={pageStyles.gigDetail}>
         <DollarSign className={pageStyles.gigIcon} />
-        <span>£{gig.hourlyRate}/hour</span>
+        <span>£{price}/hour</span>
       </div>
       <div className={pageStyles.gigDetail}>
-        <Calendar className={pageStyles.gigIcon} />
-        <span>{gig.dateString}</span>
+        <Clock className={pageStyles.gigIcon} />
+        <span>{date}</span>
       </div>
     </div>
-    {gig.gigDescription && (
-      <div className={pageStyles.gigDescription}>{gig.gigDescription}</div>
-    )}
+    <div className={pageStyles.gigDescription}>{description}</div>
   </div>
 );
+
+import pageStyles from "./AbleAIPage.module.css";
+import { useAuth } from "@/context/AuthContext";
+import { useFirebase } from '@/context/FirebaseContext';
+import { geminiAIAgent } from '@/lib/firebase/ai';
+import { Schema } from '@firebase/ai';
 
 type ChatStep = {
   id: number;
   type: "bot" | "user" | "typing";
   content?: string;
   isNew?: boolean;
-  gigs?: WorkerGigOffer[];
+  gigs?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    location: string;
+    price: number;
+    date: string;
+  }>;
 };
 
 interface AIResponse {
   response: string;
   hasGigs?: boolean;
-  gigs?: WorkerGigOffer[];
+  gigs?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    location: string;
+    price: number;
+    date: string;
+  }>;
   needsLiveAgent?: boolean;
 }
 
@@ -140,16 +137,8 @@ export default function AbleAIPage() {
   const { user, loading: loadingAuth } = useAuth();
   const { ai } = useFirebase();
   const router = useRouter();
-  const params = useParams();
-  const pageUserId = (params as Record<string, string | string[]>)?.userId;
-  const resolvedUserId = Array.isArray(pageUserId) ? pageUserId[0] : pageUserId;
-  
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const endOfChatRef = useRef<HTMLDivElement>(null);
-  
-  // State for modal
-  const [selectedGig, setSelectedGig] = useState<WorkerGigOffer | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [chatSteps, setChatSteps] = useState<ChatStep[]>([{
     id: 1,
@@ -164,39 +153,6 @@ export default function AbleAIPage() {
   const [escalated, setEscalated] = useState<boolean>(false);
 
   const SUPPORT_EMAIL = 'support@ableai.com';
-
-  // Fetch gigs from database - only when needed
-  const fetchGigsForUser = async () => {
-    if (!user?.uid) return null;
-    
-    try {
-      const result = await getWorkerOffers(user.uid);
-      
-      if (result.success && result.data) {
-        // Get first 3 gigs (offers first, then accepted)
-        const allGigs = [...result.data.offers, ...result.data.acceptedGigs];
-        return allGigs.slice(0, 3);
-      }
-    } catch (error) {
-      console.error('Error fetching gigs:', error);
-    }
-    
-    return null;
-  };
-
-  // Handle gig click
-  const handleGigClick = (gig: WorkerGigOffer) => {
-    setSelectedGig(gig);
-    setIsModalOpen(true);
-  };
-
-  // Handle go to gig offers
-  const handleGoToGigOffers = () => {
-    if (resolvedUserId) {
-      router.push(`/user/${resolvedUserId}/worker/offers`);
-    }
-    setIsModalOpen(false);
-  };
 
   // AI response handler
   const handleAIResponse = useCallback(async (userMessage: string) => {
@@ -242,15 +198,15 @@ User message: "${userMessage}"
 
 Please respond appropriately based on the user's request:
 
-1. If they're asking about available gigs, jobs, or work opportunities, set hasGigs to true and I will fetch real gigs from the database
-2. If they need help with the platform, provide helpful guidance (set hasGigs to false)
+1. If they're asking about available gigs, search the database and provide relevant gigs
+2. If they need help with the platform, provide helpful guidance
 3. If they request a live agent, set needsLiveAgent to true
 4. Be friendly, helpful, and professional
 
-IMPORTANT: Only set hasGigs to true if the user is specifically asking about available gigs, jobs, or work opportunities. For general questions about the platform, set hasGigs to false.
-
+For gigs, include relevant details like title, description, location, price, and date.
 For platform help, provide clear, actionable advice.
-For gig requests, provide a helpful response and set hasGigs to true.`;
+
+Respond with a helpful message and include any relevant gigs if applicable.`;
 
       const result = await geminiAIAgent(
         "gemini-2.0-flash",
@@ -264,26 +220,9 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
 
       if (result.ok && result.data) {
         const aiResponse = result.data as AIResponse;
-        console.log('AI Response:', aiResponse);
-        console.log('hasGigs:', aiResponse.hasGigs);
         
         // Remove typing indicator and add AI response
-        setTimeout(async () => {
-          // If gigs are requested, fetch them first
-          let gigsToShow: WorkerGigOffer[] | undefined;
-          if (aiResponse.hasGigs) {
-            console.log('AI requested gigs, fetching from database...');
-            try {
-              const fetchedGigs = await fetchGigsForUser();
-              console.log('Fetched gigs:', fetchedGigs);
-              gigsToShow = fetchedGigs || undefined;
-            } catch (error) {
-              console.error('Error fetching gigs:', error);
-            }
-          } else {
-            console.log('AI did not request gigs');
-          }
-          
+        setTimeout(() => {
           setChatSteps(prev => {
             const filtered = prev.filter(s => s.type !== 'typing');
             
@@ -294,32 +233,28 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
               responseContent += '\n\n*Note: For more complex issues, you can request a live agent.*';
               // TODO: Implement live agent redirect logic here
             }
-            
-            const newMessage = {
-              id: Date.now() + 1,
-              type: "bot" as const,
+
+            const newMessage: ChatStep = {
+              id: Date.now() + 2,
+              type: "bot",
               content: responseContent,
-              gigs: gigsToShow,
+              gigs: aiResponse.gigs,
               isNew: true,
             };
+
+            const next = [
+              ...filtered,
+              newMessage,
+            ];
 
             // After any AI response, show feedback prompt unless escalated
             setFeedbackTargetId(newMessage.id);
             setFeedbackPending(true);
             setEscalated(false);
 
-            return [
-              ...filtered,
-              newMessage,
-            ];
+            return next;
           });
-          
-          // After any AI response, show feedback prompt unless escalated
-          const newStepId = Date.now() + 1;
-          setFeedbackTargetId(newStepId);
-          setFeedbackPending(true);
-          setEscalated(false);
-        }, 1000);
+        }, 700);
       } else {
         throw new Error('Failed to get AI response');
       }
@@ -541,8 +476,11 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
                   {step.gigs.map((gig, gigIndex) => (
                     <GigCard
                       key={gig.id || gigIndex}
-                      gig={gig}
-                      onClick={handleGigClick}
+                      title={gig.title}
+                      location={gig.location}
+                      price={gig.price}
+                      date={gig.date}
+                      description={gig.description}
                     />
                   ))}
                 </div>
@@ -605,68 +543,6 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
       })}
       
       <div ref={endOfChatRef} />
-      
-      {/* Gig Detail Modal */}
-      {isModalOpen && selectedGig && (
-        <div className={pageStyles.modalOverlay} onClick={() => setIsModalOpen(false)}>
-          <div className={pageStyles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={pageStyles.modalHeader}>
-              <h3>{selectedGig.role}</h3>
-              <button 
-                className={pageStyles.closeButton}
-                onClick={() => setIsModalOpen(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className={pageStyles.modalBody}>
-              <div className={pageStyles.modalGigDetails}>
-                <div className={pageStyles.modalGigDetail}>
-                  <MapPin size={16} />
-                  <span>{selectedGig.locationSnippet}</span>
-                </div>
-                <div className={pageStyles.modalGigDetail}>
-                  <Calendar size={16} />
-                  <span>{selectedGig.dateString}</span>
-                </div>
-                <div className={pageStyles.modalGigDetail}>
-                  <Clock size={16} />
-                  <span>{selectedGig.timeString}</span>
-                </div>
-                <div className={pageStyles.modalGigDetail}>
-                  <DollarSign size={16} />
-                  <span>£{selectedGig.hourlyRate}/hr</span>
-                </div>
-                {selectedGig.estimatedHours && (
-                  <div className={pageStyles.modalGigDetail}>
-                    <span>Total: £{selectedGig.totalPay} ({selectedGig.estimatedHours}h)</span>
-                  </div>
-                )}
-              </div>
-              {selectedGig.gigDescription && (
-                <div className={pageStyles.modalDescription}>
-                  <h4>Description</h4>
-                  <p>{selectedGig.gigDescription}</p>
-                </div>
-              )}
-              {selectedGig.notesForWorker && (
-                <div className={pageStyles.modalNotes}>
-                  <h4>Notes for Worker</h4>
-                  <p>{selectedGig.notesForWorker}</p>
-                </div>
-              )}
-            </div>
-            <div className={pageStyles.modalFooter}>
-              <button 
-                className={pageStyles.goToOffersButton}
-                onClick={handleGoToGigOffers}
-              >
-                Go to Gig Offers
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </ChatBotLayout>
   );
 }

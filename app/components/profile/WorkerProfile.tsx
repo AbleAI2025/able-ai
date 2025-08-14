@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 // --- SHARED & HELPER COMPONENTS ---
+import Avatar from "@/app/components/shared/Avatar";
 import ContentCard from "@/app/components/shared/ContentCard";
 import SkillsDisplayTable from "@/app/components/profile/SkillsDisplayTable";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
@@ -18,23 +19,9 @@ import {
   ThumbsUp,
   MessageSquare,
 } from "lucide-react";
-import {
-  getPrivateWorkerProfileAction,
-  updateVideoUrlProfileAction,
-} from "@/actions/user/gig-worker-profile";
-import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
-import { firebaseApp } from "@/lib/firebase/clientApp";
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
 
 import PublicWorkerProfile, { Review } from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
-import { useCallback, useState } from "react";
-import { toast } from "sonner";
 
 const WorkerProfile = ({
   workerProfile,
@@ -43,164 +30,22 @@ const WorkerProfile = ({
   handleSkillDetails, // Optional handler for skill details
 }: {
   workerProfile: PublicWorkerProfile;
+  isSelfView?: boolean;
   handleAddSkill?: () => void;
   handleSkillDetails: (id: string) => void; // Now optional
-  fetchUserProfile: (id: string) => void;
-  userId?: string;
-  isSelfView: boolean;
 }) => {
   const { user } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [isEditingVideo, setIsEditingVideo] = useState(false);
-
-  const handleVideoUpload = useCallback(
-    async (file: Blob) => {
-      if (!user) {
-        console.error("Missing required parameters for video upload");
-        setError("Failed to upload video. Please try again.");
-        return;
-      }
-
-      if (!file || file.size === 0) {
-        console.error("Invalid file for video upload");
-        setError("Invalid video file. Please try again.");
-        return;
-      }
-
-      // Check file size (limit to 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
-        setError("Video file too large. Please use a file smaller than 50MB.");
-        return;
-      }
-
-      try {
-        const filePath = `workers/${
-          user.uid
-        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
-        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
-        const uploadTask = uploadBytesResumable(fileStorageRef, file);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // Progress handling if needed
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            setError("Video upload failed. Please try again.");
-          },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {
-                updateVideoUrlProfileAction(downloadURL, user.token);
-                toast.success("Video upload successfully");
-                getPrivateWorkerProfileAction(user.token);
-              })
-              .catch((error) => {
-                console.error("Failed to get download URL:", error);
-                setError("Failed to get video URL. Please try again.");
-              });
-          }
-        );
-      } catch (error) {
-        console.error("Video upload error:", error);
-        setError("Failed to upload video. Please try again.");
-      }
-    },
-    [user]
-  );
   return (
     <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
       <div className={styles.profileHeaderImageSection}>
         <div className={styles.profileImageVideo}>
-          {!workerProfile?.videoUrl ? (
-            isSelfView ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <h3>Please, introduce yourself</h3>
-                <VideoRecorderBubble
-                  key={1}
-                  onVideoRecorded={handleVideoUpload}
-                />
-              </div>
-            ) : (
-              <p
-                style={{
-                  textAlign: "center",
-                  fontStyle: "italic",
-                  color: "#888",
-                }}
-              >
-                User presentation not exist
-              </p>
-            )
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              {/* Video with link */}
-              <Link
-                href={workerProfile.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: "inline-block", textDecoration: "none" }}
-              >
-                <video
-                  width="180"
-                  height="180"
-                  style={{ borderRadius: "8px", objectFit: "cover" }}
-                  preload="metadata"
-                  muted
-                  poster="/video-placeholder.jpg"
-                >
-                  <source
-                    src={workerProfile.videoUrl + "#t=0.1"}
-                    type="video/webm"
-                  />
-                </video>
-              </Link>
-
-              {/* Record video link */}
-              {isSelfView && (
-                <div style={{ marginTop: "8px" }}>
-                  <button
-                    onClick={() => setIsEditingVideo(true)}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#0070f3",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit video
-                  </button>
-                </div>
-              )}
-
-              {/* Show video recorder */}
-              {isEditingVideo && (
-                <div style={{ marginTop: "12px" }}>
-                  <VideoRecorderBubble
-                    key={2}
-                    onVideoRecorded={(video) => {
-                      handleVideoUpload(video);
-                      setIsEditingVideo(false);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+          <Avatar
+            src={"/default-avatar.png"}
+            alt={`${user?.displayName}'s profile`}
+            width={180}
+            height={169}
+          />
 
           {/* Add play icon if it's a video */}
         </div>
@@ -215,7 +60,7 @@ const WorkerProfile = ({
             />
           )}
           <div className={styles.locationShareContainer}>
-            {workerProfile && workerProfile.location && (
+            {workerProfile && workerProfile.location &&  (
               <div className={styles.locationInfo}>
                 <MapPin size={16} color="#ffffff" className={styles.mapPin} />
                 <span>{workerProfile.location}</span>
@@ -224,11 +69,7 @@ const WorkerProfile = ({
             <button
               className={styles.shareProfileButton}
               aria-label="Share profile"
-              onClick={() =>
-                alert(
-                  `${window.location.origin}/worker/${workerProfile.id}/profile`
-                )
-              }
+              onClick={() => alert("Share functionality coming soon!")}
             >
               <Share2 size={33} color="#ffffff" />
             </button>
@@ -316,6 +157,7 @@ const WorkerProfile = ({
                   ))}
                 </div>
               </div>
+              // </ContentCard>
             )}
             <div>
               <h3 className={styles.contentTitle}>Feedbacks:</h3>
@@ -363,9 +205,7 @@ const WorkerProfile = ({
 
         {/* Bio Text (if used) */}
         {workerProfile.fullBio && (
-          <ContentCard
-            title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}
-          >
+         <ContentCard title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}>
             <p className={styles.bioText}>{workerProfile.fullBio}</p>
           </ContentCard>
         )}

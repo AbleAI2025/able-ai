@@ -71,11 +71,16 @@ const BuyerCalendarPage = () => {
     const fetchEvents = async () => {
       if (!user) return;
 
-      // Use real DB-backed events so newly created gigs appear
-      const isViewQA = false;
-      const res = await getCalendarEvents({ userId: user.uid, role: 'buyer', isViewQA });
-      if (res.error) throw new Error(res.error);
-      const source = res.events as CalendarEvent[];
+      // Prefer explicit buyer mock on client when integrating
+      const isViewQA = true;
+      let source: CalendarEvent[];
+      if (isViewQA) {
+        source = BUYER_MOCK_EVENTS;
+      } else {
+        const res = await getCalendarEvents({ userId: user.uid, role: 'buyer', isViewQA });
+        if (res.error) throw new Error(res.error);
+        source = res.events as CalendarEvent[];
+      }
 
       const parsed = source.map((event: CalendarEvent) => ({ ...event, start: new Date(event.start), end: new Date(event.end) }));
 
@@ -157,10 +162,9 @@ const BuyerCalendarPage = () => {
           onNavigate={setDate}
           onSelectEvent={handleEventClick}
           userRole="buyer"
-          activeFilter={activeFilter}
           components={{
             event: (({ event }: { event: CalendarEvent; title: string }) => (
-              <CalendarEventComponent event={event} userRole="buyer" view={view} activeFilter={activeFilter} />
+              <CalendarEventComponent event={event} userRole="buyer" view={view} />
             )) as React.ComponentType<unknown>,
           }}
           hideToolbar={true}

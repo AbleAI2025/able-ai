@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -14,7 +14,6 @@ import Loader from "@/app/components/shared/Loader";
 
 import pageStyles from "./page.module.css";
 import { useAuth } from "@/context/AuthContext";
-import { createGig } from "@/actions/gigs/create-gig";
 import { StepInputConfig, FormInputType } from "@/app/types/form";
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { useFirebase } from '@/context/FirebaseContext';
@@ -181,26 +180,15 @@ const baseInitialSteps: OnboardingStep[] = [
   },
 ];
 
-// Define required fields and their configs for buyer gig creation
-const requiredFields: RequiredField[] = [
-  { name: "gigDescription", type: "text", placeholder: "e.g., Bartender for a wedding reception", defaultPrompt: "Tell me about yourself and what gig or gigs you need filling!", rows: 3 },
-  { name: "additionalInstructions", type: "text", placeholder: "e.g., Cocktail making experience would be ideal", defaultPrompt: "Do you need any special skills or do you have instructions for your hire?", rows: 3 },
-  { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "How much would you like to pay per hour?" },
-  { name: "gigLocation", type: "location", defaultPrompt: "Where is the gig located?" },
-  { name: "gigDate", type: "date", defaultPrompt: "What date is the gig?" },
+// Define required fields and their configs
+const requiredFields = [
+  { name: "gigDescription", type: "text", placeholder: "Tell me about your gig...", defaultPrompt: "Hi! Tell me about yourself and what gig or gigs you need filling - we can assemble a team if you need one!" },
+  { name: "additionalInstructions", type: "text", placeholder: "Any specific requirements or instructions?", defaultPrompt: "Do you need any special skills or do you have instructions for your hire?", rows: 3 },
+  { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team!" },
+  { name: "gigLocation", type: "text", placeholder: "Where is the gig?", defaultPrompt: "Where is the gig? What time and day do you need someone and for how long?" },
+  { name: "gigDate", type: "date", defaultPrompt: "What is the date of the gig?" },
+  { name: "gigTime", type: "time", defaultPrompt: "What time does the gig start?" },
 ];
-
-// Currency note for users
-const CURRENCY_NOTE = "💡 All amounts and rates are in British Pounds (£)";
-
-// Type definitions for better type safety
-interface RequiredField {
-  name: string;
-  type: string;
-  placeholder?: string;
-  defaultPrompt: string;
-  rows?: number;
-}
 
 // Function to generate context-aware prompts based on gig description
 async function generateContextAwarePrompt(fieldName: string, gigDescription: string, ai: any): Promise<string> {
@@ -231,7 +219,7 @@ Generate a friendly, contextual prompt for the next question. The prompt should:
 
 Field-specific guidance:
 - additionalInstructions: Ask about specific skills, requirements, or preferences for the job
-- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone in British Pounds (£)
+- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone
 - gigLocation: Ask about location with context about finding nearby workers
 - gigDate: Ask about timing with context about availability
 - gigTime: Ask about the specific start time of the gig
@@ -297,7 +285,7 @@ Your job is to:
 - Respond in a friendly, helpful, and concise way, like the following examples:
   - "Hi! Tell me about yourself and what gig or gigs you need filling - we can assemble a team if you need one!"
   - "We have some great bartenders available. Do you need any special skills or do you have instructions for your hire?"
-  - "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team! All amounts are in British Pounds (£)"
+  - "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team!"
   - "Where is the gig? What time and day do you need someone and for how long?"
 - If the answer is clear, confirm it and move to the next logical question (e.g., ask about pay, location, date, etc.).
 - If the answer is unclear, ask for clarification.
@@ -538,13 +526,11 @@ export default function OnboardBuyerPage() {
   const [expandedSummaryFields, setExpandedSummaryFields] = useState<Record<string, boolean>>({});
   // Add state for typing animation
   const [isTyping, setIsTyping] = useState(false);
-  // Add reformulation state variables
+  // Update state to track reformulation
   const [reformulateField, setReformulateField] = useState<string | null>(null);
   const [isReformulating, setIsReformulating] = useState(false);
+  // Track which sanitized step buttons have been clicked to disable them
   const [clickedSanitizedButtons, setClickedSanitizedButtons] = useState<Set<string>>(new Set());
-  // Add error state
-  const [error, setError] = useState<string | null>(null);
-
 
   // Helper to get next required field not in formData
   function getNextRequiredField(formData: Record<string, any>) {
@@ -609,43 +595,9 @@ export default function OnboardBuyerPage() {
     }
   }
 
-  // Enhanced time parsing function that handles time ranges like "12:00-14:30"
   function parseTimeToHHMM(timeValue: any): string | null {
     try {
       if (!timeValue) return null;
-      
-      // Handle time ranges like "12:00-14:30" or "12:00 - 14:30"
-      if (typeof timeValue === 'string') {
-        const val = timeValue.trim();
-        
-        // Check for time range pattern: HH:MM-HH:MM or HH:MM - HH:MM
-        const timeRangeMatch = val.match(/^(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})$/);
-        if (timeRangeMatch) {
-          // For time ranges, return the start time (first time)
-          const hours = parseInt(timeRangeMatch[1], 10);
-          const minutes = parseInt(timeRangeMatch[2], 10);
-          if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-          }
-        }
-        
-        // Check for time range with AM/PM: "12:00 PM - 2:30 PM"
-        const timeRangeAMPM = val.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])\s*[-–]\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
-        if (timeRangeAMPM) {
-          let hours = parseInt(timeRangeAMPM[1], 10);
-          const minutes = parseInt(timeRangeAMPM[2], 10);
-          const mer = timeRangeAMPM[3]?.toLowerCase();
-          
-          if (mer === 'pm' && hours !== 12) hours += 12;
-          if (mer === 'am' && hours === 12) hours = 0;
-          
-          if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-          }
-        }
-      }
-      
-      // Original time parsing logic for single times
       if (timeValue instanceof Date) {
         const h = timeValue.getHours().toString().padStart(2, '0');
         const m = timeValue.getMinutes().toString().padStart(2, '0');
@@ -685,76 +637,6 @@ export default function OnboardBuyerPage() {
       }
     } catch {}
     return null;
-  }
-
-  // New function to extract both start and end times from time ranges
-  function parseTimeRange(timeValue: any): { startTime: string | null; endTime: string | null; duration: number | null } {
-    try {
-      if (!timeValue || typeof timeValue !== 'string') {
-        return { startTime: null, endTime: null, duration: null };
-      }
-      
-      const val = timeValue.trim();
-      
-      // Pattern: "12:00-14:30" or "12:00 - 14:30"
-      const timeRangeMatch = val.match(/^(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})$/);
-      if (timeRangeMatch) {
-        const startHours = parseInt(timeRangeMatch[1], 10);
-        const startMinutes = parseInt(timeRangeMatch[2], 10);
-        const endHours = parseInt(timeRangeMatch[3], 10);
-        const endMinutes = parseInt(timeRangeMatch[4], 10);
-        
-        if (startHours >= 0 && startHours <= 23 && startMinutes >= 0 && startMinutes <= 59 &&
-            endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
-          
-          const startTime = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
-          const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-          
-          // Calculate duration in hours
-          const startTotalMinutes = startHours * 60 + startMinutes;
-          const endTotalMinutes = endHours * 60 + endMinutes;
-          const durationHours = (endTotalMinutes - startTotalMinutes) / 60;
-          
-          return { startTime, endTime, duration: durationHours };
-        }
-      }
-      
-      // Pattern: "12:00 PM - 2:30 PM"
-      const timeRangeAMPM = val.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])\s*[-–]\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
-      if (timeRangeAMPM) {
-        let startHours = parseInt(timeRangeAMPM[1], 10);
-        const startMinutes = parseInt(timeRangeAMPM[2], 10);
-        const startMer = timeRangeAMPM[3]?.toLowerCase();
-        let endHours = parseInt(timeRangeAMPM[4], 10);
-        const endMinutes = parseInt(timeRangeAMPM[5], 10);
-        const endMer = timeRangeAMPM[6]?.toLowerCase();
-        
-        // Convert to 24-hour format
-        if (startMer === 'pm' && startHours !== 12) startHours += 12;
-        if (startMer === 'am' && startHours === 12) startHours = 0;
-        if (endMer === 'pm' && endHours !== 12) endHours += 12;
-        if (endMer === 'am' && endHours === 12) endHours = 0;
-        
-        if (startHours >= 0 && startHours <= 23 && startMinutes >= 0 && startMinutes <= 59 &&
-            endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
-          
-          const startTime = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
-          const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-          
-          // Calculate duration in hours
-          const startTotalMinutes = startHours * 60 + startMinutes;
-          const endTotalMinutes = endHours * 60 + endMinutes;
-          const durationHours = (endTotalMinutes - startTotalMinutes) / 60;
-          
-          return { startTime, endTime, duration: durationHours };
-        }
-      }
-      
-      // If no range pattern found, return null for all
-      return { startTime: null, endTime: null, duration: null };
-    } catch {
-      return { startTime: null, endTime: null, duration: null };
-    }
   }
 
   function formatTimeForDisplay(timeValue: any): string {
@@ -816,11 +698,6 @@ Validation criteria:
 
 IMPORTANT: For location fields (gigLocation), coordinate objects with lat/lng properties are ALWAYS valid and sufficient. Do not ask for additional location details if coordinates are provided.
 
-SPECIAL TIME HANDLING: For time fields (gigTime), if the user provides a time range like "12:00-14:30" or "12:00 PM - 2:30 PM":
-- Accept it as valid
-- In sanitizedValue, show the parsed information clearly: "Start: 12:00, End: 14:30, Duration: 2.5 hours"
-- This helps the user confirm the time range was understood correctly
-
 Special handling:
 - For coordinates (lat/lng): Accept any valid coordinate format like "Lat: 14.7127059, Lng: 120.9341704" or coordinate objects
 - For location objects: If the input is an object with lat/lng properties, accept it as valid location data
@@ -828,14 +705,13 @@ Special handling:
 - For text: Be lenient and accept most gig-related content
 - For dates: Accept any valid date format
 - For location fields: Accept coordinates, addresses, venue names, or any location information
-- For time fields: Accept single times (12:00, 2:30 PM) or time ranges (12:00-14:30, 12:00 PM - 2:30 PM)
 
 If validation passes, respond with:
 - isAppropriate: true
 - isGigRelated: true
 - isSufficient: true
 - clarificationPrompt: ""
-- sanitizedValue: string (cleaned version of the input, with special formatting for time ranges)
+- sanitizedValue: string (cleaned version of the input)
 
 If validation fails, respond with:
 - isAppropriate: boolean
@@ -952,7 +828,8 @@ Make the conversation feel natural and build on what they've already told you.`;
     const currentStep = chatSteps.find(s => s.id === stepId);
     const inputType = currentStep?.inputConfig?.type || 'text';
     
-    // Remove reformulation check - now handled directly for insufficient answers
+    // Check if this is a reformulation input (if reformulateField is set and matches inputName)
+    const isReformulation = reformulateField === inputName;
     
     // Add typing indicator for AI processing
     setChatSteps((prev) => [
@@ -977,44 +854,23 @@ Make the conversation feel natural and build on what they've already told you.`;
       });
       
       if (!aiResult.sufficient) {
-        // Add clarification message and re-open the same input step to collect a better answer
-        setChatSteps((prev) => {
-          const reopenedType: "input" | "calendar" | "location" =
-            currentStep?.type === 'location' ? 'location' :
-            currentStep?.type === 'calendar' ? 'calendar' :
-            'input';
-          const reopenedInputConfig = currentStep?.inputConfig ?? {
-            type: 'text',
-            name: inputName,
-            placeholder: '',
-          };
-          const nextSteps: ChatStep[] = [
-            ...prev,
-            { 
-              id: Date.now() + 2, 
-              type: 'bot', 
-              content: aiResult.clarificationPrompt!,
-              isNew: true,
-            },
-            {
-              id: Date.now() + 3,
-              type: reopenedType,
-              inputConfig: reopenedInputConfig,
-              isComplete: false,
-              isNew: true,
-            },
-          ];
-          return nextSteps;
-        });
+        // Add clarification message only - keep the original input visible
+        setChatSteps((prev) => [
+          ...prev,
+          { 
+            id: Date.now() + 2, 
+            type: 'bot', 
+            content: aiResult.clarificationPrompt,
+            isNew: true
+          }
+        ]);
         return;
       }
       
-      // Check if this is a reformulation
-      const isReformulation = reformulateField === inputName;
-      
+      // If this is a reformulation, update the form data and proceed to next field
+      // instead of showing sanitized confirmation again
       if (isReformulation) {
-        // If this is a reformulation, update the form data and proceed to next field
-        // instead of showing sanitized confirmation again
+        // Update form data with the new value
         setFormData(prev => ({ ...prev, [inputName]: aiResult.sanitized }));
         
         // Reset reformulating state and clear reformulateField
@@ -1068,7 +924,7 @@ Make the conversation feel natural and build on what they've already told you.`;
             {
               id: Date.now() + 5,
               type: "bot",
-              content: `Perfect! Here's a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
+              content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
               isNew: true,
             },
           ]);
@@ -1079,21 +935,18 @@ Make the conversation feel natural and build on what they've already told you.`;
           ...prev,
           { 
             id: Date.now() + 3, 
-            type: "sanitized",
-            fieldName: inputName,
-            sanitizedValue: aiResult.sanitized!,
+            type: 'sanitized', 
+            fieldName: inputName, 
+            sanitizedValue: aiResult.sanitized, 
             originalValue: valueToUse,
-            isNew: true,
-          },
+            isNew: true
+          }
         ]);
-        
-        // Also update formData with the validated value to preserve coordinates and other data
-        setFormData(prev => ({ ...prev, [inputName]: aiResult.sanitized }));
       }
     } catch (error) {
       console.error('AI validation error:', error);
-      // Reset reformulating state if this was a reformulation
-      if (reformulateField === inputName) {
+      // Reset reformulation state on error
+      if (isReformulation) {
         setIsReformulating(false);
         setReformulateField(null);
       }
@@ -1206,87 +1059,6 @@ Make the conversation feel natural and build on what they've already told you.`;
     }, 1000);
   }
 
-  // Handle sanitized confirmation
-  const handleSanitizedConfirm = useCallback(async (fieldName: string, sanitized: string | unknown) => {
-    try {
-      // Reset reformulating state
-      setIsReformulating(false);
-      setReformulateField(null);
-      
-      // Track clicked button
-      setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-confirm`]));
-      
-      // Update formData first
-      const updatedFormData = { ...formData, [fieldName]: sanitized };
-      setFormData(updatedFormData);
-      
-      // Mark sanitized step as complete
-      setChatSteps((prev) => prev.map((step) =>
-        step.type === "sanitized" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
-      ));
-      
-      // Find next required field using updated formData
-      const nextField = getNextRequiredField(updatedFormData);
-      
-      if (nextField) {
-        // Generate context-aware prompt
-        const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
-        
-        // Determine the step type based on the field
-        let stepType: "input" | "calendar" | "location" = "input";
-        if (nextField.name === "gigDate") {
-          stepType = "calendar";
-        } else if (nextField.name === "gigLocation") {
-          stepType = "location";
-        }
-        
-        const newInputConfig = {
-          type: nextField.type as FormInputType,
-          name: nextField.name,
-          placeholder: nextField.placeholder || nextField.defaultPrompt,
-          ...(nextField.rows && { rows: nextField.rows }),
-        };
-        
-        setChatSteps((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 2,
-            type: "bot",
-            content: contextAwarePrompt,
-            isNew: true,
-          },
-          {
-            id: Date.now() + 3,
-            type: stepType,
-            inputConfig: newInputConfig,
-            isComplete: false,
-            isNew: true,
-          },
-        ]);
-      } else {
-        // All fields completed, show summary
-        setChatSteps((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 2,
-            type: "bot",
-            content: `Perfect! Here's a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
-            isNew: true,
-          },
-        ]);
-      }
-    } catch (error) {
-      console.error('Error in sanitized confirmation:', error);
-      setError('Failed to process confirmation. Please try again.');
-    }
-  }, [formData, getNextRequiredField, ai]);
-
-  const handleSanitizedReformulate = (fieldName: string) => {
-    if (isReformulating) return; // Prevent multiple clicks
-    setReformulateField(fieldName);
-    setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-reformulate`]));
-  };
-
   // After the last input, show a summary message (optionally call AI for summary)
   // useEffect(() => {
   //   if (chatSteps.length > 0 && chatSteps[chatSteps.length - 1].type === "input" && !chatSteps[chatSteps.length - 1].isComplete) {
@@ -1302,11 +1074,199 @@ Make the conversation feel natural and build on what they've already told you.`;
 
   // Remove complex AI useEffect - no longer needed
 
-  // Remove old reformulation useEffect - now handled directly in handleInputSubmit
+  // Update sanitized confirmation effect to use AI's next question or summary
+  useEffect(() => {
+    if (reformulateField) {
+      // Clear the form data for the reformulated field
+      setFormData(prev => {
+        const newFormData = { ...prev };
+        delete newFormData[reformulateField];
+        return newFormData;
+      });
+      
+      // Find the required field config and map to StepInputConfig (exclude defaultPrompt)
+      const fieldConfig = requiredFields.find(f => f.name === reformulateField);
+      let inputConfig: StepInputConfig | undefined;
+      if (fieldConfig) {
+        inputConfig = {
+          name: fieldConfig.name,
+          type: fieldConfig.type as FormInputType,
+        };
+        if ('placeholder' in fieldConfig && fieldConfig.placeholder) {
+          inputConfig.placeholder = fieldConfig.placeholder as string;
+        }
+        if ('rows' in fieldConfig && fieldConfig.rows) {
+          inputConfig.rows = fieldConfig.rows as number;
+        }
+      }
+      
+      if (inputConfig) {
+        // Keep previous entries but mark sanitized step as complete and add new reformulation
+        setChatSteps(prev => {
+          // Mark the sanitized step as complete so it doesn't show buttons anymore
+          const updatedSteps = prev.map(step => 
+            step.type === "sanitized" && step.fieldName === reformulateField 
+              ? { ...step, isComplete: true }
+              : step
+          );
+          
+          // Add typing indicator
+          return [
+            ...updatedSteps,
+            {
+              id: Date.now() + 2,
+              type: "typing",
+              isNew: true,
+            },
+          ];
+        });
+        
+        // Generate a reformulation question asking for reformulated message
+        const reformulationPrompt = `Could you provide your reformulated message?`;
+        
+        setTimeout(() => {
+          setChatSteps((prev) => {
+            // Remove typing indicator and add bot message and input
+            const filtered = prev.filter(s => s.type !== 'typing');
+            return [
+              ...filtered,
+              {
+                id: Date.now() + 3,
+                type: "bot",
+                content: reformulationPrompt,
+                isNew: true,
+              },
+              {
+                id: Date.now() + 4,
+                type: "input",
+                inputConfig: inputConfig,
+                isComplete: false,
+                isNew: true,
+              },
+            ];
+          });
+        }, 700);
+      } else {
+        console.error('Field config not found for:', reformulateField);
+        setIsReformulating(false);
+      }
+    }
+  }, [reformulateField, ai]);
 
+  async function handleSanitizedConfirm(fieldName: string, sanitized: string | any) {
+    // Mark this button as clicked to disable it
+    setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-confirm`]));
+    
+    // Reset reformulation state when confirming any sanitized step
+    setIsReformulating(false);
+    setReformulateField(null);
+    
+    // Update formData first
+    const updatedFormData = { ...formData, [fieldName]: sanitized };
+    setFormData(updatedFormData);
+    
+    // Mark sanitized step as complete
+    setChatSteps((prev) => prev.map((step) =>
+      step.type === "sanitized" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
+    ));
+    
+    // Find next required field using updated formData
+    const nextField = getNextRequiredField(updatedFormData);
+    
+    if (nextField) {
+      // Generate context-aware prompt
+      // Try to get gigDescription from formData, but if not available, use the current field value as context
+      const gigDescription = updatedFormData.gigDescription || (fieldName === 'additionalInstructions' ? (typeof sanitized === 'string' ? sanitized : JSON.stringify(sanitized)) : '');
+      
+      // Add typing indicator first
+      setChatSteps((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 2,
+          type: "typing",
+          isNew: true,
+        },
+      ]);
+      
+      // Generate AI prompt
+      setTimeout(async () => {
+        const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, gigDescription, ai);
+        
+        setChatSteps((prev) => {
+          // Remove typing indicator and add bot message and input
+          const filtered = prev.filter(s => s.type !== 'typing');
+          const newInputConfig = {
+            type: nextField.type as FormInputType,
+            name: nextField.name,
+            placeholder: nextField.placeholder || nextField.defaultPrompt,
+            ...(nextField.rows && { rows: nextField.rows }),
+          };
+          
+          // Determine the step type based on the field
+          let stepType: "input" | "calendar" | "location" = "input";
+          if (nextField.name === "gigDate") {
+            stepType = "calendar";
+          } else if (nextField.name === "gigLocation") {
+            stepType = "location";
+          }
+          
+          return [
+            ...filtered,
+            {
+              id: Date.now() + 3,
+              type: "bot",
+              content: contextAwarePrompt,
+              isNew: true,
+            },
+            {
+              id: Date.now() + 4,
+              type: stepType,
+              inputConfig: newInputConfig,
+              isComplete: false,
+              isNew: true,
+            },
+          ];
+        });
+      }, 700);
+    } else {
+      // All fields collected, show summary
+      // Add typing indicator first
+      setChatSteps((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 4,
+          type: "typing",
+          isNew: true,
+        },
+      ]);
+      
+      setTimeout(() => {
+        setChatSteps((prev) => {
+          // Remove typing indicator and add summary
+          const filtered = prev.filter(s => s.type !== 'typing');
+          return [
+            ...filtered,
+            {
+              id: Date.now() + 5,
+              type: "bot",
+              content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
+              isNew: true,
+            },
+          ];
+        });
+      }, 700);
+    }
+  }
 
-
-
+  function handleSanitizedReformulate(fieldName: string) {
+    if (isReformulating) return; // Prevent multiple clicks
+    
+    // Mark this button as clicked to disable it
+    setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-reformulate`]));
+    
+    setIsReformulating(true);
+    setReformulateField(fieldName);
+  }
 
   const handleInputChange = (name: string, value: any) => {
     // Special handling for date fields to ensure only date part is stored
@@ -1355,153 +1315,26 @@ Make the conversation feel natural and build on what they've already told you.`;
   const handleFinalSubmit = async () => {
     if (!user) return; // Disable submission if not logged in
     setIsSubmitting(true);
+    const submissionData = {
+      ...formData,
+      gigLocationCoords: formData.gigLocationCoords,
+      workerName: null, // No longer needed
+      workerPrice: null, // No longer needed
+    };
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    try {
-      // Handle gigLocation conversion - if it's an object with coordinates, convert to readable string
-      let processedGigLocation: string | undefined;
-      if (formData.gigLocation) {
-        if (typeof formData.gigLocation === 'object' && formData.gigLocation !== null) {
-          const locationObj = formData.gigLocation as any;
-          if (locationObj.lat && locationObj.lng) {
-            // Convert coordinates to readable format
-            processedGigLocation = `Coordinates: ${locationObj.lat.toFixed(6)}, ${locationObj.lng.toFixed(6)}`;
-          } else if (locationObj.formatted_address) {
-            processedGigLocation = locationObj.formatted_address;
-          } else if (locationObj.address) {
-            processedGigLocation = locationObj.address;
-          } else {
-            // Fallback: try to find any meaningful string value
-            const locationKeys = Object.keys(locationObj);
-            for (const key of locationKeys) {
-              const value = locationObj[key];
-              if (typeof value === 'string' && value.trim() && value !== 'null' && value !== 'undefined') {
-                processedGigLocation = value;
-                break;
-              }
-            }
-            // If still no good value, use a descriptive message
-            if (!processedGigLocation) {
-              processedGigLocation = 'Location coordinates provided';
-            }
-          }
-        } else {
-          // It's already a string or other primitive
-          processedGigLocation = String(formData.gigLocation);
-        }
-      }
+    const contentMessage =
+      "Thanks! Your request is being processed (Mocked).";
 
-      const payload = {
-        userId: user.uid,
-        gigDescription: String(formData.gigDescription || "").trim(),
-        additionalInstructions: formData.additionalInstructions ? String(formData.additionalInstructions) : undefined,
-        hourlyRate: formData.hourlyRate ?? 0,
-        gigLocation: formData.gigLocation, // Send the original location object to preserve coordinates
-        gigDate: String(formData.gigDate || "").slice(0, 10),
-        gigTime: formData.gigTime ? String(formData.gigTime) : undefined,
-      };
+    const successMessageStep: ChatStep = {
+      id: Date.now() + 1,
+      type: "bot",
+      content: contentMessage,
+    };
 
-      const result = await createGig(payload);
-
-      if (result.status === 200 && result.gigId) {
-        const successMessageStep: ChatStep = {
-          id: Date.now() + 1,
-          type: "bot",
-          content: "Thanks! Your gig has been created.",
-        };
-        setChatSteps((prev) => [...prev, successMessageStep]);
-        // Navigate back to buyer dashboard per design
-        setTimeout(() => {
-          router.push(`/user/${user.uid}/buyer`);
-        }, 700);
-      } else {
-        const errorMessage = result.error || "Failed to create gig. Please try again.";
-        const errorStep: ChatStep = {
-          id: Date.now() + 2,
-          type: "bot",
-          content: errorMessage,
-        };
-        setChatSteps((prev) => [...prev, errorStep]);
-      }
-    } catch (e: any) {
-      const errorStep: ChatStep = {
-        id: Date.now() + 3,
-        type: "bot",
-        content: e?.message || "Unexpected error creating gig.",
-      };
-      setChatSteps((prev) => [...prev, errorStep]);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setChatSteps((prev) => [...prev, successMessageStep]);
+    setIsSubmitting(false);
   };
-
-  // Reformulate logic: when reformulateField is set, clear the field and add a new prompt/input step
-  useEffect(() => {
-    if (reformulateField) {
-      // Set reformulating state to prevent multiple clicks
-      setIsReformulating(true);
-      
-      // Clear the value for that field
-      setFormData(prev => ({ ...prev, [reformulateField]: undefined }));
-
-      // Keep previous entries but mark sanitized step as complete and add new reformulation
-      setChatSteps(prev => {
-        // Mark the sanitized step as complete so it doesn't show buttons anymore
-        const updatedSteps = prev.map(step => 
-          step.type === "sanitized" && step.fieldName === reformulateField 
-            ? { ...step, isComplete: true }
-            : step
-        );
-        
-        // Add typing indicator
-        return [
-          ...updatedSteps,
-          {
-            id: Date.now() + 1,
-            type: "typing",
-            isNew: true,
-          },
-        ];
-      });
-
-      // Generate a reformulation question asking for reformulated message
-      const reformulationPrompt = `Could you provide your reformulated message?`;
-      
-      setTimeout(() => {
-        setChatSteps(prev => {
-          const filtered = prev.filter(s => s.type !== "typing");
-          const fieldConfig = requiredFields.find(f => f.name === reformulateField);
-          
-          if (!fieldConfig) {
-            console.error('Field config not found for:', reformulateField);
-            return filtered;
-          }
-
-          return [
-            ...filtered,
-            {
-              id: Date.now() + 2,
-              type: "bot",
-              content: reformulationPrompt,
-              isNew: true,
-            },
-            {
-              id: Date.now() + 3,
-              type: fieldConfig.type === "location" ? "location" : 
-                    fieldConfig.type === "date" ? "calendar" : "input",
-              inputConfig: {
-                type: fieldConfig.type as FormInputType,
-                name: fieldConfig.name,
-                placeholder: fieldConfig.placeholder || fieldConfig.defaultPrompt,
-                rows: fieldConfig.rows,
-              },
-              isComplete: false,
-              isNew: true,
-            },
-          ];
-        });
-      }, 700);
-    }
-  }, [reformulateField]);
 
   // Auto-scroll to the bottom (Confirm button or latest message) whenever chatSteps or isTyping changes
   useEffect(() => {
@@ -1583,9 +1416,6 @@ Make the conversation feel natural and build on what they've already told you.`;
           }
         }}
       >
-
-
-
         {chatSteps.map((step, idx) => {
           const key = `step-${step.id}-${idx}`;
           
@@ -1598,107 +1428,6 @@ Make the conversation feel natural and build on what they've already told you.`;
                 senderType="user"
                 role="BUYER"
                 showAvatar={false}
-              />
-            );
-          }
-          
-          // Sanitized confirmation step
-          if (step.type === "sanitized" && step.fieldName) {
-            const sanitizedValue = step.sanitizedValue;
-            const originalValue = step.originalValue;
-            
-            // Format the display value
-            const displayValue = (() => {
-              if (typeof sanitizedValue === 'string') {
-                return sanitizedValue;
-              }
-              
-              if (typeof sanitizedValue === 'object') {
-                return JSON.stringify(sanitizedValue);
-              }
-              
-              // Handle other types
-              return String(sanitizedValue || '');
-            })();
-            
-            // Check button states
-            const confirmClicked = clickedSanitizedButtons.has(`${step.fieldName}-confirm`);
-            const reformulateClicked = clickedSanitizedButtons.has(`${step.fieldName}-reformulate`);
-            const isReformulatingThisField = reformulateField === step.fieldName;
-            const isCompleted = step.isComplete || confirmClicked || reformulateClicked;
-            
-            return (
-              <MessageBubble
-                key={key}
-                text={
-                  <div>
-                    <div style={{ marginBottom: 8, color: 'var(--primary-color)', fontWeight: 600, fontSize: '14px' }}>This is what you wanted?</div>
-                    {typeof displayValue === 'string' ? (
-                      <div style={{ marginBottom: 16, fontStyle: 'italic', color: '#e5e5e5', fontSize: '15px', lineHeight: '1.4' }}>{displayValue}</div>
-                    ) : (
-                      displayValue
-                    )}
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <button
-                        style={{ 
-                          background: isCompleted ? '#555' : 'var(--primary-color)', 
-                          color: '#fff', 
-                          border: 'none', 
-                          borderRadius: 8, 
-                          padding: '8px 16px', 
-                          fontWeight: 600, 
-                          fontSize: '14px', 
-                          cursor: isCompleted ? 'not-allowed' : 'pointer', 
-                          transition: 'background-color 0.2s',
-                          opacity: isCompleted ? 0.7 : 1
-                        }}
-                        onClick={isCompleted ? undefined : () => handleSanitizedConfirm(step.fieldName!, step.sanitizedValue!)}
-                        disabled={isCompleted}
-                        onMouseOver={(e) => {
-                          if (!isCompleted) {
-                            e.currentTarget.style.background = 'var(--primary-darker-color)';
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = isCompleted ? '#555' : 'var(--primary-color)';
-                        }}
-                      >
-                        {confirmClicked ? 'Confirmed' : 'Confirm'}
-                      </button>
-                      <button
-                        style={{ 
-                          background: isCompleted ? '#555' : 'transparent', 
-                          color: isCompleted ? '#999' : 'var(--primary-color)', 
-                          border: '1px solid var(--primary-color)', 
-                          borderRadius: 8, 
-                          padding: '8px 16px', 
-                          fontWeight: 600, 
-                          fontSize: '14px', 
-                          cursor: isCompleted ? 'not-allowed' : 'pointer', 
-                          transition: 'all 0.2s',
-                          opacity: isCompleted ? 0.7 : 1
-                        }}
-                        onClick={isCompleted ? undefined : () => handleSanitizedReformulate(step.fieldName!)}
-                        disabled={isCompleted}
-                        onMouseOver={(e) => { 
-                          if (!isCompleted) {
-                            e.currentTarget.style.background = 'var(--primary-color)'; 
-                            e.currentTarget.style.color = '#fff'; 
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = 'transparent'; 
-                          e.currentTarget.style.color = 'var(--primary-color)'; 
-                        }}
-                      >
-                        {reformulateClicked ? 'Reformulated' : (isReformulatingThisField ? 'Reformulating...' : 'Reformulate')}
-                      </button>
-                    </div>
-                  </div>
-                }
-                senderType="bot"
-                role="BUYER"
-                showAvatar={true}
               />
             );
           }
@@ -1782,12 +1511,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                           transform: 'scale(1)',
                           animation: 'pulse 2s infinite'
                         }}
-                        onClick={() => {
-                          if (!isSubmitting) {
-                            void handleFinalSubmit();
-                          }
-                        }}
-                        disabled={isSubmitting}
+                        onClick={() => router.push(`/user/${user?.uid || "this_user"}/buyer`)}
                         onMouseOver={(e) => {
                           e.currentTarget.style.transform = 'scale(1.05)';
                           e.currentTarget.style.background = 'var(--secondary-darker-color)';
@@ -1810,7 +1534,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                             }
                           }
                         `}</style>
-                        {isSubmitting ? 'Creating...' : 'Confirm & Go to Dashboard'}
+                        Confirm & Go to Dashboard
                       </button>
                     </div>
                   }
@@ -1911,7 +1635,133 @@ Make the conversation feel natural and build on what they've already told you.`;
 
 
           
-
+          // Handle sanitized step
+          if (step.type === "sanitized" && step.fieldName) {
+            // Format the sanitized value properly
+            const displayValue = (() => {
+              const sanitizedValue = step.sanitizedValue as any; // Type assertion since it can be object or string
+              
+              // Handle coordinate objects
+              if (sanitizedValue && typeof sanitizedValue === 'object' && 'lat' in sanitizedValue && 'lng' in sanitizedValue) {
+                const lat = sanitizedValue.lat;
+                const lng = sanitizedValue.lng;
+                
+                // Format coordinates with proper number handling
+                const latStr = typeof lat === 'number' ? lat.toFixed(6) : String(lat);
+                const lngStr = typeof lng === 'number' ? lng.toFixed(6) : String(lng);
+                return `Lat: ${latStr}, Lng: ${lngStr}`;
+              } 
+              
+              // Handle string that might contain coordinates
+              if (typeof sanitizedValue === 'string') {
+                // Check if it's a JSON string containing coordinates
+                try {
+                  const parsed = JSON.parse(sanitizedValue);
+                  if (parsed && typeof parsed === 'object' && 'lat' in parsed && 'lng' in parsed) {
+                    const lat = parsed.lat;
+                    const lng = parsed.lng;
+                    const latStr = typeof lat === 'number' ? lat.toFixed(6) : String(lat);
+                    const lngStr = typeof lng === 'number' ? lng.toFixed(6) : String(lng);
+                    return `Lat: ${latStr}, Lng: ${lngStr}`;
+                  }
+                } catch (e) {
+                  // Not JSON, return as string
+                }
+                return sanitizedValue;
+              }
+              
+              // Handle other objects
+              if (typeof sanitizedValue === 'object') {
+                return JSON.stringify(sanitizedValue);
+              }
+              
+              // Handle other types
+              return String(sanitizedValue || '');
+            })();
+            
+            // Check if buttons have been clicked for this field
+            const confirmClicked = clickedSanitizedButtons.has(`${step.fieldName}-confirm`);
+            const reformulateClicked = clickedSanitizedButtons.has(`${step.fieldName}-reformulate`);
+            const isReformulatingThisField = isReformulating && reformulateField === step.fieldName;
+            
+            // Determine if step is completed (either confirmed or reformulated)
+            const isCompleted = step.isComplete || confirmClicked || reformulateClicked;
+            
+            return (
+              <MessageBubble
+                key={key}
+                text={
+                  <div>
+                    <div style={{ marginBottom: 8, color: 'var(--secondary-color)', fontWeight: 600, fontSize: '14px' }}>This is what you wanted?</div>
+                    <div style={{ marginBottom: 16, fontStyle: 'italic', color: '#e5e5e5', fontSize: '15px', lineHeight: '1.4' }}>{displayValue}</div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <button
+                        style={{ 
+                          background: isCompleted ? '#555' : 'var(--secondary-color)', 
+                          color: '#fff', 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          padding: '8px 16px', 
+                          fontWeight: 600, 
+                          fontSize: '14px', 
+                          cursor: isCompleted ? 'not-allowed' : 'pointer', 
+                          transition: 'background-color 0.2s',
+                          opacity: isCompleted ? 0.7 : 1
+                        }}
+                        onClick={() => !isCompleted && handleSanitizedConfirm(step.fieldName!, step.sanitizedValue!)}
+                        disabled={isCompleted}
+                        onMouseOver={(e) => {
+                          if (!isCompleted) {
+                            e.currentTarget.style.background = 'var(--secondary-darker-color)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!isCompleted) {
+                            e.currentTarget.style.background = 'var(--secondary-color)';
+                          }
+                        }}
+                      >
+                        {confirmClicked ? 'Confirmed' : 'Confirm'}
+                      </button>
+                      <button
+                        style={{ 
+                          background: isCompleted ? '#555' : 'transparent', 
+                          color: isCompleted ? '#999' : 'var(--secondary-color)', 
+                          border: '1px solid var(--secondary-color)', 
+                          borderRadius: 8, 
+                          padding: '8px 16px', 
+                          fontWeight: 600, 
+                          fontSize: '14px', 
+                          cursor: isCompleted ? 'not-allowed' : 'pointer', 
+                          transition: 'all 0.2s',
+                          opacity: isCompleted ? 0.7 : 1
+                        }}
+                        onClick={() => !isCompleted && handleSanitizedReformulate(step.fieldName!)}
+                        disabled={isCompleted}
+                        onMouseOver={(e) => { 
+                          if (!isCompleted) {
+                            e.currentTarget.style.background = 'var(--secondary-color)'; 
+                            e.currentTarget.style.color = '#fff'; 
+                          }
+                        }}
+                        onMouseOut={(e) => { 
+                          if (!isCompleted) {
+                            e.currentTarget.style.background = 'transparent'; 
+                            e.currentTarget.style.color = 'var(--secondary-color)'; 
+                          }
+                        }}
+                      >
+                        {reformulateClicked ? 'Reformulated' : (isReformulatingThisField ? 'Reformulating...' : 'Reformulate')}
+                      </button>
+                    </div>
+                  </div>
+                }
+                senderType="bot"
+                role="BUYER"
+                showAvatar={true}
+              />
+            );
+          }
           
           // Handle calendar picker step
           if (step.type === "calendar") {
@@ -1980,6 +1830,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                       <button
                         style={{
                           background: isConfirming ? '#555' : 'var(--secondary-color)',
+                          color: '#fff',
                           border: 'none',
                           borderRadius: '8px',
                           padding: '8px 16px',
@@ -2015,7 +1866,8 @@ Make the conversation feel natural and build on what they've already told you.`;
                   {confirmedSteps.has(step.id) && (
                     <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                       <div style={{
-                        background: 'var(--secondary-color)',
+                        background: '#28a745',
+                        color: '#fff',
                         border: 'none',
                         borderRadius: '8px',
                         padding: '8px 16px',
@@ -2092,7 +1944,6 @@ Make the conversation feel natural and build on what they've already told you.`;
                         handleInputChange(step.inputConfig.name, value);
                       }
                     }}
-                    role="BUYER"
                   />
                   
                   {/* Confirm button when location is selected */}
@@ -2101,6 +1952,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                       <button
                         style={{
                           background: isConfirming ? '#555' : 'var(--secondary-color)',
+                          color: '#fff',
                           border: 'none',
                           borderRadius: '8px',
                           padding: '8px 16px',
@@ -2136,7 +1988,8 @@ Make the conversation feel natural and build on what they've already told you.`;
                   {confirmedSteps.has(step.id) && (
                     <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                       <div style={{
-                        background: 'var(--secondary-color)',
+                        background: '#28a745',
+                        color: '#fff',
                         border: 'none',
                         borderRadius: '8px',
                         padding: '8px 16px',

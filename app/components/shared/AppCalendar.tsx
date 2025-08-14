@@ -28,7 +28,6 @@ type AppCalendarProps<TEvent> = {
   hideToolbar?: boolean;
   formats?: Formats | undefined;
   userRole?: string;
-  activeFilter?: string;
 };
 
 const AppCalendar = <TEvent extends object>({
@@ -49,7 +48,6 @@ const AppCalendar = <TEvent extends object>({
     eventTimeRangeFormat: () => ''
   },
   userRole,
-  activeFilter,
 }: AppCalendarProps<TEvent>) => {
 
   const [showDayViewModal, setShowDayViewModal] = useState(false);
@@ -58,37 +56,13 @@ const AppCalendar = <TEvent extends object>({
   // No filtering - let react-big-calendar handle the layout naturally
   const filteredEvents = events;
 
-  // Event prop getter that applies dynamic colors based on event status
+  // Simple event prop getter that forces proper positioning
   const defaultEventPropGetter = (event: TEvent) => {
-    // Get event background color based on status and user role
-    const getEventBackgroundColor = (event: any) => {
-      switch (event.status) {
-        case 'ACCEPTED':
-          return userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)';
-        case 'OFFER':
-          return '#6b7280'; // Gray color for offers
-        case 'IN_PROGRESS':
-          return '#10b981'; // Emerald green
-        case 'COMPLETED':
-          return '#059669'; // Dark green
-        case 'PENDING':
-          return '#eab308'; // Yellow
-        case 'UNAVAILABLE':
-          return '#6b7280'; // Gray
-        case 'CANCELLED':
-          return '#dc2626'; // Red
-        default:
-          return '#9ca3af'; // Default: Light gray
-      }
-    };
-
-    const backgroundColor = getEventBackgroundColor(event);
-    
     const baseStyle: React.CSSProperties = {
-      backgroundColor: backgroundColor,
+      backgroundColor: '#3a3a3a',
       borderRadius: '4px',
-      color: '#ffffff', // White text for better contrast on colored backgrounds
-      border: '1px solid rgba(255, 255, 255, 0.2)',
+      color: '#e0e0e0',
+      border: '1px solid #525252',
       cursor: 'pointer',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       overflow: 'hidden',
@@ -98,17 +72,9 @@ const AppCalendar = <TEvent extends object>({
       alignItems: 'center',
       justifyContent: 'center',
       gap: '4px',
-      // Apply bold styling when "Accepted gigs" filter is active and event is accepted
-      fontWeight: (activeFilter === 'Accepted gigs' && (event as any).status === 'ACCEPTED') ? '700' : '500',
     };
 
-    // Return style with !important for background color to override CSS
-    return { 
-      style: {
-        ...baseStyle,
-        backgroundColor: backgroundColor
-      }
-    };
+    return { style: baseStyle };
   };
 
   // Custom date cell component for click-to-navigate functionality
@@ -119,13 +85,6 @@ const AppCalendar = <TEvent extends object>({
         setShowDayViewModal(true);
       }
     };
-
-    // Check if this date has any events
-    const hasEvents = filteredEvents.some(event => {
-      const eventDate = moment((event as any).start).startOf('day');
-      const cellDate = moment(props.value).startOf('day');
-      return eventDate.isSame(cellDate);
-    });
 
     return (
       <div 
@@ -143,44 +102,71 @@ const AppCalendar = <TEvent extends object>({
     // Check if we're in month view by looking at the current view prop
     const isMonthView = view === 'month';
     
-    // Determine text and icon color based on event status and user role
-    const getTextColor = () => {
-      if (props.event.status === 'ACCEPTED' && userRole === 'buyer') {
-        return '#000000'; // Black for accepted gigs in buyer view
+    // Get event background color based on status and user role (for day/agenda view)
+    const getEventBackgroundColor = (event: any) => {
+      if (event.status !== 'ACCEPTED') {
+        return '#525252'; // Grey for non-accepted events
       }
-      return '#ffffff'; // White for everything else
+      
+      // For accepted events, color depends on user role
+      return userRole === 'worker' ? 'var(--primary-color)' : 'var(--success-color)';
     };
     
-    const getIconColor = () => {
-      if (props.event.status === 'ACCEPTED' && userRole === 'buyer') {
-        return '#000000'; // Black for accepted gigs in buyer view
+    // Add data attributes to the parent rbc-event element (for month view)
+    React.useEffect(() => {
+      // Use a more reliable method to find the parent rbc-event element
+      const findParentEventElement = () => {
+        // Try multiple selectors to find the parent event element
+        const selectors = [
+          '.rbc-event',
+          `[title="${props.event.title}"]`,
+          `[data-event-id="${props.event.id}"]`
+        ];
+        
+        for (const selector of selectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            const parentEvent = element.closest('.rbc-event') || element;
+            if (parentEvent && parentEvent.classList.contains('rbc-event')) {
+              return parentEvent;
+            }
+          }
+        }
+        
+        // Fallback: find any rbc-event element
+        return document.querySelector('.rbc-event');
+      };
+      
+      const eventElement = findParentEventElement();
+      if (eventElement) {
+        eventElement.setAttribute('data-status', props.event.status || '');
+        eventElement.setAttribute('data-role', userRole || '');
+        console.log('Set data attributes:', {
+          status: props.event.status,
+          role: userRole,
+          element: eventElement
+        });
       }
-      return '#ffffff'; // White for everything else
-    };
-    
-    // Determine font weight based on filter and event status
-    const getFontWeight = () => {
-      if (activeFilter === 'Accepted gigs' && props.event.status === 'ACCEPTED') {
-        return '700'; // Bold when "Accepted gigs" filter is active
-      }
-      return '500'; // Normal weight for everything else
-    };
+    }, [props.event.status, userRole, props.event.title, props.event.id]);
     
     if (isMonthView) {
       // Month view: vertical layout with text on top, icon below
       return (
         <div className={styles.eventComponent}>
-          <span style={{ fontSize: '2.5vw', color: getTextColor(), fontWeight: getFontWeight(), whiteSpace: 'nowrap' }}>Open gig</span>
+          <span style={{ fontSize: '2.5vw', color: '#000', fontWeight: '500', whiteSpace: 'nowrap' }}>Open gig</span>
           <br />
-          <Eye size={25} color={getIconColor()} />
+          <Eye size={25} color="#888" />
         </div>
       );
     } else {
       // Day/Agenda view: horizontal layout with icon and text side by side
       return (
-        <div className={styles.eventComponentHorizontal}>
+        <div 
+          className={styles.eventComponentHorizontal} 
+          style={{ backgroundColor: getEventBackgroundColor(props.event) }}
+        >
           <Eye size={8} color="#888" />
-          <span style={{ fontSize: '1.5vw', color: getTextColor(), fontWeight: getFontWeight(), whiteSpace: 'nowrap' }}>Open gig</span>
+          <span style={{ fontSize: '1.5vw', color: '#fff', fontWeight: '500', whiteSpace: 'nowrap' }}>Open gig</span>
         </div>
       );
     }
@@ -244,7 +230,6 @@ const AppCalendar = <TEvent extends object>({
             }
           }}
           userRole={userRole || 'buyer'}
-          activeFilter={activeFilter}
         />
       </div>
     );
@@ -268,7 +253,6 @@ const AppCalendar = <TEvent extends object>({
             }
           }}
           userRole={userRole || 'buyer'}
-          activeFilter={activeFilter}
         />
       </div>
     );
@@ -323,15 +307,7 @@ const AppCalendar = <TEvent extends object>({
               <button className={styles.cancelButton} onClick={handleCloseModal}>
                 Cancel
               </button>
-              <button 
-                className={styles.confirmButton} 
-                onClick={handleNavigateToDayView}
-                style={{
-                  backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                  borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                  color: userRole === 'worker' ? '#ffffff' : '#000000'
-                }}
-              >
+              <button className={styles.confirmButton} onClick={handleNavigateToDayView}>
                 Go to Day View
               </button>
             </div>
@@ -342,4 +318,4 @@ const AppCalendar = <TEvent extends object>({
   );
 };
 
-export default AppCalendar;
+export default AppCalendar; 

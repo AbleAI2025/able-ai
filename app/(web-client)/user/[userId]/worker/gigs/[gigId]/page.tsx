@@ -8,30 +8,16 @@ import styles from './GigDetailsPage.module.css';
 import GigDetailsComponent from '@/app/components/gigs/GigDetails';
 import type GigDetails from '@/app/types/GigDetailsTypes'; // Adjust import path as needed
 import { getGigDetails } from '@/actions/gigs/get-gig-details';
-import { getWorkerOffers } from '@/actions/gigs/get-worker-offers';
 
 async function fetchWorkerGigDetails(user: User, gigId: string): Promise<GigDetails | null> {
   console.log("Fetching gig details for worker:", user?.uid, "gig:", gigId);
 
-  const isViewQA = false;
+  const isViewQA = user?.claims.role === "QA";
   const { gig, status } = await getGigDetails({ gigId, userId: user?.uid, role: 'worker', isViewQA });
 
   if (!gig || status !== 200) return null;
 
   return gig;
-}
-
-async function checkIfGigIsAvailableOffer(user: User, gigId: string): Promise<boolean> {
-  try {
-    const result = await getWorkerOffers(user.uid);
-    if (result.success && result.data?.offers) {
-      return result.data.offers.some(offer => offer.id === gigId);
-    }
-    return false;
-  } catch (error) {
-    console.error("Error checking if gig is available offer:", error);
-    return false;
-  }
 }
 
 export default function WorkerGigDetailsPage() {
@@ -45,8 +31,6 @@ export default function WorkerGigDetailsPage() {
   const [gig, setGig] = useState<GigDetails | null>(null);
   const [isLoadingGig, setIsLoadingGig] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAvailableOffer, setIsAvailableOffer] = useState(false);
-  const [isCheckingOffer, setIsCheckingOffer] = useState(false);
 
   // Fetch Gig Details
   useEffect(() => {
@@ -57,34 +41,21 @@ export default function WorkerGigDetailsPage() {
 
     if (shouldFetch) {
       setIsLoadingGig(true);
-      
-      // First fetch gig details
-      fetchWorkerGigDetails(user, gigId)
+      fetchWorkerGigDetails(user, gigId) // pageUserId is correct here (worker's ID from URL)
         .then(data => {
           if (data) {
             setGig(data);
-            
-            // Then check if this is an available offer
-            setIsCheckingOffer(true);
-            return checkIfGigIsAvailableOffer(user, gigId);
           } else {
             setError("Gig not found or access denied.");
-            return false;
           }
-        })
-        .then(isOffer => {
-          setIsAvailableOffer(isOffer);
         })
         .catch(err => {
           console.error("Failed to fetch gig details:", err);
           setError("Could not load gig details.");
         })
-        .finally(() => {
-          setIsLoadingGig(false);
-          setIsCheckingOffer(false);
-        });
+        .finally(() => setIsLoadingGig(false));
     }
-  }, [loadingAuth, user, authUserId, pageUserId, gigId]);
+  }, [loadingAuth, user, authUserId, pageUserId, gigId, setIsLoadingGig]);
 
 
   /*
@@ -101,32 +72,7 @@ export default function WorkerGigDetailsPage() {
   */
 
   if (isLoadingGig) {
-    console.log('Rendering loading screen, isLoadingGig:', isLoadingGig);
-    return (
-      <div 
-        className={styles.loadingContainer}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: '#1A1A1A',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}
-      >
-        <div className={styles.loadingContent}>
-          <Loader2 
-            className={styles.loadingSpinner} 
-            size={48} 
-            style={{ color: 'white', animation: 'spin 1s linear infinite' }}
-          />
-        </div>
-      </div>
-    );
+    return <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={32} /> Loading Gig Details...</div>;
   }
 
   if (error) {
@@ -138,13 +84,6 @@ export default function WorkerGigDetailsPage() {
   }
 
   return (
-    <GigDetailsComponent 
-      userId={pageUserId} 
-      role="worker" 
-      gig={gig} 
-      setGig={setGig}
-      isAvailableOffer={isAvailableOffer}
-      isCheckingOffer={isCheckingOffer}
-    />
+    <GigDetailsComponent userId={pageUserId} role="worker" gig={gig} setGig={setGig} />
   );
 } 

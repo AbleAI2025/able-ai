@@ -47,7 +47,7 @@ const WorkerCalendarPage = () => {
     return "week";
   });
   const [date, setDate] = useState<Date>(new Date());
-  const [activeFilter, setActiveFilter] = useState<string>(FILTERS[2]); // Default to "See gig offers"
+  const [activeFilter, setActiveFilter] = useState<string>(FILTERS[1]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -55,71 +55,92 @@ const WorkerCalendarPage = () => {
   const [isFilterTransitioning, setIsFilterTransitioning] = useState(false);
 
   useEffect(() => {
+    console.log('Auth useEffect triggered:', { loadingAuth, user: !!user, authUserId, pageUserId });
+    
     if (loadingAuth) {
+      console.log('Still loading auth, returning');
       return;
     }
 
     if (!user) {
+      console.log('No user, redirecting to signin');
       router.push(`/signin?redirect=${pathname}`);
       return;
     }
 
     if (authUserId !== pageUserId) {
+      console.log('User ID mismatch, redirecting to signin');
       router.push(`/signin?error=unauthorized`);
       return;
     }
     
+    console.log('Auth check passed');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingAuth]);
 
   useEffect(() => {
+    console.log('useEffect triggered:', { loadingAuth, user: !!user });
+    
     const fetchEvents = async () => {
       if (!user) {
+        console.log('No user, returning early');
         return;
       }
 
-      let res;
-      try {
-        res = await getCalendarEvents({ userId: user.uid, role: 'worker', isViewQA: false });
+      console.log('Fetching events with params:', {
+        userId: user.uid,
+        role: 'worker',
+        isViewQA: true
+      });
 
-        if (res.error) {
-          throw new Error(res.error);
-        }
-      } catch (error) {
-        throw error;
-      }
+      const res = await getCalendarEvents({ userId: user.uid, role: 'worker', isViewQA: true });
+
+      console.log('getCalendarEvents response:', res);
+
+      if (res.error) throw new Error(res.error);
 
       const data: CalendarEvent[] = res.events;
+
+      console.log('Raw events data:', data);
+
       const parsed = data.map((event: CalendarEvent) => ({ ...event, start: new Date(event.start), end: new Date(event.end) }));
       
+      // Debug logging
+      console.log('Worker Calendar Debug:', {
+        totalEvents: parsed.length,
+        events: parsed.map(e => ({
+          id: e.id,
+          title: e.title,
+          start: e.start,
+          end: e.end,
+          status: e.status
+        })),
+        activeFilter,
+        filteredEvents: filterEvents(parsed, activeFilter)
+      });
+      
       setAllEvents(parsed);
-      const filteredEvents = filterEvents(parsed, activeFilter);
-      setEvents(filteredEvents);
+      setEvents(filterEvents(parsed, activeFilter));
     };
 
     fetchEvents();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingAuth]);
 
-
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
   };
 
-  // Handle event clicks - different behavior for offers vs accepted gigs
-  const handleEventClick = (event: CalendarEvent) => {
-    if (event.status === 'OFFER') {
-      // For offers, show modal instead of navigating to gig details
-      // (since offers aren't assigned to workers yet)
-      setSelectedEvent(event);
-      setIsModalOpen(true);
-    } else {
-      // For other events, show modal
-      setSelectedEvent(event);
-      setIsModalOpen(true);
-    }
+  const redirectGigOfferHandler = (event: CalendarEvent) => {
+    if (event?.status !== 'OFFER') return;
+
+    router.push(`/user/${pageUserId}/worker/gigs/${event.id || 'gig123-accepted'}`);
   };
 
   // Calendar navigation handler
@@ -169,7 +190,6 @@ const WorkerCalendarPage = () => {
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
       />
-      
       <main className={`${styles.mainContent} ${isFilterTransitioning ? styles.filterTransitioning : ''}`}>
         <AppCalendar
           date={date}
@@ -179,10 +199,9 @@ const WorkerCalendarPage = () => {
           onNavigate={setDate}
           onSelectEvent={handleEventClick}
           userRole="worker"
-          activeFilter={activeFilter}
           components={{
             event: (props: any) => (
-              <CalendarEventComponent {...props} userRole="worker" view={view} activeFilter={activeFilter} />
+              <CalendarEventComponent {...props} userRole="worker" view={view} />
             )
           }}
           hideToolbar={true}

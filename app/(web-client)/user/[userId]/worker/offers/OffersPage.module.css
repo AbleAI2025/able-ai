@@ -4,7 +4,6 @@
   min-height: 100vh;
   background-color: #000;
   color: #e0e0e0;
-  padding: 1rem 1rem 0;
   font-family: var(--font-family);
   position: relative;
 }
@@ -18,6 +17,7 @@
   flex-grow: 1;
   overflow-y: scroll;
   margin-bottom: 3rem;
+   padding: 1rem 1rem 0;
 }
 
 .header {
@@ -27,46 +27,12 @@
   margin-bottom: 1.5rem;
 }
 
-.pageHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  animation: fadeInUp 0.6s ease-out;
-}
-
 .pageTitle {
   color: #ffffff;
   font-size: 1.5rem;
   font-family: var(--font-family);
   font-weight: 700;
-  margin: 0;
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.calendarNavButton {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(121, 240, 247, 0.1);
-  border: 1px solid rgba(121, 240, 247, 0.2);
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  color: var(--text-white);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.calendarNavButton:hover {
-  background: rgba(121, 240, 247, 0.2);
-  border-color: rgba(121, 240, 247, 0.4);
-  transform: scale(1.05);
-}
-
-.calendarNavButton span {
-  color: var(--text-white);
+  margin-bottom: 0.5rem;
 }
 
 .sectionTitle {
@@ -89,7 +55,6 @@
   flex-grow: 1;
   overflow-y: auto;
   padding: 0.25rem; /* Small padding for scrollbar */
-  animation: fadeIn 0.8s ease-out;
 }
 
 .infoBanner {
@@ -139,28 +104,7 @@
   justify-content: center;
   flex-grow: 1;
 }
-.loadingContainer { 
-  min-height: 50vh; 
-  animation: fadeIn 0.5s ease-out;
-}
-
-.loadingContent {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.loadingSpinner {
-  animation: spin 1s linear infinite;
-  color: #3b82f6;
-}
-
-.loadingText {
-  color: #888;
-  font-size: 1.1rem;
-  margin: 0;
-}
+.loadingContainer { min-height: 50vh; }
 
 /* Styles for Accepted Gigs section */
 .acceptedSection .card {
@@ -211,34 +155,4 @@
         width: 10px;
         height: 10px;
     }
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 } 

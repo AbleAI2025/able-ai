@@ -1,13 +1,5 @@
 /* app/onboard-buyer/OnboardBuyerPage.module.css */
 
-/* CSS Variables for sanitized step buttons */
-.cssVariables {
-  --primary-color: #7eecf9;
-  --primary-darker-color: #5dd8e8;
-  --secondary-color: #7eecf9;
-  --secondary-darker-color: #5dd8e8;
-}
-
 /* Chat container fade-in animation */
 .container {
   animation: fadeIn 0.6s ease-out;

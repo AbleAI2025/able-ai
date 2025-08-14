@@ -21,7 +21,6 @@ interface ChatStepRendererProps {
   setConfirmDisabled: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void;
   setExpandedSummaryFields: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void;
   isSubmitting?: boolean;
-  role?: 'BUYER' | 'GIG_WORKER';
 }
 
 // Typing indicator component
@@ -51,7 +50,6 @@ export default function ChatStepRenderer({
   setConfirmDisabled,
   setExpandedSummaryFields,
   isSubmitting = false,
-  role = 'GIG_WORKER',
 }: ChatStepRendererProps) {
   const key = `step-${step.id}-${step.type}-${step.inputConfig?.name || Math.random()}`;
 
@@ -169,7 +167,6 @@ export default function ChatStepRenderer({
             onChange={val => handleInputChange('gigLocation', val)}
             showConfirm={!!formData.gigLocation && isActive}
             onConfirm={() => handleInputSubmit(step.id, 'gigLocation')}
-            role={role}
           />
         </div>
       );
@@ -195,13 +192,13 @@ export default function ChatStepRenderer({
       );
     }
 
-    // Custom hourly rate input with British Pounds symbol
+    // Custom hourly rate input with euro symbol
     if (inputConf.name === "hourlyRate") {
       return (
         <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <label style={{ fontWeight: 600 }}>{inputConf.label}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontWeight: 600, fontSize: 18 }}>£</span>
+            <span style={{ fontWeight: 600, fontSize: 18 }}>€</span>
             <input
               id={inputConf.name}
               name={inputConf.name}
@@ -210,7 +207,7 @@ export default function ChatStepRenderer({
               step="0.01"
               value={formData[inputConf.name] || ""}
               disabled={isSubmitting}
-              placeholder="Hourly Rate in £ (British Pounds)"
+              placeholder="Hourly Rate in €"
               onChange={e => handleInputChange(inputConf.name, e.target.value)}
               style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
               onKeyPress={e => {
@@ -221,10 +218,9 @@ export default function ChatStepRenderer({
               }}
             />
           </div>
-
           {isActive && formData[inputConf.name] && (
             <button
-              style={{ margin: '8px 0', background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+              style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
               onClick={() => {
                 setConfirmDisabled(prev => ({ ...prev, [inputConf.name]: true }));
                 handleInputSubmit(step.id, inputConf.name);
@@ -265,7 +261,7 @@ export default function ChatStepRenderer({
         />
         {isActive && formData[inputConf.name] && (
           <button
-            style={{ margin: '8px 0', background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+            style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
             onClick={() => {
               setConfirmDisabled(prev => ({ ...prev, [inputConf.name]: true }));
               handleInputSubmit(step.id, inputConf.name);
@@ -298,7 +294,7 @@ export default function ChatStepRenderer({
               <div style={{ marginBottom: 8 }}>{step.sanitizedValue}</div>
               {!isStepComplete && (
                 <button
-                  style={{ background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px' }}
+                  style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px' }}
                   onClick={() => handleSanitizedConfirm(step.fieldName!, step.originalValue!)}
                 >
                   Confirm Location
@@ -322,7 +318,7 @@ export default function ChatStepRenderer({
             {!isStepComplete && (
               <div style={{ display: 'flex', gap: 12 }}>
                 <button
-                  style={{ background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+                  style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
                   onClick={() => handleSanitizedConfirm(step.fieldName!, step.sanitizedValue!)}
                   disabled={isStepComplete}
                 >

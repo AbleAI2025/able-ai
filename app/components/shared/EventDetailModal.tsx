@@ -1,14 +1,10 @@
 "use client";
 
-import React from "react";
-import { useRouter, useParams } from "next/navigation";
-import { X, Calendar, Clock, MapPin, User } from "lucide-react";
-import { CalendarEvent } from "@/app/types/CalendarEventTypes";
-import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
-import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
-import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
-import styles from "./EventDetailModal.module.css";
+import React from 'react';
+import styles from './EventDetailModal.module.css';
+import { X, Clock, User, Calendar, MapPin } from 'lucide-react';
+import { CalendarEvent } from '@/app/types/CalendarEventTypes';
+import { useRouter, useParams } from 'next/navigation';
 
 interface EventDetailModalProps {
   event: CalendarEvent | null;
@@ -58,7 +54,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
       case 'ACCEPTED':
         return '#10b981';
       case 'OFFER':
-        return '#3b82f6';
+        return '#6b7280';
       case 'IN_PROGRESS':
         return '#f59e0b';
       case 'COMPLETED':
@@ -170,38 +166,12 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
           {(event.status === 'ACCEPTED' || event.status === 'OFFER') && (
             <div className={styles.actions}>
-              {event.status === 'OFFER' && userRole === 'worker' ? (
-                // For offers, redirect to gig offers page
-                                                   <button 
-                    className={styles.actionButton}
-                    onClick={() => {
-                      if (resolvedUserId) {
-                        router.push(`/user/${resolvedUserId}/worker/offers`);
-                      }
-                      onClose();
-                    }}
-                    style={{
-                      backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                      borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                      color: userRole === 'worker' ? '#ffffff' : '#000000'
-                    }}
-                  >
-                    View All Offers
-                  </button>
-              ) : (
-                // For accepted gigs, show the original button
-                                                   <button 
-                    className={styles.actionButton}
-                    onClick={handleGoToOffer}
-                    style={{
-                      backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                      borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                      color: userRole === 'worker' ? '#ffffff' : '#000000'
-                    }}
-                  >
-                    Go to Offer
-                  </button>
-              )}
+              <button 
+                className={styles.actionButton}
+                onClick={handleGoToOffer}
+              >
+                Go to Offer
+              </button>
             </div>
           )}
         </div>
@@ -210,4 +180,4 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
   );
 };
 
-export default EventDetailModal;
+export default EventDetailModal; 
