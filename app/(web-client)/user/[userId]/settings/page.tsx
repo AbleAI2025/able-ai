@@ -1,5 +1,7 @@
 /* eslint-disable max-lines */
 /* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useState, useEffect, FormEvent } from "react";
@@ -142,6 +144,7 @@ export default function SettingsPage() {
   // Fetch user settings from backend API
   useEffect(() => {
     if (user) {
+      console.log(user, "user");
       console.log(user, "user");
       setIsLoadingSettings(true);
       // Replace with your actual API call
@@ -419,6 +422,7 @@ export default function SettingsPage() {
   }
 
   if (!user) {
+  if (!user) {
     return (
       <div className={styles.loadingContainer}>
         Unable to load settings. Please ensure you are logged in.
@@ -429,6 +433,7 @@ export default function SettingsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        <ScreenHeaderWithBack title="Settings" onBackClick={() => router.back()} />
         <ScreenHeaderWithBack title="Settings" onBackClick={() => router.back()} />
         <div className={styles.pageWrapper}>
             {/* Email Verification Section */}
@@ -680,6 +685,7 @@ export default function SettingsPage() {
           </section>
 
           {/* <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Logo width={60} height={60} />
             <div
               className={`${styles2.suggestionBanner} ${styles2.suggestionTextContainer}`}
@@ -691,6 +697,7 @@ export default function SettingsPage() {
                 How can i help?
               </p>
             </div>
+          </div> */}
           </div> */}
           <section className={styles.bottomNavSection}>
             <div className={styles.bottomNav}>

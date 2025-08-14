@@ -165,8 +165,6 @@ export default function WorkerDashboardPage() {
           {/* <h2 className={styles.sectionTitle}>Manage Your Activity</h2> */}
           <IconGrid items={actionItems} />
 
-        {/* AI Gig Request Chat Card */}
-
           {/* Optional Summary Section - Example Structure
           {summaryData.length > 0 && (
             <section className={styles.summarySection}>

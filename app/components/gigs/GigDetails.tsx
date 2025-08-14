@@ -1,4 +1,5 @@
 /* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines-per-function */
 import { Calendar, Info, MessageSquare } from 'lucide-react';
 import Logo from '../brand/Logo';
 import styles from './GigDetails.module.css';
@@ -14,6 +15,7 @@ import { updateGigOfferStatus } from '@/actions/gigs/update-gig-offer-status';
 import { holdGigFunds } from '@/app/actions/stripe/create-hold-gig-Funds';
 import { deleteGig } from '@/actions/gigs/delete-gig';
 import { toast } from 'sonner';
+import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
 import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
 
 
@@ -80,6 +82,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 	const [isWaitingHoldPayment, setIsWaitingHoldPayment] = useState(false);
 
 	const gigDuration = calculateDuration(gig.startTime, gig.endTime);
+	const amendId = "123";
 	const amendId = "123";
 
 	const getButtonLabel = (action: string) => {
@@ -193,7 +196,6 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 					router.push(`/user/${user.uid}/buyer`);
 				}
 			}
-			// Handle other actions
 		} catch (err: unknown) {
 			if (err instanceof Error) {
 				console.error(err.message || `Failed to ${action} gig.`);
@@ -211,8 +213,15 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 	return (
 		<div className={styles.container}>
 			<ScreenHeaderWithBack title={`${gig.role} Gig`} onBackClick={() => router.back()} />
+			<ScreenHeaderWithBack title={`${gig.role} Gig`} onBackClick={() => router.back()} />
 
 			{/* Core Gig Info Section - Adapted to new structure */}
+			<main className={styles.gigDetailsMain}>
+				<section className={styles.gigDetailsSection}>
+					<div className={styles.gigDetailsHeader}>
+						<h2 className={styles.sectionTitle}>Gig Details</h2>
+						<Calendar size={26} color='#ffffff' />
+					</div>
 			<main className={styles.gigDetailsMain}>
 				<section className={styles.gigDetailsSection}>
 					<div className={styles.gigDetailsHeader}>
@@ -248,6 +257,34 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 						<span className={styles.detailValue}>£{gig.estimatedEarnings.toFixed(2)} + tips</span>
 					</div>
 					{/* Hiring Manager Info - Placeholder as it's not in current GigDetails interface */}
+					{/* <div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Buyer:</span>
+						<span className={styles.detailValue}>{gig.buyerName}</span>
+					</div> */}
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Location:</span>
+						<span className={styles.detailValue}>
+							{gig.location}
+							<a href={`https://maps.google.com/?q=${encodeURIComponent(gig.location)}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>(View Map)</a>
+						</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Date:</span>
+						<span className={styles.detailValue}>{formatGigDate(gig.date)}</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Time:</span>
+						<span className={styles.detailValue}>{formatGigTime(gig.startTime)} - {formatGigTime(gig.endTime)} ({gigDuration})</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Pay per hour:</span>
+						<span className={styles.detailValue}>£{gig.hourlyRate.toFixed(2)}/hr</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Total pay:</span>
+						<span className={styles.detailValue}>£{gig.estimatedEarnings.toFixed(2)} + tips</span>
+					</div>
+					{/* Hiring Manager Info - Placeholder as it's not in current GigDetails interface */}
 
 					{lastRoleUsed === "GIG_WORKER" && (
 						<div className={styles.gigDetailsRow}>
@@ -255,7 +292,14 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 							<span className={styles.detailValue}>{gig.hiringManager} <br /> {gig.hiringManagerUsername}</span>
 						</div>
 					)}
+					{lastRoleUsed === "GIG_WORKER" && (
+						<div className={styles.gigDetailsRow}>
+							<span className={styles.label}>Hiring manager:</span>
+							<span className={styles.detailValue}>{gig.hiringManager} <br /> {gig.hiringManagerUsername}</span>
+						</div>
+					)}
 
+				</section>
 				</section>
 
 				{lastRoleUsed === "GIG_WORKER" && (
@@ -280,7 +324,36 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 						</div>
 					</section>
 				)}
+				{lastRoleUsed === "GIG_WORKER" && (
+					<section
+						className={`${styles.gigDetailsSection} ${styles.workerSection}`}
+					>
+						<Image
+							src={worker.avatarUrl}
+							className={styles.workerAvatar}
+							alt={worker.name}
+							width={56}
+							height={56}
+						/>
+						<div className={styles.workerDetailsContainer}>
+							<div className={styles.workerDetails}>
+								<span className={styles.workerName}>
+									{worker.name}
+								</span>
+								{worker.gigs} Able gigs, {worker.experience} years experience
+							</div>
+							{worker.isStar && <Image src="/images/star.svg" alt="Star" width={56} height={50} />}
+						</div>
+					</section>
+				)}
 
+				{/* Negotiation Button - Kept from new structure */}
+				{/* Added a check to only show if gig is accepted */}
+				{(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
+					<button className={styles.negotiationButton} onClick={() => handleGigAction('requestAmendment')}>
+						Negotiate, cancel or change gig details
+					</button>
+				)}
 				{/* Negotiation Button - Kept from new structure */}
 				{/* Added a check to only show if gig is accepted */}
 				{(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
@@ -340,7 +413,22 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 						isActive={!isWaitingHoldPayment && gig.status === 'PENDING'}
 						isDisabled={gig.status !== 'PENDING'}
 					/>
+				{/* Primary Actions Section - Adapted to new structure */}
+				<section className={styles.actionSection}>
+					<GigActionButton
+						label={!isWaitingHoldPayment ? getButtonLabel('accept') : 'processing...'}
+						handleGigAction={() => handleGigAction('accept')}
+						isActive={!isWaitingHoldPayment && gig.status === 'PENDING'}
+						isDisabled={gig.status !== 'PENDING'}
+					/>
 
+					{/* 2. Start Gig */}
+					<GigActionButton
+						label={getButtonLabel('start')}
+						handleGigAction={() => handleGigAction('start')}
+						isActive={gig.status === 'ACCEPTED'}
+						isDisabled={gig.status !== 'ACCEPTED'}
+					/>
 					{/* 2. Start Gig */}
 					<GigActionButton
 						label={getButtonLabel('start')}
@@ -356,7 +444,21 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 						isActive={gig.status === 'IN_PROGRESS'}
 						isDisabled={gig.status !== 'IN_PROGRESS'}
 					/>
+					{/* 3. Complete Gig */}
+					<GigActionButton
+						label={getButtonLabel('complete')}
+						handleGigAction={() => handleGigAction('complete')}
+						isActive={gig.status === 'IN_PROGRESS'}
+						isDisabled={gig.status !== 'IN_PROGRESS'}
+					/>
 
+					{/* 4. Awaiting Buyer Confirmation */}
+					<GigActionButton
+						label={getButtonLabel('awaiting')}
+						handleGigAction={() => handleGigAction('awaiting')}
+						isActive={gig.status === 'COMPLETED'}
+						isDisabled={gig.status !== 'COMPLETED'}
+					/>
 					{/* 4. Awaiting Buyer Confirmation */}
 					<GigActionButton
 						label={getButtonLabel('awaiting')}
@@ -380,9 +482,41 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 					</p>
 					)} */}
 				</section>
+					{/* Info messages for other statuses
+					{gig.status === 'AWAITING_BUYER_CONFIRMATION' && (
+					<p className={styles.actionInfoText}>Waiting for buyer to confirm completion.</p>
+					)}
+					{gig.status === 'CANCELLED' && (
+					<p className={styles.actionInfoText} style={{color: 'var(--error-color)', backgroundColor: 'rgba(239,68,68,0.1)'}}>
+					<XCircle size={18} style={{marginRight: '8px'}}/> This gig was cancelled.
+					</p>
+					)}
+					{gig.status === 'COMPLETED' && (
+					<p className={styles.actionInfoText} style={{color: 'var(--success-color)'}}>
+					<CheckCircle size={18} style={{marginRight: '8px'}}/> Gig completed successfully!
+					</p>
+					)} */}
+				</section>
 
 				{/* Secondary Actions Section - Adapted to new structure */}
+				{/* Secondary Actions Section - Adapted to new structure */}
 
+				{/* {lastRoleUsed === "GIG_WORKER" && (
+					<button className={styles.negotiationButton} disabled>
+						Cancel, amend gig timing or add tips
+					</button>
+				)} */}
+				<section className={`${styles.secondaryActionsSection}`}> {/* Using secondaryActionsSection class */}
+					<Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className={styles.secondaryActionButton}>
+						Terms of agreement
+					</Link>
+					<button onClick={() => handleGigAction('reportIssue')} className={styles.secondaryActionButton} disabled={isActionLoading}>
+						Report an Issue
+					</button>
+					{/* <button onClick={() => handleGigAction('delegate')} className={styles.secondaryActionButton} disabled={isActionLoading}>
+							<Share2 size={16} style={{marginRight: '8px'}}/> Delegate Gig
+						</button> */}
+				</section>
 				{/* {lastRoleUsed === "GIG_WORKER" && (
 					<button className={styles.negotiationButton} disabled>
 						Cancel, amend gig timing or add tips
@@ -402,6 +536,15 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 
 
 
+				{/* Footer (Home Button) */}
+				{/* <footer className={styles.footer}>
+					<Link href={`/user/${user?.uid}/worker`} passHref>
+					<button className={styles.homeButton} aria-label="Go to Home">
+						<Home size={24} />
+					</button>
+					</Link>
+				</footer> */}
+			</main>
 				{/* Footer (Home Button) */}
 				{/* <footer className={styles.footer}>
 					<Link href={`/user/${user?.uid}/worker`} passHref>

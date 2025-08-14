@@ -261,12 +261,15 @@ export default function WorkerOffersPage() {
   return (
     <div className={styles.container}>
       <ScreenHeaderWithBack title="Gig Offers" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Gig Offers" onBackClick={() => router.back()} />
       <div className={styles.pageWrapper}>
         {" "}
         {/* Use styles */}
         <div className={styles.infoBanner}>
           {" "}
           {/* Use styles */}
+
+          {/* <p className={styles.infoText}>Accept these gigs within the time shown or we will offer them to someone else!</p> */}
 
           {/* <p className={styles.infoText}>Accept these gigs within the time shown or we will offer them to someone else!</p> */}
           {uid && (
