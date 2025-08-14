@@ -289,12 +289,13 @@ const WorkerProfile = ({
         </ContentCard>
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
-        {workerProfile.skills && workerProfile.skills.length > 0 && (
+        { (
           <SkillsDisplayTable
-            skills={workerProfile.skills}
+            skills={workerProfile?.skills}
             isSelfView={isSelfView}
             handleAddSkill={handleAddSkill}
             handleSkillDetails={handleSkillDetails}
+            token={user?.token || ""}
           />
         )}
 

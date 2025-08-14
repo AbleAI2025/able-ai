@@ -205,6 +205,68 @@ export const getSkillDetailsWorker = async (id: string) => {
   }
 };
 
+export const createSkillWorker = async (
+  token: string,
+  {
+    name,
+    experienceMonths,
+    agreedRate,
+    skillVideoUrl,
+    adminTags = [],
+    images = [],
+  }: {
+    name: string;
+    experienceMonths: number;
+    agreedRate: number | string;
+    skillVideoUrl?: string;
+    adminTags?: string[];
+    images?: string[];
+  }
+) => {
+  try {
+    if (!token) throw new Error("Token is required");
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw new Error("Unauthorized");
+
+      const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firebaseUid, uid),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.userId, user.id),
+  });
+  
+    if (!workerProfile) {
+    throw new Error("Worker profile not found");
+  }
+
+    const [newSkill] = await db
+      .insert(SkillsTable)
+      .values({
+        workerProfileId: workerProfile.id,
+        name,
+        experienceMonths,
+        agreedRate: String(agreedRate),
+        skillVideoUrl: skillVideoUrl || null,
+        adminTags: adminTags.length > 0 ? adminTags : null,
+        ableGigs: null,
+        images,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    return { success: true, data: newSkill };
+  } catch (error) {
+    console.error("Error creating skill:", error);
+    return { success: false, data: null, error };
+  }
+};
+
 export const updateVideoUrlProfileAction = async (
   videoUrl: string,
   token?: string | undefined

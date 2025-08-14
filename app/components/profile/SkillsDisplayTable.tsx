@@ -1,27 +1,35 @@
-import React from 'react';
-import PillBadge from '../shared/PillBadge';
-import styles from './SkillsDisplayTable.module.css';
-import { Skill } from '@/app/types/workerProfileTypes';
+import React, { useState } from "react";
+import PillBadge from "../shared/PillBadge";
+import styles from "./SkillsDisplayTable.module.css";
+import { Skill } from "@/app/types/workerProfileTypes";
+import AddSkillModal from "./createSkillModal";
 
 interface SkillsDisplayTableProps {
-  skills: Skill[];
+  skills?: Skill[];
   title?: string;
   isSelfView?: boolean;
   handleAddSkill?: () => void;
-  handleSkillDetails: (id: string) => void; // Optional handler for skill details 
+  handleSkillDetails: (id: string) => void;
+  token: string;
 }
 
 const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
   skills,
   isSelfView,
-  handleAddSkill,
   handleSkillDetails,
+  token,
 }) => {
-  const hasAbleGigs = skills.length > 0 && skills[0].ableGigs !== undefined;
-  const hasExperience = skills.length > 0 && skills[0].experienceMonths !== undefined;
-  const hasEph = skills.length > 0 && skills[0].agreedRate !== undefined;
+  const hasAbleGigs = !!skills?.[0]?.ableGigs;
+  const hasExperience = skills?.[0]?.experienceMonths !== undefined;
+  const hasEph = skills?.[0]?.agreedRate !== undefined;
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  
+  const handleAddSkill = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
+
+  const handleSkillCreated = () => {
+  };
+
   return (
     <div className={styles.skillsCard}>
       <table className={styles.skillsTable}>
@@ -34,23 +42,53 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {skills.map((skill, index) => (
-              <tr key={index}>
-                <td>
-                  <PillBadge className={styles.skill} id={skill.id} text={skill.name} variant="dark" handleSkillDetails={handleSkillDetails}/>
-                </td>
-                {hasAbleGigs && <td>{skill.ableGigs}</td>}
-                {hasExperience && <td>{skill.experienceMonths / 12}</td>}
-                {hasEph && <td>£{skill.agreedRate}</td>}
-              </tr>
-          ))}
+          {skills
+            ? skills.map((skill, index) => (
+                <tr key={index}>
+                  <td>
+                    <PillBadge
+                      className={styles.skill}
+                      id={skill.id}
+                      text={skill.name}
+                      variant="dark"
+                      handleSkillDetails={handleSkillDetails}
+                    />
+                  </td>
+                  {hasAbleGigs && <td>{skill.ableGigs}</td>}
+                  {hasExperience && (
+                    <td>
+                      {skill.experienceMonths < 12
+                        ? `${skill.experienceMonths} month${
+                            skill.experienceMonths > 1 ? "s" : ""
+                          }`
+                        : `${(skill.experienceMonths / 12).toFixed(1)} year${
+                            skill.experienceMonths / 12 > 1 ? "s" : ""
+                          }`}
+                    </td>
+                  )}
+                  {hasEph && <td>£{skill.agreedRate}</td>}
+                </tr>
+              ))
+            : "There are not skills"}
           <tr>
-            {isSelfView && <td><button className={styles.addSkill} onClick={handleAddSkill}>+ add skill</button></td>}
+            {isSelfView && (
+              <td>
+                <button className={styles.addSkill} onClick={handleAddSkill}>
+                  + add skill
+                </button>
+              </td>
+            )}
           </tr>
         </tbody>
       </table>
+      <AddSkillModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSkillCreated={handleSkillCreated}
+        token={token}
+      />
     </div>
   );
 };
 
-export default SkillsDisplayTable; 
+export default SkillsDisplayTable;

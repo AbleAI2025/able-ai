@@ -6,7 +6,7 @@ import styles from "./SkillSplashScreen.module.css";
 import AwardDisplayBadge from "./AwardDisplayBadge";
 import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import RecommendationCardItem from "@/app/components/shared/RecommendationCardItem";
-import React from "react";
+import React, { useState } from "react";
 import { SkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import {
@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { updateProfileImageAction } from "@/actions/user/gig-worker-profile";
+import ViewImageModal from "./ViewImagesModal";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -74,6 +75,8 @@ const SkillSplashScreen = ({
 }) => {
   const { user } = useAuth();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleAddImageClick = () => {
     fileInputRef.current?.click();
@@ -190,37 +193,55 @@ const SkillSplashScreen = ({
       </div>
 
       {/* Image placeholders */}
-      <div className={styles.supportingImages}>
-        <div className={styles.images}>
-          {profile.supportingImages.map((image: string, index: number) => (
-            <Image
-              key={index}
-              src={image}
-              alt={`Supporting image ${index + 1}`}
-              width={109}
-              height={68}
-            />
-          ))}
-                  {isSelfView && (
-          <>
-            <button
-              className={styles.attachButton}
-              onClick={handleAddImageClick}
-            >
-              <Paperclip size={29} color="#ffffff" />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className={styles.hiddenInput}
-              onChange={handleSupportingImageUpload}
-            />
-          </>
-        )}
+      <>
+        <h4>Images</h4>
+        <div className={styles.supportingImages}>
+          <div className={styles.images}>
+            {profile.supportingImages?.length ? (
+              profile.supportingImages.map((img, i) => (
+                <div
+                  key={i}
+                  onClick={() => setSelectedImage(img)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <Image src={img} alt={`Img ${i}`} width={109} height={68} />
+                </div>
+              ))
+            ) : (
+              <p>No images available</p>
+            )}
+
+            {isSelfView && (
+              <>
+                <button
+                  className={styles.attachButton}
+                  onClick={handleAddImageClick}
+                >
+                  <Paperclip size={29} color="#ffffff" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className={styles.hiddenInput}
+                  onChange={handleSupportingImageUpload}
+                />
+              </>
+            )}
+          </div>
         </div>
-        <input type="file" accept="image/*" className={styles.hiddenInput} />
-      </div>
+
+        {/* Modal para ver las imágenes en grande */}
+        <ViewImageModal
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+          imageUrl={selectedImage!}
+          userToken={user?.token || ""}
+          skillId={skillId}
+          isSelfView={isSelfView}
+          fetchSkillData={fetchSkillData}
+        />
+      </>
 
       {/* Badges */}
       <div className={styles.section}>
