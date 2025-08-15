@@ -1,10 +1,20 @@
+'use server'
+
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/drizzle/db';
 import { GigsTable, UsersTable } from '@/lib/drizzle/schema';
 import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
 import { holdGigAmount } from '@/lib/stripe/hold-gig-amount';
 
-async function updateAdjustedGig(
+interface GigAdjustmentParams {
+  firebaseUid: string;
+  gigId: string;
+  newFinalRate: number;
+  newFinalHours: number;
+  currency: string;
+}
+
+export async function updateAdjustedGig(
   { gigId, newFinalRate, newFinalHours }: { gigId: string, newFinalRate: number, newFinalHours: number }
 ) {
   try {
@@ -26,11 +36,13 @@ async function updateAdjustedGig(
 }
 
 export async function handleGigAdjustment(
-  firebaseUid: string,
-  gigId: string,
-  newFinalRate: number,
-  newFinalHours: number,
-  currency: string,
+  {
+    firebaseUid,
+    gigId,
+    newFinalRate,
+    newFinalHours,
+    currency,
+  }: GigAdjustmentParams
 ) {
   if (!firebaseUid) {
     return { error: 'User ID is required.', status: 400 }
@@ -49,7 +61,6 @@ export async function handleGigAdjustment(
   }
 
   const { receiverAccountId, gig } = await getPaymentAccountDetailsForGig(gigId);
-
   const currentFinalPrice = Number(gig.finalAgreedPrice) || Number(gig.totalAgreedPrice);
   const newFinalPriceCents = Math.round(newFinalRate * newFinalHours * 100);
 

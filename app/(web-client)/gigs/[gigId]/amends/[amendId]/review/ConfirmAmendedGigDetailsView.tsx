@@ -17,6 +17,7 @@ type ConfirmAmendedGigDetailsViewProps = {
   gigDetails: GigDetails;
   gigDetailsData?: GigReviewDetailsData;
   isLoading: boolean;
+  isLoadingConfirm: boolean;
   lastRoleUsed: string | null;
   notificationMessage: NotificationMessage;
   handleEditDetails: () => void;
@@ -29,6 +30,7 @@ const ConfirmAmendedGigDetailsView: React.FC<ConfirmAmendedGigDetailsViewProps> 
   gigDetails,
   gigDetailsData,
   isLoading,
+  isLoadingConfirm,
   lastRoleUsed,
   notificationMessage,
   handleEditDetails,
@@ -55,6 +57,7 @@ const ConfirmAmendedGigDetailsView: React.FC<ConfirmAmendedGigDetailsViewProps> 
       </main>
       <ConfirmAmendedGigDetailsFooterActions
         lastRoleUsed={lastRoleUsed}
+        isLoadingConfirm={isLoadingConfirm}
         handleConfirm={handleConfirm}
         handleSuggestNew={handleSuggestNew}
         handleDecline={handleDecline}
