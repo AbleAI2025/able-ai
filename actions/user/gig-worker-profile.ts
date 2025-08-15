@@ -174,6 +174,7 @@ export const getSkillDetailsWorker = async (id: string) => {
     );
 
     const skillProfile = {
+      profileId: workerProfile?.id,
       name: user?.fullName,
       title: skill?.name,
       hashtags: Array.isArray(workerProfile?.hashtags)
@@ -187,6 +188,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       address: workerProfile?.address || "",
       latitude: workerProfile?.latitude ?? 0,
       longitude: workerProfile?.longitude ?? 0,
+      videoUrl: workerProfile?.videoUrl || "",
       statistics: {
         reviews: reviews?.length,
         paymentsCollected: "£4899",

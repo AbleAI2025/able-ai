@@ -1,4 +1,5 @@
 export type SkillProfile = {
+  profileId?: string;
   name?: string;
   title?: string;
   hashtags?: string;

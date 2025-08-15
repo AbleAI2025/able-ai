@@ -6,7 +6,7 @@ import styles from "./SkillSplashScreen.module.css";
 import AwardDisplayBadge from "./AwardDisplayBadge";
 import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import RecommendationCardItem from "@/app/components/shared/RecommendationCardItem";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import {
@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { updateProfileImageAction } from "@/actions/user/gig-worker-profile";
 import ViewImageModal from "./ViewImagesModal";
+import Loader from "../shared/Loader";
+import ProfileMedia from "./ProfileMedia";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -76,6 +78,8 @@ const SkillSplashScreen = ({
   const { user } = useAuth();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploadImage, setIsUploadImage] = useState(false);
+  const [workerLink, setWorkerLink] = useState<string | null>(null);
 
   const handleAddImageClick = () => {
     fileInputRef.current?.click();
@@ -84,6 +88,7 @@ const SkillSplashScreen = ({
   const handleSupportingImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
+    setIsUploadImage(true);
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
@@ -104,10 +109,21 @@ const SkillSplashScreen = ({
       await updateProfileImageAction(user.token, skillId, downloadURL);
 
       await fetchSkillData();
+      setIsUploadImage(false);
     } catch (err) {
       console.error("Error uploading profile image:", err);
+      setIsUploadImage(false);
+      toast.error("Error uploading profile image. Please try again.");
     }
   };
+
+  useEffect(() => {
+    if (profile && profile.profileId) {
+      setWorkerLink(
+        `${window.location.origin}/worker/${profile.profileId}/profile`
+      );
+    }
+  }, [profile]);
 
   if (!profile) return <p className={styles.loading}>Loading...</p>;
 
@@ -115,12 +131,11 @@ const SkillSplashScreen = ({
     <div className={styles.skillSplashContainer}>
       {/* Header */}
       <div className={styles.header}>
-        <Image
-          src="/images/benji.jpeg"
-          alt="Profile picture"
-          width={115}
-          height={86}
-          className={styles.profileImage}
+        <ProfileMedia
+          workerProfile={profile}
+          isSelfView={false}
+          workerLink={workerLink}
+          onVideoUpload={() => {}}
         />
         <h2 className={styles.name}>
           {profile.name}: {profile.title}
@@ -216,8 +231,21 @@ const SkillSplashScreen = ({
                   className={styles.attachButton}
                   onClick={handleAddImageClick}
                 >
-                  <Paperclip size={29} color="#ffffff" />
+                  {!isUploadImage ? (
+                    <Paperclip size={29} color="#ffffff" />
+                  ) : (
+                    <Loader
+                      customClass={styles.loaderCustom}
+                      customStyle={{
+                        width: "auto",
+                        height: "auto",
+                        minHeight: 0,
+                        backgroundColor: "#121212",
+                      }}
+                    />
+                  )}
                 </button>
+
                 <input
                   ref={fileInputRef}
                   type="file"

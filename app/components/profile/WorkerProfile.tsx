@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 
 // --- SHARED & HELPER COMPONENTS ---
@@ -13,8 +12,6 @@ import styles from "./WorkerProfile.module.css";
 import {
   CalendarDays,
   BadgeCheck,
-  MapPin,
-  Share2,
   ThumbsUp,
   MessageSquare,
 } from "lucide-react";
@@ -22,7 +19,6 @@ import {
   getPrivateWorkerProfileAction,
   updateVideoUrlProfileAction,
 } from "@/actions/user/gig-worker-profile";
-import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import {
   getStorage,
@@ -33,15 +29,16 @@ import {
 
 import PublicWorkerProfile, { Review } from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import ProfileMedia from "./ProfileMedia";
 
 const WorkerProfile = ({
   workerProfile,
   isSelfView = false,
   handleAddSkill,
   handleSkillDetails, // Optional handler for skill details
-  fetchUserProfile
+  fetchUserProfile,
 }: {
   workerProfile: PublicWorkerProfile;
   handleAddSkill?: () => void;
@@ -52,7 +49,7 @@ const WorkerProfile = ({
 }) => {
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const [workerLink, setWorkerLink] = useState<string | null>(null);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -113,129 +110,24 @@ const WorkerProfile = ({
     },
     [user]
   );
+
+  useEffect(() => {
+    if (workerProfile && workerProfile.id) {
+      setWorkerLink(
+        `${window.location.origin}/worker/${workerProfile.id}/profile`
+      );
+    }
+  }, [workerProfile]);
+
   return (
     <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
-      <div className={styles.profileHeaderImageSection}>
-        <div className={styles.profileImageVideo}>
-          {!workerProfile?.videoUrl ? (
-            isSelfView ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <h3>Please, introduce yourself</h3>
-                <VideoRecorderBubble
-                  key={1}
-                  onVideoRecorded={handleVideoUpload}
-                />
-              </div>
-            ) : (
-              <p
-                style={{
-                  textAlign: "center",
-                  fontStyle: "italic",
-                  color: "#888",
-                }}
-              >
-                User presentation not exist
-              </p>
-            )
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              {/* Video with link */}
-              <Link
-                href={workerProfile.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: "inline-block", textDecoration: "none" }}
-              >
-                <video
-                  width="180"
-                  height="180"
-                  style={{ borderRadius: "8px", objectFit: "cover" }}
-                  preload="metadata"
-                  muted
-                  poster="/video-placeholder.jpg"
-                >
-                  <source
-                    src={workerProfile.videoUrl + "#t=0.1"}
-                    type="video/webm"
-                  />
-                </video>
-              </Link>
-
-              {/* Record video link */}
-              {isSelfView && (
-                <div style={{ marginTop: "8px" }}>
-                  <button
-                    onClick={() => setIsEditingVideo(true)}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#0070f3",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit video
-                  </button>
-                </div>
-              )}
-
-              {/* Show video recorder */}
-              {isEditingVideo && (
-                <div style={{ marginTop: "12px" }}>
-                  <VideoRecorderBubble
-                    key={2}
-                    onVideoRecorded={(video) => {
-                      handleVideoUpload(video);
-                      setIsEditingVideo(false);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Add play icon if it's a video */}
-        </div>
-        <div className={styles.profileHeaderRightCol}>
-          {true && (
-            <Image
-              src={"/default-avatar.png"}
-              alt="QR Code"
-              width={90}
-              height={90}
-              className={styles.qrCode}
-            />
-          )}
-          <div className={styles.locationShareContainer}>
-            {workerProfile && workerProfile.location && (
-              <div className={styles.locationInfo}>
-                <MapPin size={16} color="#ffffff" className={styles.mapPin} />
-                <span>{workerProfile.location}</span>
-              </div>
-            )}
-            <button
-              className={styles.shareProfileButton}
-              aria-label="Share profile"
-              onClick={() =>
-                alert(
-                  `${window.location.origin}/worker/${workerProfile.id}/profile`
-                )
-              }
-            >
-              <Share2 size={33} color="#ffffff" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <ProfileMedia
+        workerProfile={workerProfile}
+        isSelfView={isSelfView}
+        workerLink={workerLink}
+        onVideoUpload={handleVideoUpload}
+      />
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfoLeft}>
@@ -290,7 +182,7 @@ const WorkerProfile = ({
         </ContentCard>
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
-        { (
+        {
           <SkillsDisplayTable
             skills={workerProfile?.skills}
             isSelfView={isSelfView}
@@ -299,7 +191,7 @@ const WorkerProfile = ({
             fetchUserProfile={fetchUserProfile}
             token={user?.token || ""}
           />
-        )}
+        }
 
         {/* Awards & Feedback Section (Benji Image Style) */}
         {workerProfile.awards && ( // Only show section if there are awards or feedback
