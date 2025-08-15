@@ -67,7 +67,7 @@ const AddSkillModal: React.FC<AddSkillModalProps> = ({
             />
           </label>
           <label>
-            Experience (months):
+            Experience (years):
             <input
               type="number"
               step="0.1"
