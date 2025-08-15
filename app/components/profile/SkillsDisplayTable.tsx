@@ -11,16 +11,18 @@ interface SkillsDisplayTableProps {
   handleAddSkill?: () => void;
   handleSkillDetails: (id: string) => void;
   token: string;
+  fetchUserProfile: (token: string) => void;
 }
 
 const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
   skills,
   isSelfView,
   handleSkillDetails,
+  fetchUserProfile,
   token,
 }) => {
   const hasAbleGigs = !!skills?.[0]?.ableGigs;
-  const hasExperience = skills?.[0]?.experienceMonths !== undefined;
+  const hasExperience = skills?.[0]?.experienceYears !== undefined;
   const hasEph = skills?.[0]?.agreedRate !== undefined;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -57,13 +59,8 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
                   {hasAbleGigs && <td>{skill.ableGigs}</td>}
                   {hasExperience && (
                     <td>
-                      {skill.experienceMonths < 12
-                        ? `${skill.experienceMonths} month${
-                            skill.experienceMonths > 1 ? "s" : ""
-                          }`
-                        : `${(skill.experienceMonths / 12).toFixed(1)} year${
-                            skill.experienceMonths / 12 > 1 ? "s" : ""
-                          }`}
+                      {skill.experienceYears}{" "}
+                      {skill.experienceYears === 1 ? "year" : "years"}
                     </td>
                   )}
                   {hasEph && <td>£{skill.agreedRate}</td>}
@@ -86,6 +83,7 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
         onClose={handleCloseModal}
         onSkillCreated={handleSkillCreated}
         token={token}
+        fetchUserProfile={fetchUserProfile}
       />
     </div>
   );

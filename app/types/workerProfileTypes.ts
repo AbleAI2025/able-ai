@@ -2,7 +2,7 @@ export interface Skill {
   id: string;
   workerProfileId: string;
   name: string;
-  experienceMonths: number;
+  experienceYears: number;
   agreedRate: string;
   skillVideoUrl?: string | null;
   adminTags?: string[] | null;

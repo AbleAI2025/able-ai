@@ -35,11 +35,16 @@ export const SkillsTable = pgTable("skills", {
     .references(() => GigWorkerProfilesTable.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 100 }).notNull(),
   experienceMonths: integer("experience_months").notNull(),
+  experienceYears: decimal("experience_years", { precision: 4, scale: 1 })
+    .$type<number>()
+    .notNull(),
   agreedRate: decimal("agreed_rate", { precision: 10, scale: 2 }).notNull(),
   skillVideoUrl: text("skill_video_url"),
   adminTags: text("admin_tags").array(),
   ableGigs: integer("able_gigs"),
-  images: jsonb("images").$type<string[]>().default(sql`'[]'::jsonb`),
+  images: jsonb("images")
+    .$type<string[]>()
+    .default(sql`'[]'::jsonb`),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

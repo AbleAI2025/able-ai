@@ -181,7 +181,7 @@ export const getSkillDetailsWorker = async (id: string) => {
         : "",
       customerReviewsText: workerProfile?.fullBio,
       ableGigs: skill?.ableGigs,
-      experienceYears: skill?.experienceMonths / 12,
+      experienceYears: skill?.experienceYears,
       Eph: skill?.agreedRate,
       location: workerProfile?.location || "",
       address: workerProfile?.address || "",
@@ -209,14 +209,14 @@ export const createSkillWorker = async (
   token: string,
   {
     name,
-    experienceMonths,
+    experienceYears,
     agreedRate,
     skillVideoUrl,
     adminTags = [],
     images = [],
   }: {
     name: string;
-    experienceMonths: number;
+    experienceYears: number;
     agreedRate: number | string;
     skillVideoUrl?: string;
     adminTags?: string[];
@@ -249,7 +249,8 @@ export const createSkillWorker = async (
       .values({
         workerProfileId: workerProfile.id,
         name,
-        experienceMonths,
+        experienceMonths: 0,
+        experienceYears,
         agreedRate: String(agreedRate),
         skillVideoUrl: skillVideoUrl || null,
         adminTags: adminTags.length > 0 ? adminTags : null,
@@ -333,3 +334,37 @@ export const updateProfileImageAction = async (
   }
 };
 
+export const deleteImageAction = async (
+  token: string,
+  skillId: string,
+  imageUrl: string
+) => {
+  try {
+    if (!token) throw new Error("User ID is required");
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const skill = await db.query.SkillsTable.findFirst({
+      where: eq(SkillsTable.id, skillId),
+      columns: { images: true },
+    });
+
+    if (!skill) throw "Skill not found";
+
+    const updatedImages = skill?.images?.filter((img) => img !== imageUrl);
+
+    await db
+      .update(SkillsTable)
+      .set({
+        images: updatedImages,
+        updatedAt: new Date(),
+      })
+      .where(eq(SkillsTable.id, skillId));
+
+    return { success: true, data: updatedImages };
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return { success: false, data: null, error };
+  }
+}

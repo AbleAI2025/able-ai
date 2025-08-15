@@ -41,11 +41,12 @@ const WorkerProfile = ({
   isSelfView = false,
   handleAddSkill,
   handleSkillDetails, // Optional handler for skill details
+  fetchUserProfile
 }: {
   workerProfile: PublicWorkerProfile;
   handleAddSkill?: () => void;
   handleSkillDetails: (id: string) => void; // Now optional
-  fetchUserProfile: (id: string) => void;
+  fetchUserProfile: (token: string) => void;
   userId?: string;
   isSelfView: boolean;
 }) => {
@@ -295,6 +296,7 @@ const WorkerProfile = ({
             isSelfView={isSelfView}
             handleAddSkill={handleAddSkill}
             handleSkillDetails={handleSkillDetails}
+            fetchUserProfile={fetchUserProfile}
             token={user?.token || ""}
           />
         )}

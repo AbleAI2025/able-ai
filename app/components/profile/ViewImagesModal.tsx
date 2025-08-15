@@ -4,6 +4,8 @@ import React from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
 import styles from "./ViewImagesModal.module.css";
+import { toast } from "sonner";
+import { deleteImageAction } from "@/actions/user/gig-worker-profile";
 
 interface ViewImageModalProps {
   isOpen: boolean;
@@ -21,14 +23,19 @@ const ViewImageModal: React.FC<ViewImageModalProps> = ({
   imageUrl,
   isSelfView,
   fetchSkillData,
+  userToken, 
+  skillId,
 }) => {
   if (!isOpen) return null;
   console.log(imageUrl);
 
   const handleDelete = async () => {
     try {
+      await deleteImageAction(userToken, skillId, imageUrl);
+
       fetchSkillData();
       onClose();
+      toast.success("Image deleted successfully");
     } catch (err) {
       console.error("Error deleting image", err);
     }
