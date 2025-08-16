@@ -18,6 +18,7 @@ type AppCalendarProps<TEvent> = {
   view?: View;
   defaultView?: View;
   onSelectEvent?: (event: CalendarEvent) => void;
+  onSelectSlot?: (slotInfo: { start: Date; end: Date; slots: Date[] }) => void;
   onNavigate?: (date: Date) => void;
   onView?: (view: View) => void;
   minTime?: Date;
@@ -37,6 +38,7 @@ const AppCalendar = <TEvent extends object>({
   date,
   defaultView = 'month',
   onSelectEvent,
+  onSelectSlot,
   onNavigate,
   onView,
   minTime,
@@ -75,6 +77,8 @@ const AppCalendar = <TEvent extends object>({
           return '#eab308'; // Yellow
         case 'UNAVAILABLE':
           return '#6b7280'; // Gray
+        case 'AVAILABLE':
+          return '#10b981'; // Green for availability
         case 'CANCELLED':
           return '#dc2626'; // Red
         default:
@@ -287,8 +291,9 @@ const AppCalendar = <TEvent extends object>({
         titleAccessor={(event: TEvent & { title?: string }) => event.title || ''}
         defaultView={defaultView}
         views={['month', 'week', 'day', 'agenda']}
-        selectable={false}
+        selectable={true}
         onSelectEvent={handleSelectEvent}
+        onSelectSlot={onSelectSlot}
         onNavigate={onNavigate}
         onView={onView}
         min={minTime}

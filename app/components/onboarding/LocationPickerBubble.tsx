@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useJsApiLoader, GoogleMap, Marker } from '@react-google-maps/api';
 
 // FontAwesome icons (assume global or imported elsewhere)
 // fa-location-dot, fa-map-location-dot, fa-building
@@ -9,23 +10,33 @@ interface LocationPickerBubbleProps {
   showConfirm?: boolean;
   onConfirm?: () => void;
   role?: 'BUYER' | 'GIG_WORKER';
+  googleMapsApiKey?: string;
 }
 
-function extractCoordsFromGoogleMapsUrl(url: string) {
-  const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-  const qMatch = url.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-  return null;
-}
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAu25FZGBoAn-l1hhirCNfnmMwO_qfJvhg';
 
-const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ value, onChange, showConfirm, onConfirm, role = 'GIG_WORKER' }) => {
-  const [urlInput, setUrlInput] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+const defaultCenter = { lat: 51.5074, lng: -0.1278 }; // London as default
+
+const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ 
+  value, 
+  onChange, 
+  showConfirm, 
+  onConfirm, 
+  role = 'GIG_WORKER',
+  googleMapsApiKey = GOOGLE_MAPS_API_KEY
+}) => {
+  const [searchInput, setSearchInput] = useState('');
+  const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(null);
+  const [formattedAddress, setFormattedAddress] = useState('');
   const [error, setError] = useState('');
-  const [selectedMethod, setSelectedMethod] = useState<'geo' | 'url' | 'coordinates' | null>(null);
-  const [useCoordinates, setUseCoordinates] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey,
+    libraries: ['places'],
+  });
 
   // Get colors based on role
   const getColors = () => {
@@ -46,188 +57,341 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({ value, onCh
 
   const colors = getColors();
 
-  const handleGeo = () => {
+  // Initialize autocomplete when component loads
+  useEffect(() => {
+    if (isLoaded && searchInputRef.current && !autocompleteRef.current) {
+      autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
+        types: ['establishment', 'geocode'],
+        componentRestrictions: { country: 'GB' }, // Restrict to UK
+      });
+
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current?.getPlace();
+        if (place && place.geometry && place.geometry.location) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          const coords = { lat, lng };
+          
+          // Fill the search input with the complete formatted address
+          const fullAddress = place.formatted_address || `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          setSearchInput(fullAddress);
+          setMarker(coords);
+          setFormattedAddress(fullAddress);
+          setError('');
+          
+          // Pass coordinates as an object to preserve lat/lng for backend storage
+          onChange({ 
+            lat, 
+            lng, 
+            formatted_address: fullAddress
+          });
+        }
+      });
+    }
+  }, [isLoaded, onChange]);
+
+  // Initialize with existing value
+  useEffect(() => {
+    if (value && typeof value === 'object' && 'lat' in value && 'lng' in value) {
+      setMarker({ lat: value.lat, lng: value.lng });
+      setFormattedAddress(value.formatted_address || `Coordinates: ${value.lat.toFixed(6)}, ${value.lng.toFixed(6)}`);
+    }
+  }, [value]);
+
+  const handleUseCurrentLocation = () => {
     setError('');
-    setSelectedMethod('geo');
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        // Pass coordinates as an object to preserve lat/lng for backend storage
-        onChange({ lat, lng, formatted_address: `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}` });
-      }, () => setError('Unable to get your location.'));
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const coords = { lat, lng };
+          
+          setMarker(coords);
+          
+          // Get address from coordinates using reverse geocoding
+          try {
+            const geocoder = new google.maps.Geocoder();
+            const result = await geocoder.geocode({ location: coords });
+            const address = result.results[0]?.formatted_address || `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            setFormattedAddress(address);
+            
+            onChange({ lat, lng, formatted_address: address });
+          } catch (err) {
+            const address = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            setFormattedAddress(address);
+            onChange({ lat, lng, formatted_address: address });
+          }
+        },
+        () => setError('Unable to get your location.')
+      );
     } else {
       setError('Geolocation is not supported by your browser.');
     }
   };
 
-  const handleUrlBlur = () => {
-    setSelectedMethod('url');
-    const coords = extractCoordsFromGoogleMapsUrl(urlInput);
-    if (coords) {
-      setError('');
-      // Pass coordinates as an object to preserve lat/lng for backend storage
-      onChange({ lat: coords.lat, lng: coords.lng, formatted_address: `Coordinates: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}` });
-    } else if (urlInput) {
-      setError('Could not extract coordinates from this URL.');
-    }
+  const handleMapClick = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    const coords = { lat, lng };
+    
+    setMarker(coords);
+    
+    // Get address from coordinates using reverse geocoding
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: coords }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const address = results[0].formatted_address;
+        setFormattedAddress(address);
+        onChange({ lat, lng, formatted_address: address });
+      } else {
+        const address = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        setFormattedAddress(address);
+        onChange({ lat, lng, formatted_address: address });
+      }
+    });
   };
 
-  const handleCoordinatesSubmit = () => {
-    setSelectedMethod('coordinates');
-    // Validate coordinates
-    const lat = parseFloat(latitude);
-    const lng = parseFloat(longitude);
+  const handleMarkerDragEnd = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    const coords = { lat, lng };
     
-    if (isNaN(lat) || isNaN(lng)) {
-      setError('Please enter valid coordinates');
-      return;
-    }
+    setMarker(coords);
     
-    if (lat < -90 || lat > 90) {
-      setError('Latitude must be between -90 and 90');
-      return;
-    }
-    
-    if (lng < -180 || lng > 180) {
-      setError('Longitude must be between -180 and 180');
-      return;
-    }
+    // Get address from coordinates using reverse geocoding
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: coords }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const address = results[0].formatted_address;
+        setFormattedAddress(address);
+        onChange({ lat, lng, formatted_address: address });
+      } else {
+        const address = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        setFormattedAddress(address);
+        onChange({ lat, lng, formatted_address: address });
+      }
+    });
+  };
 
-    // Pass coordinates as an object to preserve lat/lng for backend storage
-    onChange({ lat, lng, formatted_address: `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}` });
+  const handleSearchSubmit = async () => {
+    if (!searchInput.trim()) return;
+    
+    setIsSearching(true);
     setError('');
+    
+    try {
+      const geocoder = new google.maps.Geocoder();
+      const result = await geocoder.geocode({ address: searchInput });
+      
+      if (result.results && result.results[0]) {
+        const place = result.results[0];
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const coords = { lat, lng };
+        
+        setMarker(coords);
+        setFormattedAddress(place.formatted_address);
+        onChange({ lat, lng, formatted_address: place.formatted_address });
+      } else {
+        setError('Location not found. Please try a different search term.');
+      }
+    } catch (err) {
+      setError('Error searching for location. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && useCoordinates) {
-      handleCoordinatesSubmit();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearchSubmit();
     }
   };
 
   return (
-    <div style={{ background: '#232323', borderRadius: 12, padding: 16, margin: '12px 0', boxShadow: '0 2px 8px #0002', maxWidth: 400 }}>
+    <div style={{ background: '#232323', borderRadius: 12, padding: 16, margin: '12px 0', boxShadow: '0 2px 8px #0002', maxWidth: 500 }}>
       <style>{`
         input::placeholder {
-          color: rgba(0, 0, 0, 0.7) !important;
+          color: rgba(255, 255, 255, 0.5) !important;
+        }
+        .pac-container {
+          background: #333 !important;
+          border: 1px solid #555 !important;
+          border-radius: 8px !important;
+        }
+        .pac-item {
+          color: #fff !important;
+          border-bottom: 1px solid #555 !important;
+          padding: 8px 12px !important;
+        }
+        .pac-item:hover {
+          background: #444 !important;
+        }
+        .pac-item-selected {
+          background: ${colors.primary} !important;
+          color: #fff !important;
+        }
+        .pac-item-query {
+          color: #fff !important;
+          font-weight: 600 !important;
+        }
+        .pac-matched {
+          color: #fff !important;
+          font-weight: 600 !important;
         }
       `}</style>
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <button
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, background: selectedMethod === 'geo' ? colors.primary : colors.primary, border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 600, cursor: 'pointer', fontSize: 16
-          }}
-          onClick={handleGeo}
-        >
-          <i className="fa-solid fa-location-dot" style={{ color: '#fff', fontSize: 20 }} />
-          Use my current location
-        </button>
-        
-        <div style={{ display: 'flex', alignItems: 'center', background: selectedMethod === 'url' ? colors.primary : colors.primary, borderRadius: 8, padding: '4px 8px' }}>
-          <i className="fa-solid fa-map-location-dot" style={{ color: '#fff', fontSize: 18, marginRight: 8 }} />
+        {/* Search Input */}
+        <div style={{ display: 'flex', gap: 8 }}>
           <input
+            ref={searchInputRef}
             type="text"
-            placeholder="Paste Google Maps URL"
-            value={urlInput}
-            onChange={e => setUrlInput(e.target.value)}
-            onBlur={handleUrlBlur}
+            placeholder="Search for a location or address..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={handleKeyDown}
             style={{ 
               flex: 1, 
-              background: 'transparent', 
-              border: 'none', 
+              background: '#333', 
+              border: '1px solid #555', 
               color: '#fff', 
               fontSize: 15, 
-              outline: 'none'
+              outline: 'none',
+              padding: '10px 12px',
+              borderRadius: '8px'
             }}
           />
+          <button
+            onClick={handleSearchSubmit}
+            disabled={isSearching}
+            style={{
+              background: colors.primary,
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 16px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 14,
+              color: '#000',
+              minWidth: '80px'
+            }}
+          >
+            {isSearching ? 'Searching...' : 'Search'}
+          </button>
         </div>
 
-        {/* Manual Coordinates Toggle */}
+        {/* Use Current Location Button */}
         <button
-          onClick={() => setUseCoordinates(!useCoordinates)}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8, 
-            background: useCoordinates ? colors.primary : colors.primary, 
-            border: 'none', borderRadius: 8, 
-            padding: '8px 12px', fontWeight: 600, cursor: 'pointer', 
-            fontSize: 16, transition: 'background-color 0.2s ease'
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 8, 
+            background: colors.primary, 
+            border: 'none', 
+            borderRadius: 8, 
+            padding: '10px 12px', 
+            fontWeight: 600, 
+            cursor: 'pointer', 
+            fontSize: 16,
+            color: '#000'
           }}
+          onClick={handleUseCurrentLocation}
         >
-          <i className="fa-solid fa-crosshairs" style={{ color: '#fff', fontSize: 18 }} />
-          {useCoordinates ? 'Hide Manual Coordinates' : 'Enter Coordinates Manually'}
+          <i className="fa-solid fa-location-dot" style={{ fontSize: 18 }} />
+          Use my current location
         </button>
 
-        {useCoordinates && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: selectedMethod === 'coordinates' ? colors.primary : colors.primary, borderRadius: 8, padding: '8px' }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ color: '#fff', fontSize: 12, marginBottom: 4, display: 'block' }}>Latitude:</label>
-                <input
-                  type="number"
-                  placeholder="e.g., 51.5074"
-                  value={latitude}
-                  onChange={e => setLatitude(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  step="any"
-                  style={{ 
-                    width: '100%', 
-                    background: 'transparent', 
-                    border: '1px solid rgba(255, 255, 255, 0.3)', 
-                    color: '#fff', 
-                    fontSize: 14, 
-                    outline: 'none',
-                    padding: '6px 8px',
-                    borderRadius: '4px'
-                  }}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ color: '#fff', fontSize: 12, marginBottom: 4, display: 'block' }}>Longitude:</label>
-                <input
-                  type="number"
-                  placeholder="e.g., -0.1278"
-                  value={longitude}
-                  onChange={e => setLongitude(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  step="any"
-                  style={{ 
-                    width: '100%', 
-                    background: 'transparent', 
-                    border: '1px solid rgba(255, 255, 255, 0.3)', 
-                    color: '#fff', 
-                    fontSize: 14, 
-                    outline: 'none',
-                    padding: '6px 8px',
-                    borderRadius: '4px'
-                  }}
-                />
-              </div>
-            </div>
-            <button
-              onClick={handleCoordinatesSubmit}
-              style={{
-                background: colors.primary, border: 'none', borderRadius: 4, padding: '6px 12px', fontWeight: 600, cursor: 'pointer', fontSize: 12, alignSelf: 'flex-start'
+        {/* Google Map */}
+        <div style={{ height: 300, borderRadius: 8, overflow: 'hidden', border: '1px solid #555' }}>
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={{ width: '100%', height: '100%' }}
+              center={marker || defaultCenter}
+              zoom={marker ? 15 : 10}
+              onClick={handleMapClick}
+              options={{ 
+                disableDefaultUI: true,
+                zoomControl: true,
+                streetViewControl: false,
+                mapTypeControl: false,
+                fullscreenControl: false,
+                styles: [
+                  {
+                    featureType: 'all',
+                    elementType: 'all',
+                    stylers: [
+                      { invert_lightness: true },
+                      { saturation: 10 },
+                      { lightness: 30 },
+                      { gamma: 0.5 },
+                      { hue: '#0077ff' }
+                    ]
+                  }
+                ]
               }}
             >
-              Set Coordinates
-            </button>
-          </div>
-        )}
+              {marker && (
+                <Marker
+                  position={marker}
+                  draggable
+                  onDragEnd={handleMarkerDragEnd}
+                />
+              )}
+            </GoogleMap>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%', 
+              background: '#333',
+              color: '#fff'
+            }}>
+              Loading map...
+            </div>
+          )}
+        </div>
 
         {error && <div style={{ color: '#f87171', fontSize: 14 }}>{error}</div>}
         
-        {value && (
-          <div style={{ color: colors.primary, fontSize: 15, marginTop: 8 }}>
-            Selected: {typeof value === 'object' && value !== null && 'lat' in value && 'lng' in value && typeof value.lat === 'number' && typeof value.lng === 'number' 
-              ? `Lat: ${value.lat.toFixed(6)}, Lng: ${value.lng.toFixed(6)}` 
-              : String(value)}
+        {formattedAddress && (
+          <div style={{ 
+            background: '#333', 
+            padding: '12px', 
+            borderRadius: 8, 
+            border: '1px solid #555'
+          }}>
+            <div style={{ color: colors.primary, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+              Selected Location:
+            </div>
+            <div style={{ color: '#fff', fontSize: 15 }}>
+              {formattedAddress}
+            </div>
+            {marker && (
+              <div style={{ color: '#ccc', fontSize: 12, marginTop: 4 }}>
+                Coordinates: {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+              </div>
+            )}
           </div>
         )}
         
-        {showConfirm && value && onConfirm && (
+        {showConfirm && marker && onConfirm && (
           <button
             style={{
-              background: colors.primary, border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: 14, marginTop: 8
+              background: colors.primary, 
+              border: 'none', 
+              borderRadius: 8, 
+              padding: '12px 16px', 
+              fontWeight: 600, 
+              cursor: 'pointer', 
+              fontSize: 16,
+              color: '#fff',
+              marginTop: 8
             }}
             onClick={onConfirm}
           >

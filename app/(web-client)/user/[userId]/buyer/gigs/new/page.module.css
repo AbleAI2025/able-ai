@@ -1,11 +1,11 @@
 /* app/onboard-buyer/OnboardBuyerPage.module.css */
 
-/* CSS Variables for sanitized step buttons */
+/* CSS Variables for buyer gig creation - using buyer theme colors */
 .cssVariables {
-  --primary-color: #7eecf9;
-  --primary-darker-color: #5dd8e8;
-  --secondary-color: #7eecf9;
-  --secondary-darker-color: #5dd8e8;
+  --primary-color: var(--buyer-accent-color);
+  --primary-darker-color: var(--buyer-accent-darker-color);
+  --secondary-color: var(--buyer-accent-color);
+  --secondary-darker-color: var(--buyer-accent-darker-color);
 }
 
 /* Chat container fade-in animation */

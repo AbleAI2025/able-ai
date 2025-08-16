@@ -220,3 +220,143 @@ export const updateVideoUrlProfileAction = async (
     return { success: false, data: "Url video updated successfully", error };
   }
 };
+
+// New action to save complete worker profile from onboarding
+export const saveWorkerProfileFromOnboardingAction = async (
+  profileData: {
+    about?: string;
+    experience?: string;
+    skills?: string;
+    hourlyRate?: number;
+    location?: { lat: number; lng: number } | string;
+    availability?: {
+      days: string[];
+      startTime: string;
+      endTime: string;
+    } | string;
+    time?: string;
+    videoIntro?: string;
+    references?: string;
+  },
+  token?: string
+) => {
+  try {
+    if (!token) {
+      throw new Error("Token is required to save worker profile");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) throw "User not found";
+
+    // Get or create worker profile
+    let workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+
+    if (!workerProfile) {
+      // Create new worker profile if it doesn't exist
+      const newProfiles = await db.insert(GigWorkerProfilesTable).values({
+        userId: user.id,
+      }).returning();
+      workerProfile = newProfiles[0];
+    }
+
+    // Prepare update data
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    // Handle fullBio (combine about and experience)
+    if (profileData.about || profileData.experience) {
+      const bioParts = [];
+      if (profileData.about) bioParts.push(profileData.about);
+      if (profileData.experience) bioParts.push(profileData.experience);
+      updateData.fullBio = bioParts.join('\n\n');
+    }
+
+    // Handle location
+    if (profileData.location) {
+      if (typeof profileData.location === 'object' && 'lat' in profileData.location && 'lng' in profileData.location) {
+        // Handle coordinate object
+        updateData.latitude = profileData.location.lat;
+        updateData.longitude = profileData.location.lng;
+        updateData.location = `Lat: ${profileData.location.lat.toFixed(6)}, Lng: ${profileData.location.lng.toFixed(6)}`;
+      } else if (typeof profileData.location === 'string') {
+        // Handle string location
+        updateData.location = profileData.location;
+      }
+    }
+
+    // Handle availability
+    if (profileData.availability) {
+      if (typeof profileData.availability === 'object' && 'days' in profileData.availability) {
+        // New availability format
+        updateData.availabilityJson = profileData.availability;
+      } else if (typeof profileData.availability === 'string') {
+        // Legacy string format - convert to new format
+        updateData.availabilityJson = {
+          days: [],
+          startTime: '09:00',
+          endTime: '17:00'
+        };
+      }
+    }
+
+    // Handle video URL
+    if (profileData.videoIntro) {
+      updateData.videoUrl = profileData.videoIntro;
+    }
+
+    // Handle skills and create semantic profile
+    if (profileData.skills) {
+      // Create semantic profile from skills
+      const skillTags = profileData.skills
+        .split(/[,\n]+/)
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 0);
+      
+      updateData.semanticProfileJson = {
+        tags: skillTags
+      };
+    }
+
+    // Handle hourly rate in private notes for now (could be moved to a separate field later)
+    if (profileData.hourlyRate) {
+      updateData.privateNotes = `Hourly Rate: £${profileData.hourlyRate}${profileData.time ? `\nPreferred Time: ${profileData.time}` : ''}`;
+    }
+
+    // Update the worker profile
+    await db
+      .update(GigWorkerProfilesTable)
+      .set(updateData)
+      .where(eq(GigWorkerProfilesTable.userId, user.id));
+
+    // Also ensure user is marked as a gig worker
+    await db
+      .update(UsersTable)
+      .set({
+        isGigWorker: true,
+        lastRoleUsed: "GIG_WORKER",
+        updatedAt: new Date(),
+      })
+      .where(eq(UsersTable.firebaseUid, uid));
+
+    return { 
+      success: true, 
+      data: "Worker profile saved successfully",
+      profileId: workerProfile.id 
+    };
+  } catch (error) {
+    console.error("Error saving worker profile from onboarding:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to save worker profile" 
+    };
+  }
+};

@@ -38,13 +38,15 @@ export function GigSummary({ data, expandedFields, onExpandField, onConfirm, use
           return (
             <li key={field} style={styles.summaryListItem}>
               <strong style={styles.summaryLabel}>{field.replace(/([A-Z])/g, ' $1')}: </strong>
-              <span>
-                {value && typeof value === 'object' && 'lat' in value && 'lng' in value
-                  ? `Lat: ${value.lat}, Lng: ${value.lng}`
-                  : typeof value === 'object'
-                    ? JSON.stringify(value)
-                    : String(value)}
-              </span>
+                             <span>
+                 {field === 'hourlyRate' && typeof value === 'number'
+                   ? `£${value.toFixed(2)}`
+                   : value && typeof value === 'object' && 'lat' in value && 'lng' in value
+                     ? value.formatted_address || `Lat: ${value.lat}, Lng: ${value.lng}`
+                     : typeof value === 'object'
+                       ? JSON.stringify(value)
+                       : String(value)}
+               </span>
             </li>
           );
         })}

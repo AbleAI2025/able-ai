@@ -6,6 +6,57 @@ import CalendarPickerBubble from './CalendarPickerBubble';
 import { ChatStep } from '@/app/hooks';
 import { StepInputConfig } from '@/app/types';
 
+// Utility function to format time for display
+function formatTimeForDisplay(timeValue: any): string {
+  if (!timeValue) return '';
+  try {
+    // Handle time ranges like "12:00 to 16:00"
+    if (typeof timeValue === 'string' && timeValue.includes(' to ')) {
+      const [startTime, endTime] = timeValue.split(' to ');
+      const formattedStart = formatSingleTime(startTime);
+      const formattedEnd = formatSingleTime(endTime);
+      return `${formattedStart} to ${formattedEnd}`;
+    }
+    
+    // Handle single times
+    return formatSingleTime(timeValue);
+  } catch {
+    return String(timeValue);
+  }
+}
+
+function formatSingleTime(timeValue: any): string {
+  if (!timeValue) return '';
+  try {
+    // Handle time strings like "14:30" or "2:30 PM"
+    if (typeof timeValue === 'string') {
+      const time = timeValue.trim();
+      
+      // Check if it's already in a readable format
+      if (time.match(/^\d{1,2}:\d{2}\s*[AaPp][Mm]$/)) {
+        return time; // Already formatted like "2:30 PM"
+      }
+      
+      // Handle 24-hour format like "14:30"
+      if (time.match(/^\d{1,2}:\d{2}$/)) {
+        const [hours, minutes] = time.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        return date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+      }
+    }
+    
+    // Handle Date objects
+    if (timeValue instanceof Date) {
+      return timeValue.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+    
+    return String(timeValue);
+  } catch {
+    return String(timeValue);
+  }
+}
+
 interface ChatStepRendererProps {
   step: ChatStep;
   idx: number;
@@ -78,7 +129,7 @@ export default function ChatStepRenderer({
                   <li key={field} style={{ marginBottom: 8 }}>
                     <strong style={{ textTransform: 'capitalize' }}>{field.replace(/([A-Z])/g, ' $1')}: </strong>
                     <span>
-                      Lat: {loc.lat}, Lng: {loc.lng}
+                      {loc.formatted_address || `Coordinates: ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`}
                     </span>
                   </li>
                 );
@@ -115,11 +166,15 @@ export default function ChatStepRenderer({
                 <li key={field} style={{ marginBottom: 8 }}>
                   <strong style={{ textTransform: 'capitalize' }}>{field.replace(/([A-Z])/g, ' $1')}: </strong>
                   <span>
-                    {value && typeof value === 'object' && 'lat' in value && 'lng' in value
-                      ? `Lat: ${(value as any).lat}, Lng: ${(value as any).lng}`
-                      : typeof value === 'object'
-                        ? JSON.stringify(value)
-                        : String(value)}
+                    {field === 'hourlyRate' && typeof value === 'number'
+                      ? `£${value.toFixed(2)}`
+                      : field === 'gigTime' && typeof value === 'string'
+                        ? formatTimeForDisplay(value)
+                        : value && typeof value === 'object' && 'lat' in value && 'lng' in value
+                          ? (value as any).formatted_address || `Coordinates: ${(value as any).lat.toFixed(6)}, ${(value as any).lng.toFixed(6)}`
+                          : typeof value === 'object'
+                            ? JSON.stringify(value)
+                            : String(value)}
                   </span>
                 </li>
               );
@@ -239,7 +294,7 @@ export default function ChatStepRenderer({
     }
 
     // Standard input bubble
-    const allowedTypes = ["number", "text", "email", "password", "date", "tel"];
+    const allowedTypes = ["number", "text", "email", "password", "date", "tel", "time"];
     const safeType = allowedTypes.includes(inputConf.type) ? inputConf.type : "text";
     
     return (
@@ -249,7 +304,7 @@ export default function ChatStepRenderer({
           name={inputConf.name}
           value={formData[inputConf.name] || ""}
           disabled={isSubmitting}
-          type={safeType as "number" | "text" | "email" | "password" | "date" | "tel"}
+          type={safeType as "number" | "text" | "email" | "password" | "date" | "tel" | "time"}
           placeholder={inputConf.placeholder}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             handleInputChange(inputConf.name, e.target.value)

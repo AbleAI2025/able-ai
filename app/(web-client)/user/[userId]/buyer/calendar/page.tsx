@@ -14,12 +14,10 @@ import { BUYER_MOCK_EVENTS } from "./mockData";
 import styles from "./BuyerCalendarPage.module.css";
 import Image from "next/image";
 
-const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
+const FILTERS = ["Accepted gigs", "See gig offers"];
 
 function filterEvents(events: CalendarEvent[], filter: string): CalendarEvent[] {
   switch (filter) {
-    case 'Manage availability':
-      return events.filter(e => e.status === 'UNAVAILABLE');
     case 'Accepted gigs':
       return events.filter(e => e.status === 'ACCEPTED');
     case 'See gig offers':
@@ -44,7 +42,7 @@ const BuyerCalendarPage = () => {
     return "week";
   });
   const [date, setDate] = useState<Date>(new Date());
-  const [activeFilter, setActiveFilter] = useState<string>(FILTERS[1]);
+  const [activeFilter, setActiveFilter] = useState<string>(FILTERS[0]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);

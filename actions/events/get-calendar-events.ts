@@ -173,8 +173,8 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
         return {
           id: gig.id,
           title: gig.titleInternal,
-          start: gig.startTime,
-          end: gig.endTime,
+          start: new Date(gig.startTime),
+          end: new Date(gig.endTime),
           allDay: !(gig.startTime && gig.endTime),
           status: displayStatus,
           eventType: 'gig',
@@ -182,7 +182,7 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
           workerName: gig.worker?.fullName || 'Unassigned Worker',
           isMyGig: true,
           isBuyerAccepted: gig.statusInternal === 'ACCEPTED',
-          location: (gig.addressJson as any)?.address || gig.exactLocation || 'Location not specified',
+          location: (gig.addressJson as any)?.formatted_address || gig.exactLocation || 'Location not specified',
           description: gig.fullDescription || undefined,
           resource: {
             gigId: gig.id,
@@ -201,8 +201,8 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
         return {
           id: gig.id,
           title: `🎯 ${gig.titleInternal} (Offer)`,
-          start: gig.startTime,
-          end: gig.endTime,
+          start: new Date(gig.startTime),
+          end: new Date(gig.endTime),
           allDay: !(gig.startTime && gig.endTime),
           status: EventStatusEnum.OFFER,
           eventType: 'offer',
@@ -210,7 +210,7 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
           workerName: 'Available for you',
           isMyGig: false,
           isBuyerAccepted: false,
-          location: (gig.addressJson as any)?.address || gig.exactLocation || 'Location not specified',
+          location: (gig.addressJson as any)?.formatted_address || gig.exactLocation || 'Location not specified',
           description: gig.fullDescription || undefined,
           resource: {
             gigId: gig.id,
@@ -255,8 +255,8 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
         return {
           id: gig.id,
           title: gig.titleInternal,
-          start: gig.startTime,
-          end: gig.endTime,
+          start: new Date(gig.startTime),
+          end: new Date(gig.endTime),
           allDay: !(gig.startTime && gig.endTime),
           status: displayStatus,
           eventType: 'gig',
@@ -264,7 +264,7 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
           workerName: gig.worker?.fullName || 'Unassigned Worker',
           isMyGig: isMyGig,
           isBuyerAccepted: isBuyerAccepted,
-          location: (gig.addressJson as any)?.address || gig.exactLocation || 'Location not specified',
+          location: (gig.addressJson as any)?.formatted_address || gig.exactLocation || 'Location not specified',
           description: gig.fullDescription || undefined,
           resource: {
             gigId: gig.id,

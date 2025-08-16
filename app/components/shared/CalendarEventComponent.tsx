@@ -22,8 +22,9 @@ export interface CalendarEvent {
     | "COMPLETED"
     | "CANCELLED"
     | "UNAVAILABLE"
-    | "OFFER";
-  eventType?: "gig" | "offer" | "unavailability";
+    | "OFFER"
+    | "AVAILABLE";
+  eventType?: "gig" | "offer" | "unavailability" | "availability";
   buyerName?: string;
   workerName?: string;
   isMyGig?: boolean;
@@ -77,6 +78,9 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
   } else if (event.status === "UNAVAILABLE") {
     statusClass += " " + styles.statusUnavailable;
     statusText = "Unavailable";
+  } else if (event.status === "AVAILABLE") {
+    statusClass += " " + styles.statusAvailable;
+    statusText = "Available";
   }
 
   // Checkmark icon for accepted/completed
@@ -170,6 +174,16 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
           <button className={`${styles.actionButton} ${styles.viewGigBtn} ${userRole === 'buyer' ? styles.viewGigBtnSecondary : ''}`}>
             <Eye size={12} className={styles.viewIcon} />
             View Gig
+          </button>
+        </div>
+      )}
+
+      {/* Edit button for availability events */}
+      {event.status === 'AVAILABLE' && (
+        <div className={styles.actionButtons}>
+          <button className={`${styles.actionButton} ${styles.editAvailabilityBtn}`}>
+            <Eye size={12} className={styles.viewIcon} />
+            Edit
           </button>
         </div>
       )}

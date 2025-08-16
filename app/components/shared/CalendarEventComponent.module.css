@@ -240,6 +240,30 @@
   text-overflow: ellipsis;
 }
 
+.statusAvailable {
+  background-color: #10b981;
+  color: #ffffff;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.75rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: availableGlow 2s ease-in-out infinite;
+}
+
+@keyframes availableGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  }
+}
+
 .participantInfo {
   display: flex;
   align-items: center;
@@ -340,6 +364,17 @@
 
 .viewGigBtnSecondary:hover {
   background-color: var(--secondary-color);
+  color: #ffffff;
+}
+
+.editAvailabilityBtn {
+  background-color: #10b981;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.editAvailabilityBtn:hover {
+  background-color: #059669;
   color: #ffffff;
 }
 
