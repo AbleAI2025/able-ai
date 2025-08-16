@@ -529,10 +529,28 @@ export default function OnboardWorkerPage() {
   }, [manualFormData]);
 
   const handleManualFormSubmit = useCallback(async (formData: any) => {
+    if (!user?.token) {
+      setError('Authentication required. Please sign in again.');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present
+      const requiredData = {
+        about: formData.about || '',
+        experience: formData.experience || '',
+        skills: formData.skills || '',
+        hourlyRate: String(formData.hourlyRate || ''),
+        location: formData.location || '',
+        availability: formData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
+        videoIntro: formData.videoIntro || '',
+        references: formData.references || '',
+        time: formData.time || ''
+      };
+      
       // Save the profile data to database
-      const result = await saveWorkerProfileFromOnboardingAction(formData, user?.token);
+      const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
       if (result.success) {
         // Navigate to worker dashboard
         router.push(`/user/${user?.uid}/worker`);
@@ -1984,10 +2002,28 @@ Make the conversation feel natural and build on what they've already told you.`;
                            }}
                            disabled={isSubmitting}
                            onClick={async () => {
+                             if (!user?.token) {
+                               setError('Authentication required. Please sign in again.');
+                               return;
+                             }
+                             
                              try {
                                setIsSubmitting(true);
+                               // Ensure all required fields are present from summary data
+                               const requiredData = {
+                                 about: summaryData.about || '',
+                                 experience: summaryData.experience || '',
+                                 skills: summaryData.skills || '',
+                                 hourlyRate: String(summaryData.hourlyRate || ''),
+                                 location: summaryData.location || '',
+                                 availability: summaryData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
+                                 videoIntro: summaryData.videoIntro || '',
+                                 references: summaryData.references || '',
+                                 time: summaryData.time || ''
+                               };
+                               
                                // Save the profile data to database
-                               const result = await saveWorkerProfileFromOnboardingAction(summaryData, user?.token);
+                               const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
                                if (result.success) {
                                  // Navigate to worker dashboard
                                  router.push(`/user/${user?.uid}/worker`);
