@@ -354,7 +354,7 @@ export async function getGigDetails({ gigId, userId, role, isViewQA }: { gigId: 
     console.log('Location debug - FINAL locationDisplay type:', typeof locationDisplay);
 
     // Use the full titleInternal as the role (no truncation)
-    let roleDisplay = gig.titleInternal || 'Gig Worker';
+    const roleDisplay = gig.titleInternal || 'Gig Worker';
 
     const gigDetails: GigDetails = {
       id: gig.id,

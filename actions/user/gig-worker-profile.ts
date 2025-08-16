@@ -6,6 +6,7 @@ import PublicWorkerProfile, {
 } from "@/app/types/workerProfileTypes";
 import { db } from "@/lib/drizzle/db";
 import {
+  BadgeDefinitionsTable,
   EquipmentTable,
   GigWorkerProfilesTable,
   QualificationsTable,
@@ -18,69 +19,67 @@ import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { eq } from "drizzle-orm";
 
-
 export const getPublicWorkerProfileAction = async (workerId: string) => {
-    if (!workerId) throw "Worker ID is required"
+  if (!workerId) throw "Worker ID is required";
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.id, workerId),
-    });
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.id, workerId),
+  });
 
-    const data = await getGigWorkerProfile(workerProfile)
+  const data = await getGigWorkerProfile(workerProfile);
 
-    return data
-}
+  return data;
+};
 
 export const getPrivateWorkerProfileAction = async (token: string) => {
-      if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
+  if (!token) {
+    throw new Error("User ID is required to fetch buyer profile");
+  }
 
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+  const { uid } = await isUserAuthenticated(token);
+  if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
+  const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firebaseUid, uid),
+  });
 
-    if (!user) {
-      throw new Error("User not found");
-    }
+  if (!user) {
+    throw new Error("User not found");
+  }
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.userId, user.id),
+  });
 
-    const data = await getGigWorkerProfile(workerProfile)
+  const data = await getGigWorkerProfile(workerProfile);
 
-    return data
-}
+  return data;
+};
 export const getGigWorkerProfile = async (
-  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined,
+  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined
 ): Promise<{ success: true; data: PublicWorkerProfile }> => {
   try {
-
     if (!workerProfile) throw "Getting worker profile error";
 
-      const skills = await db.query.SkillsTable.findMany({
-        where: eq(SkillsTable.workerProfileId, workerProfile.id),
-      });
+    const skills = await db.query.SkillsTable.findMany({
+      where: eq(SkillsTable.workerProfileId, workerProfile.id),
+    });
 
-      const equipment = await db.query.EquipmentTable.findMany({
-        where: eq(EquipmentTable.workerProfileId, workerProfile.id),
-      });
+    const equipment = await db.query.EquipmentTable.findMany({
+      where: eq(EquipmentTable.workerProfileId, workerProfile.id),
+    });
 
-      const qualifications = await db.query.QualificationsTable.findMany({
-        where: eq(QualificationsTable.workerProfileId, workerProfile.id),
-      });
+    const qualifications = await db.query.QualificationsTable.findMany({
+      where: eq(QualificationsTable.workerProfileId, workerProfile.id),
+    });
 
-      const awards = await db.query.UserBadgesLinkTable.findMany({
-        where: eq(UserBadgesLinkTable.userId, workerProfile.userId),
-      });
-  
-      const reviews = await db.query.ReviewsTable.findMany({
-        where: eq(ReviewsTable.targetUserId, workerProfile.userId),
-      });
+    const awards = await db.query.UserBadgesLinkTable.findMany({
+      where: eq(UserBadgesLinkTable.userId, workerProfile.userId),
+    });
+
+    const reviews = await db.query.ReviewsTable.findMany({
+      where: eq(ReviewsTable.targetUserId, workerProfile.userId),
+    });
 
     const totalReviews = reviews?.length;
 
@@ -130,9 +129,27 @@ export const getSkillDetailsWorker = async (id: string) => {
       where: eq(UsersTable.id, workerProfile?.userId || ""),
     });
 
-    const badges = await db.query.UserBadgesLinkTable.findMany({
-      where: eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""),
-    });
+    const badges = await db
+      .select({
+        id: UserBadgesLinkTable.id,
+        awardedAt: UserBadgesLinkTable.awardedAt,
+        awardedBySystem: UserBadgesLinkTable.awardedBySystem,
+        notes: UserBadgesLinkTable.notes,
+        badge: {
+          id: BadgeDefinitionsTable.id,
+          name: BadgeDefinitionsTable.name,
+          description: BadgeDefinitionsTable.description,
+          icon: BadgeDefinitionsTable.iconUrlOrLucideName,
+          type: BadgeDefinitionsTable.type,
+        },
+      })
+      .from(UserBadgesLinkTable)
+      .innerJoin(
+        BadgeDefinitionsTable,
+        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+      )
+      .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
+
 
     const qualifications = await db.query.QualificationsTable.findMany({
       where: eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
@@ -157,6 +174,7 @@ export const getSkillDetailsWorker = async (id: string) => {
     );
 
     const skillProfile = {
+      profileId: workerProfile?.id,
       name: user?.fullName,
       title: skill?.name,
       hashtags: Array.isArray(workerProfile?.hashtags)
@@ -164,18 +182,19 @@ export const getSkillDetailsWorker = async (id: string) => {
         : "",
       customerReviewsText: workerProfile?.fullBio,
       ableGigs: skill?.ableGigs,
-      experienceYears: skill?.experienceMonths / 12,
+      experienceYears: skill?.experienceYears,
       Eph: skill?.agreedRate,
       location: workerProfile?.location || "",
       address: workerProfile?.address || "",
       latitude: workerProfile?.latitude ?? 0,
       longitude: workerProfile?.longitude ?? 0,
+      videoUrl: workerProfile?.videoUrl || "",
       statistics: {
         reviews: reviews?.length,
         paymentsCollected: "£4899",
         tipsReceived: "£767",
       },
-      supportingImages: ["/images/bar-action.svg", "/images/bar-action.svg"],
+      supportingImages: skill.images ?? [],
       badges,
       qualifications,
       buyerReviews: reviewsData,
@@ -184,6 +203,69 @@ export const getSkillDetailsWorker = async (id: string) => {
     return { success: true, data: skillProfile };
   } catch (error) {
     console.error(`Error fetching skill: ${error}`);
+    return { success: false, data: null, error };
+  }
+};
+
+export const createSkillWorker = async (
+  token: string,
+  {
+    name,
+    experienceYears,
+    agreedRate,
+    skillVideoUrl,
+    adminTags = [],
+    images = [],
+  }: {
+    name: string;
+    experienceYears: number;
+    agreedRate: number | string;
+    skillVideoUrl?: string;
+    adminTags?: string[];
+    images?: string[];
+  }
+) => {
+  try {
+    if (!token) throw new Error("Token is required");
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw new Error("Unauthorized");
+
+      const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firebaseUid, uid),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.userId, user.id),
+  });
+  
+    if (!workerProfile) {
+    throw new Error("Worker profile not found");
+  }
+
+    const [newSkill] = await db
+      .insert(SkillsTable)
+      .values({
+        workerProfileId: workerProfile.id,
+        name,
+        experienceMonths: 0,
+        experienceYears,
+        agreedRate: String(agreedRate),
+        skillVideoUrl: skillVideoUrl || null,
+        adminTags: adminTags.length > 0 ? adminTags : null,
+        ableGigs: null,
+        images,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    return { success: true, data: newSkill };
+  } catch (error) {
+    console.error("Error creating skill:", error);
     return { success: false, data: null, error };
   }
 };
@@ -204,7 +286,7 @@ export const updateVideoUrlProfileAction = async (
       where: eq(UsersTable.firebaseUid, uid),
     });
 
-    if (!user) throw "User not found"
+    if (!user) throw "User not found";
 
     await db
       .update(GigWorkerProfilesTable)
@@ -221,142 +303,70 @@ export const updateVideoUrlProfileAction = async (
   }
 };
 
-// New action to save complete worker profile from onboarding
-export const saveWorkerProfileFromOnboardingAction = async (
-  profileData: {
-    about?: string;
-    experience?: string;
-    skills?: string;
-    hourlyRate?: number;
-    location?: { lat: number; lng: number } | string;
-    availability?: {
-      days: string[];
-      startTime: string;
-      endTime: string;
-    } | string;
-    time?: string;
-    videoIntro?: string;
-    references?: string;
-  },
-  token?: string
+export const updateProfileImageAction = async (
+  token: string,
+  id: string,
+  newImage: string
 ) => {
   try {
-    if (!token) {
-      throw new Error("Token is required to save worker profile");
-    }
+    if (!token) throw new Error("User ID is required");
 
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
+    const skill = await db.query.SkillsTable.findFirst({
+      where: eq(SkillsTable.id, id),
+      columns: { images: true },
     });
 
-    if (!user) throw "User not found";
+    const updatedImages = [...(skill?.images ?? []), newImage];
 
-    // Get or create worker profile
-    let workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      // Create new worker profile if it doesn't exist
-      const newProfiles = await db.insert(GigWorkerProfilesTable).values({
-        userId: user.id,
-      }).returning();
-      workerProfile = newProfiles[0];
-    }
-
-    // Prepare update data
-    const updateData: any = {
-      updatedAt: new Date(),
-    };
-
-    // Handle fullBio (combine about and experience)
-    if (profileData.about || profileData.experience) {
-      const bioParts = [];
-      if (profileData.about) bioParts.push(profileData.about);
-      if (profileData.experience) bioParts.push(profileData.experience);
-      updateData.fullBio = bioParts.join('\n\n');
-    }
-
-    // Handle location
-    if (profileData.location) {
-      if (typeof profileData.location === 'object' && 'lat' in profileData.location && 'lng' in profileData.location) {
-        // Handle coordinate object
-        updateData.latitude = profileData.location.lat;
-        updateData.longitude = profileData.location.lng;
-        updateData.location = `Lat: ${profileData.location.lat.toFixed(6)}, Lng: ${profileData.location.lng.toFixed(6)}`;
-      } else if (typeof profileData.location === 'string') {
-        // Handle string location
-        updateData.location = profileData.location;
-      }
-    }
-
-    // Handle availability
-    if (profileData.availability) {
-      if (typeof profileData.availability === 'object' && 'days' in profileData.availability) {
-        // New availability format
-        updateData.availabilityJson = profileData.availability;
-      } else if (typeof profileData.availability === 'string') {
-        // Legacy string format - convert to new format
-        updateData.availabilityJson = {
-          days: [],
-          startTime: '09:00',
-          endTime: '17:00'
-        };
-      }
-    }
-
-    // Handle video URL
-    if (profileData.videoIntro) {
-      updateData.videoUrl = profileData.videoIntro;
-    }
-
-    // Handle skills and create semantic profile
-    if (profileData.skills) {
-      // Create semantic profile from skills
-      const skillTags = profileData.skills
-        .split(/[,\n]+/)
-        .map(skill => skill.trim())
-        .filter(skill => skill.length > 0);
-      
-      updateData.semanticProfileJson = {
-        tags: skillTags
-      };
-    }
-
-    // Handle hourly rate in private notes for now (could be moved to a separate field later)
-    if (profileData.hourlyRate) {
-      updateData.privateNotes = `Hourly Rate: £${profileData.hourlyRate}${profileData.time ? `\nPreferred Time: ${profileData.time}` : ''}`;
-    }
-
-    // Update the worker profile
     await db
-      .update(GigWorkerProfilesTable)
-      .set(updateData)
-      .where(eq(GigWorkerProfilesTable.userId, user.id));
-
-    // Also ensure user is marked as a gig worker
-    await db
-      .update(UsersTable)
+      .update(SkillsTable)
       .set({
-        isGigWorker: true,
-        lastRoleUsed: "GIG_WORKER",
+        images: updatedImages,
         updatedAt: new Date(),
       })
-      .where(eq(UsersTable.firebaseUid, uid));
+      .where(eq(SkillsTable.id, id));
 
-    return { 
-      success: true, 
-      data: "Worker profile saved successfully",
-      profileId: workerProfile.id 
-    };
+    return { success: true, data: updatedImages };
   } catch (error) {
-    console.error("Error saving worker profile from onboarding:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to save worker profile" 
-    };
+    console.error("Error adding profile image:", error);
+    return { success: false, data: null, error };
   }
 };
+
+export const deleteImageAction = async (
+  token: string,
+  skillId: string,
+  imageUrl: string
+) => {
+  try {
+    if (!token) throw new Error("User ID is required");
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const skill = await db.query.SkillsTable.findFirst({
+      where: eq(SkillsTable.id, skillId),
+      columns: { images: true },
+    });
+
+    if (!skill) throw "Skill not found";
+
+    const updatedImages = skill?.images?.filter((img) => img !== imageUrl);
+
+    await db
+      .update(SkillsTable)
+      .set({
+        images: updatedImages,
+        updatedAt: new Date(),
+      })
+      .where(eq(SkillsTable.id, skillId));
+
+    return { success: true, data: updatedImages };
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return { success: false, data: null, error };
+  }
+}

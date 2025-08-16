@@ -37,7 +37,7 @@
 }
 
 .role {
-  font-size: 1.25rem;
+  font-size: 1rem;
   margin-bottom: 8px;
   color: #ffffff;
   font-family: var(--font-family);
@@ -109,7 +109,7 @@
 }
 
 .acceptButton {
-  background-color: #5bc0de; /* Light blue from the image */
+  background-color: var(--primary-color);
 }
 
 .declineButton {

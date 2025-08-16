@@ -13,11 +13,12 @@ import Loader from "@/app/components/shared/Loader"; // Assuming you have a Load
 import { useAuth } from "@/context/AuthContext";
 import { getAllNotificationsAction, updateNotificationStatusAction } from "@/actions/notifications/notifications";
 import { Notification, NotificationType } from "@/app/types/NotificationTypes";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 
 // Helper to get icon based on notification type
 const getNotificationIcon = (type: Notification["type"]) => {
-  if (type) return null;
+  if (!type) return null;
   switch (type) {
     case "offer":
     case "gigUpdate":
@@ -149,18 +150,8 @@ export default function NotificationsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        <ScreenHeaderWithBack title="Notifications" onBackClick={handleGoBack} />
         <div className={styles.pageWrapper}>
-          <header className={styles.header}>
-            <button
-              onClick={handleGoBack}
-              className={styles.backButton}
-              aria-label="Go back"
-            >
-              <ChevronLeft size={24} color="#fff" />
-            </button>
-            <h1 className={styles.pageTitle}>Notifications</h1>
-          </header>
-
           {isLoadingNotifications ? (
             <Loader />
           ) : error ? (

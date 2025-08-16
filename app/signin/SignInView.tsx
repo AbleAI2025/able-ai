@@ -8,7 +8,8 @@ import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signInWithFirebaseAction } from "@/actions/auth/singin";
 import { useFirebase } from "@/context/FirebaseContext";
-import { Eye, EyeOff } from "lucide-react";
+import PasswordInputField from "../components/form/PasswodInputField";
+import Link from "next/link";
 
 interface SignInViewProps {
   onToggleRegister: () => void;
@@ -21,7 +22,6 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { authClient, loading: firebaseLoading } = useFirebase();
-  const [show, setShow] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,30 +100,17 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
         <label htmlFor="password" className={styles.label}>
           Password
         </label>
-        <div className={styles.passwordContainer}>
-          <InputField
-            type={show ? "text" : "password"}
-            id="password-signin"
-            name="password-signin"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setPassword(e.target.value)
-            }
-            required
-          />
-          <button
-            type="button"
-            className={styles.togglePasswordVisibility}
-            onClick={() => setShow(!show)}
-            aria-label={show ? "Hide password" : "Show password"}
-          >
-            {show ? <Eye className={styles.eyeIcon} /> : <EyeOff className={styles.eyeIcon} />}
-          </button>
-        </div>
-        <a href="/reset-password" className={styles.forgotPassword}>
+        <PasswordInputField
+          password={password}
+          setPassword={setPassword}
+          id="password-signin"
+          name="password-signin"
+          placeholder="Enter your password"
+          required
+        />
+        <Link href="/reset-password" className={styles.forgotPassword}>
           Forgot Password?
-        </a>
+        </Link>
       </div>
 
       <div className={styles.submitWrapper}>

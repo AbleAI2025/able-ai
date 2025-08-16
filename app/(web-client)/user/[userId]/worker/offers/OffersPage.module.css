@@ -4,7 +4,6 @@
   min-height: 100vh;
   background-color: #000;
   color: #e0e0e0;
-  padding: 1rem 1rem 0;
   font-family: var(--font-family);
   position: relative;
 }
@@ -18,6 +17,7 @@
   flex-grow: 1;
   overflow-y: scroll;
   margin-bottom: 3rem;
+   padding: 1rem 1rem 0;
 }
 
 .header {
@@ -32,15 +32,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.pageTitle {
-  color: #ffffff;
-  font-size: 1.5rem;
-  font-family: var(--font-family);
-  font-weight: 700;
-  margin: 0;
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -70,17 +61,16 @@
 }
 
 .sectionTitle {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 1rem;
+  color: var(--primary-color);
   font-family: var(--font-family);
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .offerList {
@@ -113,6 +103,7 @@
   bottom: 0;
   left: 0;
   right: 0;
+  padding: 0.5rem;
 }
 
 .homeButton {

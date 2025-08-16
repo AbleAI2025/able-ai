@@ -9,6 +9,7 @@ import { Star, Send, Loader2 } from 'lucide-react'; // Lucide icons
 
 import styles from './RecommendationPage.module.css';
 import { useAuth } from '@/context/AuthContext';
+import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
 
 interface RecommendationFormData {
   recommendationText: string;
@@ -174,16 +175,12 @@ export default function RecommendationPage() {
 
   return (
     <div className={styles.container}>
+      <ScreenHeaderWithBack title='Recommendation' onBackClick={() => router.back()} />
       <div className={styles.pageWrapper}>
-        <h1 className={styles.title}>
-          <Star size={28} className={styles.starIcon} />
-          Recommendation for {workerDetails.name}
-        </h1>
-
         <div className={styles.recommendationCard}>
           <p className={styles.prompt}>
-            {workerDetails.name} is available for hire on Able! Please provide a reference for {workerDetails.name}&apos;s skills as a {workerDetails.primarySkill}.
-            Your feedback will be added to their public profile after review.
+            {workerDetails.name} is available for hire on Able! <br /> Please provide a reference for {workerDetails.name}&apos;s skills as a {workerDetails.primarySkill}.
+          Your feedback will be added to their public profile.
           </p>
 
           {error && <p className={styles.errorMessage}>{error}</p>}
@@ -204,7 +201,7 @@ export default function RecommendationPage() {
             </div>
 
             <div className={styles.inputGroup}>
-              <label htmlFor="relationship" className={styles.label}>How do you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label>
+              <label htmlFor="relationship" className={styles.label}>Please describe how you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label>
               <textarea
                 id="relationship"
                 name="relationship"
@@ -242,22 +239,9 @@ export default function RecommendationPage() {
 
             <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
               {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={18} />}
-              {isSubmitting ? 'Submitting...' : 'Submit Recommendation'}
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           </form>
-        </div>
-
-        <div className={styles.botMessageContainer}>
-          <Image
-            src="/images/logo-placeholder.svg" // Replace with actual bot avatar
-            alt="Able AI Agent"
-            width={40}
-            height={40}
-            className={styles.botAvatar}
-          />
-          <p className={styles.botText}>
-            Thank you for helping build our community! If you need assistance or want to find talent yourself, feel free to ask.
-          </p>
         </div>
       </div>
     </div>

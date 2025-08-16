@@ -22,6 +22,7 @@ import MonthlyAvailabilityView from "@/app/components/availability/MonthlyAvaila
 // Import the CSS module for this page
 import styles from "./WorkerCalendarPage.module.css";
 import Image from "next/image";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
 
@@ -328,6 +329,7 @@ const WorkerCalendarPage = () => {
 
   return (
     <div className={styles.container}>
+      <ScreenHeaderWithBack onBackClick={() => router.back()} />
       <CalendarHeader
         date={date}
         view={view}

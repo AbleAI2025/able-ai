@@ -12,8 +12,7 @@ export default function WorkerSkillDetailPage() {
   const skillId = params?.skillId as string;
   const [profile, setProfile] = useState<SkillProfile | null>(null);
 
-  useEffect(() => {
-    const fetchSkillData = async () => {
+      const fetchSkillData = async () => {
       if (!skillId) return;
       try {
         const { success, data } = await getSkillDetailsWorker(skillId);
@@ -41,8 +40,9 @@ export default function WorkerSkillDetailPage() {
       }
     };
 
+  useEffect(() => {
     fetchSkillData();
   }, [skillId]);
 
-  return <SkillSplashScreen profile={profile} />;
+  return <SkillSplashScreen skillId={skillId} profile={profile} fetchSkillData={fetchSkillData} isSelfView={true}/>;
 }

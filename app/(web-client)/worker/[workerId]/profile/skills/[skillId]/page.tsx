@@ -18,8 +18,7 @@ export default function PublicSkillProfilePage() {
   const skillId = params?.skillId as string;
   const [profile, setProfile] = useState<SkillProfile | null>(null);
 
-  useEffect(() => {
-    const fetchSkillData = async () => {
+      const fetchSkillData = async () => {
       if (!skillId) return;
       try {
         const { success, data } = await getSkillDetailsWorker(skillId);
@@ -47,13 +46,14 @@ export default function PublicSkillProfilePage() {
       }
     };
 
+  useEffect(() => {
     fetchSkillData();
   }, [skillId]);
 
   return (
     <div className={styles.skillPageContainer}>
       <CloseButton />
-      <SkillSplashScreen profile={profile} />
+      <SkillSplashScreen profile={profile} skillId={skillId} fetchSkillData={fetchSkillData} isSelfView={false} />
       <HireButton workerId={skillId} workerName={profile?.name} />
     </div> 
   );

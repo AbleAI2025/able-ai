@@ -13,7 +13,7 @@ import { getWorkerOffers } from '@/actions/gigs/get-worker-offers';
 async function fetchWorkerGigDetails(user: User, gigId: string): Promise<GigDetails | null> {
   console.log("Fetching gig details for worker:", user?.uid, "gig:", gigId);
 
-  const isViewQA = false;
+  const isViewQA = true;
   const { gig, status } = await getGigDetails({ gigId, userId: user?.uid, role: 'worker', isViewQA });
 
   if (!gig || status !== 200) return null;

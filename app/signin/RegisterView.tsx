@@ -9,9 +9,9 @@ import styles from "@/app/signin/SignInPage.module.css";
 import { useRouter } from "next/navigation";
 import { registerUserAction } from "@/actions/auth/signup";
 import { isPasswordCommon } from "./actions";
-import { Eye, EyeOff } from "lucide-react";
 import { authClient } from "@/lib/firebase/clientApp";
 import { toast } from "sonner";
+import PasswordInputField from "../components/form/PasswodInputField";
 
 interface RegisterViewProps {
   onToggleRegister: () => void;
@@ -52,7 +52,6 @@ const RegisterView: React.FC<RegisterViewProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const [show, setShow] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -165,31 +164,17 @@ const RegisterView: React.FC<RegisterViewProps> = ({
         <label htmlFor={`password-register`} className={styles.label}>
           Password
         </label>
-        <div className={styles.passwordContainer}>
-          <InputField
-            type={show ? "text" : "password"}
-            id={`password-register`}
-            name={`password`}
-            placeholder={`Make it secure...`}
-            value={formData[`password` as keyof typeof formData]}
-            onChange={handleInputChange}
-            required={true}
-          />
-          <button
-            type="button"
-            className={styles.togglePasswordVisibility}
-            onClick={() => setShow(!show)}
-            aria-label={show ? "Hide password" : "Show password"}
-          >
-            {show ? (
-              <Eye className={styles.eyeIcon} />
-            ) : (
-              <EyeOff className={styles.eyeIcon} />
-            )}
-          </button>
-        </div>
-      </div>
-
+        <PasswordInputField
+          password={formData.password}
+          setPassword={(value: string) =>
+            setFormData((prev) => ({ ...prev, password: value }))
+          }
+          id={`password-register`}
+          name={`password-register`}
+          placeholder={`Make it secure...`}
+          required
+        />
+    </div>
       <div className={styles.submitWrapper}>
         <SubmitButton loading={loading} disabled={loading}>
           Register

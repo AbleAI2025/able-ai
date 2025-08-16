@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 // Import shared components
@@ -31,6 +31,9 @@ import {
   resetUnreadCountInDB,
 } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import Notification from "@/app/components/shared/Notification";
+
 
 export default function WorkerDashboardPage() {
   const params = useParams();
@@ -39,6 +42,7 @@ export default function WorkerDashboardPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { user } = useAuth();
   const authUserToken = user?.token;
+  const router = useRouter();
 
   async function fetchNotifications(token: string) {
     const { notifications, unreadCount } = await getAllNotificationsAction(token);
@@ -134,9 +138,14 @@ export default function WorkerDashboardPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <header className={styles.pageHeader}>
-          <Logo width={60} height={60} />
-          {uid && (
+        <ScreenHeaderWithBack
+          isHomePage
+          onBackClick={() => router.back()}
+          handleClick={handleClick}
+          unreadCount={unreadCount}
+          unreadNotifications={unreadNotifications}
+        />
+        {uid && (
             <AiSuggestionBanner
               suggestions={aiSuggestions}
               currentIndex={currentIndex}
@@ -150,57 +159,10 @@ export default function WorkerDashboardPage() {
               userId={uid}
             />
           )}
-          {/* Notification Icon */}
-          {uid && (
-            <Link
-              href={`/user/${uid}/notifications`}
-              passHref
-              onClick={handleClick}
-            >
-              <button
-                className={styles.notificationButton}
-                aria-label="Notifications"
-              >
-                <Image
-                  src="/images/notifications.svg"
-                  alt="Notifications"
-                  width={40}
-                  height={40}
-                />
-              </button>
-              {unreadCount > 0 || unreadNotifications > 0 ? (
-                <span
-                  className={styles.notificationBadge}
-                >
-                </span>
-              ) : null}
-            </Link>
-          )}
-        </header>
-
-        {/* <h2 className={styles.sectionTitle}>Manage Your Activity</h2> */}
-        <IconGrid items={actionItems} />
-
-        {/* AI Gig Request Chat Card */}
-
-        {/* Optional Summary Section - Example Structure
-        {summaryData.length > 0 && (
-          <section className={styles.summarySection}>
-            <h2 className={styles.sectionTitle}>
-              Your Next Gig
-            </h2>
-            <ul className={styles.summaryList}>
-              {summaryData.slice(0,3).map(item => ( // Show first 3
-                  <li key={item.id}><Link href={item.link}>{item.title} with {item.partnerName} on {item.dateTime}</Link></li>
-              ))}
-            </ul>
-            {summaryData.length > 3 && <Link href='/worker/calendar' className={styles.viewAllLink}>View All</Link>>}
-          </section>
-        )}
-        */}
-
-        <ReferralBanner title="Refer a worker and earn £5!" />
-
+        <main className={styles.contentWrapper}>
+          <IconGrid items={actionItems} />
+          <ReferralBanner />
+        </main> 
         <footer className={styles.pageFooter}>
           <RoleToggle />
           <SettingsButton />

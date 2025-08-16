@@ -4,7 +4,6 @@
   background-color: #161616;
   color: #ffffff;
   min-height: 100vh;
-  padding: 1rem;
 }
 
 @keyframes fadeIn {
@@ -423,10 +422,6 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .container {
-    padding: 0.75rem;
-  }
-  
   .gigsGrid {
     gap: 0.75rem;
   }

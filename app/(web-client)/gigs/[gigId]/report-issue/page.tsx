@@ -97,7 +97,6 @@ export default function ReportIssuePage() {
     <div className={styles.pageContainer}>
       <ScreenHeaderWithBack title="Report an Issue" onBackClick={() => router.back()} />
       <div className={styles.chatBot}>
-        {/* <Logo width={50} height={50} /> */}
         <p>Chat with Able or complete the form manually. A member of our team will be in touch</p>
       </div>
       <form onSubmit={handleSubmit} className={styles.formCard}>

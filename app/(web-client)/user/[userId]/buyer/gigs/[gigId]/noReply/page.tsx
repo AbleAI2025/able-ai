@@ -2,10 +2,11 @@
 import Logo from '@/app/components/brand/Logo'
 import styles from './NoReply.module.css'
 import RehireWorkerCard from '@/app/components/buyer/RehireWorkerCard';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
 
 interface Data {
     originalGig: {
@@ -91,7 +92,7 @@ const suggestedWorkers = [
 ];
 
   const { userId, gigId } = useParams();
-
+  const router = useRouter();
 
 useEffect(() => {
     const fetchData = async (buyerUserId: string, gigId: string) => {
@@ -137,16 +138,18 @@ useEffect(() => {
 
   return (
     <div className={styles.container}>
-      <Logo width={50} height={50}  />
-      <p className={styles.originalGigInfo}>
-        {data.originalGig.workerName.split(" ")[0]} didn&apos;t reply to your {data.originalGig.role.toLowerCase()} gig offer. 
-        Here are some other available workers for your {data.originalGig.startTime} shift at the {data.originalGig.originalLocation} on {data.originalGig.originalDate}.
-      </p>
-        <div className={styles.suggestedWorkers}>
-            {suggestedWorkers.map((worker) => (
-                <RehireWorkerCard key={worker.workerId} workerData={worker} isBooking={false} onBook={handleBookWorker} />
-            ))}
-        </div>
+        <ScreenHeaderWithBack onBackClick={() => router.back()} />
+        <main className={styles.mainContent}>
+            <p className={styles.originalGigInfo}>
+                {data.originalGig.workerName.split(" ")[0]} didn&apos;t reply to your {data.originalGig.role.toLowerCase()} gig offer. 
+                Here are some other available workers for your {data.originalGig.startTime} shift at the {data.originalGig.originalLocation} on {data.originalGig.originalDate}.
+            </p>
+            <div className={styles.suggestedWorkers}>
+                {suggestedWorkers.map((worker) => (
+                    <RehireWorkerCard key={worker.workerId} workerData={worker} isBooking={false} onBook={handleBookWorker} />
+                ))}
+            </div>
+        </main>
         <footer className={styles.footerNav}>
             <Link href={`/user/${userId}/buyer`} passHref>
                 <button className={styles.homeButtonNav} aria-label="Go to Home">
