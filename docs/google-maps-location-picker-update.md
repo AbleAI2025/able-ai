@@ -50,7 +50,7 @@ Updated the location picker components to use Google Maps API for enhanced locat
 ## API Key Configuration
 The Google Maps API key is configured as a constant in both components:
 ```typescript
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAu25FZGBoAn-l1hhirCNfnmMwO_qfJvhg';
+const GOOGLE_MAPS_API_KEY = '';
 ```
 
 ## Features
