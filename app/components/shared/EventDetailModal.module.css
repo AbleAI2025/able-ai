@@ -267,9 +267,9 @@
 .actionButton {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background-color: var(--secondary-color);
-  color: #000000;
-  border: none;
+  /* background-color removed to allow inline styles for role-based colors */
+  color: #ffffff;
+  border: 1px solid;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.875rem;
@@ -297,8 +297,8 @@
 }
 
 .actionButton:hover {
-  background-color: var(--secondary-color);
-  color: #ffffff;
+  /* Use filter for hover effect that works with any background color */
+  filter: brightness(0.9);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }

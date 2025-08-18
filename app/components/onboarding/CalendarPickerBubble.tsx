@@ -33,6 +33,7 @@ interface CalendarPickerBubbleProps {
   onBlur?: (event: FocusEvent<HTMLInputElement>) => void; // Datepicker input is an HTMLInputElement
   onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
   popperPlacement?: DatePickerProps['popperPlacement'];
+  role?: 'BUYER' | 'GIG_WORKER';
 }
 
 const CalendarPickerBubble = React.forwardRef<DatePicker, CalendarPickerBubbleProps>( // Ref type is DatePicker
@@ -47,12 +48,13 @@ const CalendarPickerBubble = React.forwardRef<DatePicker, CalendarPickerBubblePr
     dateFormat = "MMMM d, yyyy",
     onBlur,
     onFocus,
-    popperPlacement = "top-end"
+    popperPlacement = "top-end",
+    role = 'GIG_WORKER'
   }, ref) => {
     const inputId = id || name;
 
     return (
-      <div className={`${styles.calendarBubbleWrapper} ${styles.alignUser}`}>
+      <div className={`${styles.calendarBubbleWrapper} ${styles.alignUser}`} data-role={role}>
         <div className={styles.calendarBubbleContent}>
           {label && <label htmlFor={inputId} className={styles.label}>{label}</label>}
           <DatePicker

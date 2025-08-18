@@ -19,6 +19,7 @@ interface CalendarHeaderProps {
   filters: string[];
   activeFilter: string;
   onFilterChange: (filter: string) => void;
+  onDateSelect?: (date: Date) => void;
 }
 
 const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -30,13 +31,47 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   filters,
   activeFilter,
   onFilterChange,
+  onDateSelect,
 }) => {
-  // Format date as "18 Dec 2023"
-  const formattedDate = date.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  // Format date based on view
+  const getFormattedDate = () => {
+    if (view === 'day') {
+      return date.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } else if (view === 'week') {
+      // Show week range
+      const startOfWeek = new Date(date);
+      const day = startOfWeek.getDay();
+      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+      startOfWeek.setDate(diff);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      
+      const startStr = startOfWeek.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+      });
+      const endStr = endOfWeek.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+      
+      return `${startStr} - ${endStr}`;
+    } else {
+      // Month view
+      return date.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      });
+    }
+  };
+
+  const formattedDate = getFormattedDate();
 
   return (
     <div className={styles.headerContainer}>
@@ -65,7 +100,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         >
           &#8592;
         </button>
-        <span className={styles.dateDisplay}>{formattedDate}</span>
+        <span 
+          className={`${styles.dateDisplay} ${onDateSelect ? styles.clickableDate : ''}`}
+          onClick={onDateSelect ? () => onDateSelect(date) : undefined}
+          title={onDateSelect ? "Click to select a specific date" : undefined}
+        >
+          {formattedDate}
+        </span>
         <button
           className={styles.navButton}
           aria-label="Next"

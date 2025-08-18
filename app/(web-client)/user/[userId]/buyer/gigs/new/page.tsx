@@ -188,7 +188,11 @@ const requiredFields: RequiredField[] = [
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "How much would you like to pay per hour?" },
   { name: "gigLocation", type: "location", defaultPrompt: "Where is the gig located?" },
   { name: "gigDate", type: "date", defaultPrompt: "What date is the gig?" },
+  { name: "gigTime", type: "time", defaultPrompt: "What time does the gig start?" },
 ];
+
+// Currency note for users
+const CURRENCY_NOTE = "💡 All amounts and rates are in British Pounds (£)";
 
 // Type definitions for better type safety
 interface RequiredField {
@@ -228,7 +232,7 @@ Generate a friendly, contextual prompt for the next question. The prompt should:
 
 Field-specific guidance:
 - additionalInstructions: Ask about specific skills, requirements, or preferences for the job
-- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone
+- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone in British Pounds (£)
 - gigLocation: Ask about location with context about finding nearby workers
 - gigDate: Ask about timing with context about availability
 - gigTime: Ask about the specific start time of the gig
@@ -294,7 +298,7 @@ Your job is to:
 - Respond in a friendly, helpful, and concise way, like the following examples:
   - "Hi! Tell me about yourself and what gig or gigs you need filling - we can assemble a team if you need one!"
   - "We have some great bartenders available. Do you need any special skills or do you have instructions for your hire?"
-  - "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team!"
+  - "How much you would like to pay per hour? We suggest £15 plus tips to keep a motivated and happy team! All amounts are in British Pounds (£)"
   - "Where is the gig? What time and day do you need someone and for how long?"
 - If the answer is clear, confirm it and move to the next logical question (e.g., ask about pay, location, date, etc.).
 - If the answer is unclear, ask for clarification.
@@ -757,6 +761,24 @@ export default function OnboardBuyerPage() {
   function formatTimeForDisplay(timeValue: any): string {
     if (!timeValue) return '';
     try {
+      // Handle time ranges like "12:00 to 16:00"
+      if (typeof timeValue === 'string' && timeValue.includes(' to ')) {
+        const [startTime, endTime] = timeValue.split(' to ');
+        const formattedStart = formatSingleTime(startTime);
+        const formattedEnd = formatSingleTime(endTime);
+        return `${formattedStart} to ${formattedEnd}`;
+      }
+      
+      // Handle single times
+      return formatSingleTime(timeValue);
+    } catch {
+      return String(timeValue);
+    }
+  }
+
+  function formatSingleTime(timeValue: any): string {
+    if (!timeValue) return '';
+    try {
       const hhmm = parseTimeToHHMM(timeValue);
       if (hhmm) {
         const [hours, minutes] = hhmm.split(':');
@@ -813,10 +835,16 @@ Validation criteria:
 
 IMPORTANT: For location fields (gigLocation), coordinate objects with lat/lng properties are ALWAYS valid and sufficient. Do not ask for additional location details if coordinates are provided.
 
-SPECIAL TIME HANDLING: For time fields (gigTime), if the user provides a time range like "12:00-14:30" or "12:00 PM - 2:30 PM":
+SPECIAL TIME HANDLING: For time fields (gigTime), if the user provides a time range like "12PM to 4pm" or "12:00-14:30" or "12:00 PM - 2:30 PM":
 - Accept it as valid
-- In sanitizedValue, show the parsed information clearly: "Start: 12:00, End: 14:30, Duration: 2.5 hours"
-- This helps the user confirm the time range was understood correctly
+- In sanitizedValue, convert to 24-hour format: "12:00 to 16:00" or "12:00 to 14:30"
+- For time ranges, always use the format "HH:MM to HH:MM" in 24-hour time
+- Examples:
+  * "12PM to 4pm" → "12:00 to 16:00"
+  * "9am to 5pm" → "09:00 to 17:00"
+  * "2:30 PM to 6:30 PM" → "14:30 to 18:30"
+  * "12:00-14:30" → "12:00 to 14:30"
+- This standardized format helps with gig scheduling and display
 
 Special handling:
 - For coordinates (lat/lng): Accept any valid coordinate format like "Lat: 14.7127059, Lng: 120.9341704" or coordinate objects
@@ -1065,7 +1093,7 @@ Make the conversation feel natural and build on what they've already told you.`;
             {
               id: Date.now() + 5,
               type: "bot",
-              content: `Perfect! Here's a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
+              content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
               isNew: true,
             },
           ]);
@@ -1267,7 +1295,7 @@ Make the conversation feel natural and build on what they've already told you.`;
           {
             id: Date.now() + 2,
             type: "bot",
-            content: `Perfect! Here's a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
+            content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
             isNew: true,
           },
         ]);
@@ -1582,6 +1610,7 @@ Make the conversation feel natural and build on what they've already told you.`;
       >
 
 
+
         {chatSteps.map((step, idx) => {
           const key = `step-${step.id}-${idx}`;
           
@@ -1628,7 +1657,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                 key={key}
                 text={
                   <div>
-                    <div style={{ marginBottom: 8, color: 'var(--primary-color)', fontWeight: 600, fontSize: '14px' }}>This is what you wanted?</div>
+                    <div style={{ marginBottom: 8, color: 'var(--secondary-color)', fontWeight: 600, fontSize: '14px' }}>This is what you wanted?</div>
                     {typeof displayValue === 'string' ? (
                       <div style={{ marginBottom: 16, fontStyle: 'italic', color: '#e5e5e5', fontSize: '15px', lineHeight: '1.4' }}>{displayValue}</div>
                     ) : (
@@ -1637,8 +1666,8 @@ Make the conversation feel natural and build on what they've already told you.`;
                     <div style={{ display: 'flex', gap: 12 }}>
                       <button
                         style={{ 
-                          background: isCompleted ? '#555' : 'var(--primary-color)', 
-                          color: '#fff', 
+                          background: isCompleted ? '#555' : 'var(--secondary-color)', 
+                          color: isCompleted ? '#fff' : '#000', 
                           border: 'none', 
                           borderRadius: 8, 
                           padding: '8px 16px', 
@@ -1652,11 +1681,13 @@ Make the conversation feel natural and build on what they've already told you.`;
                         disabled={isCompleted}
                         onMouseOver={(e) => {
                           if (!isCompleted) {
-                            e.currentTarget.style.background = 'var(--primary-darker-color)';
+                            e.currentTarget.style.background = 'var(--secondary-darker-color)';
+                            e.currentTarget.style.color = '#000';
                           }
                         }}
                         onMouseOut={(e) => {
-                          e.currentTarget.style.background = isCompleted ? '#555' : 'var(--primary-color)';
+                          e.currentTarget.style.background = isCompleted ? '#555' : 'var(--secondary-color)';
+                          e.currentTarget.style.color = isCompleted ? '#fff' : '#000';
                         }}
                       >
                         {confirmClicked ? 'Confirmed' : 'Confirm'}
@@ -1664,8 +1695,8 @@ Make the conversation feel natural and build on what they've already told you.`;
                       <button
                         style={{ 
                           background: isCompleted ? '#555' : 'transparent', 
-                          color: isCompleted ? '#999' : 'var(--primary-color)', 
-                          border: '1px solid var(--primary-color)', 
+                          color: isCompleted ? '#999' : 'var(--secondary-color)', 
+                          border: '1px solid var(--secondary-color)', 
                           borderRadius: 8, 
                           padding: '8px 16px', 
                           fontWeight: 600, 
@@ -1678,13 +1709,13 @@ Make the conversation feel natural and build on what they've already told you.`;
                         disabled={isCompleted}
                         onMouseOver={(e) => { 
                           if (!isCompleted) {
-                            e.currentTarget.style.background = 'var(--primary-color)'; 
+                            e.currentTarget.style.background = 'var(--secondary-color)'; 
                             e.currentTarget.style.color = '#fff'; 
                           }
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.background = 'transparent'; 
-                          e.currentTarget.style.color = 'var(--primary-color)'; 
+                          e.currentTarget.style.color = 'var(--secondary-color)'; 
                         }}
                       >
                         {reformulateClicked ? 'Reformulated' : (isReformulatingThisField ? 'Reformulating...' : 'Reformulate')}
@@ -1751,15 +1782,17 @@ Make the conversation feel natural and build on what they've already told you.`;
                             <li key={field} style={{ marginBottom: 8 }}>
                               <strong style={{ textTransform: 'capitalize' }}>{field.replace(/([A-Z])/g, ' $1')}: </strong>
                               <span>
-                                {value && typeof value === 'object' && 'lat' in value && 'lng' in value
-                                  ? `Lat: ${value.lat}, Lng: ${value.lng}`
-                                  : field === 'gigDate'
-                                    ? formatDateForDisplay(value)
-                                    : field === 'gigTime'
-                                      ? formatTimeForDisplay(value)
-                                      : typeof value === 'object'
-                                        ? JSON.stringify(value)
-                                        : String(value)}
+                                {field === 'hourlyRate' && typeof value === 'number'
+                                  ? `£${value.toFixed(2)}`
+                                  : value && typeof value === 'object' && 'lat' in value && 'lng' in value
+                                    ? (value as any).formatted_address || `Coordinates: ${(value as any).lat.toFixed(6)}, ${(value as any).lng.toFixed(6)}`
+                                    : field === 'gigDate'
+                                      ? formatDateForDisplay(value)
+                                      : field === 'gigTime'
+                                        ? formatTimeForDisplay(value)
+                                        : typeof value === 'object'
+                                          ? JSON.stringify(value)
+                                          : String(value)}
                               </span>
                             </li>
                           );
@@ -1796,13 +1829,13 @@ Make the conversation feel natural and build on what they've already told you.`;
                         <style>{`
                           @keyframes pulse {
                             0% {
-                              box-shadow: 0 0 0 0 rgba(126, 238, 249, 0.7);
+                              box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
                             }
                             70% {
-                              box-shadow: 0 0 0 10px rgba(126, 238, 249, 0);
+                              box-shadow: 0 0 0 10px rgba(34, 211, 238, 0);
                             }
                             100% {
-                              box-shadow: 0 0 0 0 rgba(126, 238, 249, 0);
+                              box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
                             }
                           }
                         `}</style>
@@ -1865,7 +1898,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                       alignItems: 'center',
                       justifyContent: 'center',
                       background: 'linear-gradient(135deg, var(--secondary-color), var(--secondary-darker-color))',
-                      boxShadow: '0 2px 8px rgba(126, 238, 249, 0.3)'
+                      boxShadow: '0 2px 8px rgba(34, 211, 238, 0.3)'
                     }}>
                       <div style={{
                         width: '28px',
@@ -1968,6 +2001,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                       }
                     }}
                     placeholderText={step.inputConfig?.placeholder || "Select a date"}
+                    role="BUYER"
                   />
                   
                   {/* Confirm button when date is selected */}
@@ -1976,7 +2010,6 @@ Make the conversation feel natural and build on what they've already told you.`;
                       <button
                         style={{
                           background: isConfirming ? '#555' : 'var(--secondary-color)',
-                          color: '#fff',
                           border: 'none',
                           borderRadius: '8px',
                           padding: '8px 16px',
@@ -2012,8 +2045,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                   {confirmedSteps.has(step.id) && (
                     <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                       <div style={{
-                        background: '#28a745',
-                        color: '#fff',
+                        background: 'var(--secondary-color)',
                         border: 'none',
                         borderRadius: '8px',
                         padding: '8px 16px',
@@ -2090,6 +2122,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                         handleInputChange(step.inputConfig.name, value);
                       }
                     }}
+                    role="BUYER"
                   />
                   
                   {/* Confirm button when location is selected */}
@@ -2098,7 +2131,6 @@ Make the conversation feel natural and build on what they've already told you.`;
                       <button
                         style={{
                           background: isConfirming ? '#555' : 'var(--secondary-color)',
-                          color: '#fff',
                           border: 'none',
                           borderRadius: '8px',
                           padding: '8px 16px',
@@ -2134,8 +2166,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                   {confirmedSteps.has(step.id) && (
                     <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                       <div style={{
-                        background: '#28a745',
-                        color: '#fff',
+                        background: 'var(--secondary-color)',
                         border: 'none',
                         borderRadius: '8px',
                         padding: '8px 16px',

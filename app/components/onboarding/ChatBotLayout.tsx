@@ -6,6 +6,8 @@ import ChatInput from './ChatInput';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
+import OnboardingOptionsDropdown from './OnboardingOptionsDropdown';
 
 interface ChatBotLayoutProps {
   children: ReactNode;
@@ -15,10 +17,13 @@ interface ChatBotLayoutProps {
   onSendMessage?: (message: string) => void;
   role?: 'BUYER' | 'GIG_WORKER';
   showChatInput?: boolean;
+  showOnboardingOptions?: boolean;
+  onSwitchToManual?: () => void;
+  onChangeSetupMethod?: () => void;
 }
 
 const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
-  ({ children, onScroll, className, onHomeClick, onSendMessage, role = 'GIG_WORKER', showChatInput = false }, ref) => {
+  ({ children, onScroll, className, onHomeClick, onSendMessage, role = 'GIG_WORKER', showChatInput = false, showOnboardingOptions = false, onSwitchToManual, onChangeSetupMethod }, ref) => {
 
     const router = useRouter();
     const { user } = useAuth();
@@ -35,11 +40,18 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
     return (
       <div className={`${styles.chatContainerWrapper} ${className}`}>
         <div className={styles.chatContainer} onScroll={onScroll} ref={ref}>
-          <div className={styles.header}>
-            <span className={styles.headerText}>Chat with Able</span>
-            <Logo width={50} height={50} />
+          <ScreenHeaderWithBack onBackClick={() => router.back()} />
+          <div className={styles.chatContent}>
+            {showOnboardingOptions && onSwitchToManual && onChangeSetupMethod && (
+              <div className={styles.onboardingOptionsContainer}>
+                <OnboardingOptionsDropdown
+                  onSwitchToManual={onSwitchToManual}
+                  onChangeSetupMethod={onChangeSetupMethod}
+                />
+              </div>
+            )}
+            {children}
           </div>
-          <div className={styles.chatContent}>{children}</div>
           {showChatInput && (
             <ChatInput 
               onSend={handleSendMessage}

@@ -18,6 +18,7 @@ interface WeekViewCalendarProps {
   onEventClick?: (event: Event) => void;
   onDateClick?: (date: Date) => void;
   userRole?: string;
+  activeFilter?: string;
 }
 
 const WeekViewCalendar: React.FC<WeekViewCalendarProps> = ({
@@ -25,7 +26,8 @@ const WeekViewCalendar: React.FC<WeekViewCalendarProps> = ({
   currentDate,
   onEventClick,
   onDateClick,
-  userRole = 'buyer'
+  userRole = 'buyer',
+  activeFilter
 }) => {
   // Get the start of the week (Monday)
   const startOfWeek = moment(currentDate).startOf('week');
@@ -218,11 +220,37 @@ const WeekViewCalendar: React.FC<WeekViewCalendarProps> = ({
                           handleEventClick(event);
                         }}
                         onMouseEnter={(e) => {
-                          const baseColor = event.status === 'ACCEPTED' 
-                            ? (userRole === 'worker' ? 'var(--primary-color)' : 'var(--success-color)')
-                            : '#525252';
-                          e.currentTarget.style.backgroundColor = baseColor === '#525252' ? '#4a4a4a' : 
-                            (baseColor === 'var(--primary-color)' ? '#2563eb' : '#059669');
+                          const getEventBackgroundColor = (event: any) => {
+                            switch (event.status) {
+                              case 'ACCEPTED':
+                                return userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)';
+                              case 'OFFER':
+                                return '#6b7280'; // Gray color for offers
+                              case 'IN_PROGRESS':
+                                return '#10b981'; // Emerald green
+                              case 'COMPLETED':
+                                return '#059669'; // Dark green
+                              case 'PENDING':
+                                return '#eab308'; // Yellow
+                              case 'UNAVAILABLE':
+                                return '#6b7280'; // Gray
+                              case 'CANCELLED':
+                                return '#dc2626'; // Red
+                              default:
+                                return '#9ca3af'; // Default: Light gray
+                            }
+                          };
+                          const baseColor = getEventBackgroundColor(event);
+                          // Darken the color slightly on hover
+                          const darkerColor = baseColor === 'var(--primary-color)' ? '#2563eb' : 
+                            baseColor === 'var(--secondary-color)' ? '#06b6d4' : 
+                            baseColor === '#10b981' ? '#059669' :
+                            baseColor === '#059669' ? '#047857' :
+                            baseColor === '#eab308' ? '#d97706' :
+                            baseColor === '#6b7280' ? '#4b5563' :
+                            baseColor === '#dc2626' ? '#b91c1c' :
+                            '#6b7280';
+                          e.currentTarget.style.backgroundColor = darkerColor;
                           e.currentTarget.style.transform = 'scale(1.02)';
                           // Make text and icon more visible on hover
                           const icon = e.currentTarget.querySelector('svg');
@@ -231,21 +259,60 @@ const WeekViewCalendar: React.FC<WeekViewCalendarProps> = ({
                           if (text) text.style.color = '#fff';
                         }}
                         onMouseLeave={(e) => {
-                          const baseColor = event.status === 'ACCEPTED' 
-                            ? (userRole === 'worker' ? 'var(--primary-color)' : 'var(--success-color)')
-                            : '#525252';
+                          const getEventBackgroundColor = (event: any) => {
+                            switch (event.status) {
+                              case 'ACCEPTED':
+                                return userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)';
+                              case 'OFFER':
+                                return '#6b7280'; // Gray color for offers
+                              case 'IN_PROGRESS':
+                                return '#10b981'; // Emerald green
+                              case 'COMPLETED':
+                                return '#059669'; // Dark green
+                              case 'PENDING':
+                                return '#eab308'; // Yellow
+                              case 'UNAVAILABLE':
+                                return '#6b7280'; // Gray
+                              case 'CANCELLED':
+                                return '#dc2626'; // Red
+                              default:
+                                return '#9ca3af'; // Default: Light gray
+                            }
+                          };
+                          const baseColor = getEventBackgroundColor(event);
                           e.currentTarget.style.backgroundColor = baseColor;
                           e.currentTarget.style.transform = 'scale(1)';
-                          // Reset text and icon color
+                          // Reset text and icon color based on event status and user role
                           const icon = e.currentTarget.querySelector('svg');
                           const text = e.currentTarget.querySelector('span');
-                          if (icon) icon.style.color = '#888';
-                          if (text) text.style.color = '#888';
+                          if (icon) {
+                            icon.style.color = event.status === 'ACCEPTED' && userRole === 'buyer' ? '#000000' : '#888';
+                          }
+                          if (text) {
+                            text.style.color = event.status === 'ACCEPTED' && userRole === 'buyer' ? '#000000' : '#ffffff';
+                          }
                         }}
                         style={{
-                          backgroundColor: event.status === 'ACCEPTED' 
-                            ? (userRole === 'worker' ? 'var(--primary-color)' : 'var(--success-color)')
-                            : '#525252',
+                          backgroundColor: (() => {
+                            switch (event.status) {
+                              case 'ACCEPTED':
+                                return userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)';
+                              case 'OFFER':
+                                return '#6b7280'; // Gray color for offers
+                              case 'IN_PROGRESS':
+                                return '#10b981'; // Emerald green
+                              case 'COMPLETED':
+                                return '#059669'; // Dark green
+                              case 'PENDING':
+                                return '#eab308'; // Yellow
+                              case 'UNAVAILABLE':
+                                return '#6b7280'; // Gray
+                              case 'CANCELLED':
+                                return '#dc2626'; // Red
+                              default:
+                                return '#9ca3af'; // Default: Light gray
+                            }
+                          })(),
                           height: `${Math.max(totalHeight - startOffset - endOffset, 20)}px`,
                           margin: '0',
                           borderRadius: '4px',
@@ -270,8 +337,13 @@ const WeekViewCalendar: React.FC<WeekViewCalendarProps> = ({
                           flexDirection: 'column'
                         }}
                       >
-                        <span style={{ fontSize: '2.5vw', color: '#fff', fontWeight: '600', whiteSpace: 'nowrap' }}>Open gig</span>
-                        <Eye size={25} color="#888" />
+                        <span style={{ 
+                          fontSize: '2.5vw', 
+                          color: event.status === 'ACCEPTED' && userRole === 'buyer' ? '#000000' : '#ffffff', 
+                          fontWeight: (activeFilter === 'Accepted gigs' && event.status === 'ACCEPTED') ? '700' : '600', 
+                          whiteSpace: 'nowrap' 
+                        }}>Open gig</span>
+                        <Eye size={25} color={event.status === 'ACCEPTED' && userRole === 'buyer' ? '#000000' : '#888'} />
                       </div>
                     );
                   })}

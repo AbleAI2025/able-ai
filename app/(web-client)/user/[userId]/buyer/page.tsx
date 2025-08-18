@@ -21,12 +21,15 @@ import {
   resetUnreadCountInDB,
 } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import { useRouter } from "next/navigation";
 
 export default function BuyerDashboardPage() {
   const { user: userPublicProfile } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { user } = useAuth();
+  const router = useRouter();
   const authUserToken = user?.token;
 
   async function fetchNotifications(token: string) {
@@ -112,15 +115,20 @@ export default function BuyerDashboardPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <header className={styles.pageHeader}>
-          <Logo width={60} height={60} />
-          {uid && (
+       <ScreenHeaderWithBack
+          isHomePage
+          onBackClick={() => router.back()}
+          handleClick={handleClick}
+          unreadCount={unreadCount}
+          unreadNotifications={unreadNotifications}
+        />
+        {uid && (
             <AiSuggestionBanner
               suggestions={aiSuggestions}
               currentIndex={currentIndex}
               isLoading={isLoadingSuggestions}
               error={suggestionsError}
-              dismissed={suggestionsDismissed}
+              dismissed={suggestionsDismissed} // Pass the dismissed state
               onDismiss={dismissSuggestions}
               onRefresh={refreshSuggestions}
               goToNext={goToNext}
@@ -128,45 +136,36 @@ export default function BuyerDashboardPage() {
               userId={uid}
             />
           )}
-          {/* Notification Icon */}
-          {userPublicProfile?.uid && (
-            <Link
-              href={`/user/${userPublicProfile.uid}/notifications`}
-              passHref
-              onClick={handleClick}
-            >
-              <button
-                className={styles.notificationButton}
-                aria-label="Notifications"
-              >
-                <Image
-                  src="/images/notifications.svg"
-                  alt="Notifications"
-                  width={40}
-                  height={40}
-                />
-              </button>
-              {unreadCount > 0 || unreadNotifications > 0 ? (
-                <span
-                className={styles.notificationBadge}
-                >
-                </span>
-              ) : null}
-            </Link>
+        <main className={styles.contentWrapper}>
+          
+
+          {/* <h2 className={styles.sectionTitle}>Manage Your Activity</h2> */}
+           <IconGrid items={actionItems} color={"#7eeef9"} />
+
+          {/* Optional Summary Section - Example Structure
+          {summaryData.length > 0 && (
+            <section className={styles.summarySection}>
+              <h2 className={styles.sectionTitle}>
+                Your Next Gig
+              </h2>
+              <ul className={styles.summaryList}>
+                {summaryData.slice(0,3).map(item => ( // Show first 3
+                    <li key={item.id}><Link href={item.link}>{item.title} with {item.partnerName} on {item.dateTime}</Link></li>
+                ))}
+              </ul>
+              {summaryData.length > 3 && <Link href='/worker/calendar' className={styles.viewAllLink}>View All</Link>>}
+            </section>
           )}
-        </header>
+          */}
 
-        <IconGrid items={actionItems} color={"#7eeef9"} />
-
-        <ReferralBanner
-          title="Refer a business and earn £5!"
-          className={styles.customHover}
-        />
-
-        <footer className={styles.pageFooter}>
-          <RoleToggle />
-          <SettingsButton />
-        </footer>
+          <ReferralBanner
+            className={styles.customHover}
+          />
+        </main> 
+         <footer className={styles.pageFooter}>
+            <RoleToggle />
+            <SettingsButton />
+          </footer>
       </div>
     </div>
   );

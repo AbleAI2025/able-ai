@@ -1,9 +1,11 @@
 import {
   AlertTriangle,
+  X,
 } from "lucide-react";
 import styles from './stripeModal.module.css';
 import PaymentSetupForm from "./PaymentSetupForm";
 import { FlowStep, UserRole } from "@/app/types/SettingsTypes";
+import RoleToggle from "../shared/RoleToggle";
 
 const StripeModal = ({
   userId,
@@ -30,19 +32,11 @@ const StripeModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          <div className={styles.modalHeaderContent}>
             <div className={styles.stripeIconWrapper}>
-              <AlertTriangle size={28} color="#ffc107" />
+              <AlertTriangle size={25} color="#ffc107" />
             </div>
-            <h3 style={{
-              marginLeft: "10px"
-            }}>
+            <h3 className={styles.modalTitle}>
               {
                 userRole === 'BUYER' ?
                   'Pay Securely with Stripe!' :
@@ -55,7 +49,7 @@ const StripeModal = ({
             className={styles.closeButton}
             aria-label="Close"
           >
-            ×
+           <X color="#ffffff" size={25} />
           </button>
         </div>
         {
@@ -77,7 +71,7 @@ const StripeModal = ({
             <div className={styles.modalActions}>
               <button
                 onClick={handleOpenStripeConnection}
-                className={styles.stripeButton}
+                className={`${styles.stripeButton} ${userRole === 'BUYER' ? styles.buyerBtn : styles.workerBtn}`}
                 disabled={isConnectingStripe}
               >
                 {isConnectingStripe
@@ -86,11 +80,7 @@ const StripeModal = ({
               </button>
             </div>
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className={styles.connectionStatus}
             >
               <AlertTriangle size={20} color="#ffc107" />
               <p>Not connected</p>

@@ -13,7 +13,7 @@ const ConfirmAmendedGigDetailsFooterActions: React.FC<Props> = ({ lastRoleUsed, 
   <footer className={styles.actionsFooter}>
     <button
       type="button"
-      className={`${styles.actionButton} ${lastRoleUsed === 'BUYER' ? styles.confirmButton : styles.suggestButton}`}
+      className={`${styles.actionButton} ${lastRoleUsed === 'BUYER' ? styles.buyerColor : styles.workerColor}`}
       onClick={handleConfirm}
       disabled={isLoadingConfirm}
     >
@@ -35,24 +35,6 @@ const ConfirmAmendedGigDetailsFooterActions: React.FC<Props> = ({ lastRoleUsed, 
     >
       Decline changes
     </button>
-    {lastRoleUsed === 'BUYER' && (
-      <>
-        <button
-          type="button"
-          className={`${styles.actionButton} ${styles.suggestButton}`}
-          onClick={handleSuggestNew}
-        >
-          Suggest new changes
-        </button>
-        <button
-          type="button"
-          className={`${styles.actionButton} ${styles.declineButton}`}
-          onClick={handleDecline}
-        >
-          Decline changes
-        </button>
-      </>
-    )}
   </footer>
 );
 

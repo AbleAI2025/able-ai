@@ -80,6 +80,7 @@ export function ChatStepRenderer({
             onChange={val => onInputChange('gigLocation', val)}
             showConfirm={!!formData.gigLocation && isActive}
             onConfirm={() => onInputSubmit(step.id, 'gigLocation')}
+            role="BUYER"
           />
         </div>
       );
@@ -94,7 +95,7 @@ export function ChatStepRenderer({
           />
           {isActive && formData.gigDate && (
             <button
-              style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+              style={{ margin: '8px 0', background: 'var(--secondary-color)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
               onClick={() => onInputSubmit(step.id, 'gigDate')}
             >
               Confirm
@@ -104,7 +105,7 @@ export function ChatStepRenderer({
       );
     }
 
-    const allowedTypes = ["number", "text", "email", "password", "date", "tel"];
+    const allowedTypes = ["number", "text", "email", "password", "date", "tel", "time"];
     const safeType = allowedTypes.includes(inputConf.type) ? inputConf.type : "text";
 
     return (
@@ -115,7 +116,7 @@ export function ChatStepRenderer({
             name={inputConf.name}
             value={formData[inputConf.name] || ""}
             disabled={isSubmitting}
-            type={safeType as "number" | "text" | "email" | "password" | "date" | "tel"}
+            type={safeType as "number" | "text" | "email" | "password" | "date" | "tel" | "time"}
             placeholder={inputConf.placeholder}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               onInputChange(inputConf.name, e.target.value)
@@ -140,7 +141,7 @@ export function ChatStepRenderer({
         </div>
         {isActive && formData[inputConf.name] && (
           <button
-            style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+            style={{ margin: '8px 0', background: 'var(--secondary-color)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
             onClick={() => onInputSubmit(step.id, inputConf.name)}
           >
             Confirm
@@ -160,17 +161,17 @@ export function ChatStepRenderer({
         key={key}
         text={
           <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 16, margin: '16px 0', boxShadow: '0 2px 8px #0001' }}>
-            <div style={{ marginBottom: 8, color: '#0f766e', fontWeight: 600 }}>This is what you wanted?</div>
+            <div style={{ marginBottom: 8, color: 'var(--secondary-color)', fontWeight: 600 }}>This is what you wanted?</div>
             <div style={{ marginBottom: 12, fontStyle: 'italic' }}>{step.sanitizedValue}</div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button
-                style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+                style={{ background: 'var(--secondary-color)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
                 onClick={() => onSanitizedConfirm(step.fieldName!, step.sanitizedValue!)}
               >
                 Confirm
               </button>
               <button
-                style={{ background: '#fff', color: '#0f766e', border: '1px solid #0f766e', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+                style={{ background: '#fff', color: 'var(--secondary-color)', border: '1px solid var(--secondary-color)', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
                 onClick={() => onSanitizedReformulate(step.fieldName!)}
               >
                 Reformulate

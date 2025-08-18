@@ -9,6 +9,7 @@ import UpdateGig from "@/app/components/gigs/UpdateGig";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 import SubmitButton from "@/app/components/form/SubmitButton";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 // Mock data - replace with actual props or state
 const gigDetailsData = {
@@ -71,24 +72,22 @@ export default function CancelOrAmendGigDetailsPage() {
 
   return (
     <div className={styles.viewContainer}>
-      <header className={styles.header}>
+      {/* <header className={styles.header}>
         <h1 className={styles.headerTitle}>Cancel or Amend Gig Details</h1>
-      </header>
+      </header> */}
+      <ScreenHeaderWithBack title="Cancel or Amend" onBackClick={() => router.back()} />
 
-      <main>
+      <main className={styles.contentWrapper}>
         {/* Instruction Block */}
         <section className={`${styles.card} ${styles.instructionBlock}`}>
-          <div className={styles.instructionIconContainer}>
-            <Logo width={60} height={60} />
-          </div>
           <p className={styles.instructionText}>
             What changes would you like to make to the gig?{" "}
-            Tell me or edit using the icon below
+            Tell me or edit using the icon below.
           </p>
         </section>
 
         {/* Text Input Block */}
-        <section className={styles.botCard}>
+        {/* <section className={styles.botCard}>
           <label htmlFor="benjiMessage" className={styles.textInputBlockLabel}>
             {user?.displayName && user.displayName.toLocaleLowerCase() + ":"}
           </label>
@@ -101,19 +100,18 @@ export default function CancelOrAmendGigDetailsPage() {
             placeholder="e.g., Add one more hour to the gig or pay 22ph"
             rows={4}
           />
-        </section>
+        </section> */}
 
         {/* Updated Gig Details Block */}
         <UpdateGig
+          title="Gig Details"
           gigDetailsData={gigDetailsData}
           editedGigDetails={editedGigDetails}
           handleEditDetails={handleEditDetails}
           setEditedGigDetails={setEditedGigDetails}
           isEditingDetails={isEditingDetails}
         />
-      </main>
-
-      {/* Action Button Area */}
+        {/* Action Button Area */}
       <div className={`${styles.actionBtnContainer}`}>
         <button
           type="button"
@@ -122,21 +120,26 @@ export default function CancelOrAmendGigDetailsPage() {
         >
           Submit for Confirmation
         </button>
-        <SubmitButton
-          type="button"
-          className={`${styles.submitButton} ${styles.cancelBtn} ${isLoading ? styles.loadingCancelSubmit : ''}`}
-          onClick={handleCancelGig}
-          disabled={isLoading}
-          loading={isLoading}
-        >
-          <div className={styles.cancelBtnText}>
+        
+          {/* <div className={styles.cancelBtnText}>
             <span>
               Cancel GIG
             </span>
             (This might incur charges or penalties)
-          </div>
-        </SubmitButton>
+          </div> */}
+        <button
+          type="button"
+          className={`${styles.cancelButton}`}
+          onClick={handleCancelGig}
+          disabled={isLoading}
+        >
+          Cancel Gig
+          <p>This might incur charges or penalties</p>
+        </button>
       </div>
+      </main>
+
+      
     </div>
   );
 }

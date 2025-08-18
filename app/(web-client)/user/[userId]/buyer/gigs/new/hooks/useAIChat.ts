@@ -52,6 +52,8 @@ Here is the data collected: ${JSON.stringify(formData)}
 The last question was: "${lastQuestion}"
 The user answered: "${lastAnswer}"
 
+IMPORTANT: All monetary amounts and rates should be in British Pounds (£). When asking about hourly rates or pricing, always specify that amounts are in British Pounds.
+
 Is this answer sufficient? If not, provide a clarification prompt. If yes, sanitize the answer and provide the next question (or summary if done). Respond as JSON: { sufficient: boolean, sanitized?: string, clarificationPrompt?: string, nextField?: string, nextPrompt?: string, summary?: string }`;
 
       const aiSchema = Schema.object({

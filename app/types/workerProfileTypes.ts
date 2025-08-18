@@ -2,7 +2,7 @@ export interface Skill {
   id: string;
   workerProfileId: string;
   name: string;
-  experienceMonths: number;
+  experienceYears: number;
   agreedRate: string;
   skillVideoUrl?: string | null;
   adminTags?: string[] | null;
@@ -83,6 +83,7 @@ export default interface PublicWorkerProfile {
 
   availabilityJson?: Availability;
   semanticProfileJson?: SemanticProfile;
+  videoUrl?: string | undefined;
 
   createdAt?: Date | undefined;
   updatedAt?: Date | undefined;

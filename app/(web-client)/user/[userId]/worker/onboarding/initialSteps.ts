@@ -32,7 +32,7 @@ const baseInitialSteps: OnboardingStep[] = [
     id: 5,
     type: "botMessage",
     content:
-      "How much you would like to be paid per hour, we  make sure you are paid above minimum wage",
+      "How much you would like to be paid per hour? We make sure you are paid above minimum wage",
     dependsOn: 4,
   },
   {

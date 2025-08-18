@@ -92,7 +92,7 @@ const buildSummaryText = (formData: Record<string, any>): string => {
   return `Thank you! Here is a summary of your gig:
 • Gig Description: ${formData.gigDescription || 'Not specified'}
 • Additional Instructions: ${formData.additionalInstructions || 'None'}
-• Hourly Rate: €${formData.hourlyRate || 'Not specified'}
+• Hourly Rate: £${formData.hourlyRate || 'Not specified'}
 • Location: ${typeof formData.gigLocation === 'object' ? 'Coordinates provided' : formData.gigLocation || 'Not specified'}
 • Date: ${formData.gigDate || 'Not specified'}
 

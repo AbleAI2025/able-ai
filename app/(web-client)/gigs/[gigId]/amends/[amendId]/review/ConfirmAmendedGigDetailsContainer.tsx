@@ -31,11 +31,12 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
   const [gigDetails, setGigDetails] = useState<GigDetails | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoadingConfirm, setIsLoadingConfirm] = useState<boolean>(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
 
   const notificationMessage = lastRoleUsed ? buyerNotificationMessage : workerNotificationMessage;
 
   const handleEditDetails = () => {
-    // No-op, editing not supported in this view
+    setIsEditingDetails(!isEditingDetails);
   };
 
   const handleConfirm = async () => {
@@ -109,6 +110,7 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
       handleConfirm={handleConfirm}
       handleSuggestNew={handleSuggestNew}
       handleDecline={handleDecline}
+      isEditingDetails={isEditingDetails}
     />
   );
 };

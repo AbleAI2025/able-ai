@@ -54,7 +54,7 @@
 body {
   /* font-family: var(--font-family); */
   color: var(--text-color);
-  background-color: var(--background-color); /* Changed to use variable */
+  background-color: #161616; /* Dark background to match the app theme */
   margin: 0;
   padding: 0;
   min-height: 100vh;

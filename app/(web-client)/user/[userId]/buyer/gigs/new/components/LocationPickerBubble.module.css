@@ -21,25 +21,126 @@
   gap: 12px;
 }
 
+/* Search Container Styles */
+.searchContainer {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+  background-color: #fff;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--secondary-color, #007bff);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.searchButton {
+  padding: 10px 16px;
+  background-color: var(--secondary-color, #007bff);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 80px;
+  transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+  background-color: var(--secondary-darker-color, #0056b3);
+  color: #000;
+}
+
+.searchButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  color: #000;
+}
+
+/* Map Container Styles */
+.mapContainer {
+  width: 100%;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+}
+
+.mapLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: #f8f9fa;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Selected Location Display */
+.selectedLocation {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.locationLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--secondary-color, #007bff);
+  margin-bottom: 4px;
+}
+
+.locationAddress {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.locationCoords {
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+}
+
 .currentLocationButton {
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: white;
+  padding: 10px 12px;
+  background-color: var(--secondary-color, #007bff);
+  color: #000;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .currentLocationButton:hover {
-  background-color: #218838;
+  background-color: var(--secondary-darker-color, #0056b3);
+  color: #000;
 }
 
 .currentLocationButton:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+  color: #000;
 }
 
 .urlInputContainer {
@@ -152,16 +253,18 @@
 
 .confirmButton {
   padding: 8px 16px;
-  background-color: #007bff;
+  background-color: var(--secondary-color, #007bff);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .confirmButton:hover {
-  background-color: #0056b3;
+  background-color: var(--secondary-darker-color, #0056b3);
 }
 
 .confirmButton:disabled {
@@ -185,15 +288,29 @@
   min-height: 40px;
   display: flex;
   align-items: center;
+  transition: all 0.2s ease;
 }
 
 .displayAddress:hover {
-  border-color: #007bff;
+  border-color: var(--secondary-color, #007bff);
   background-color: #f0f7ff;
 }
 
 /* Responsive design for mobile */
 @media (max-width: 768px) {
+  .searchContainer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .searchButton {
+    width: 100%;
+  }
+  
+  .mapContainer {
+    height: 250px;
+  }
+  
   .coordinatesContainer {
     flex-direction: column;
     gap: 8px;
@@ -209,3 +326,5 @@
     width: 100%;
   }
 }
+
+

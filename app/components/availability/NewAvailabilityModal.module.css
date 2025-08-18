@@ -1,0 +1,422 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 20px;
+}
+
+.title {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.content {
+  padding: 24px;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.timeInput {
+  width: 100%;
+  padding: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  color: #333;
+  transition: border-color 0.2s;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.recurrenceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #2a2a2a;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 24px;
+}
+
+.recurrenceRow:hover {
+  background: #333;
+}
+
+.recurrenceText {
+  color: white;
+  font-size: 14px;
+}
+
+.arrow {
+  color: #888;
+  font-size: 18px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #333;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 16px;
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.saveButton {
+  flex: 1;
+  padding: 16px;
+  background: #007bff;
+  border: none;
+  color: white;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover {
+  background: #0056b3;
+}
+
+.deleteButton {
+  flex: 1;
+  padding: 16px;
+  background: #444;
+  border: none;
+  color: white;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.deleteButton:hover {
+  background: #555;
+}
+
+/* Repeat Sheet Styles */
+.repeatSheet {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 350px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.repeatHeader {
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+}
+
+.repeatHeader h3 {
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.repeatContent {
+  padding: 24px;
+}
+
+.daysSection,
+.singleDateSection,
+.frequencySection,
+.endsSection {
+  margin-bottom: 24px;
+}
+
+.sectionLabel {
+  display: block;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.dateInput {
+  width: 100%;
+}
+
+.datePicker {
+  width: 100%;
+  padding: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  color: #333;
+  transition: border-color 0.2s;
+}
+
+.datePicker:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.daysGrid {
+  display: flex;
+  gap: 8px;
+}
+
+.dayButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  background: transparent;
+  color: #007bff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.dayButtonSelected {
+  background: #007bff;
+  color: white;
+}
+
+.dayButton:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.dayButtonSelected:hover {
+  background: #0056b3;
+}
+
+.frequencyInput,
+.endsInput {
+  padding: 16px;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.frequencyInput:hover,
+.endsInput:hover {
+  border-color: #007bff;
+}
+
+.repeatActions {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #eee;
+}
+
+/* Option Modal Styles */
+.optionModal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.optionHeader {
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 20px;
+}
+
+.optionHeader h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.optionContent {
+  padding: 24px;
+}
+
+.optionButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.optionButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.optionSelected {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+.radioButton {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #007bff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.radioSelected {
+  width: 10px;
+  height: 10px;
+  background: #007bff;
+  border-radius: 50%;
+}
+
+.optionActions {
+  padding: 24px;
+  border-top: 1px solid #333;
+}
+
+.confirmButton {
+  width: 100%;
+  padding: 16px;
+  background: #007bff;
+  border: none;
+  color: white;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirmButton:hover {
+  background: #0056b3;
+}
+
+/* Date and Occurrences Input Styles */
+.dateInputContainer,
+.occurrencesInputContainer {
+  margin-top: 12px;
+  margin-left: 32px;
+  margin-bottom: 16px;
+}
+
+.dateInput,
+.occurrencesInput {
+  width: 100%;
+  padding: 12px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  font-size: 14px;
+  color: white;
+  transition: border-color 0.2s;
+}
+
+.dateInput:focus,
+.occurrencesInput:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.occurrencesInputContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.occurrencesInput {
+  flex: 1;
+}
+
+.occurrencesLabel {
+  color: #ccc;
+  font-size: 14px;
+  white-space: nowrap;
+}

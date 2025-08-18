@@ -11,35 +11,16 @@
 
 .pageWrapper {
   width: 100%;
-  max-width: 650px; /* Max width for the content area */
-}
-
-.title {
-  font-size: 1.1rem; /* Consistent with other page titles */
-  color: #ffffff;
-  margin-bottom: 1.5rem; /* Space after title */
-  display: flex;
-  align-items: center;
-  gap: 0.5rem; /* Space between title text and icon */
-  background-color: #2b2b2b;
-  height: 60px;
-  padding-left: 1rem;
-}
-
-.starIcon {
-  fill: #ffffff; /* Gold color for the star */
-  width: 18px;
-  height: 16px;
+  max-width: 450px; /* Max width for the content area */
+  padding: 1rem;
 }
 
 .recommendationCard {
   padding: 1rem; /* More padding inside card */
-  width: 90%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   background-color: #2b2b2b;
   border-radius: 24px;
   border: 1px solid #808080;
-  margin: auto;
 }
 
 .prompt {

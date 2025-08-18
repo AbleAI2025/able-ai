@@ -1,4 +1,5 @@
 export type SkillProfile = {
+  profileId?: string;
   name?: string;
   title?: string;
   hashtags?: string;
@@ -20,6 +21,11 @@ export type SkillProfile = {
     id: string | number;
     icon?: React.ElementType | null;
     notes: string;
+    badge: {
+      id: string | number;
+      icon?: React.ElementType | null;
+      description?: string | null
+    }
   }[];
   qualifications: {
     title: string;

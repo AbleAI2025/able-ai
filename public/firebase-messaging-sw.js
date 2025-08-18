@@ -10,7 +10,12 @@ console.log("🛠 Service Worker: initializing...");
 
     firebase.initializeApp(firebaseConfig);
 
-    const messaging = firebase.messaging();
+    const messaging = firebase.messaging.isSupported() ? firebase.messaging() : null
+
+    if (!messaging) {
+      console.warn("[SW][MSG] ⚠️ Firebase Messaging is not supported");
+      return;
+    }
 
     messaging.onBackgroundMessage(async (payload) => {
 

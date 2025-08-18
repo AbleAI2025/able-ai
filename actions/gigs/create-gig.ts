@@ -27,7 +27,30 @@ function coerceNumber(value: number | string | undefined, fallback = 0): number 
 }
 
 function buildDateTime(gigDate: string, gigTime?: string): { startTime: Date; endTime: Date; duration: number } {
-  // Check if gigTime is a time range (e.g., "12:00-14:30")
+  console.log('buildDateTime debug - gigDate:', gigDate, 'gigTime:', gigTime);
+  
+  // Check if gigTime is a time range with " to " (AI formatted)
+  if (gigTime && gigTime.includes(' to ')) {
+    const timeRangeMatch = gigTime.match(/^(\d{1,2}):(\d{2})\s*to\s*(\d{1,2}):(\d{2})$/);
+    if (timeRangeMatch) {
+      const startHours = parseInt(timeRangeMatch[1], 10);
+      const startMinutes = parseInt(timeRangeMatch[2], 10);
+      const endHours = parseInt(timeRangeMatch[3], 10);
+      const endMinutes = parseInt(timeRangeMatch[4], 10);
+      
+      const startTime = new Date(`${gigDate}T${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}:00`);
+      const endTime = new Date(`${gigDate}T${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`);
+      
+      // Calculate duration in hours
+      const durationMs = endTime.getTime() - startTime.getTime();
+      const duration = durationMs / (1000 * 60 * 60);
+      
+      console.log('buildDateTime debug - parsed time range:', { startTime, endTime, duration });
+      return { startTime, endTime, duration };
+    }
+  }
+  
+  // Check if gigTime is a time range with dash (e.g., "12:00-14:30")
   if (gigTime && gigTime.includes('-')) {
     const timeRangeMatch = gigTime.match(/^(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})$/);
     if (timeRangeMatch) {
@@ -43,14 +66,26 @@ function buildDateTime(gigDate: string, gigTime?: string): { startTime: Date; en
       const durationMs = endTime.getTime() - startTime.getTime();
       const duration = durationMs / (1000 * 60 * 60);
       
+      console.log('buildDateTime debug - parsed dash time range:', { startTime, endTime, duration });
       return { startTime, endTime, duration };
     }
   }
   
-  // Handle single time (original logic)
-  const time = (gigTime && /^\d{2}:\d{2}$/.test(gigTime)) ? gigTime : "09:00";
-  const startTime = new Date(`${gigDate}T${time}:00`);
-  const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // default 2h
+  // Handle single time in 24-hour format (e.g., "14:30")
+  if (gigTime && /^\d{1,2}:\d{2}$/.test(gigTime)) {
+    const time = gigTime;
+    const startTime = new Date(`${gigDate}T${time}:00`);
+    const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // default 2h
+    const duration = 2; // default 2 hours
+    
+    console.log('buildDateTime debug - parsed single time:', { startTime, endTime, duration });
+    return { startTime, endTime, duration };
+  }
+  
+  // Fallback to default time
+  console.log('buildDateTime debug - using default time 09:00-11:00');
+  const startTime = new Date(`${gigDate}T09:00:00`);
+  const endTime = new Date(`${gigDate}T11:00:00`);
   const duration = 2; // default 2 hours
   
   return { startTime, endTime, duration };

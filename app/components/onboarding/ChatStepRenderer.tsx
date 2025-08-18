@@ -6,6 +6,57 @@ import CalendarPickerBubble from './CalendarPickerBubble';
 import { ChatStep } from '@/app/hooks';
 import { StepInputConfig } from '@/app/types';
 
+// Utility function to format time for display
+function formatTimeForDisplay(timeValue: any): string {
+  if (!timeValue) return '';
+  try {
+    // Handle time ranges like "12:00 to 16:00"
+    if (typeof timeValue === 'string' && timeValue.includes(' to ')) {
+      const [startTime, endTime] = timeValue.split(' to ');
+      const formattedStart = formatSingleTime(startTime);
+      const formattedEnd = formatSingleTime(endTime);
+      return `${formattedStart} to ${formattedEnd}`;
+    }
+    
+    // Handle single times
+    return formatSingleTime(timeValue);
+  } catch {
+    return String(timeValue);
+  }
+}
+
+function formatSingleTime(timeValue: any): string {
+  if (!timeValue) return '';
+  try {
+    // Handle time strings like "14:30" or "2:30 PM"
+    if (typeof timeValue === 'string') {
+      const time = timeValue.trim();
+      
+      // Check if it's already in a readable format
+      if (time.match(/^\d{1,2}:\d{2}\s*[AaPp][Mm]$/)) {
+        return time; // Already formatted like "2:30 PM"
+      }
+      
+      // Handle 24-hour format like "14:30"
+      if (time.match(/^\d{1,2}:\d{2}$/)) {
+        const [hours, minutes] = time.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        return date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+      }
+    }
+    
+    // Handle Date objects
+    if (timeValue instanceof Date) {
+      return timeValue.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+    
+    return String(timeValue);
+  } catch {
+    return String(timeValue);
+  }
+}
+
 interface ChatStepRendererProps {
   step: ChatStep;
   idx: number;
@@ -21,6 +72,7 @@ interface ChatStepRendererProps {
   setConfirmDisabled: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void;
   setExpandedSummaryFields: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void;
   isSubmitting?: boolean;
+  role?: 'BUYER' | 'GIG_WORKER';
 }
 
 // Typing indicator component
@@ -50,6 +102,7 @@ export default function ChatStepRenderer({
   setConfirmDisabled,
   setExpandedSummaryFields,
   isSubmitting = false,
+  role = 'GIG_WORKER',
 }: ChatStepRendererProps) {
   const key = `step-${step.id}-${step.type}-${step.inputConfig?.name || Math.random()}`;
 
@@ -76,7 +129,7 @@ export default function ChatStepRenderer({
                   <li key={field} style={{ marginBottom: 8 }}>
                     <strong style={{ textTransform: 'capitalize' }}>{field.replace(/([A-Z])/g, ' $1')}: </strong>
                     <span>
-                      Lat: {loc.lat}, Lng: {loc.lng}
+                      {loc.formatted_address || `Coordinates: ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`}
                     </span>
                   </li>
                 );
@@ -113,11 +166,15 @@ export default function ChatStepRenderer({
                 <li key={field} style={{ marginBottom: 8 }}>
                   <strong style={{ textTransform: 'capitalize' }}>{field.replace(/([A-Z])/g, ' $1')}: </strong>
                   <span>
-                    {value && typeof value === 'object' && 'lat' in value && 'lng' in value
-                      ? `Lat: ${(value as any).lat}, Lng: ${(value as any).lng}`
-                      : typeof value === 'object'
-                        ? JSON.stringify(value)
-                        : String(value)}
+                    {field === 'hourlyRate' && typeof value === 'number'
+                      ? `£${value.toFixed(2)}`
+                      : field === 'gigTime' && typeof value === 'string'
+                        ? formatTimeForDisplay(value)
+                        : value && typeof value === 'object' && 'lat' in value && 'lng' in value
+                          ? (value as any).formatted_address || `Coordinates: ${(value as any).lat.toFixed(6)}, ${(value as any).lng.toFixed(6)}`
+                          : typeof value === 'object'
+                            ? JSON.stringify(value)
+                            : String(value)}
                   </span>
                 </li>
               );
@@ -167,6 +224,7 @@ export default function ChatStepRenderer({
             onChange={val => handleInputChange('gigLocation', val)}
             showConfirm={!!formData.gigLocation && isActive}
             onConfirm={() => handleInputSubmit(step.id, 'gigLocation')}
+            role={role}
           />
         </div>
       );
@@ -192,13 +250,13 @@ export default function ChatStepRenderer({
       );
     }
 
-    // Custom hourly rate input with euro symbol
+    // Custom hourly rate input with British Pounds symbol
     if (inputConf.name === "hourlyRate") {
       return (
         <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <label style={{ fontWeight: 600 }}>{inputConf.label}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontWeight: 600, fontSize: 18 }}>€</span>
+            <span style={{ fontWeight: 600, fontSize: 18 }}>£</span>
             <input
               id={inputConf.name}
               name={inputConf.name}
@@ -207,7 +265,7 @@ export default function ChatStepRenderer({
               step="0.01"
               value={formData[inputConf.name] || ""}
               disabled={isSubmitting}
-              placeholder="Hourly Rate in €"
+              placeholder="Hourly Rate in £ (British Pounds)"
               onChange={e => handleInputChange(inputConf.name, e.target.value)}
               style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
               onKeyPress={e => {
@@ -218,9 +276,10 @@ export default function ChatStepRenderer({
               }}
             />
           </div>
+
           {isActive && formData[inputConf.name] && (
             <button
-              style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+              style={{ margin: '8px 0', background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
               onClick={() => {
                 setConfirmDisabled(prev => ({ ...prev, [inputConf.name]: true }));
                 handleInputSubmit(step.id, inputConf.name);
@@ -235,7 +294,7 @@ export default function ChatStepRenderer({
     }
 
     // Standard input bubble
-    const allowedTypes = ["number", "text", "email", "password", "date", "tel"];
+    const allowedTypes = ["number", "text", "email", "password", "date", "tel", "time"];
     const safeType = allowedTypes.includes(inputConf.type) ? inputConf.type : "text";
     
     return (
@@ -245,7 +304,7 @@ export default function ChatStepRenderer({
           name={inputConf.name}
           value={formData[inputConf.name] || ""}
           disabled={isSubmitting}
-          type={safeType as "number" | "text" | "email" | "password" | "date" | "tel"}
+          type={safeType as "number" | "text" | "email" | "password" | "date" | "tel" | "time"}
           placeholder={inputConf.placeholder}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             handleInputChange(inputConf.name, e.target.value)
@@ -261,7 +320,7 @@ export default function ChatStepRenderer({
         />
         {isActive && formData[inputConf.name] && (
           <button
-            style={{ margin: '8px 0', background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+            style={{ margin: '8px 0', background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
             onClick={() => {
               setConfirmDisabled(prev => ({ ...prev, [inputConf.name]: true }));
               handleInputSubmit(step.id, inputConf.name);
@@ -294,7 +353,7 @@ export default function ChatStepRenderer({
               <div style={{ marginBottom: 8 }}>{step.sanitizedValue}</div>
               {!isStepComplete && (
                 <button
-                  style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px' }}
+                  style={{ background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px' }}
                   onClick={() => handleSanitizedConfirm(step.fieldName!, step.originalValue!)}
                 >
                   Confirm Location
@@ -318,7 +377,7 @@ export default function ChatStepRenderer({
             {!isStepComplete && (
               <div style={{ display: 'flex', gap: 12 }}>
                 <button
-                  style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
+                  style={{ background: '#0f766e', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}
                   onClick={() => handleSanitizedConfirm(step.fieldName!, step.sanitizedValue!)}
                   disabled={isStepComplete}
                 >

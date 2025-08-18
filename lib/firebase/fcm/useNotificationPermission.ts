@@ -6,15 +6,37 @@ const useNotificationPermissionStatus = () => {
     useState<NotificationPermission>("default");
 
   useEffect(() => {
-    const handler = () => setPermission(Notification.permission);
-    handler();
-    Notification.requestPermission().then(handler);
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notification");
+      setPermission("denied");
+      return;
+    }
 
-    navigator.permissions
-      .query({ name: "notifications" })
-      .then((notificationPerm) => {
-        notificationPerm.onchange = handler;
+    const handlePermissionChange = () => setPermission(Notification.permission);
+
+    if (Notification.permission === "granted") {
+      setPermission("granted");
+      // Optionally, you can show a notification here if needed
+      // new Notification("Hi there!");
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then((permission) => {
+        setPermission(permission);
+        if (permission === "granted") {
+          // Optionally, you can show a notification here if needed
+          // new Notification("Hi there!");
+        }
       });
+    } else {
+      setPermission(Notification.permission);
+    }
+
+    if ("permissions" in navigator && navigator.permissions.query) {
+      navigator.permissions
+        .query({ name: "notifications" as PermissionName })
+        .then((notificationPerm) => {
+          notificationPerm.onchange = handlePermissionChange;
+        });
+    }
   }, []);
 
   return permission;

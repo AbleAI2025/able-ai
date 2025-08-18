@@ -368,7 +368,7 @@
 .calendarWrapper :global(.rbc-event) {
   box-shadow: 0 2px 4px rgba(0,0,0,0.4);
   font-weight: 500;
-  background-color: #3a3a3a;
+  /* background-color removed to allow eventPropGetter to control colors */
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -525,7 +525,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background-color: #3a3a3a;
+  /* background-color removed to allow eventPropGetter to control colors */
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -652,21 +652,20 @@
 }
 
 .confirmButton {
-  background-color: var(--primary-color, #0f766e);
+  /* Default styles - will be overridden by inline styles for role-based colors */
   color: #ffffff;
-  border: 1px solid var(--primary-color, #0f766e);
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s ease;
+  border: 1px solid;
 }
 
 .confirmButton:hover {
-  background-color: #0d5a55;
-  border-color: #0d5a55;
   transform: translateY(-1px);
+  filter: brightness(0.9);
 }
 
 /* Animations */
@@ -871,7 +870,7 @@
 
 /* Legend Colors */
 .legendAccepted { background-color: var(--primary-color); }
-.legendOffer { background-color: #3b82f6; }
+.legendOffer { background-color: #6b7280; }
 .legendInProgress { background-color: #f59e0b; }
 .legendCompleted { background-color: var(--success-color); }
 .legendCancelled { background-color: var(--error-color); }
@@ -992,60 +991,11 @@
   }
 }
 
-/* Override react-big-calendar event colors with our conditional colors */
+/* Allow eventPropGetter to control event colors dynamically */
 .calendarWrapper :global(.rbc-event) {
-  /* Remove the !important background-color override to allow eventPropGetter colors */
   border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Remove any background-color overrides to allow eventPropGetter colors */
 }
 
-/* For accepted events in worker view */
-.calendarWrapper :global(.rbc-event[data-status="ACCEPTED"][data-role="worker"]) {
-  background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-}
-
-/* For accepted events in buyer view */
-.calendarWrapper :global(.rbc-event[data-status="ACCEPTED"][data-role="buyer"]) {
-  background-color: var(--secondary-color) !important;
-  border-color: var(--secondary-color) !important;
-}
-
-/* For non-accepted events (explicit) */
-.calendarWrapper :global(.rbc-event[data-status]:not([data-status="ACCEPTED"])) {
-  background-color: #525252 !important;
-  border-color: #525252 !important;
-}
-
-/* Force inline styles to take precedence over CSS */
-.calendarWrapper :global(.rbc-event[style*="background-color"]) {
-  background-color: inherit !important;
-}
-
-/* Specific overrides for different event statuses */
-.calendarWrapper :global(.rbc-event[style*="var(--primary-color)"]) {
-  background-color: var(--primary-color) !important;
-}
-
-.calendarWrapper :global(.rbc-event[style*="#3b82f6"]) {
-  background-color: #3b82f6 !important;
-}
-
-.calendarWrapper :global(.rbc-event[style*="#10b981"]) {
-  background-color: #10b981 !important;
-}
-
-.calendarWrapper :global(.rbc-event[style*="#059669"]) {
-  background-color: #059669 !important;
-}
-
-.calendarWrapper :global(.rbc-event[style*="#eab308"]) {
-  background-color: #eab308 !important;
-}
-
-.calendarWrapper :global(.rbc-event[style*="#6b7280"]) {
-  background-color: #6b7280 !important;
-}
-
-.calendarWrapper :global(.rbc-event[style*="#dc2626"]) {
-  background-color: #dc2626 !important;
-}
+/* Remove the complex data-attribute based styling since it's not reliable */
+/* The eventPropGetter will handle all the color logic consistently */

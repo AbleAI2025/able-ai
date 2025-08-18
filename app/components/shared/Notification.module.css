@@ -1,0 +1,36 @@
+
+.notificationButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: auto; /* Push button to the right */
+  display: flex;
+  align-items: center;
+}
+
+.notificationButton svg {
+  fill: #ffffff;
+  transition: 0.2s ease;
+}
+
+.notificationButton svg:hover {
+  color: var(--primary-color);
+  fill: var(--primary-color);
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 27%;
+  right: 3%;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  width: 18;
+  height: 18;
+  font-size: 12;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}

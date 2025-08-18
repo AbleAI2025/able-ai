@@ -4,6 +4,8 @@
 .suggestionBanner {
   display: flex;
   flex-direction: column; /* Stack top row and bottom controls */
+  width: 90%;
+  margin: 1rem auto; /* Center the banner */
 }
 
 .suggestionBanner.error {

@@ -172,25 +172,35 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
             <div className={styles.actions}>
               {event.status === 'OFFER' && userRole === 'worker' ? (
                 // For offers, redirect to gig offers page
-                <button 
-                  className={styles.actionButton}
-                  onClick={() => {
-                    if (resolvedUserId) {
-                      router.push(`/user/${resolvedUserId}/worker/offers`);
-                    }
-                    onClose();
-                  }}
-                >
-                  View All Offers
-                </button>
+                                                   <button 
+                    className={styles.actionButton}
+                    onClick={() => {
+                      if (resolvedUserId) {
+                        router.push(`/user/${resolvedUserId}/worker/offers`);
+                      }
+                      onClose();
+                    }}
+                    style={{
+                      backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                      borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                      color: userRole === 'worker' ? '#ffffff' : '#000000'
+                    }}
+                  >
+                    View All Offers
+                  </button>
               ) : (
                 // For accepted gigs, show the original button
-                <button 
-                  className={styles.actionButton}
-                  onClick={handleGoToOffer}
-                >
-                  Go to Offer
-                </button>
+                                                   <button 
+                    className={styles.actionButton}
+                    onClick={handleGoToOffer}
+                    style={{
+                      backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                      borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                      color: userRole === 'worker' ? '#ffffff' : '#000000'
+                    }}
+                  >
+                    Go to Offer
+                  </button>
               )}
             </div>
           )}

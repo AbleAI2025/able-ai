@@ -1,5 +1,5 @@
 {
-  "id": "3e3cd5d0-7aef-4d7d-8547-882ea93bb0ba",
+  "id": "b0daf36a-22af-4c4d-804b-e33c7ecf9258",
   "prevId": "b1aa2e2e-aafc-48b4-b8da-7d940f06f42d",
   "version": "7",
   "dialect": "postgresql",
@@ -660,24 +660,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "final_rate": {
-          "name": "final_rate",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "final_hours": {
-          "name": "final_hours",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "final_agreed_price": {
-          "name": "final_agreed_price",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "status_internal": {
           "name": "status_internal",
           "type": "gig_status_enum",
@@ -740,18 +722,6 @@
         "notes_for_buyer": {
           "name": "notes_for_buyer",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "adjustment_notes": {
-          "name": "adjustment_notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "adjusted_at": {
-          "name": "adjusted_at",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -1027,6 +997,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "video_url": {
+          "name": "video_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1146,6 +1122,12 @@
         "semantic_profile_json": {
           "name": "semantic_profile_json",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "video_url": {
+          "name": "video_url",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

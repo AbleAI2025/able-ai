@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { Calendar, Info, MessageSquare } from 'lucide-react';
 import Logo from '../brand/Logo';
 import styles from './GigDetails.module.css';
@@ -13,6 +14,7 @@ import { updateGigOfferStatus } from '@/actions/gigs/update-gig-offer-status';
 import { holdGigFunds } from '@/app/actions/stripe/create-hold-gig-Funds';
 import { deleteGig } from '@/actions/gigs/delete-gig';
 import { toast } from 'sonner';
+import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
 
 
 const formatGigDate = (isoDate: string) => new Date(isoDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -78,6 +80,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 	const [isWaitingHoldPayment, setIsWaitingHoldPayment] = useState(false);
 
 	const gigDuration = calculateDuration(gig.startTime, gig.endTime);
+	const amendId = "123";
 
 	const getButtonLabel = (action: string) => {
 		const status = gig.status;
@@ -169,6 +172,10 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 			else if (action === 'confirmed') {
 				setGig({ ...gig, status: 'CONFIRMED' });
 				// Show success message
+			} else if (action === 'requestAmendment') {
+				setGig({ ...gig, status: 'REQUESTED_AMENDMENT' });
+				router.push(`/gigs/${gig.id}/amends/${amendId}`);
+				// Show success message
 			}
 			else if (action === 'delete') {
 				if (!user?.uid) {
@@ -203,240 +210,166 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 
 	return (
 		<div className={styles.container}>
-			<header className={styles.header}>
-				{/* <button onClick={() => router.back()} className={styles.backButton} aria-label="Go back">
-                <ArrowLeft size={24} />
-                </button> */}
-				<Logo width={70} height={70} />
-				<h1 className={styles.pageTitle}>{gig.role} Gig</h1>
-				{/* <span className={`${styles.statusBadge} ${getStatusBadgeClass(gig.status)}`}>{gig.status.replace('_', ' ')}</span> */}
-				<div className={styles.headerActions}>
-					{/* Calendar navigation button for workers */}
-					{role === 'worker' && (
-						<button 
-							onClick={() => router.push(`/user/${userId}/worker/calendar`)} 
-							className={styles.calendarButton}
-							title="View Calendar"
-						>
-							<Calendar size={24} />
-						</button>
-					)}
-					<button onClick={() => router.push(`/chat?gigId=${gig.id}`)} className={styles.chatButton}>
-						<MessageSquare size={40} fill="#ffffff" className={styles.icon} />
-					</button>
-				</div>
-			</header>
+			<ScreenHeaderWithBack title={`${gig.role} Gig`} onBackClick={() => router.back()} />
 
 			{/* Core Gig Info Section - Adapted to new structure */}
-			<section className={styles.gigDetailsSection}>
-				<div className={styles.gigDetailsHeader}>
-					<h2 className={styles.sectionTitle}>Gig Details</h2>
-					<Calendar size={26} color='#ffffff' />
-				</div>
-
-				{/* Title */}
-				{gig.gigTitle && (
-					<div className={styles.gigDetailsRow}>
-						<span className={styles.label}>Title:</span>
-						<span className={styles.detailValue}>{gig.gigTitle}</span>
+			<main className={styles.gigDetailsMain}>
+				<section className={styles.gigDetailsSection}>
+					<div className={styles.gigDetailsHeader}>
+						<h2 className={styles.sectionTitle}>Gig Details</h2>
+						<Calendar size={26} color='#ffffff' />
 					</div>
-				)}
 
-				{/* <div className={styles.gigDetailsRow}>
-                    <span className={styles.label}>Buyer:</span>
-                    <span className={styles.detailValue}>{gig.buyerName}</span>
-                </div> */}
-				<div className={styles.gigDetailsRow}>
-					<span className={styles.label}>Location:</span>
-					<span className={styles.detailValue}>
-						{gig.location}
-						<a href={`https://maps.google.com/?q=${encodeURIComponent(gig.location)}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>(View Map)</a>
-					</span>
-				</div>
-				<div className={styles.gigDetailsRow}>
-					<span className={styles.label}>Date:</span>
-					<span className={styles.detailValue}>{formatGigDate(gig.date)}</span>
-				</div>
-				<div className={styles.gigDetailsRow}>
-					<span className={styles.label}>Time:</span>
-					<span className={styles.detailValue}>{formatGigTime(gig.startTime)} - {formatGigTime(gig.endTime)} ({gigDuration})</span>
-				</div>
-				<div className={styles.gigDetailsRow}>
-					<span className={styles.label}>Pay per hour:</span>
-					<span className={styles.detailValue}>£{gig.hourlyRate.toFixed(2)}/hr</span>
-				</div>
-				<div className={styles.gigDetailsRow}>
-					<span className={styles.label}>Total pay:</span>
-					<span className={styles.detailValue}>£{gig.estimatedEarnings.toFixed(2)} + tips</span>
-				</div>
-				{/* Hiring Manager Info - Placeholder as it's not in current GigDetails interface */}
+					{/* <div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Buyer:</span>
+						<span className={styles.detailValue}>{gig.buyerName}</span>
+					</div> */}
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Location:</span>
+						<span className={styles.detailValue}>
+							{gig.location}
+							<a href={`https://maps.google.com/?q=${encodeURIComponent(gig.location)}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>(View Map)</a>
+						</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Date:</span>
+						<span className={styles.detailValue}>{formatGigDate(gig.date)}</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Time:</span>
+						<span className={styles.detailValue}>{formatGigTime(gig.startTime)} - {formatGigTime(gig.endTime)} ({gigDuration})</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Pay per hour:</span>
+						<span className={styles.detailValue}>£{gig.hourlyRate.toFixed(2)}/hr</span>
+					</div>
+					<div className={styles.gigDetailsRow}>
+						<span className={styles.label}>Total pay:</span>
+						<span className={styles.detailValue}>£{gig.estimatedEarnings.toFixed(2)} + tips</span>
+					</div>
+					{/* Hiring Manager Info - Placeholder as it's not in current GigDetails interface */}
+
+					{lastRoleUsed === "GIG_WORKER" && (
+						<div className={styles.gigDetailsRow}>
+							<span className={styles.label}>Hiring manager:</span>
+							<span className={styles.detailValue}>{gig.hiringManager} <br /> {gig.hiringManagerUsername}</span>
+						</div>
+					)}
+
+				</section>
 
 				{lastRoleUsed === "GIG_WORKER" && (
-					<div className={styles.gigDetailsRow}>
-						<span className={styles.label}>Hiring manager:</span>
-						<span className={styles.detailValue}>{gig.hiringManager} <br /> {gig.hiringManagerUsername}</span>
-					</div>
+					<section
+						className={`${styles.gigDetailsSection} ${styles.workerSection}`}
+					>
+						<Image
+							src={worker.avatarUrl}
+							className={styles.workerAvatar}
+							alt={worker.name}
+							width={56}
+							height={56}
+						/>
+						<div className={styles.workerDetailsContainer}>
+							<div className={styles.workerDetails}>
+								<span className={styles.workerName}>
+									{worker.name}
+								</span>
+								{worker.gigs} Able gigs, {worker.experience} years experience
+							</div>
+							{worker.isStar && <Image src="/images/star.svg" alt="Star" width={56} height={50} />}
+						</div>
+					</section>
 				)}
 
-			</section>
-
-			{lastRoleUsed === "GIG_WORKER" && (
-				<section
-					className={`${styles.gigDetailsSection} ${styles.workerSection}`}
-				>
-					<Image
-						src={worker.avatarUrl}
-						className={styles.workerAvatar}
-						alt={worker.name}
-						width={56}
-						height={56}
-					/>
-					<div className={styles.workerDetailsContainer}>
-						<div className={styles.workerDetails}>
-							<span className={styles.workerName}>
-								{worker.name}
-							</span>
-							{worker.gigs} Able gigs, {worker.experience} years experience
-						</div>
-						{worker.isStar && <Image src="/images/star.svg" alt="Star" width={56} height={50} />}
-					</div>
-				</section>
-			)}
-
-			{/* Negotiation Button - Kept from new structure */}
-			{/* Added a check to only show if gig is accepted */}
-			{(lastRoleUsed === "GIG_WORKER" && (gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED')) && (
-				<button className={styles.negotiationButton} onClick={() => handleGigAction('requestAmendment')}>
-					Negotiate, cancel or change gig details
-				</button>
-			)}
-
-			{/* Special Instructions Section */}
-			{gig.specialInstructions && (
-				<section className={styles.instructionsSection}>
-					<h2 className={styles.specialInstTitle}><Info size={18} />Special Instructions</h2>
-					<p className={styles.specialInstructions}>{gig.specialInstructions}</p>
-				</section>
-			)}
-
-			{/* Gig Offer Actions Section - Show when this is an available offer for workers */}
-			{isAvailableOffer && role === 'worker' && (
-				<section className={styles.offerActionsSection}>
-					<div className={styles.offerHeader}>
-						<h2>🎯 Available Gig Offer</h2>
-						<p>This gig is available for you to accept. Review the details below and take action.</p>
-					</div>
-					
-					<div className={styles.offerActionButtons}>
-						<button 
-							className={`${styles.acceptOfferButton} ${styles.primaryAction}`}
-							onClick={() => handleGigAction('accept')}
-							disabled={isActionLoading}
-						>
-							{isActionLoading ? 'Accepting...' : 'Accept Gig Offer'}
-						</button>
-						
-						<button 
-							className={`${styles.declineOfferButton} ${styles.secondaryAction}`}
-							onClick={() => router.push(`/user/${userId}/worker/offers`)}
-							disabled={isActionLoading}
-						>
-							View Other Offers
-						</button>
-					</div>
-				</section>
-			)}
-
-			{/* Primary Actions Section - Adapted to new structure */}
-			<section className={styles.actionSection}>
-				<GigActionButton
-					label={!isWaitingHoldPayment ? getButtonLabel('accept') : 'processing...'}
-					handleGigAction={() => handleGigAction('accept')}
-					isActive={!isWaitingHoldPayment && gig.status === 'PENDING'}
-					isDisabled={gig.status !== 'PENDING'}
-				/>
-
-				{/* 2. Start Gig */}
-				<GigActionButton
-					label={getButtonLabel('start')}
-					handleGigAction={() => handleGigAction('start')}
-					isActive={gig.status === 'ACCEPTED'}
-					isDisabled={gig.status !== 'ACCEPTED'}
-				/>
-
-				{/* 3. Complete Gig */}
-				<GigActionButton
-					label={getButtonLabel('complete')}
-					handleGigAction={() => handleGigAction('complete')}
-					isActive={gig.status === 'IN_PROGRESS'}
-					isDisabled={gig.status !== 'IN_PROGRESS'}
-				/>
-
-				{/* 4. Awaiting Buyer Confirmation */}
-				<GigActionButton
-					label={getButtonLabel('awaiting')}
-					handleGigAction={() => handleGigAction('awaiting')}
-					isActive={gig.status === 'COMPLETED'}
-					isDisabled={gig.status !== 'COMPLETED'}
-				/>
-
-				{/* Info messages for other statuses
-                {gig.status === 'AWAITING_BUYER_CONFIRMATION' && (
-                <p className={styles.actionInfoText}>Waiting for buyer to confirm completion.</p>
-                )}
-                {gig.status === 'CANCELLED' && (
-                <p className={styles.actionInfoText} style={{color: 'var(--error-color)', backgroundColor: 'rgba(239,68,68,0.1)'}}>
-                <XCircle size={18} style={{marginRight: '8px'}}/> This gig was cancelled.
-                </p>
-                )}
-                {gig.status === 'COMPLETED' && (
-                <p className={styles.actionInfoText} style={{color: 'var(--success-color)'}}>
-                <CheckCircle size={18} style={{marginRight: '8px'}}/> Gig completed successfully!
-                </p>
-                )} */}
-			</section>
-
-			{/* Secondary Actions Section - Adapted to new structure */}
-
-			{lastRoleUsed === "GIG_WORKER" && (
-				<button className={styles.negotiationButton} disabled>
-					Cancel, amend gig timing or add tips
-				</button>
-			)}
-			<section className={`${styles.secondaryActionsSection}`}> {/* Using secondaryActionsSection class */}
-				<Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className={styles.secondaryActionButton}>
-					Terms of agreement
-				</Link>
-				<button onClick={() => handleGigAction('reportIssue')} className={styles.secondaryActionButton} disabled={isActionLoading}>
-					Report an Issue
-				</button>
-				
-				{/* Delete button - only show for buyers when gig is not yet accepted */}
-				{lastRoleUsed === "BUYER" && gig.statusInternal === 'PENDING_WORKER_ACCEPTANCE' && (
-					<button 
-						onClick={() => handleGigAction('delete')} 
-						className={`${styles.secondaryActionButton} ${styles.deleteButton}`} 
-						disabled={isActionLoading}
-					>
-						Delete Gig
+				{/* Negotiation Button - Kept from new structure */}
+				{/* Added a check to only show if gig is accepted */}
+				{(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
+					<button className={styles.negotiationButton} onClick={() => handleGigAction('requestAmendment')}>
+						Negotiate, cancel or change gig details
 					</button>
 				)}
-				
-				{/* <button onClick={() => handleGigAction('delegate')} className={styles.secondaryActionButton} disabled={isActionLoading}>
-                        <Share2 size={16} style={{marginRight: '8px'}}/> Delegate Gig
-                    </button> */}
-			</section>
+
+				{/* Special Instructions Section */}
+				{gig.specialInstructions && (
+					<section className={styles.instructionsSection}>
+						<h2 className={styles.specialInstTitle}><Info size={18} />Special Instructions</h2>
+						<p className={styles.specialInstructions}>{gig.specialInstructions}</p>
+					</section>
+				)}
+
+				{/* Primary Actions Section - Adapted to new structure */}
+				<section className={styles.actionSection}>
+					<GigActionButton
+						label={!isWaitingHoldPayment ? getButtonLabel('accept') : 'processing...'}
+						handleGigAction={() => handleGigAction('accept')}
+						isActive={!isWaitingHoldPayment && gig.status === 'PENDING'}
+						isDisabled={gig.status !== 'PENDING'}
+					/>
+
+					{/* 2. Start Gig */}
+					<GigActionButton
+						label={getButtonLabel('start')}
+						handleGigAction={() => handleGigAction('start')}
+						isActive={gig.status === 'ACCEPTED'}
+						isDisabled={gig.status !== 'ACCEPTED'}
+					/>
+
+					{/* 3. Complete Gig */}
+					<GigActionButton
+						label={getButtonLabel('complete')}
+						handleGigAction={() => handleGigAction('complete')}
+						isActive={gig.status === 'IN_PROGRESS'}
+						isDisabled={gig.status !== 'IN_PROGRESS'}
+					/>
+
+					{/* 4. Awaiting Buyer Confirmation */}
+					<GigActionButton
+						label={getButtonLabel('awaiting')}
+						handleGigAction={() => handleGigAction('awaiting')}
+						isActive={gig.status === 'COMPLETED'}
+						isDisabled={gig.status !== 'COMPLETED'}
+					/>
+
+					{/* Info messages for other statuses
+					{gig.status === 'AWAITING_BUYER_CONFIRMATION' && (
+					<p className={styles.actionInfoText}>Waiting for buyer to confirm completion.</p>
+					)}
+					{gig.status === 'CANCELLED' && (
+					<p className={styles.actionInfoText} style={{color: 'var(--error-color)', backgroundColor: 'rgba(239,68,68,0.1)'}}>
+					<XCircle size={18} style={{marginRight: '8px'}}/> This gig was cancelled.
+					</p>
+					)}
+					{gig.status === 'COMPLETED' && (
+					<p className={styles.actionInfoText} style={{color: 'var(--success-color)'}}>
+					<CheckCircle size={18} style={{marginRight: '8px'}}/> Gig completed successfully!
+					</p>
+					)} */}
+				</section>
+
+				{/* Secondary Actions Section - Adapted to new structure */}
+				<section className={`${styles.secondaryActionsSection}`}> {/* Using secondaryActionsSection class */}
+					<Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className={styles.secondaryActionButton}>
+						Terms of agreement
+					</Link>
+					<button onClick={() => handleGigAction('reportIssue')} className={styles.secondaryActionButton} disabled={isActionLoading}>
+						Report an Issue
+					</button>
+					{/* <button onClick={() => handleGigAction('delegate')} className={styles.secondaryActionButton} disabled={isActionLoading}>
+							<Share2 size={16} style={{marginRight: '8px'}}/> Delegate Gig
+						</button> */}
+				</section>
 
 
 
-			{/* Footer (Home Button) */}
-			{/* <footer className={styles.footer}>
-                <Link href={`/user/${user?.uid}/worker`} passHref>
-                <button className={styles.homeButton} aria-label="Go to Home">
-                    <Home size={24} />
-                </button>
-                </Link>
-            </footer> */}
+				{/* Footer (Home Button) */}
+				{/* <footer className={styles.footer}>
+					<Link href={`/user/${user?.uid}/worker`} passHref>
+					<button className={styles.homeButton} aria-label="Go to Home">
+						<Home size={24} />
+					</button>
+					</Link>
+				</footer> */}
+			</main>
 		</div>
 	)
 }

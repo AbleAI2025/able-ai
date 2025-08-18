@@ -1,22 +1,28 @@
 .stripeButton {
-  /* From user example */
-  background-color: var(--primary-color);
-  color: #fff;
+  color: #0f0f0f;
   border: none;
-  /* Adjusted padding */
   padding: 0.75rem 1.25rem;
-  /* 8px */
   border-radius: 1.5rem;
   cursor: pointer;
-  /* Adjusted font size */
   font-size: 0.9rem;
   font-weight: 500;
   transition: background-color 0.2s ease;
 }
 
-.stripeButton:hover:not(:disabled) {
-  /* Darker blue */
-  background-color: #177bc9;
+.workerBtn {
+  background-color: var(--primary-color);
+}
+
+.buyerBtn {
+  background-color: var(--secondary-color);
+}
+
+.workerBtn:hover:not(:disabled) {
+  background-color: #378bca;
+}
+
+.buyerBtn:hover:not(:disabled) {
+  background-color: #6fcbd4;
 }
 
 .stripeButton:disabled {
@@ -27,10 +33,8 @@
 .modalOverlay {
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,24 +43,34 @@
 
 .modalContent {
   background-color: #1f1f1f;
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 0.75rem;
   border: 1px solid #2b2b2b;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-  width: 100%;
+  width: 90%;
   max-width: 450px;
   color: #e0e0e0;
+
+  p {
+    color: #aeaeb2;
+    line-height: 1.6;
+  }
 }
 
 .modalTitle {
   font-size: 1.25rem;
   font-weight: 600;
   color: #ffffff;
-  margin: 0 0 1rem 0;
+}
+
+.modalHeaderContent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .modalActions {
-  margin-top: 1.5rem;
+  margin: 1.5rem 0 0.5rem;
   display: flex;
   justify-content: center;
   gap: 0.75rem;
@@ -76,12 +90,9 @@
   margin-bottom: 1rem;
 }
 
-.closeButton {
-  background: transparent;
-  border: none;
-  color: 1px solid #2b2b2b;
-  font-size: 1.5rem;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }

@@ -1,0 +1,211 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1a1a1a;
+  color: white;
+  position: relative;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.monthInfo {
+  flex: 1;
+}
+
+.monthTitle {
+  color: white;
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.chooseDateButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chooseDateButton:hover {
+  background: #0056b3;
+}
+
+.calendarGrid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dayHeader {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #888;
+  padding: 8px;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  flex: 1;
+}
+
+.dayCell {
+  position: relative;
+  background: #2a2a2a;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+}
+
+.dayCell:hover {
+  background: #333;
+  transform: scale(1.05);
+}
+
+.dayCell.otherMonth {
+  color: #666;
+  background: #222;
+}
+
+.dayCell.today {
+  background: #007bff;
+  color: white;
+}
+
+.dayCell.selected {
+  background: #0056b3;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.dayCell.hasAvailability {
+  background: #1e3a8a;
+  color: white;
+}
+
+.dayCell.hasAvailability:hover {
+  background: #1e40af;
+}
+
+.dayNumber {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.availabilityIndicator {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+.navigation {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.navButton:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.clearButton {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #444;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.clearButton:hover {
+  background: #555;
+  transform: scale(1.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .monthTitle {
+    font-size: 24px;
+  }
+
+  .chooseDateButton {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  .dayCell {
+    min-height: 50px;
+    padding: 8px 6px;
+  }
+
+  .dayNumber {
+    font-size: 14px;
+  }
+
+  .dayHeaders {
+    gap: 4px;
+  }
+
+  .daysGrid {
+    gap: 4px;
+  }
+}

@@ -26,7 +26,8 @@ export enum GigStatusEnum {
   COMPLETED = 'COMPLETED',
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
-  REQUESTED = 'REQUESTED'
+  REQUESTED = 'REQUESTED',
+  REQUESTED_AMENDMENT = 'REQUESTED_AMENDMENT'
 }
 
 export type GigStatusEnumType = `${GigStatusEnum}`

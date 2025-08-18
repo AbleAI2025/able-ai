@@ -2,16 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import {
-  UserCircle,
-} from "lucide-react";
+import { UserCircle } from "lucide-react";
 import styles from "./page.module.css";
 import WorkerProfile from "@/app/components/profile/WorkerProfile";
 import CloseButton from "@/app/components/profile/CloseButton";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import PublicWorkerProfile from "@/app/types/workerProfileTypes";
-import { getGigWorkerProfile } from "@/actions/user/gig-worker-profile";
+import {
+  getPrivateWorkerProfileAction,
+} from "@/actions/user/gig-worker-profile";
 
 export default function WorkerOwnedProfilePage() {
   const router = useRouter();
@@ -22,19 +22,15 @@ export default function WorkerOwnedProfilePage() {
 
   const { user, loading: loadingAuth } = useAuth();
 
-  const [profile, setProfile] = useState<PublicWorkerProfile | undefined | null>(null);
+  const [profile, setProfile] = useState<
+    PublicWorkerProfile | undefined | null
+  >(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isSelfView = true;
 
-  useEffect(() => {
-    if (!loadingAuth && user) {
-      if (
-        lastRoleUsed === "GIG_WORKER" ||
-        user.claims.role === "QA"
-      ) {
+  const fetchUserProfile = (token: string) => {
         setLoadingProfile(true);
-          getGigWorkerProfile(user.token)
+        getPrivateWorkerProfileAction(token)
           .then((data) => {
             setProfile(data.data);
             setError(null);
@@ -44,11 +40,17 @@ export default function WorkerOwnedProfilePage() {
             setError("Could not load your profile.");
           })
           .finally(() => setLoadingProfile(false));
+  }
+
+  useEffect(() => {
+    if (!loadingAuth && user) {
+      if (lastRoleUsed === "GIG_WORKER" || user.claims.role === "QA") {
+        fetchUserProfile(user.token)
       } else {
         router.replace("/select-role");
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingAuth, user?.claims.role, userId, pathname, router, lastRoleUsed]);
 
   const handleSkillDetails = (id: string) => {
@@ -83,9 +85,10 @@ export default function WorkerOwnedProfilePage() {
       <CloseButton />
       <WorkerProfile
         workerProfile={profile}
-        isSelfView={isSelfView}
+        isSelfView={true}
         handleAddSkill={() => {}}
         handleSkillDetails={handleSkillDetails}
+        fetchUserProfile={fetchUserProfile}
       />
     </div>
   );

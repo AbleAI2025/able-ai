@@ -1,9 +1,7 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 
 // --- SHARED & HELPER COMPONENTS ---
-import Avatar from "@/app/components/shared/Avatar";
 import ContentCard from "@/app/components/shared/ContentCard";
 import SkillsDisplayTable from "@/app/components/profile/SkillsDisplayTable";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
@@ -14,68 +12,122 @@ import styles from "./WorkerProfile.module.css";
 import {
   CalendarDays,
   BadgeCheck,
-  MapPin,
-  Share2,
   ThumbsUp,
   MessageSquare,
 } from "lucide-react";
+import {
+  getPrivateWorkerProfileAction,
+  updateVideoUrlProfileAction,
+} from "@/actions/user/gig-worker-profile";
+import { firebaseApp } from "@/lib/firebase/clientApp";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
 
 import PublicWorkerProfile, { Review } from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import ProfileMedia from "./ProfileMedia";
 
 const WorkerProfile = ({
   workerProfile,
   isSelfView = false,
   handleAddSkill,
   handleSkillDetails, // Optional handler for skill details
+  fetchUserProfile,
 }: {
   workerProfile: PublicWorkerProfile;
-  isSelfView?: boolean;
   handleAddSkill?: () => void;
   handleSkillDetails: (id: string) => void; // Now optional
+  fetchUserProfile: (token: string) => void;
+  userId?: string;
+  isSelfView: boolean;
 }) => {
   const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [workerLink, setWorkerLink] = useState<string | null>(null);
+
+  const handleVideoUpload = useCallback(
+    async (file: Blob) => {
+      if (!user) {
+        console.error("Missing required parameters for video upload");
+        setError("Failed to upload video. Please try again.");
+        return;
+      }
+
+      if (!file || file.size === 0) {
+        console.error("Invalid file for video upload");
+        setError("Invalid video file. Please try again.");
+        return;
+      }
+
+      // Check file size (limit to 50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        setError("Video file too large. Please use a file smaller than 50MB.");
+        return;
+      }
+
+      try {
+        const filePath = `workers/${
+          user.uid
+        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+        const uploadTask = uploadBytesResumable(fileStorageRef, file);
+
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            // Progress handling if needed
+          },
+          (error) => {
+            console.error("Upload failed:", error);
+            setError("Video upload failed. Please try again.");
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then((downloadURL) => {
+                updateVideoUrlProfileAction(downloadURL, user.token);
+                toast.success("Video upload successfully");
+                getPrivateWorkerProfileAction(user.token);
+              })
+              .catch((error) => {
+                console.error("Failed to get download URL:", error);
+                setError("Failed to get video URL. Please try again.");
+              });
+          }
+        );
+      } catch (error) {
+        console.error("Video upload error:", error);
+        setError("Failed to upload video. Please try again.");
+      }
+    },
+    [user]
+  );
+
+  useEffect(() => {
+    if (workerProfile && workerProfile.id) {
+      setWorkerLink(
+        `${window.location.origin}/worker/${workerProfile.id}/profile`
+      );
+    }
+  }, [workerProfile]);
+
   return (
     <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
-      <div className={styles.profileHeaderImageSection}>
-        <div className={styles.profileImageVideo}>
-          <Avatar
-            src={"/default-avatar.png"}
-            alt={`${user?.displayName}'s profile`}
-            width={180}
-            height={169}
-          />
-
-          {/* Add play icon if it's a video */}
-        </div>
-        <div className={styles.profileHeaderRightCol}>
-          {true && (
-            <Image
-              src={"/default-avatar.png"}
-              alt="QR Code"
-              width={90}
-              height={90}
-              className={styles.qrCode}
-            />
-          )}
-          <div className={styles.locationShareContainer}>
-            {workerProfile && workerProfile.location &&  (
-              <div className={styles.locationInfo}>
-                <MapPin size={16} color="#ffffff" className={styles.mapPin} />
-                <span>{workerProfile.location}</span>
-              </div>
-            )}
-            <button
-              className={styles.shareProfileButton}
-              aria-label="Share profile"
-              onClick={() => alert("Share functionality coming soon!")}
-            >
-              <Share2 size={33} color="#ffffff" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <ProfileMedia
+        workerProfile={workerProfile}
+        isSelfView={isSelfView}
+        workerLink={workerLink}
+        onVideoUpload={handleVideoUpload}
+      />
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfoLeft}>
@@ -130,14 +182,16 @@ const WorkerProfile = ({
         </ContentCard>
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
-        {workerProfile.skills && workerProfile.skills.length > 0 && (
+        {
           <SkillsDisplayTable
-            skills={workerProfile.skills}
+            skills={workerProfile?.skills}
             isSelfView={isSelfView}
             handleAddSkill={handleAddSkill}
             handleSkillDetails={handleSkillDetails}
+            fetchUserProfile={fetchUserProfile}
+            token={user?.token || ""}
           />
-        )}
+        }
 
         {/* Awards & Feedback Section (Benji Image Style) */}
         {workerProfile.awards && ( // Only show section if there are awards or feedback
@@ -157,7 +211,6 @@ const WorkerProfile = ({
                   ))}
                 </div>
               </div>
-              // </ContentCard>
             )}
             <div>
               <h3 className={styles.contentTitle}>Feedbacks:</h3>
@@ -205,7 +258,9 @@ const WorkerProfile = ({
 
         {/* Bio Text (if used) */}
         {workerProfile.fullBio && (
-         <ContentCard title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}>
+          <ContentCard
+            title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}
+          >
             <p className={styles.bioText}>{workerProfile.fullBio}</p>
           </ContentCard>
         )}

@@ -12,6 +12,8 @@ import PublicWorkerProfile from '@/app/types/workerProfileTypes';
 import CloseButton from '@/app/components/profile/CloseButton';
 import HireButton from '@/app/components/profile/HireButton';
 import { useAuth } from '@/context/AuthContext';
+import { getLastRoleUsed } from '@/lib/last-role-used';
+import { getPublicWorkerProfileAction } from '@/actions/user/gig-worker-profile';
 
 // --- COMPONENT ---
 export default function PublicWorkerProfilePage() {
@@ -27,7 +29,34 @@ export default function PublicWorkerProfilePage() {
 
   const handleSkillDetails = (name: string) => {
     return router.push(`/worker/${workerProfileIdToView}/profile/skills/${name}`);
-  }
+  } // TODO: Update view to only read user
+
+    const userId = params.userId as string;
+    const lastRoleUsed = getLastRoleUsed();
+  
+    const fetchUserProfile = (workerId: string) => {
+          setIsLoadingProfile(true);
+          getPublicWorkerProfileAction(workerId)
+            .then((data) => {
+              setWorkerProfile(data.data);
+              setError(null);
+            })
+            .catch((err) => {
+              console.error("Failed to fetch worker profile:", err);
+              setError("Could not load your profile.");
+            })
+            .finally(() => setIsLoadingProfile(false));
+    }
+  
+    useEffect(() => {
+      if (workerProfileIdToView) {
+        console.log(workerProfileIdToView);
+        
+          fetchUserProfile(workerProfileIdToView)
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadingAuth, user?.claims.role, userId, router, lastRoleUsed]);
+
 
   useEffect(() => {
     if (workerProfileIdToView) {
@@ -41,9 +70,11 @@ export default function PublicWorkerProfilePage() {
   if (loadingAuth || isLoadingProfile) {
     return <div className={styles.pageLoadingContainer}><Loader2 className="animate-spin" size={48} /> Loading Profile...</div>;
   }
+  
   if (error) {
     return <div className={styles.pageWrapper}><p className={styles.errorMessage}>{error}</p></div>;
   }
+
   if (!workerProfile) {
     return <div className={styles.pageWrapper}><p className={styles.emptyState}>Worker profile not available.</p></div>;
   }
@@ -51,7 +82,7 @@ export default function PublicWorkerProfilePage() {
   return (
     <div className={styles.profilePageContainer}>      
       <CloseButton />
-      <WorkerProfile workerProfile={workerProfile} isSelfView={false} handleSkillDetails={handleSkillDetails}/>
+      <WorkerProfile workerProfile={workerProfile} fetchUserProfile={fetchUserProfile} handleSkillDetails={handleSkillDetails} isSelfView={false}/>
       {/* --- Footer Action Bar (from first "Benji" image) --- */}
       
     <HireButton workerName={user?.displayName || ""} workerId={workerProfile.id || "1"} />
