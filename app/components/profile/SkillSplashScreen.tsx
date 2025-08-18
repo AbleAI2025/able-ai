@@ -394,8 +394,8 @@ const SkillSplashScreen = ({
           <RecommendationCardItem
             key={index}
             recommenderName={recommendation.name}
-            date={recommendation.date.toString()}
-            comment={recommendation.text}
+            date={recommendation?.date?.toString()}
+            comment={recommendation?.text}
           />
         ))}
       </div>

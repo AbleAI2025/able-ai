@@ -35,12 +35,12 @@ export type SkillProfile = {
   }[];
   buyerReviews: {
     name: string;
-    date: Date;
+    date: Date | string;
     text: string | null;
   }[];
   recommendations?: {
     name: string;
-    date: string;
-    text: string;
+    date: Date | null;
+    text: string | null;
   }[];
 };

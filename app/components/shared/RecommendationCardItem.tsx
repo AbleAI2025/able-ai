@@ -3,8 +3,8 @@ import styles from './RecommendationCardItem.module.css';
 
 interface RecommendationCardItemProps {
   recommenderName: string;
-  date: string;
-  comment: string;
+  date?: string | null;
+  comment?: string | null;
 }
 
 const RecommendationCardItem: React.FC<RecommendationCardItemProps> = ({
