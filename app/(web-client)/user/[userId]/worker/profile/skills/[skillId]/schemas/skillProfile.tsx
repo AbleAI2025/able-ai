@@ -11,6 +11,7 @@ export type SkillProfile = {
   address?: string | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
+  videoUrl?: string | null;
   statistics: {
     reviews: number;
     paymentsCollected: string;
@@ -37,9 +38,9 @@ export type SkillProfile = {
     date: Date;
     text: string | null;
   }[];
-  recommendation?: {
+  recommendations?: {
     name: string;
     date: string;
     text: string;
-  };
+  }[];
 };

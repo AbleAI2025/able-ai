@@ -1,12 +1,10 @@
 // app/components/profile/ProfileMedia.tsx
 "use client";
-import Link from "next/link";
-import { useState } from "react";
-import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
 import QRCodeDisplay from "./QrCodeDisplay";
 import { MapPin, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import styles from "./WorkerProfile.module.css";
+import ProfileVideo from "./WorkerProfileVideo";
 
 interface ProfileMediaProps {
   workerProfile: any;
@@ -21,92 +19,15 @@ export default function ProfileMedia({
   workerLink,
   onVideoUpload,
 }: ProfileMediaProps) {
-  const [isEditingVideo, setIsEditingVideo] = useState(false);
 
   return (
     <div className={styles.profileHeaderImageSection}>
       <div className={styles.profileImageVideo}>
-        {!workerProfile?.videoUrl ? (
-          isSelfView ? (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <h3>Please, introduce yourself</h3>
-              <VideoRecorderBubble
-                key={1}
-                onVideoRecorded={onVideoUpload}
-              />
-            </div>
-          ) : (
-            <p
-              style={{
-                textAlign: "center",
-                fontStyle: "italic",
-                color: "#888",
-              }}
-            >
-              User presentation not exist
-            </p>
-          )
-        ) : (
-          <div style={{ textAlign: "center" }}>
-            <Link
-              href={workerProfile.videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: "inline-block", textDecoration: "none" }}
-            >
-              <video
-                width="180"
-                height="180"
-                style={{ borderRadius: "8px", objectFit: "cover" }}
-                preload="metadata"
-                muted
-                poster="/video-placeholder.jpg"
-              >
-                <source
-                  src={workerProfile.videoUrl + "#t=0.1"}
-                  type="video/webm"
-                />
-              </video>
-            </Link>
-
-            {isSelfView && (
-              <div style={{ marginTop: "8px" }}>
-                <button
-                  onClick={() => setIsEditingVideo(true)}
-                  style={{
-                    padding: "6px 12px",
-                    backgroundColor: "#0070f3",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Edit video
-                </button>
-              </div>
-            )}
-
-            {isEditingVideo && (
-              <div style={{ marginTop: "12px" }}>
-                <VideoRecorderBubble
-                  key={2}
-                  onVideoRecorded={(video) => {
-                    onVideoUpload(video);
-                    setIsEditingVideo(false);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <ProfileVideo
+          videoUrl={workerProfile?.videoUrl}
+          isSelfView={isSelfView}
+          onVideoUpload={onVideoUpload}
+        />
       </div>
 
       <div className={styles.profileHeaderRightCol}>
