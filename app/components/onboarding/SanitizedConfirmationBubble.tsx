@@ -29,8 +29,8 @@ const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = 
   const isBuyer = role === 'BUYER';
   const primaryColor = isBuyer ? 'var(--secondary-color)' : 'var(--primary-color)';
   const primaryDarkerColor = isBuyer ? 'var(--secondary-darker-color)' : 'var(--primary-darker-color)';
-  const primaryColorRgba = isBuyer ? 'rgba(126, 238, 249, ' : 'rgba(65, 161, 232, ';
-  const primaryDarkerColorRgba = isBuyer ? 'rgba(91, 192, 232, ' : 'rgba(37, 99, 235, ';
+  const primaryColorRgba = isBuyer ? 'rgba(34, 211, 238, ' : 'rgba(65, 161, 232, ';
+  const primaryDarkerColorRgba = isBuyer ? 'rgba(6, 182, 212, ' : 'rgba(37, 99, 235, ';
 
   const handleConfirm = () => {
     if (isProcessing) return;

@@ -404,4 +404,99 @@ export const deleteImageAction = async (
     console.error("Error deleting image:", error);
     return { success: false, data: null, error };
   }
+}
+
+export const saveWorkerProfileFromOnboardingAction = async (
+  profileData: {
+    about: string;
+    experience: string;
+    skills: string;
+    hourlyRate: string;
+    location: any;
+    availability: { 
+      days: string[]; 
+      startTime: string; 
+      endTime: string; 
+      frequency?: string;
+      ends?: string;
+      endDate?: string;
+      occurrences?: number;
+    } | string;
+    videoIntro: File | string;
+    references: string;
+    time: string;
+  },
+  token: string
+) => {
+  try {
+    if (!token) {
+      throw new Error("Token is required");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) throw "User not found";
+
+    // Check if worker profile already exists
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+
+    // Prepare profile data
+    const profileUpdateData = {
+      fullBio: `${profileData.about}\n\n${profileData.experience}`,
+      location: typeof profileData.location === 'string' ? profileData.location : profileData.location?.formatted_address || profileData.location?.name || '',
+      latitude: typeof profileData.location === 'object' && profileData.location?.lat ? profileData.location.lat : null,
+      longitude: typeof profileData.location === 'object' && profileData.location?.lng ? profileData.location.lng : null,
+      availabilityJson: typeof profileData.availability === 'string' ? profileData.availability : {
+        ...profileData.availability,
+        // Ensure all recurring fields are included
+        frequency: profileData.availability.frequency || 'never',
+        ends: profileData.availability.ends || 'never',
+        endDate: profileData.availability.endDate,
+        occurrences: profileData.availability.occurrences
+      },
+      videoUrl: typeof profileData.videoIntro === 'string' ? profileData.videoIntro : profileData.videoIntro?.name || '',
+      semanticProfileJson: {
+        tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+      },
+      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\nTime Preferences: ${profileData.time}\nReferences: ${profileData.references}`,
+      updatedAt: new Date(),
+    };
+
+    if (workerProfile) {
+      // Update existing profile
+      await db
+        .update(GigWorkerProfilesTable)
+        .set(profileUpdateData)
+        .where(eq(GigWorkerProfilesTable.userId, user.id));
+    } else {
+      // Create new profile
+      await db.insert(GigWorkerProfilesTable).values({
+        userId: user.id,
+        ...profileUpdateData,
+        createdAt: new Date(),
+      });
+    }
+
+    // Update user table to mark as gig worker
+    await db
+      .update(UsersTable)
+      .set({
+        isGigWorker: true,
+        lastRoleUsed: "GIG_WORKER",
+        updatedAt: new Date(),
+      })
+      .where(eq(UsersTable.id, user.id));
+
+    return { success: true, data: "Worker profile saved successfully" };
+  } catch (error) {
+    console.error("Error saving worker profile:", error);
+    return { success: false, data: null, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 };

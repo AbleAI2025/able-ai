@@ -1,0 +1,325 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 0 20px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+}
+
+.title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: white;
+}
+
+.content {
+  padding: 20px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.timeInput {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.recurrenceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 20px;
+}
+
+.recurrenceRow:hover {
+  background: #333;
+}
+
+.recurrenceText {
+  color: white;
+  font-size: 14px;
+}
+
+.arrow {
+  color: #888;
+  font-size: 18px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #333;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.saveButton {
+  flex: 1;
+  padding: 12px;
+  background: #007bff;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover {
+  background: #0056b3;
+}
+
+.deleteButton {
+  flex: 1;
+  padding: 12px;
+  background: #444;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.deleteButton:hover {
+  background: #555;
+}
+
+/* Repeat Modal Styles */
+.repeatModal {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 350px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.repeatHeader {
+  padding: 20px 20px 0 20px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+}
+
+.repeatHeader h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.repeatContent {
+  padding: 20px;
+}
+
+.daysSection,
+.frequencySection,
+.endsSection {
+  margin-bottom: 20px;
+}
+
+.sectionLabel {
+  display: block;
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.daysGrid {
+  display: flex;
+  gap: 8px;
+}
+
+.dayButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #007bff;
+  background: transparent;
+  color: #007bff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dayButtonSelected {
+  background: #007bff;
+  color: white;
+}
+
+.dayButton:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.dayButtonSelected:hover {
+  background: #0056b3;
+}
+
+.frequencyInput,
+.endsInput {
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.summary {
+  padding: 12px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  color: #ccc;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+.repeatActions {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #333;
+}
+
+/* Clear Modal Styles */
+.clearModal {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 300px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.clearHeader {
+  padding: 20px 20px 0 20px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+}
+
+.clearHeader h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.clearContent {
+  padding: 20px;
+}
+
+.clearContent p {
+  color: #ccc;
+  font-size: 14px;
+  margin: 0;
+}
+
+.clearActions {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #333;
+}
+
+.clearButton {
+  flex: 1;
+  padding: 12px;
+  background: #007bff;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clearButton:hover {
+  background: #0056b3;
+}

@@ -105,7 +105,7 @@ export function ChatStepRenderer({
       );
     }
 
-    const allowedTypes = ["number", "text", "email", "password", "date", "tel"];
+    const allowedTypes = ["number", "text", "email", "password", "date", "tel", "time"];
     const safeType = allowedTypes.includes(inputConf.type) ? inputConf.type : "text";
 
     return (
@@ -116,7 +116,7 @@ export function ChatStepRenderer({
             name={inputConf.name}
             value={formData[inputConf.name] || ""}
             disabled={isSubmitting}
-            type={safeType as "number" | "text" | "email" | "password" | "date" | "tel"}
+            type={safeType as "number" | "text" | "email" | "password" | "date" | "tel" | "time"}
             placeholder={inputConf.placeholder}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               onInputChange(inputConf.name, e.target.value)

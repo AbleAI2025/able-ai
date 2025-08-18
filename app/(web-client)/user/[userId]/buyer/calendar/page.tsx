@@ -43,7 +43,7 @@ const BuyerCalendarPage = () => {
     return "week";
   });
   const [date, setDate] = useState<Date>(new Date());
-  const [activeFilter, setActiveFilter] = useState<string>(FILTERS[1]);
+  const [activeFilter, setActiveFilter] = useState<string>(FILTERS[0]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -166,11 +166,7 @@ const BuyerCalendarPage = () => {
           hideToolbar={true}
         />
       </main>
-      <footer className={styles.footer}>
-        <button className={styles.homeButton} onClick={() => router.push(`/user/${pageUserId}/buyer`)}>
-          <Image src="/images/home.svg" alt="Home" width={40} height={40} />
-        </button>
-      </footer>
+
 
       <EventDetailModal
         event={selectedEvent}

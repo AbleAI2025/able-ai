@@ -13,6 +13,8 @@ import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble
 import LocationPickerBubble from '@/app/components/onboarding/LocationPickerBubble';
 import ShareLinkBubble from "@/app/components/onboarding/ShareLinkBubble";
 import SanitizedConfirmationBubble from "@/app/components/onboarding/SanitizedConfirmationBubble";
+import SetupChoiceModal from "@/app/components/onboarding/SetupChoiceModal";
+import ManualProfileForm from "@/app/components/onboarding/ManualProfileForm";
 import Loader from "@/app/components/shared/Loader";
 
 // Typing indicator component with bouncing animation - matching gig creation
@@ -92,7 +94,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
-import { updateVideoUrlProfileAction } from "@/actions/user/gig-worker-profile";
+import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction } from "@/actions/user/gig-worker-profile";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
@@ -101,7 +103,7 @@ const requiredFields: RequiredField[] = [
   { name: "skills", type: "text", placeholder: "List your skills and certifications...", defaultPrompt: "What skills and certifications do you have?", rows: 3 },
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "What's your preferred hourly rate?" },
   { name: "location", type: "location", defaultPrompt: "Where are you based? This helps us find gigs near you!" },
-  { name: "availability", type: "date", defaultPrompt: "When are you available to work?" },
+  { name: "availability", type: "availability", defaultPrompt: "When are you available to work? Let's set up your weekly schedule!" },
   { name: "time", type: "time", defaultPrompt: "What time of day do you prefer to work?" },
   { name: "videoIntro", type: "video", defaultPrompt: "Record a short video introduction to help clients get to know you!" },
   { name: "references", type: "text", placeholder: "Provide your references...", defaultPrompt: "Do you have any references or testimonials?", rows: 3 },
@@ -128,7 +130,15 @@ interface FormData {
   skills?: string;
   hourlyRate?: number;
   location?: { lat: number; lng: number } | string;
-  availability?: string;
+  availability?: {
+    days: string[];
+    startTime: string;
+    endTime: string;
+    frequency?: string;
+    ends?: string;
+    endDate?: string;
+    occurrences?: number;
+  } | string;
   time?: string;
   videoIntro?: string;
   references?: string;
@@ -138,7 +148,7 @@ interface FormData {
 // Chat step type definition - matching gig creation structure
  type ChatStep = {
   id: number;
-  type: "bot" | "user" | "input" | "sanitized" | "typing" | "calendar" | "location" | "confirm" | "video" | "shareLink";
+  type: "bot" | "user" | "input" | "sanitized" | "typing" | "calendar" | "location" | "confirm" | "video" | "shareLink" | "availability";
   content?: string;
   inputConfig?: {
     type: string;
@@ -295,6 +305,26 @@ function formatTimeForDisplay(timeValue: unknown): string {
   if (!timeValue) return '';
 
   try {
+    // Handle time ranges like "12:00 to 16:00"
+    if (typeof timeValue === 'string' && timeValue.includes(' to ')) {
+      const [startTime, endTime] = timeValue.split(' to ');
+      const formattedStart = formatSingleTime(startTime);
+      const formattedEnd = formatSingleTime(endTime);
+      return `${formattedStart} to ${formattedEnd}`;
+    }
+    
+    // Handle single times
+    return formatSingleTime(timeValue);
+  } catch (error) {
+    console.error('Time formatting error:', error);
+    return String(timeValue);
+  }
+}
+
+function formatSingleTime(timeValue: unknown): string {
+  if (!timeValue) return '';
+
+  try {
     // Normalize to HH:MM first
     const hhmm = parseTimeToHHMM(timeValue);
     if (hhmm) {
@@ -325,6 +355,20 @@ function formatSummaryValue(value: unknown, field?: string): string {
     }
     
     if (field === 'availability') {
+      if (typeof value === 'object' && value !== null && 'days' in value) {
+        const availability = value as { days: string[]; startTime: string; endTime: string };
+        const weekDays = [
+          { value: 'monday', label: 'Monday' },
+          { value: 'tuesday', label: 'Tuesday' },
+          { value: 'wednesday', label: 'Wednesday' },
+          { value: 'thursday', label: 'Thursday' },
+          { value: 'friday', label: 'Friday' },
+          { value: 'saturday', label: 'Saturday' },
+          { value: 'sunday', label: 'Sunday' }
+        ];
+        const days = availability.days.map((day: string) => weekDays.find(d => d.value === day)?.label).join(', ');
+        return `${days} ${availability.startTime} - ${availability.endTime}`;
+      }
       return formatDateForDisplay(value);
     }
     
@@ -451,6 +495,11 @@ export default function OnboardWorkerPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmedSteps, setConfirmedSteps] = useState<Set<number>>(new Set());
   const [clickedSanitizedButtons, setClickedSanitizedButtons] = useState<Set<string>>(new Set());
+  
+  // Setup choice state management
+  const [showSetupChoice, setShowSetupChoice] = useState(true);
+  const [setupMode, setSetupMode] = useState<'ai' | 'manual' | null>(null);
+  const [manualFormData, setManualFormData] = useState<any>({});
 
   // Helper to get next required field not in formData - matching gig creation
   const getNextRequiredField = useCallback((formData: FormData) => {
@@ -465,6 +514,66 @@ export default function OnboardWorkerPage() {
     
     return step.id === lastIncompleteInputStep?.id;
   }, [chatSteps]);
+
+  // Setup choice handlers
+  const handleSetupChoice = useCallback((choice: 'ai' | 'manual') => {
+    setSetupMode(choice);
+    setShowSetupChoice(false);
+    
+    if (choice === 'manual') {
+      // Initialize manual form with any existing data
+      setManualFormData(formData);
+    }
+  }, [formData]);
+
+  const handleSwitchToAI = useCallback(() => {
+    setSetupMode('ai');
+    // Transfer any manual form data to the AI flow
+    setFormData(prev => ({ ...prev, ...manualFormData }));
+  }, [manualFormData]);
+
+  const handleManualFormSubmit = useCallback(async (formData: any) => {
+    if (!user?.token) {
+      setError('Authentication required. Please sign in again.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      // Ensure all required fields are present
+      const requiredData = {
+        about: formData.about || '',
+        experience: formData.experience || '',
+        skills: formData.skills || '',
+        hourlyRate: String(formData.hourlyRate || ''),
+        location: formData.location || '',
+        availability: formData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
+        videoIntro: formData.videoIntro || '',
+        references: formData.references || '',
+        time: formData.time || ''
+      };
+      
+      // Save the profile data to database
+      const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
+      if (result.success) {
+        // Navigate to worker dashboard
+        router.push(`/user/${user?.uid}/worker`);
+      } else {
+        setError('Failed to save profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Manual form submission error:', error);
+      setError('Failed to save profile. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [router, user?.uid, user?.token]);
+
+  const handleResetChoice = useCallback(() => {
+    setShowSetupChoice(true);
+    setSetupMode(null);
+    setManualFormData({});
+  }, []);
 
   // AI validation function with better error handling
   const simpleAICheck = useCallback(async (field: string, value: unknown, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | unknown }> => {
@@ -772,10 +881,10 @@ Make the conversation feel natural and build on what they've already told you.`;
                 placeholder: nextAfterReferences.placeholder,
                 ...(nextAfterReferences.rows && { rows: nextAfterReferences.rows }),
               };
-              let stepType: "input" | "calendar" | "location" | "video" = "input";
-              if (nextAfterReferences.name === "availability") stepType = "calendar";
-              else if (nextAfterReferences.name === "location") stepType = "location";
-              else if (nextAfterReferences.name === "videoIntro") stepType = "video";
+                              let stepType: "input" | "calendar" | "location" | "video" | "availability" = "input";
+                if (nextAfterReferences.name === "availability") stepType = "availability";
+                else if (nextAfterReferences.name === "location") stepType = "location";
+                else if (nextAfterReferences.name === "videoIntro") stepType = "video";
 
               setChatSteps((prev) => [
                 ...prev,
@@ -819,9 +928,9 @@ Make the conversation feel natural and build on what they've already told you.`;
           };
           
           // Determine the step type based on the field
-          let stepType: "input" | "calendar" | "location" | "video" = "input";
+          let stepType: "input" | "calendar" | "location" | "video" | "availability" = "input";
           if (nextField.name === "availability") {
-            stepType = "calendar";
+            stepType = "availability";
           } else if (nextField.name === "location") {
             stepType = "location";
           } else if (nextField.name === "videoIntro") {
@@ -967,7 +1076,7 @@ Make the conversation feel natural and build on what they've already told you.`;
               },
               {
                 id: Date.now() + 6,
-                type: nextAfterReferences.type === "location" ? "location" : nextAfterReferences.type === "date" ? "calendar" : nextAfterReferences.type === "video" ? "video" : "input",
+                type: nextAfterReferences.type === "location" ? "location" : nextAfterReferences.type === "availability" ? "availability" : nextAfterReferences.type === "date" ? "calendar" : nextAfterReferences.type === "video" ? "video" : "input",
                 inputConfig: newInputConfig,
                 isComplete: false,
                 isNew: true,
@@ -1139,7 +1248,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                 },
                 {
                   id: Date.now() + 5,
-                  type: nextAfterReferences.type === "location" ? "location" : nextAfterReferences.type === "date" ? "calendar" : nextAfterReferences.type === "video" ? "video" : "input",
+                  type: nextAfterReferences.type === "location" ? "location" : nextAfterReferences.type === "availability" ? "availability" : nextAfterReferences.type === "date" ? "calendar" : nextAfterReferences.type === "video" ? "video" : "input",
                   inputConfig: {
                     type: nextAfterReferences.type,
                     name: nextAfterReferences.name,
@@ -1188,7 +1297,7 @@ Make the conversation feel natural and build on what they've already told you.`;
             },
             {
               id: Date.now() + 3,
-              type: nextField.type === "location" ? "location" : nextField.type === "date" ? "calendar" : nextField.type === "video" ? "video" : "input",
+              type: nextField.type === "location" ? "location" : nextField.type === "availability" ? "availability" : nextField.type === "date" ? "calendar" : nextField.type === "video" ? "video" : "input",
               inputConfig: {
                 type: nextField.type,
                 name: nextField.name,
@@ -1224,21 +1333,45 @@ Make the conversation feel natural and build on what they've already told you.`;
   // Handle input changes with better validation
   const handleInputChange = useCallback((name: string, value: unknown) => {
     try {
-      // Special handling for date fields to ensure only date part is stored
-      if (name === 'availability' && value) {
-        let processedValue = value;
-        
-        // If it's an ISO string with time, extract just the date part
-        if (typeof value === 'string' && value.includes('T')) {
-          processedValue = value.split('T')[0];
+      // Special handling for availability fields
+      if (name === 'availability') {
+        // If it's already an object with days array, use it as is
+        if (typeof value === 'object' && value !== null && 'days' in value) {
+          setFormData((prev) => ({ ...prev, [name]: value }));
+        } else if (value) {
+          // Legacy handling for string/date values - convert to new format
+          let processedValue = value;
+          
+          // If it's an ISO string with time, extract just the date part
+          if (typeof value === 'string' && value.includes('T')) {
+            processedValue = value.split('T')[0];
+          }
+          
+          // If it's a Date object, convert to date string
+          if (value instanceof Date) {
+            processedValue = value.toISOString().split('T')[0];
+          }
+          
+          // Convert to new availability format
+          setFormData((prev) => ({ 
+            ...prev, 
+            [name]: {
+              days: [],
+              startTime: '09:00',
+              endTime: '17:00'
+            }
+          }));
+        } else {
+          // Initialize with default availability structure
+          setFormData((prev) => ({ 
+            ...prev, 
+            [name]: {
+              days: [],
+              startTime: '09:00',
+              endTime: '17:00'
+            }
+          }));
         }
-        
-        // If it's a Date object, convert to date string
-        if (value instanceof Date) {
-          processedValue = value.toISOString().split('T')[0];
-        }
-        
-        setFormData((prev) => ({ ...prev, [name]: processedValue }));
       } else {
         // Normalize time inputs to HH:MM for consistent storage
         if (name === 'time' && value) {
@@ -1450,6 +1583,80 @@ Make the conversation feel natural and build on what they've already told you.`;
     }
   }, [chatSteps, handleInputChange, handleInputSubmit]);
 
+  // Show setup choice modal if no mode has been selected
+  if (showSetupChoice) {
+    return (
+      <SetupChoiceModal
+        isOpen={showSetupChoice}
+        onChoice={handleSetupChoice}
+      />
+    );
+  }
+
+  // Show manual form if manual mode is selected
+  if (setupMode === 'manual') {
+    return (
+      <div className={pageStyles.container}>
+        {error && (
+          <div style={{ 
+            background: '#ff4444', 
+            color: 'white', 
+            padding: '8px 16px', 
+            margin: '8px 0', 
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          padding: '16px',
+          borderBottom: '1px solid #444444',
+          background: '#161616'
+        }}>
+          <button
+            onClick={handleResetChoice}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              background: 'transparent',
+              border: '1px solid #a0a0a0',
+              borderRadius: '8px',
+              color: '#a0a0a0',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#a0a0a0';
+              e.currentTarget.style.color = '#161616';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#a0a0a0';
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="currentColor"/>
+            </svg>
+            Change Setup Method
+          </button>
+        </div>
+        <ManualProfileForm
+          onSubmit={handleManualFormSubmit}
+          onSwitchToAI={handleSwitchToAI}
+          initialData={manualFormData}
+        />
+      </div>
+    );
+  }
+
+  // Show AI chat if AI mode is selected
   return (
     <ChatBotLayout 
       ref={chatContainerRef} 
@@ -1457,6 +1664,12 @@ Make the conversation feel natural and build on what they've already told you.`;
       role="GIG_WORKER"
       showChatInput={true}
       onSendMessage={onSendMessage}
+      showOnboardingOptions={true}
+      onSwitchToManual={() => {
+        setSetupMode('manual');
+        setManualFormData(formData);
+      }}
+      onChangeSetupMethod={handleResetChoice}
     >
       {error && (
         <div style={{ 
@@ -1470,7 +1683,7 @@ Make the conversation feel natural and build on what they've already told you.`;
           {error}
         </div>
       )}
-      
+
 
       
       {chatSteps.map((step, idx) => {
@@ -1712,44 +1925,81 @@ Make the conversation feel natural and build on what they've already told you.`;
                             </li>
                           ))}
                         </ul>
-                        <button
-                          style={{ 
-                            marginTop: 16, 
-                            background: "var(--primary-color)", 
-                            color: "#fff", 
-                            border: "none", 
-                            borderRadius: 8, 
-                            padding: "8px 16px", 
-                            fontWeight: 600,
-                            transition: 'all 0.3s ease',
-                            transform: 'scale(1)',
-                            animation: 'pulse 2s infinite'
-                          }}
-                          onClick={() => router.push(`/user/${user?.uid}/worker`)}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                            e.currentTarget.style.background = 'var(--primary-darker-color)';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.background = 'var(--primary-color)';
-                          }}
-                        >
-                          <style>{`
-                            @keyframes pulse {
-                              0% {
-                                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
-                              }
-                              70% {
-                                box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
-                              }
-                              100% {
-                                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
-                              }
-                            }
-                          `}</style>
-                          Confirm & Go to Dashboard
-                        </button>
+                                                 <button
+                           style={{ 
+                             marginTop: 16, 
+                             background: isSubmitting ? "#666" : "var(--primary-color)", 
+                             color: "#fff", 
+                             border: "none", 
+                             borderRadius: 8, 
+                             padding: "8px 16px", 
+                             fontWeight: 600,
+                             transition: 'all 0.3s ease',
+                             transform: 'scale(1)',
+                             animation: isSubmitting ? 'none' : 'pulse 2s infinite',
+                             cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                           }}
+                           disabled={isSubmitting}
+                           onClick={async () => {
+                             if (!user?.token) {
+                               setError('Authentication required. Please sign in again.');
+                               return;
+                             }
+                             
+                             try {
+                               setIsSubmitting(true);
+                               // Ensure all required fields are present from summary data
+                               const requiredData = {
+                                 about: summaryData.about || '',
+                                 experience: summaryData.experience || '',
+                                 skills: summaryData.skills || '',
+                                 hourlyRate: String(summaryData.hourlyRate || ''),
+                                 location: summaryData.location || '',
+                                 availability: summaryData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
+                                 videoIntro: summaryData.videoIntro || '',
+                                 references: summaryData.references || '',
+                                 time: summaryData.time || ''
+                               };
+                               
+                               // Save the profile data to database
+                               const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
+                               if (result.success) {
+                                 // Navigate to worker dashboard
+                                 router.push(`/user/${user?.uid}/worker`);
+                               } else {
+                                 setError('Failed to save profile. Please try again.');
+                               }
+                             } catch (error) {
+                               console.error('Error saving profile:', error);
+                               setError('Failed to save profile. Please try again.');
+                             } finally {
+                               setIsSubmitting(false);
+                             }
+                           }}
+                           onMouseOver={(e) => {
+                             e.currentTarget.style.transform = 'scale(1.05)';
+                             e.currentTarget.style.background = 'var(--primary-darker-color)';
+                           }}
+                           onMouseOut={(e) => {
+                             e.currentTarget.style.transform = 'scale(1)';
+                             e.currentTarget.style.background = 'var(--primary-color)';
+                           }}
+                         >
+                           <style>{`
+                             @keyframes pulse {
+                               0% {
+                                 box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+                               }
+                               70% {
+                                 box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+                               }
+                               100% {
+                                 box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+                               }
+                             }
+                           `}</style>
+                           {isSubmitting ? 'Saving Profile...' : 'Confirm & Go to Dashboard'}
+                         </button>
                       </div>
                     }
                     senderType="bot"
@@ -1888,7 +2138,7 @@ Make the conversation feel natural and build on what they've already told you.`;
               </div>
 
               <CalendarPickerBubble
-                value={formData.availability ? new Date(formData.availability) : null}
+                value={typeof formData.availability === 'string' && formData.availability ? new Date(formData.availability) : null}
                 onChange={date => handleInputChange('availability', date ? date.toISOString() : "")}
               />
               {!confirmedSteps.has(step.id) && (
@@ -1937,6 +2187,365 @@ Make the conversation feel natural and build on what they've already told you.`;
                   }}>
                     <span>✓</span>
                     Date Confirmed
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if (step.type === "availability") {
+          const weekDays = [
+            { value: 'monday', label: 'Monday' },
+            { value: 'tuesday', label: 'Tuesday' },
+            { value: 'wednesday', label: 'Wednesday' },
+            { value: 'thursday', label: 'Thursday' },
+            { value: 'friday', label: 'Friday' },
+            { value: 'saturday', label: 'Saturday' },
+            { value: 'sunday', label: 'Sunday' }
+          ];
+
+          const currentAvailability = typeof formData.availability === 'object' ? formData.availability : {
+            days: [],
+            startTime: '09:00',
+            endTime: '17:00',
+            frequency: 'never',
+            ends: 'never'
+          };
+
+          const handleDayToggle = (day: string) => {
+            const newDays = currentAvailability.days.includes(day)
+              ? currentAvailability.days.filter(d => d !== day)
+              : [...currentAvailability.days, day];
+            
+            handleInputChange('availability', {
+              ...currentAvailability,
+              days: newDays
+            });
+          };
+
+          return (
+            <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* AI Avatar - Separated */}
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                marginBottom: '0.5rem'
+              }}>
+                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, var(--primary-color), var(--primary-darker-color))',
+                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)'
+                  }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      background: '#000000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                      <Image 
+                        src="/images/ableai.png" 
+                        alt="Able AI" 
+                        width={24} 
+                        height={24} 
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#2F2F2F',
+                border: '2px solid #444444',
+                borderRadius: '12px',
+                padding: '20px',
+                color: '#ffffff'
+              }}>
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>
+                  Set Your Weekly Availability
+                </h3>
+                
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Available Days *
+                  </label>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+                    gap: '8px' 
+                  }}>
+                    {weekDays.map((day) => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        style={{
+                          padding: '8px 12px',
+                          border: `2px solid ${currentAvailability.days.includes(day.value) ? '#41a1e8' : '#444444'}`,
+                          borderRadius: '8px',
+                          background: currentAvailability.days.includes(day.value) ? '#41a1e8' : 'transparent',
+                          color: currentAvailability.days.includes(day.value) ? '#ffffff' : '#a0a0a0',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          fontSize: '14px',
+                          fontWeight: '500'
+                        }}
+                        onClick={() => handleDayToggle(day.value)}
+                        onMouseOver={(e) => {
+                          if (!currentAvailability.days.includes(day.value)) {
+                            e.currentTarget.style.borderColor = '#41a1e8';
+                            e.currentTarget.style.color = '#ffffff';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!currentAvailability.days.includes(day.value)) {
+                            e.currentTarget.style.borderColor = '#444444';
+                            e.currentTarget.style.color = '#a0a0a0';
+                          }
+                        }}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Available Hours *
+                  </label>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '16px', 
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '12px', color: '#a0a0a0', fontWeight: '500' }}>From:</label>
+                      <input
+                        type="time"
+                        style={{
+                          padding: '8px 12px',
+                          border: '2px solid #444444',
+                          borderRadius: '8px',
+                          background: '#1A1A1A',
+                          color: '#ffffff',
+                          fontSize: '14px'
+                        }}
+                        value={currentAvailability.startTime}
+                        onChange={(e) => handleInputChange('availability', {
+                          ...currentAvailability,
+                          startTime: e.target.value
+                        })}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '12px', color: '#a0a0a0', fontWeight: '500' }}>To:</label>
+                      <input
+                        type="time"
+                        style={{
+                          padding: '8px 12px',
+                          border: '2px solid #444444',
+                          borderRadius: '8px',
+                          background: '#1A1A1A',
+                          color: '#ffffff',
+                          fontSize: '14px'
+                        }}
+                        value={currentAvailability.endTime}
+                        onChange={(e) => handleInputChange('availability', {
+                          ...currentAvailability,
+                          endTime: e.target.value
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recurring Options */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Recurring Pattern
+                  </label>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '12px', 
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                  }}>
+                    <select
+                      style={{
+                        padding: '8px 12px',
+                        border: '2px solid #444444',
+                        borderRadius: '8px',
+                        background: '#1A1A1A',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        minWidth: '120px'
+                      }}
+                      value={currentAvailability.frequency || 'never'}
+                      onChange={(e) => handleInputChange('availability', {
+                        ...currentAvailability,
+                        frequency: e.target.value
+                      })}
+                    >
+                      <option value="never">No repeat</option>
+                      <option value="weekly">Every week</option>
+                      <option value="biweekly">Every 2 weeks</option>
+                      <option value="monthly">Every month</option>
+                    </select>
+
+                    <select
+                      style={{
+                        padding: '8px 12px',
+                        border: '2px solid #444444',
+                        borderRadius: '8px',
+                        background: '#1A1A1A',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        minWidth: '120px'
+                      }}
+                      value={currentAvailability.ends || 'never'}
+                      onChange={(e) => handleInputChange('availability', {
+                        ...currentAvailability,
+                        ends: e.target.value,
+                        // Clear endDate and occurrences when changing ends type
+                        endDate: undefined,
+                        occurrences: undefined
+                      })}
+                    >
+                      <option value="never">Never ends</option>
+                      <option value="on_date">Until date</option>
+                      <option value="after_occurrences">After times</option>
+                    </select>
+
+                    {currentAvailability.ends === 'on_date' && (
+                      <input
+                        type="date"
+                        style={{
+                          padding: '8px 12px',
+                          border: '2px solid #444444',
+                          borderRadius: '8px',
+                          background: '#1A1A1A',
+                          color: '#ffffff',
+                          fontSize: '14px'
+                        }}
+                        value={currentAvailability.endDate || ''}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => handleInputChange('availability', {
+                          ...currentAvailability,
+                          endDate: e.target.value
+                        })}
+                      />
+                    )}
+
+                    {currentAvailability.ends === 'after_occurrences' && (
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="Times"
+                        style={{
+                          padding: '8px 12px',
+                          border: '2px solid #444444',
+                          borderRadius: '8px',
+                          background: '#1A1A1A',
+                          color: '#ffffff',
+                          fontSize: '14px',
+                          width: '80px'
+                        }}
+                        value={currentAvailability.occurrences || ''}
+                        onChange={(e) => handleInputChange('availability', {
+                          ...currentAvailability,
+                          occurrences: parseInt(e.target.value) || 1
+                        })}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: '#1A1A1A', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  border: '1px solid #444444',
+                  fontSize: '14px',
+                  color: '#a0a0a0'
+                }}>
+                  <strong>Preview:</strong> {currentAvailability.days.length > 0 ?
+                    `${currentAvailability.days.map(day => weekDays.find(d => d.value === day)?.label).join(', ')} ${currentAvailability.startTime} - ${currentAvailability.endTime}` +
+                    (currentAvailability.frequency && currentAvailability.frequency !== 'never' ? 
+                      ` (${currentAvailability.frequency === 'weekly' ? 'Every week' : 
+                          currentAvailability.frequency === 'biweekly' ? 'Every 2 weeks' : 
+                          currentAvailability.frequency === 'monthly' ? 'Every month' : ''})` : '') +
+                    (currentAvailability.ends === 'on_date' && currentAvailability.endDate ? 
+                      ` until ${new Date(currentAvailability.endDate).toLocaleDateString()}` : '') +
+                    (currentAvailability.ends === 'after_occurrences' && currentAvailability.occurrences ? 
+                      ` (${currentAvailability.occurrences} times)` : '') :
+                    'Please select days and times'
+                  }
+                </div>
+              </div>
+
+              {!confirmedSteps.has(step.id) && (
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    style={{
+                      background: isConfirming ? '#555' : 'var(--primary-color)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      cursor: isConfirming ? 'not-allowed' : 'pointer',
+                      transition: 'background-color 0.2s',
+                      opacity: isConfirming ? 0.7 : 1
+                    }}
+                    onClick={() => handlePickerConfirm(step.id, 'availability')}
+                    onMouseOver={(e) => {
+                      if (!isConfirming) {
+                        e.currentTarget.style.background = 'var(--primary-darker-color)';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isConfirming) {
+                        e.currentTarget.style.background = 'var(--primary-color)';
+                      }
+                    }}
+                    disabled={isConfirming || currentAvailability.days.length === 0}
+                  >
+                    {isConfirming ? 'Confirming...' : 'Confirm Availability'}
+                  </button>
+                </div>
+              )}
+              {confirmedSteps.has(step.id) && (
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{
+                    background: 'var(--primary-color)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span>✓</span>
+                    Availability Confirmed
                   </div>
                 </div>
               )}

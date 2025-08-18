@@ -73,3 +73,11 @@
   left: 0;
   right: 0;
 }
+
+.onboardingOptionsContainer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
