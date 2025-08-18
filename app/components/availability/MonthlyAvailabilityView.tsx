@@ -96,7 +96,7 @@ const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
         if (slot.frequency === 'biweekly') {
           // Find the first occurrence date to establish the pattern
           // Use the actual start date if provided, otherwise fall back to creation date
-          let slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+          const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
                              slot.createdAt ? new Date(slot.createdAt) : new Date();
           slotStartDate.setHours(0, 0, 0, 0);
           
@@ -159,7 +159,7 @@ const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
        if (slot.frequency === 'weekly') {
          // Find the first occurrence date to establish the pattern
          // Use the actual start date if provided, otherwise fall back to creation date
-         let slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+         const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
                             slot.createdAt ? new Date(slot.createdAt) : new Date();
          slotStartDate.setHours(0, 0, 0, 0);
          
@@ -204,7 +204,7 @@ const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
         if (slot.frequency === 'monthly') {
           // Find the first occurrence date to establish the pattern
           // Use the actual start date if provided, otherwise fall back to creation date
-          let slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+          const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
                              slot.createdAt ? new Date(slot.createdAt) : new Date();
           slotStartDate.setHours(0, 0, 0, 0);
           
@@ -318,7 +318,7 @@ const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
            if (slot.frequency === 'biweekly') {
              // Find the first occurrence date to establish the pattern
              // Use the actual start date if provided, otherwise fall back to creation date
-             let slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+             const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
                                 slot.createdAt ? new Date(slot.createdAt) : new Date();
              slotStartDate.setHours(0, 0, 0, 0);
             
@@ -384,7 +384,7 @@ const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
     if (slot.frequency === 'never') return 0;
     
          // Start from the slot's start date if provided, otherwise use creation date
-     let slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+     const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
                         slot.createdAt ? new Date(slot.createdAt) : new Date();
      slotStartDate.setHours(0, 0, 0, 0);
     

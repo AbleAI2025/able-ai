@@ -45,7 +45,7 @@ export const badgeDefinitions = pgTable("badge_definitions", {
 	description: text().notNull(),
 	iconUrlOrLucideName: varchar("icon_url_or_lucide_name", { length: 255 }),
 	// TODO: failed to parse database type 'badge_type_enum'
-	type: unknown("type").notNull(),
+	type: varchar("type", { length: 50 }).notNull(),
 	criteriaJson: jsonb("criteria_json"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -80,7 +80,7 @@ export const chatMessages = pgTable("chat_messages", {
 	imageUrl: text("image_url"),
 	isReadByReceiver: boolean("is_read_by_receiver").default(false).notNull(),
 	// TODO: failed to parse database type 'moderation_status_enum'
-	moderationStatus: unknown("moderation_status").notNull(),
+	moderationStatus: varchar("moderation_status", { length: 50 }).notNull(),
 	sentAt: timestamp("sent_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
 	foreignKey({
@@ -243,16 +243,16 @@ export const gigs = pgTable("gigs", {
 	estimatedHours: numeric("estimated_hours", { precision: 5, scale:  2 }),
 	totalAgreedPrice: numeric("total_agreed_price", { precision: 10, scale:  2 }),
 	// TODO: failed to parse database type 'gig_status_enum'
-	statusInternal: unknown("status_internal").notNull(),
+	statusInternal: varchar("status_internal", { length: 50 }).notNull(),
 	ableFeePercent: numeric("able_fee_percent", { precision: 5, scale:  4 }),
 	stripeFeePercent: numeric("stripe_fee_percent", { precision: 5, scale:  4 }),
 	stripeFeeFixed: numeric("stripe_fee_fixed", { precision: 10, scale:  2 }),
 	promoCodeApplied: varchar("promo_code_applied", { length: 50 }),
 	// TODO: failed to parse database type 'moderation_status_enum'
-	moderationStatus: unknown("moderation_status").notNull(),
+	moderationStatus: varchar("moderation_status", { length: 50 }).notNull(),
 	cancellationReason: text("cancellation_reason"),
 	// TODO: failed to parse database type 'cancellation_party_enum'
-	cancellationParty: unknown("cancellation_party"),
+	cancellationParty: varchar("cancellation_party", { length: 50 }),
 	notesForWorker: text("notes_for_worker"),
 	notesForBuyer: text("notes_for_buyer"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -336,7 +336,7 @@ export const payments = pgTable("payments", {
 	stripeFeeAmount: numeric("stripe_fee_amount", { precision: 10, scale:  2 }).notNull(),
 	amountNetToWorker: numeric("amount_net_to_worker", { precision: 10, scale:  2 }).notNull(),
 	// TODO: failed to parse database type 'payment_status_enum'
-	status: unknown("status").notNull(),
+	status: varchar("status", { length: 50 }).notNull(),
 	stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
 	stripeChargeId: varchar("stripe_charge_id", { length: 255 }),
 	stripeTransferIdToWorker: varchar("stripe_transfer_id_to_worker", { length: 255 }),
@@ -400,9 +400,9 @@ export const reviews = pgTable("reviews", {
 	awardedBadgeNamesToTargetJson: jsonb("awarded_badge_names_to_target_json"),
 	isPublic: boolean("is_public").default(true).notNull(),
 	// TODO: failed to parse database type 'review_type_enum'
-	type: unknown("type").notNull(),
+	type: varchar("type", { length: 50 }).notNull(),
 	// TODO: failed to parse database type 'moderation_status_enum'
-	moderationStatus: unknown("moderation_status").notNull(),
+	moderationStatus: varchar("moderation_status", { length: 50 }).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
@@ -545,20 +545,20 @@ export const users = pgTable("users", {
 	fullName: varchar("full_name", { length: 255 }).notNull(),
 	phone: varchar({ length: 30 }),
 	// TODO: failed to parse database type 'user_app_role_enum'
-	appRole: unknown("app_role").notNull(),
+	appRole: varchar("app_role", { length: 50 }).notNull(),
 	isGigWorker: boolean("is_gig_worker").default(false).notNull(),
 	isBuyer: boolean("is_buyer").default(false).notNull(),
 	// TODO: failed to parse database type 'active_role_context_enum'
-	lastRoleUsed: unknown("last_role_used"),
+	lastRoleUsed: varchar("last_role_used", { length: 50 }),
 	lastViewVisitedBuyer: text("last_view_visited_buyer"),
 	lastViewVisitedWorker: text("last_view_visited_worker"),
 	stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
 	stripeConnectAccountId: varchar("stripe_connect_account_id", { length: 255 }),
 	// TODO: failed to parse database type 'rtw_kyc_status_enum'
-	rtwStatus: unknown("rtw_status"),
+	rtwStatus: varchar("rtw_status", { length: 50 }),
 	rtwDocumentUrl: text("rtw_document_url"),
 	// TODO: failed to parse database type 'rtw_kyc_status_enum'
-	kycStatus: unknown("kyc_status"),
+	kycStatus: varchar("kyc_status", { length: 50 }),
 	kycDocumentUrl: text("kyc_document_url"),
 	isBanned: boolean("is_banned").default(false).notNull(),
 	isDisabled: boolean("is_disabled").default(false).notNull(),
@@ -567,7 +567,7 @@ export const users = pgTable("users", {
 	profileVisibility: boolean("profile_visibility").default(false),
 	canReceivePayouts: boolean("can_receive_payouts").default(false).notNull(),
 	// TODO: failed to parse database type 'stripe_account_status_enum'
-	stripeAccountStatus: unknown("stripe_account_status"),
+	stripeAccountStatus: varchar("stripe_account_status", { length: 50 }),
 }, (table) => [
 	unique("users_firebase_uid_unique").on(table.firebaseUid),
 	unique("users_email_unique").on(table.email),
@@ -577,7 +577,7 @@ export const users = pgTable("users", {
 
 export const vectorEmbeddings = pgTable("vector_embeddings", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	entityType: vector("entity_type", { dimensions: entity_type_enu }).notNull(),
+	entityType: varchar("entity_type", { length: 50 }).notNull(),
 	entityPostgresId: uuid("entity_postgres_id"),
 	entityFirestoreId: text("entity_firestore_id"),
 	embedding: vector({ dimensions: 1536 }).notNull(),

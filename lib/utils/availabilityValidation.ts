@@ -31,11 +31,9 @@ export async function checkAvailabilityOverlap({
   const conditions = [
     eq(WorkerAvailabilityTable.userId, userId),
     // Check for overlap: new start < existing end AND new end > existing start
-    or(
-      and(
-        lt(startTime, WorkerAvailabilityTable.endTime),
-        gt(endTime, WorkerAvailabilityTable.startTime)
-      )
+    and(
+      lt(WorkerAvailabilityTable.startTime, endTime),
+      gt(WorkerAvailabilityTable.endTime, startTime)
     )
   ];
 
@@ -67,11 +65,9 @@ export async function checkGigOverlap({
     // Only check accepted gigs
     eq(GigsTable.statusInternal, 'ACCEPTED'),
     // Check for overlap: new start < gig end AND new end > gig start
-    or(
-      and(
-        lt(startTime, GigsTable.endTime),
-        gt(endTime, GigsTable.startTime)
-      )
+    and(
+      lt(GigsTable.startTime, endTime),
+      gt(GigsTable.endTime, startTime)
     )
   ];
 
