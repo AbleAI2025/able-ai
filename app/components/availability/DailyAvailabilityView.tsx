@@ -101,14 +101,15 @@ const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
   const getOccurrenceCountForSlot = (slot: AvailabilitySlot, targetDate: Date): number => {
     if (slot.frequency === 'never') return 0;
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(Math.max(today.getTime(), new Date(slot.createdAt).getTime()));
+    // Start from the slot's creation date
+    const slotStartDate = slot.createdAt ? new Date(slot.createdAt) : new Date();
+    slotStartDate.setHours(0, 0, 0, 0);
+    
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
     
     let count = 0;
-    let currentDate = new Date(startDate);
+    let currentDate = new Date(slotStartDate);
     
     while (currentDate <= endDate) {
       const dayName = getDayName(currentDate);
