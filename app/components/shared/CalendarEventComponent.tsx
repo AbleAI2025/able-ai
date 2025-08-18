@@ -4,6 +4,7 @@ import React from "react";
 import styles from "./CalendarEventComponent.module.css";
 import { Check, Clock, User, Eye } from "lucide-react";
 import { View } from 'react-big-calendar';
+import { useRouter } from "next/navigation";
 
 // Optionally import an icon library for checkmark, etc.
 
@@ -29,6 +30,7 @@ export interface CalendarEvent {
   workerName?: string;
   isMyGig?: boolean;
   isBuyerAccepted?: boolean;
+  location?: string;
 }
 
 interface CalendarEventComponentProps {
@@ -44,6 +46,8 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
   view = 'day',
   activeFilter
 }) => {
+
+  const router = useRouter();
   // Format time (e.g., 9:00 AM - 11:00 AM)
   const formatTime = (start: Date, end: Date) => {
     const opts: Intl.DateTimeFormatOptions = { 
@@ -84,10 +88,8 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
   }
 
   // Checkmark icon for accepted/completed
-  const checkIcon = (event.status === "ACCEPTED" || event.status === "COMPLETED") ? (
-    <div className={styles.checkIcon}>
-      <Check color="#ffffff" size={16} />
-    </div>
+  const checkIcon = (event.status === "ACCEPTED" || event.status === "COMPLETED") ? (    
+      <Check color="#ffffff" size={30} />
   ) : null;
 
   // For month view, show minimal content
@@ -133,23 +135,31 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
 
   // For day view, show full content with View Gig button
   return (
-    <div className={styles.eventContainer} data-view="day">
+    <div 
+      className={[
+      styles.eventContainer,
+      event.status === "ACCEPTED" && (userRole === 'worker' ? styles.dayAcceptedBg : styles.dayAcceptedBgBuyer),
+      event.status === "OFFER" && styles.dayOfferStyle
+      ].filter(Boolean).join(" ")}
+      data-view="day"
+    >
       <div className={styles.eventHeader}>
         <div className={styles.eventTitle}>
-          {event.title}
+          {event.title} : {event.location}
         </div>
         {checkIcon}
       </div>
       
       <div className={styles.eventDetails}>
+        {userRole === 'worker' && (
+          <div className={styles.statusSection}>
+            <span className={statusClass}>{statusText}</span>
+          </div>
+        )}
         <div className={styles.eventTime}>
           <Clock size={12} className={styles.timeIcon} />
           {formatTime(new Date(event.start), new Date(event.end))}
-        </div>
-        
-        <div className={styles.statusSection}>
-          <span className={statusClass}>{statusText}</span>
-        </div>
+        </div>     
 
         {(event.buyerName || event.workerName) && (
           <div className={`${styles.participantInfo} ${styles.participantSplit}`}>
@@ -167,13 +177,24 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
           </div>
         )}
       </div>
-      
-      {/* View Gig button for accepted gigs and offers */}
-      {(event.status === 'ACCEPTED' || event.status === 'OFFER') && (
+
+      {/* Accept button for offers */}
+      {(event.status === 'OFFER') && (
         <div className={styles.actionButtons}>
-          <button className={`${styles.actionButton} ${styles.viewGigBtn} ${userRole === 'buyer' ? styles.viewGigBtnSecondary : ''}`}>
+          <button 
+            className={`${styles.actionButton} ${userRole === 'buyer' ? styles.pendingBtn : styles.acceptBtn}`}
+          >
+            {userRole === 'buyer' ? 'Pending' : 'Accept'}
+          </button>
+        </div>
+      )}
+
+      {/* Edit button for availability events */}
+      {event.status === 'AVAILABLE' && (
+        <div className={styles.actionButtons}>
+          <button className={`${styles.actionButton} ${styles.editAvailabilityBtn}`}>
             <Eye size={12} className={styles.viewIcon} />
-            View Gig
+            Edit
           </button>
         </div>
       )}
