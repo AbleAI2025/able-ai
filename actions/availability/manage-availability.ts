@@ -58,6 +58,7 @@ export async function createAvailabilitySlot(userId: string, data: AvailabilityF
     const newSlot: AvailabilitySlot = {
       id: crypto.randomUUID(),
       ...data,
+      startDate: data.startDate, // Include the startDate field
       createdAt: new Date(),
       updatedAt: new Date(),
     };
