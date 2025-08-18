@@ -196,18 +196,29 @@ const WorkerCalendarPage = () => {
 
   // Handle availability management
   const handleAvailabilitySave = async (data: any) => {
-    if (!user) return;
+    console.log('handleAvailabilitySave called with data:', data);
+    if (!user) {
+      console.log('No user found');
+      return;
+    }
 
     try {
       if (selectedAvailabilitySlot) {
         // Update existing slot
+        console.log('Updating existing slot:', selectedAvailabilitySlot.id);
         const { updateAvailabilitySlot } = await import('@/actions/availability/manage-availability');
-        await updateAvailabilitySlot(user.uid, selectedAvailabilitySlot.id, data);
+        const result = await updateAvailabilitySlot(user.uid, selectedAvailabilitySlot.id, data);
+        console.log('Update result:', result);
       } else {
         // Create new slot
+        console.log('Creating new slot');
         const { createAvailabilitySlot } = await import('@/actions/availability/manage-availability');
-        await createAvailabilitySlot(user.uid, data);
+        const result = await createAvailabilitySlot(user.uid, data);
+        console.log('Create result:', result);
       }
+      
+      // Close the modal
+      handleAvailabilityModalClose();
       
       // Refresh events
       const fetchEvents = async () => {
@@ -242,6 +253,9 @@ const WorkerCalendarPage = () => {
       const { deleteAvailabilitySlot } = await import('@/actions/availability/manage-availability');
       await deleteAvailabilitySlot(user.uid, selectedAvailabilitySlot.id);
       
+      // Close the modal
+      handleAvailabilityModalClose();
+      
       // Refresh events
       const fetchEvents = async () => {
         const calendarRes = await getCalendarEvents({ userId: user.uid, role: 'worker', isViewQA: false });
@@ -275,18 +289,23 @@ const WorkerCalendarPage = () => {
   };
 
   const handleDateSelect = (slotInfo: { start: Date; end: Date; slots: Date[] } | Date, selectedTime?: string) => {
-    if (selectedTime) {
-      // Handle availability view date selection with time
-      setSelectedDate(slotInfo as Date);
-      setSelectedTime(selectedTime);
-      setIsAvailabilityModalOpen(true);
-    } else {
+    console.log('handleDateSelect called with:', { slotInfo, selectedTime });
+    
+    if (typeof slotInfo === 'object' && 'start' in slotInfo) {
       // Handle regular calendar date selection
-      const slotInfoTyped = slotInfo as { start: Date; end: Date; slots: Date[] };
-      setSelectedDate(slotInfoTyped.start);
-      setSelectedTime(null);
+      console.log('Setting selected date from slotInfo.start:', slotInfo.start);
+      setSelectedDate(slotInfo.start);
+      setSelectedTime(selectedTime || null);
+      setIsAvailabilityModalOpen(true);
+    } else if (slotInfo instanceof Date) {
+      // Handle availability view date selection
+      console.log('Setting selected date from Date:', slotInfo);
+      setSelectedDate(slotInfo);
+      setSelectedTime(selectedTime || null);
       setIsAvailabilityModalOpen(true);
     }
+    
+    console.log('Modal should now be open');
   };
 
   const handleClearAllAvailability = async () => {
@@ -339,7 +358,7 @@ const WorkerCalendarPage = () => {
         filters={FILTERS}
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
-        onDateSelect={activeFilter === 'Manage availability' ? (date) => handleDateSelect({ start: date, end: date, slots: [date] }) : undefined}
+        onDateSelect={activeFilter === 'Manage availability' ? (date) => handleDateSelect(date) : undefined}
       />
       
       <main className={`${styles.mainContent} ${isFilterTransitioning ? styles.filterTransitioning : ''}`}>
@@ -405,14 +424,7 @@ const WorkerCalendarPage = () => {
           />
         )}
       </main>
-      <footer className={styles.footer}>
-        <button className={styles.homeButton} onClick={() => router.push(`/user/${pageUserId}/worker`)}>
-          <Image src="/images/home.svg" alt="Home" width={24} height={24} />
-        </button>
-        <button className={styles.dashboardButton} onClick={() => router.push(`/user/${pageUserId}/worker`)}>
-          Home
-        </button>
-      </footer>
+
 
       <EventDetailModal
         event={selectedEvent}

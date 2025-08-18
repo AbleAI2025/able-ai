@@ -378,7 +378,15 @@ export const saveWorkerProfileFromOnboardingAction = async (
     skills: string;
     hourlyRate: string;
     location: any;
-    availability: { days: string[]; startTime: string; endTime: string; } | string;
+    availability: { 
+      days: string[]; 
+      startTime: string; 
+      endTime: string; 
+      frequency?: string;
+      ends?: string;
+      endDate?: string;
+      occurrences?: number;
+    } | string;
     videoIntro: File | string;
     references: string;
     time: string;
@@ -410,7 +418,14 @@ export const saveWorkerProfileFromOnboardingAction = async (
       location: typeof profileData.location === 'string' ? profileData.location : profileData.location?.formatted_address || profileData.location?.name || '',
       latitude: typeof profileData.location === 'object' && profileData.location?.lat ? profileData.location.lat : null,
       longitude: typeof profileData.location === 'object' && profileData.location?.lng ? profileData.location.lng : null,
-      availabilityJson: typeof profileData.availability === 'string' ? profileData.availability : profileData.availability,
+      availabilityJson: typeof profileData.availability === 'string' ? profileData.availability : {
+        ...profileData.availability,
+        // Ensure all recurring fields are included
+        frequency: profileData.availability.frequency || 'never',
+        ends: profileData.availability.ends || 'never',
+        endDate: profileData.availability.endDate,
+        occurrences: profileData.availability.occurrences
+      },
       videoUrl: typeof profileData.videoIntro === 'string' ? profileData.videoIntro : profileData.videoIntro?.name || '',
       semanticProfileJson: {
         tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)

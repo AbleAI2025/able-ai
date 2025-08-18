@@ -61,11 +61,82 @@ const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
 
   // Get availability for the current week
   const getAvailabilityForDay = (date: Date): AvailabilitySlot[] => {
-    const dayName = moment(date).format('ddd');
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const dayIndex = moment(date).isoWeekday() - 1; // Monday = 1, so subtract 1 for array index
-    const dayNameShort = dayNames[dayIndex];
-    return availabilitySlots.filter(slot => slot.days.includes(dayNameShort));
+    return availabilitySlots.filter(slot => {
+      // Handle single occurrences
+      if (slot.frequency === 'never' && slot.endDate) {
+        const slotDate = new Date(slot.endDate);
+        return slotDate.toDateString() === date.toDateString();
+      }
+      
+      // Handle recurring slots
+      const dayName = moment(date).format('ddd');
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dayIndex = moment(date).isoWeekday() - 1; // Monday = 1, so subtract 1 for array index
+      const dayNameShort = dayNames[dayIndex];
+      
+      if (!slot.days.includes(dayNameShort)) {
+        return false;
+      }
+      
+      // Check if the date is within the valid range for this recurring slot
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      
+      // Don't show recurring slots for past dates
+      if (checkDate < today) {
+        return false;
+      }
+      
+      // Check end date if specified
+      if (slot.ends === 'on_date' && slot.endDate) {
+        const endDate = new Date(slot.endDate);
+        endDate.setHours(23, 59, 59, 999); // End of the day
+        if (checkDate > endDate) {
+          return false;
+        }
+      }
+      
+      // Check occurrence count if specified
+      if (slot.ends === 'after_occurrences' && slot.occurrences) {
+        const occurrenceCount = getOccurrenceCountForSlot(slot, date);
+        if (occurrenceCount >= slot.occurrences) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  // Helper function to count occurrences up to a specific date
+  const getOccurrenceCountForSlot = (slot: AvailabilitySlot, targetDate: Date): number => {
+    if (slot.frequency === 'never') return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(Math.max(today.getTime(), new Date(slot.createdAt).getTime()));
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+    
+    let count = 0;
+    let currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      const dayName = moment(currentDate).format('ddd');
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dayIndex = moment(currentDate).isoWeekday() - 1;
+      const dayNameShort = dayNames[dayIndex];
+      
+      if (slot.days.includes(dayNameShort)) {
+        count++;
+      }
+      
+      currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+    }
+    
+    return count;
   };
 
   const handleDateClick = (date: Date) => {

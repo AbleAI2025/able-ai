@@ -34,11 +34,8 @@ const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
     slot: AvailabilitySlot;
   } | null>(null);
 
-  // Time slots from 9 AM to 10 PM
-  const timeSlots: string[] = [];
-  for (let hour = 9; hour <= 22; hour++) {
-    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-  }
+  // Time slots from 6 AM to 11 PM (18 hours total) - matching accepted gigs design
+  const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
 
   const getDayName = (date: Date) => {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -54,13 +51,102 @@ const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
   };
 
   const getAvailabilityForDay = (date: Date): AvailabilitySlot[] => {
-    const dayName = getDayName(date);
-    return availabilitySlots.filter(slot => slot.days.includes(dayName));
+    return availabilitySlots.filter(slot => {
+      // Handle single occurrences
+      if (slot.frequency === 'never' && slot.endDate) {
+        const slotDate = new Date(slot.endDate);
+        return slotDate.toDateString() === date.toDateString();
+      }
+      
+      // Handle recurring slots
+      const dayName = getDayName(date);
+      
+      if (!slot.days.includes(dayName)) {
+        return false;
+      }
+      
+      // Check if the date is within the valid range for this recurring slot
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      
+      // Don't show recurring slots for past dates
+      if (checkDate < today) {
+        return false;
+      }
+      
+      // Check end date if specified
+      if (slot.ends === 'on_date' && slot.endDate) {
+        const endDate = new Date(slot.endDate);
+        endDate.setHours(23, 59, 59, 999); // End of the day
+        if (checkDate > endDate) {
+          return false;
+        }
+      }
+      
+      // Check occurrence count if specified
+      if (slot.ends === 'after_occurrences' && slot.occurrences) {
+        const occurrenceCount = getOccurrenceCountForSlot(slot, date);
+        if (occurrenceCount >= slot.occurrences) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  // Helper function to count occurrences up to a specific date
+  const getOccurrenceCountForSlot = (slot: AvailabilitySlot, targetDate: Date): number => {
+    if (slot.frequency === 'never') return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(Math.max(today.getTime(), new Date(slot.createdAt).getTime()));
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+    
+    let count = 0;
+    let currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      const dayName = getDayName(currentDate);
+      const normalizedDayName = normalizeDayName(dayName);
+      
+      if (slot.days.includes(normalizedDayName)) {
+        count++;
+      }
+      
+      currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+    }
+    
+    return count;
+  };
+
+  const normalizeDayName = (dayName: string): string => {
+    const dayMap: { [key: string]: string } = {
+      'Mon': 'monday',
+      'Tue': 'tuesday', 
+      'Wed': 'wednesday',
+      'Thu': 'thursday',
+      'Fri': 'friday',
+      'Sat': 'saturday',
+      'Sun': 'sunday',
+      'monday': 'monday',
+      'tuesday': 'tuesday',
+      'wednesday': 'wednesday', 
+      'thursday': 'thursday',
+      'friday': 'friday',
+      'saturday': 'saturday',
+      'sunday': 'sunday'
+    };
+    return dayMap[dayName] || dayName;
   };
 
   const getTimePosition = (time: string) => {
     const [hour] = time.split(':').map(Number);
-    return ((hour - 9) / 13) * 100; // 13 hours from 9 AM to 10 PM
+    return ((hour - 6) / 18) * 100; // 18 hours from 6 AM to 11 PM
   };
 
   const getTimeHeight = (startTime: string, endTime: string) => {
@@ -69,7 +155,7 @@ const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
     const duration = endMinutes - startMinutes;
-    return (duration / 60) * (100 / 13); // Convert to percentage of 13 hours
+    return (duration / 60) * (100 / 18); // Convert to percentage of 18 hours
   };
 
   const handleAvailabilityClick = (event: React.MouseEvent, slot: AvailabilitySlot) => {
@@ -86,11 +172,9 @@ const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
 
     switch (action) {
       case 'edit':
-        // For daily view, we're already on a single day, so edit the slot as-is
         onAvailabilityEdit(showContextMenu.slot);
         break;
       case 'repeat':
-        // Handle repeat action - edit the full recurring slot
         onAvailabilityEdit(showContextMenu.slot);
         break;
       case 'delete':
@@ -100,84 +184,96 @@ const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
     setShowContextMenu(null);
   };
 
-  const handleEmptySlotClick = (time: string) => {
-    const [hour] = time.split(':').map(Number);
+  const handleEmptySlotClick = (hour: number) => {
     const newDate = new Date(selectedDate);
     newDate.setHours(hour, 0, 0, 0);
     
-    // Pass the selected time as a hint for the start time
-    onDateSelect(newDate, time);
+    const timeString = `${hour.toString().padStart(2, '0')}:00`;
+    onDateSelect(newDate, timeString);
   };
 
   const dayAvailability = getAvailabilityForDay(selectedDate);
 
   return (
     <div className={styles.container}>
-      {/* Header */}
+      {/* Header - similar to accepted gigs design */}
       <div className={styles.header}>
-        <h2 className={styles.title}>
-          {getDayName(selectedDate)} {getFormattedDate(selectedDate)}
-        </h2>
+        <div className={styles.timeHeader}>
+          <span>TIME</span>
+        </div>
+        <div className={styles.dayHeader}>
+          <div className={styles.dayName}>{getDayName(selectedDate)}</div>
+          <div className={styles.dayNumber}>{getFormattedDate(selectedDate)}</div>
+        </div>
       </div>
 
-      {/* Time slots and availability blocks */}
+      {/* Time Grid - similar to accepted gigs design */}
       <div className={styles.timeGrid}>
         <div className={styles.timeColumn}>
-          {timeSlots.map((time) => (
-            <div key={time} className={styles.timeSlot}>
-              {time}
+          {hours.map((hour) => (
+            <div key={hour} className={styles.timeLabel}>
+              {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
             </div>
           ))}
         </div>
 
         <div className={styles.availabilityColumn}>
-          {timeSlots.map((time, timeIndex) => {
+          {hours.map((hour, hourIndex) => {
             const relevantSlot = dayAvailability.find(slot => {
-              const slotStart = slot.startTime;
-              const slotEnd = slot.endTime;
-              return time >= slotStart && time < slotEnd;
+              const slotStart = parseInt(slot.startTime.split(':')[0]);
+              const slotEnd = parseInt(slot.endTime.split(':')[0]);
+              return hour >= slotStart && hour < slotEnd;
             });
 
             if (relevantSlot) {
-              const isFirstTimeSlot = time === relevantSlot.startTime;
-              if (isFirstTimeSlot) {
+              const isFirstHour = hour === parseInt(relevantSlot.startTime.split(':')[0]);
+              if (isFirstHour) {
                 const height = getTimeHeight(relevantSlot.startTime, relevantSlot.endTime);
                 return (
                   <div
-                    key={timeIndex}
+                    key={hourIndex}
                     className={styles.availabilityBlock}
                     style={{
                       top: `${getTimePosition(relevantSlot.startTime)}%`,
                       height: `${height}%`,
                     }}
                     onClick={(e) => handleAvailabilityClick(e, relevantSlot)}
-                  />
+                  >
+                    <div className={styles.availabilityContent}>
+                      <div className={styles.availabilityTime}>
+                        {relevantSlot.startTime} - {relevantSlot.endTime}
+                      </div>
+                      <div className={styles.availabilityStatus}>
+                        Available
+                      </div>
+                    </div>
+                  </div>
                 );
               }
-              return null; // Don't render for subsequent time slots of the same availability
+              return null;
             }
 
             return (
               <div
-                key={timeIndex}
+                key={hourIndex}
                 className={styles.emptySlot}
-                onClick={() => handleEmptySlotClick(time)}
+                onClick={() => handleEmptySlotClick(hour)}
               />
             );
           })}
         </div>
       </div>
 
-             {/* Context Menu */}
-       {showContextMenu && (
-         <div className={styles.contextMenu} style={{ left: showContextMenu.x, top: showContextMenu.y }}>
-           <button onClick={() => handleContextMenuAction('edit')}>Edit This Day</button>
-           <button onClick={() => handleContextMenuAction('repeat')}>Edit Recurring</button>
-           <button onClick={() => handleContextMenuAction('delete')} className={styles.deleteOption}>
-             Delete
-           </button>
-         </div>
-       )}
+      {/* Context Menu */}
+      {showContextMenu && (
+        <div className={styles.contextMenu} style={{ left: showContextMenu.x, top: showContextMenu.y }}>
+          <button onClick={() => handleContextMenuAction('edit')}>Edit This Day</button>
+          <button onClick={() => handleContextMenuAction('repeat')}>Edit Recurring</button>
+          <button onClick={() => handleContextMenuAction('delete')} className={styles.deleteOption}>
+            Delete
+          </button>
+        </div>
+      )}
 
       {/* Clear button */}
       <button className={styles.clearButton} onClick={onClearAll} title="Clear all availability">

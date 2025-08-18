@@ -45,12 +45,14 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
         occurrences: slot.occurrences,
       });
     } else if (selectedDate) {
-      // Set default day based on selected date
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const dayName = dayNames[selectedDate.getDay()];
+      // For single occurrences, store the actual date in the endDate field
+      const dateString = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
       setFormData(prev => ({
         ...prev,
-        days: [dayName],
+        days: [], // Empty for single occurrences
+        endDate: dateString, // Store the actual date here
+        frequency: 'never', // Single occurrence
+        ends: 'on_date'
       }));
     }
   }, [slot, selectedDate]);
@@ -118,7 +120,17 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
 
             <div className={styles.recurrenceRow} onClick={() => setShowRepeatModal(true)}>
               <span className={styles.recurrenceText}>
-                Repeats {formData.days.join('-')} every {formData.frequency === 'weekly' ? 'week' : formData.frequency === 'biweekly' ? '2 weeks' : 'month'}
+                {formData.frequency === 'never' 
+                  ? (formData.endDate 
+                      ? `Single occurrence on ${new Date(formData.endDate).toLocaleDateString('en-GB', {
+                          weekday: 'long',
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}`
+                      : 'Single occurrence (date not specified)')
+                  : `Repeats ${formData.days.join('-')} every ${formData.frequency === 'weekly' ? 'week' : formData.frequency === 'biweekly' ? '2 weeks' : 'month'}`
+                }
               </span>
               <span className={styles.arrow}>›</span>
             </div>

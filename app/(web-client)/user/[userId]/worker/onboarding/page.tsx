@@ -134,6 +134,10 @@ interface FormData {
     days: string[];
     startTime: string;
     endTime: string;
+    frequency?: string;
+    ends?: string;
+    endDate?: string;
+    occurrences?: number;
   } | string;
   time?: string;
   videoIntro?: string;
@@ -1660,6 +1664,12 @@ Make the conversation feel natural and build on what they've already told you.`;
       role="GIG_WORKER"
       showChatInput={true}
       onSendMessage={onSendMessage}
+      showOnboardingOptions={true}
+      onSwitchToManual={() => {
+        setSetupMode('manual');
+        setManualFormData(formData);
+      }}
+      onChangeSetupMethod={handleResetChoice}
     >
       {error && (
         <div style={{ 
@@ -1674,78 +1684,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         </div>
       )}
 
-      {/* Switch to Manual Option */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        gap: '12px',
-        padding: '16px',
-        borderBottom: '1px solid #e5e7eb'
-      }}>
-        <button
-          onClick={() => {
-            setSetupMode('manual');
-            setManualFormData(formData);
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            background: 'transparent',
-            border: '1px solid var(--primary-color, #3b82f6)',
-            borderRadius: '8px',
-            color: 'var(--primary-color, #3b82f6)',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = 'var(--primary-color, #3b82f6)';
-            e.currentTarget.style.color = 'white';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--primary-color, #3b82f6)';
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/>
-          </svg>
-          Switch to Manual Form
-        </button>
-        <button
-          onClick={handleResetChoice}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            background: 'transparent',
-            border: '1px solid #6b7280',
-            borderRadius: '8px',
-            color: '#6b7280',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = '#6b7280';
-            e.currentTarget.style.color = 'white';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = '#6b7280';
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="currentColor"/>
-          </svg>
-          Change Setup Method
-        </button>
-      </div>
+
       
       {chatSteps.map((step, idx) => {
         const key = `${step.id}-${idx}`;
@@ -2269,7 +2208,9 @@ Make the conversation feel natural and build on what they've already told you.`;
           const currentAvailability = typeof formData.availability === 'object' ? formData.availability : {
             days: [],
             startTime: '09:00',
-            endTime: '17:00'
+            endTime: '17:00',
+            frequency: 'never',
+            ends: 'never'
           };
 
           const handleDayToggle = (day: string) => {
@@ -2434,6 +2375,108 @@ Make the conversation feel natural and build on what they've already told you.`;
                   </div>
                 </div>
 
+                {/* Recurring Options */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Recurring Pattern
+                  </label>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '12px', 
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                  }}>
+                    <select
+                      style={{
+                        padding: '8px 12px',
+                        border: '2px solid #444444',
+                        borderRadius: '8px',
+                        background: '#1A1A1A',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        minWidth: '120px'
+                      }}
+                      value={currentAvailability.frequency || 'never'}
+                      onChange={(e) => handleInputChange('availability', {
+                        ...currentAvailability,
+                        frequency: e.target.value
+                      })}
+                    >
+                      <option value="never">No repeat</option>
+                      <option value="weekly">Every week</option>
+                      <option value="biweekly">Every 2 weeks</option>
+                      <option value="monthly">Every month</option>
+                    </select>
+
+                    <select
+                      style={{
+                        padding: '8px 12px',
+                        border: '2px solid #444444',
+                        borderRadius: '8px',
+                        background: '#1A1A1A',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        minWidth: '120px'
+                      }}
+                      value={currentAvailability.ends || 'never'}
+                      onChange={(e) => handleInputChange('availability', {
+                        ...currentAvailability,
+                        ends: e.target.value,
+                        // Clear endDate and occurrences when changing ends type
+                        endDate: undefined,
+                        occurrences: undefined
+                      })}
+                    >
+                      <option value="never">Never ends</option>
+                      <option value="on_date">Until date</option>
+                      <option value="after_occurrences">After times</option>
+                    </select>
+
+                    {currentAvailability.ends === 'on_date' && (
+                      <input
+                        type="date"
+                        style={{
+                          padding: '8px 12px',
+                          border: '2px solid #444444',
+                          borderRadius: '8px',
+                          background: '#1A1A1A',
+                          color: '#ffffff',
+                          fontSize: '14px'
+                        }}
+                        value={currentAvailability.endDate || ''}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => handleInputChange('availability', {
+                          ...currentAvailability,
+                          endDate: e.target.value
+                        })}
+                      />
+                    )}
+
+                    {currentAvailability.ends === 'after_occurrences' && (
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="Times"
+                        style={{
+                          padding: '8px 12px',
+                          border: '2px solid #444444',
+                          borderRadius: '8px',
+                          background: '#1A1A1A',
+                          color: '#ffffff',
+                          fontSize: '14px',
+                          width: '80px'
+                        }}
+                        value={currentAvailability.occurrences || ''}
+                        onChange={(e) => handleInputChange('availability', {
+                          ...currentAvailability,
+                          occurrences: parseInt(e.target.value) || 1
+                        })}
+                      />
+                    )}
+                  </div>
+                </div>
+
                 <div style={{ 
                   background: '#1A1A1A', 
                   padding: '12px', 
@@ -2443,7 +2486,15 @@ Make the conversation feel natural and build on what they've already told you.`;
                   color: '#a0a0a0'
                 }}>
                   <strong>Preview:</strong> {currentAvailability.days.length > 0 ?
-                    `${currentAvailability.days.map(day => weekDays.find(d => d.value === day)?.label).join(', ')} ${currentAvailability.startTime} - ${currentAvailability.endTime}` :
+                    `${currentAvailability.days.map(day => weekDays.find(d => d.value === day)?.label).join(', ')} ${currentAvailability.startTime} - ${currentAvailability.endTime}` +
+                    (currentAvailability.frequency && currentAvailability.frequency !== 'never' ? 
+                      ` (${currentAvailability.frequency === 'weekly' ? 'Every week' : 
+                          currentAvailability.frequency === 'biweekly' ? 'Every 2 weeks' : 
+                          currentAvailability.frequency === 'monthly' ? 'Every month' : ''})` : '') +
+                    (currentAvailability.ends === 'on_date' && currentAvailability.endDate ? 
+                      ` until ${new Date(currentAvailability.endDate).toLocaleDateString()}` : '') +
+                    (currentAvailability.ends === 'after_occurrences' && currentAvailability.occurrences ? 
+                      ` (${currentAvailability.occurrences} times)` : '') :
                     'Please select days and times'
                   }
                 </div>

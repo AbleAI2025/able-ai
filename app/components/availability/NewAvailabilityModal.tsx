@@ -53,16 +53,15 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
         occurrences: slot.occurrences,
       });
     } else if (selectedDate) {
-      // Convert to Monday-Sunday format to match availability system
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const dayIndex = selectedDate.getDay();
-      // Convert Sunday=0 to Monday=0 format
-      const mondayBasedIndex = dayIndex === 0 ? 6 : dayIndex - 1;
-      const dayName = dayNames[mondayBasedIndex];
+      // For single occurrences, store the actual date in the endDate field
+      // and use an empty days array to avoid confusion with recurring patterns
+      const dateString = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
       
       setFormData(prev => ({
         ...prev,
-        days: [dayName],
+        days: [], // Empty for single occurrences
+        endDate: dateString, // Store the actual date here
+        frequency: 'never', // Single occurrence
         // Use selected time if available, otherwise default to 09:00
         startTime: selectedTime || "09:00",
         // Set end time to 1 hour after start time
@@ -90,12 +89,20 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
   };
 
   const getRecurrenceText = () => {
-    if (formData.days.length === 0) return "No recurrence set";
-    
     if (formData.frequency === 'never') {
-      const daysText = formData.days.join('-');
-      return `Single occurrence on ${daysText}`;
+      if (formData.endDate) {
+        const date = new Date(formData.endDate);
+        return `Single occurrence on ${date.toLocaleDateString('en-GB', {
+          weekday: 'long',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })}`;
+      }
+      return "Single occurrence (date not specified)";
     }
+    
+    if (formData.days.length === 0) return "No recurrence set";
     
     const daysText = formData.days.join('-');
     const frequencyText = formData.frequency === 'weekly' ? 'week' : 
@@ -155,7 +162,7 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
             <button className={styles.saveButton} onClick={handleSave}>
               Save
             </button>
-            {slot && (
+            {slot && onDelete && (
               <button className={styles.deleteButton} onClick={onDelete}>
                 Delete
               </button>
@@ -247,24 +254,38 @@ const RepeatAvailabilitySheet: React.FC<RepeatAvailabilitySheetProps> = ({
         </div>
 
         <div className={styles.repeatContent}>
-          <div className={styles.daysSection}>
-            <label className={styles.sectionLabel}>Days</label>
-            <div className={styles.daysGrid}>
-              {dayNames.map((day, index) => {
-                const fullDayName = fullDayNames[index];
-                const isSelected = localData.days.includes(fullDayName);
-                return (
-                  <button
-                    key={day}
-                    className={`${styles.dayButton} ${isSelected ? styles.dayButtonSelected : ''}`}
-                    onClick={() => handleDayToggle(day)}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
+          {localData.frequency === 'never' ? (
+            <div className={styles.singleDateSection}>
+              <label className={styles.sectionLabel}>Date</label>
+              <div className={styles.dateInput}>
+                <input
+                  type="date"
+                  value={localData.endDate || ''}
+                  onChange={(e) => setLocalData(prev => ({ ...prev, endDate: e.target.value }))}
+                  className={styles.datePicker}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={styles.daysSection}>
+              <label className={styles.sectionLabel}>Days</label>
+              <div className={styles.daysGrid}>
+                {dayNames.map((day, index) => {
+                  const fullDayName = fullDayNames[index];
+                  const isSelected = localData.days.includes(fullDayName);
+                  return (
+                    <button
+                      key={day}
+                      className={`${styles.dayButton} ${isSelected ? styles.dayButtonSelected : ''}`}
+                      onClick={() => handleDayToggle(day)}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className={styles.frequencySection}>
             <label className={styles.sectionLabel}>Frequency</label>
@@ -304,7 +325,29 @@ const RepeatAvailabilitySheet: React.FC<RepeatAvailabilitySheetProps> = ({
            ]}
            selectedValue={localData.frequency}
            onSelect={(value) => {
-             setLocalData(prev => ({ ...prev, frequency: value as any }));
+             const newFrequency = value as any;
+             setLocalData(prev => {
+               // If changing to single occurrence, clear days and set endDate to today
+               if (newFrequency === 'never') {
+                 return {
+                   ...prev,
+                   frequency: newFrequency,
+                   days: [],
+                   endDate: new Date().toISOString().split('T')[0], // Today's date
+                   ends: 'on_date'
+                 };
+               }
+               // If changing from single occurrence to recurring, clear endDate
+               if (prev.frequency === 'never' && newFrequency !== 'never') {
+                 return {
+                   ...prev,
+                   frequency: newFrequency,
+                   endDate: undefined,
+                   ends: 'never'
+                 };
+               }
+               return { ...prev, frequency: newFrequency };
+             });
              setShowFrequencyModal(false);
            }}
          />

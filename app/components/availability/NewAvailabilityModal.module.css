@@ -198,6 +198,7 @@
 }
 
 .daysSection,
+.singleDateSection,
 .frequencySection,
 .endsSection {
   margin-bottom: 24px;
@@ -209,6 +210,26 @@
   font-size: 14px;
   margin-bottom: 12px;
   font-weight: 500;
+}
+
+.dateInput {
+  width: 100%;
+}
+
+.datePicker {
+  width: 100%;
+  padding: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  color: #333;
+  transition: border-color 0.2s;
+}
+
+.datePicker:focus {
+  outline: none;
+  border-color: #007bff;
 }
 
 .daysGrid {

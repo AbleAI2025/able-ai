@@ -60,8 +60,111 @@ const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
   };
 
   const getAvailabilityForDay = (date: Date): AvailabilitySlot[] => {
-    const dayName = getDayName(date);
-    return availabilitySlots.filter(slot => slot.days.includes(dayName));
+    console.log('getAvailabilityForDay called for date:', date.toDateString());
+    console.log('Available slots:', availabilitySlots);
+    
+    const result = availabilitySlots.filter(slot => {
+      // Handle single occurrences
+      if (slot.frequency === 'never' && slot.endDate) {
+        const slotDate = new Date(slot.endDate);
+        const matches = slotDate.toDateString() === date.toDateString();
+        console.log('Single occurrence check:', { slotDate: slotDate.toDateString(), date: date.toDateString(), matches });
+        return matches;
+      }
+      
+      // Handle recurring slots
+      const dayName = getDayName(date);
+      const dayMatches = slot.days.includes(dayName);
+      
+      if (!dayMatches) {
+        console.log('Recurring check - day not in slot:', { dayName, slotDays: slot.days, matches: false });
+        return false;
+      }
+      
+      // Check if the date is within the valid range for this recurring slot
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      
+      // Don't show recurring slots for past dates
+      if (checkDate < today) {
+        console.log('Recurring check - date in past:', { date: checkDate.toDateString(), today: today.toDateString(), matches: false });
+        return false;
+      }
+      
+      // Check end date if specified
+      if (slot.ends === 'on_date' && slot.endDate) {
+        const endDate = new Date(slot.endDate);
+        endDate.setHours(23, 59, 59, 999); // End of the day
+        if (checkDate > endDate) {
+          console.log('Recurring check - date after end date:', { date: checkDate.toDateString(), endDate: endDate.toDateString(), matches: false });
+          return false;
+        }
+      }
+      
+      // Check occurrence count if specified
+      if (slot.ends === 'after_occurrences' && slot.occurrences) {
+        const occurrenceCount = getOccurrenceCountForSlot(slot, date);
+        if (occurrenceCount >= slot.occurrences) {
+          console.log('Recurring check - max occurrences reached:', { occurrenceCount, maxOccurrences: slot.occurrences, matches: false });
+          return false;
+        }
+      }
+      
+      console.log('Recurring check - valid:', { dayName, slotDays: slot.days, matches: true });
+      return true;
+    });
+    
+    console.log('Result for date', date.toDateString(), ':', result);
+    return result;
+  };
+
+  // Helper function to count occurrences up to a specific date
+  const getOccurrenceCountForSlot = (slot: AvailabilitySlot, targetDate: Date): number => {
+    if (slot.frequency === 'never') return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(Math.max(today.getTime(), new Date(slot.createdAt).getTime()));
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+    
+    let count = 0;
+    let currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      const dayName = getDayName(currentDate);
+      const normalizedDayName = normalizeDayName(dayName);
+      
+      if (slot.days.includes(normalizedDayName)) {
+        count++;
+      }
+      
+      currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+    }
+    
+    return count;
+  };
+
+  const normalizeDayName = (dayName: string): string => {
+    const dayMap: { [key: string]: string } = {
+      'Mon': 'monday',
+      'Tue': 'tuesday', 
+      'Wed': 'wednesday',
+      'Thu': 'thursday',
+      'Fri': 'friday',
+      'Sat': 'saturday',
+      'Sun': 'sunday',
+      'monday': 'monday',
+      'tuesday': 'tuesday',
+      'wednesday': 'wednesday', 
+      'thursday': 'thursday',
+      'friday': 'friday',
+      'saturday': 'saturday',
+      'sunday': 'sunday'
+    };
+    return dayMap[dayName] || dayName;
   };
 
   const hasAvailability = (date: Date): boolean => {
