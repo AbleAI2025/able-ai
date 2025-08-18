@@ -5,8 +5,6 @@
   height: 100%;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  /* background-color removed to allow parent eventPropGetter to control colors */
-  color: #e0e0e0;
   font-size: 0.75rem;
   line-height: 1.2;
   overflow: hidden;
@@ -17,6 +15,7 @@
   gap: 0.125rem;
   min-height: 0;
   box-sizing: border-box;
+  color: #272100;
 }
 
 @keyframes eventSlideIn {
@@ -42,7 +41,6 @@
 
 .eventTitle {
   font-weight: 600;
-  color: #ffffff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -51,18 +49,6 @@
   font-size: 0.75rem;
   line-height: 1.1;
   margin: 0;
-}
-
-.checkIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--success-color);
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  animation: checkPulse 0.6s ease-out;
 }
 
 @keyframes checkPulse {
@@ -83,7 +69,6 @@
   gap: 0.125rem;
   width: 100%;
   min-height: 0;
-  flex: 1;
   overflow: hidden;
 }
 
@@ -91,7 +76,6 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: #b0b0b0;
   font-size: 0.65rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -113,7 +97,6 @@
 
 .timeIcon {
   flex-shrink: 0;
-  color: #a0a0a0;
 }
 
 .statusSection {
@@ -244,7 +227,6 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: #a0a0a0;
   font-size: 0.65rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -266,7 +248,6 @@
 
 .userIcon {
   flex-shrink: 0;
-  color: #808080;
 }
 
 .participantName {
@@ -279,10 +260,10 @@
 
 .actionButtons {
   display: flex;
-  gap: 0.25rem;
-  margin-top: 0.125rem;
+  margin-top: 0.5rem;
   animation: buttonSlideUp 0.6s ease-out;
   flex-shrink: 0;
+  justify-content: flex-end;
 }
 
 @keyframes buttonSlideUp {
@@ -297,23 +278,18 @@
 }
 
 .actionButton {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.6rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
+  width: 120px;
+  height: 36px;
+  padding: 0px 8px;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+  color: #000000;
+  font-size: 14px;
+  font-family: "Roboto";
+  font-weight: 600;
+  line-height: 24px;
+  outline: none;
 }
 
 .actionButton:hover {
@@ -322,25 +298,13 @@
   transform: translateY(-1px);
 }
 
-.viewGigBtn {
+.pendingBtn {
+  color: #ffffff;
+   background-color: #2b2b2b;
+}
+
+.acceptBtn {
   background-color: var(--primary-color);
-  color: #000000;
-  font-weight: 600;
-}
-
-.viewGigBtn:hover {
-  background-color: var(--primary-darker-color);
-  color: #ffffff;
-}
-
-.viewGigBtnSecondary {
-  background-color: var(--secondary-color);
-  color: #000000;
-}
-
-.viewGigBtnSecondary:hover {
-  background-color: var(--secondary-color);
-  color: #ffffff;
 }
 
 .participantSplit {
@@ -422,9 +386,24 @@
 
 /* Day view styles - full content */
 .eventContainer[data-view="day"] {
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem;
   min-height: 28px;
   overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid #2b2b2b;
+}
+
+.dayAcceptedBg {
+  background-color: var(--primary-color);
+}
+
+.dayAcceptedBgBuyer {
+  background-color: var(--secondary-color);
+}
+
+.dayOfferStyle {
+   background-color: #808080;
+   color: #ffffff;
 }
 
 .eventContainer[data-view="day"] .eventTitle {
@@ -454,10 +433,10 @@
   white-space: nowrap;
 }
 
-.eventContainer[data-view="day"] .actionButton {
+/* .eventContainer[data-view="day"] .actionButton {
   font-size: 0.6rem;
   padding: 0.2rem 0.4rem;
-}
+} */
 
 /* Responsive design for small screens */
 @media (max-width: 768px) {
@@ -482,10 +461,10 @@
     font-size: 0.6rem;
   }
 
-  .actionButton {
+  /* .actionButton {
     font-size: 0.55rem;
     padding: 0.2rem 0.35rem;
-  }
+  } */
 
   /* Month view on mobile */
   .eventContainer[data-view="month"] {
@@ -517,7 +496,6 @@
 
   /* Day view on mobile */
   .eventContainer[data-view="day"] {
-    padding: 0.2rem 0.4rem;
     min-height: 26px;
   }
 
@@ -537,10 +515,10 @@
     font-size: 0.6rem;
   }
 
-  .eventContainer[data-view="day"] .actionButton {
+  /* .eventContainer[data-view="day"] .actionButton {
     font-size: 0.55rem;
     padding: 0.15rem 0.3rem;
-  }
+  } */
 }
 
 /* Extra small screens */
@@ -566,10 +544,10 @@
     font-size: 0.55rem;
   }
 
-  .actionButton {
+  /* .actionButton {
     font-size: 0.5rem;
     padding: 0.15rem 0.25rem;
-  }
+  } */
 
   /* Month view on extra small screens */
   .eventContainer[data-view="month"] {
@@ -601,7 +579,6 @@
 
   /* Day view on extra small screens */
   .eventContainer[data-view="day"] {
-    padding: 0.15rem 0.3rem;
     min-height: 24px;
   }
 
@@ -621,9 +598,9 @@
     font-size: 0.55rem;
   }
 
-  .eventContainer[data-view="day"] .actionButton {
+  /* .eventContainer[data-view="day"] .actionButton {
     font-size: 0.5rem;
     padding: 0.125rem 0.2rem;
-  }
+  } */
 }
 

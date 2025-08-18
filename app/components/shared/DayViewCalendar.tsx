@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import React from 'react';
 import moment from 'moment';
 import { Eye } from 'lucide-react';
@@ -33,8 +34,6 @@ const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
   userRole = 'buyer',
   activeFilter
 }) => {
-  // Generate array of hours from 6 AM to 10 PM (18 hours total)
-  const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
 
   // Get events for the current day
   const dayEvents = events.filter(event => {
@@ -45,6 +44,12 @@ const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
     
     return eventStart.isBefore(dayEnd) && eventEnd.isAfter(dayStart);
   });
+const earliestEvent = dayEvents.length > 0
+  ? dayEvents.reduce((min, event) => event.start < min.start ? event : min, dayEvents[0])
+  : null;
+const earliestHour = earliestEvent ? earliestEvent.start.getHours() : 6;
+const startHour = Math.max(0, earliestHour - 1);
+const hours = Array.from({ length: 18 }, (_, i) => i + startHour);
 
   const handleEventClick = (event: Event) => {
     if (onEventClick) {
@@ -81,39 +86,26 @@ const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
   };
 
   // Calculate event positioning for the entire day
-  const getEventPosition = (event: Event) => {
-    const eventStart = moment(event.start);
-    const eventEnd = moment(event.end);
-    const dayStart = moment(currentDate).startOf('day');
-    const dayStart6AM = moment(currentDate).startOf('day').add(6, 'hours');
-    
-    // Calculate start position (minutes from 6 AM, not start of day)
-    const startMinutes = Math.max(0, eventStart.diff(dayStart6AM, 'minutes'));
-    const endMinutes = Math.min(18 * 60, eventEnd.diff(dayStart6AM, 'minutes')); // 18 hours max (6 AM to 12 AM)
-    
-    // Convert to pixels (assuming 60px per hour)
-    const startPixels = (startMinutes / 60) * 60;
-    const heightPixels = ((endMinutes - startMinutes) / 60) * 60;
-    
-    // If event starts after 12 PM, don't show it
-    if (startMinutes >= 18 * 60) {
-      return {
-        top: 0,
-        height: 0,
-        startHour: eventStart.hour(),
-        endHour: eventEnd.hour(),
-        visible: false
-      };
-    }
-    
-    return {
-      top: startPixels,
-      height: Math.max(heightPixels, 20), // Minimum height of 20px
-      startHour: eventStart.hour(),
-      endHour: eventEnd.hour(),
-      visible: true
-    };
+const dayStartCustom = moment(currentDate).startOf('day').add(startHour, 'hours');
+const getEventPosition = (event: Event) => {
+  const eventStart = moment(event.start);
+  const eventEnd = moment(event.end);
+
+  const startMinutes = Math.max(0, eventStart.diff(dayStartCustom, 'minutes'));
+  const endMinutes = Math.min(18 * 60, eventEnd.diff(dayStartCustom, 'minutes'));
+
+  const startPixels = (startMinutes / 60) * 60;
+  const heightPixels = ((endMinutes - startMinutes) / 60) * 60;
+
+  if (startMinutes >= 18 * 60) {
+    return { top: 0, height: 0, visible: false };
+  }
+  return {
+    top: startPixels,
+    height: Math.max(heightPixels, 20),
+    visible: true
   };
+};
 
   return (
     <div className={styles.dayViewContainer}>
