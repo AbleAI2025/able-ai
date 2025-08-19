@@ -14,6 +14,7 @@ import {
   SkillsTable,
   UserBadgesLinkTable,
   UsersTable,
+  WorkerAvailabilityTable,
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
@@ -95,7 +96,7 @@ export const getGigWorkerProfile = async (
       privateNotes: workerProfile?.privateNotes ?? undefined,
       responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
       videoUrl: workerProfile?.videoUrl ?? undefined,
-      availabilityJson: workerProfile?.availabilityJson as Availability,
+      availabilityJson: undefined, // Set to undefined since we now use worker_availability table
       semanticProfileJson:
         workerProfile?.semanticProfileJson as SemanticProfile,
       averageRating,
@@ -384,12 +385,12 @@ export const saveWorkerProfileFromOnboardingAction = async (
       endTime: string; 
       frequency?: string;
       ends?: string;
+      startDate?: string; // Add this field
       endDate?: string;
       occurrences?: number;
     } | string;
     videoIntro: File | string;
     references: string;
-    time: string;
   },
   token: string
 ) => {
@@ -418,19 +419,12 @@ export const saveWorkerProfileFromOnboardingAction = async (
       location: typeof profileData.location === 'string' ? profileData.location : profileData.location?.formatted_address || profileData.location?.name || '',
       latitude: typeof profileData.location === 'object' && profileData.location?.lat ? profileData.location.lat : null,
       longitude: typeof profileData.location === 'object' && profileData.location?.lng ? profileData.location.lng : null,
-      availabilityJson: typeof profileData.availability === 'string' ? profileData.availability : {
-        ...profileData.availability,
-        // Ensure all recurring fields are included
-        frequency: profileData.availability.frequency || 'never',
-        ends: profileData.availability.ends || 'never',
-        endDate: profileData.availability.endDate,
-        occurrences: profileData.availability.occurrences
-      },
+      // Remove availabilityJson - we'll save to worker_availability table instead
       videoUrl: typeof profileData.videoIntro === 'string' ? profileData.videoIntro : profileData.videoIntro?.name || '',
       semanticProfileJson: {
         tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
       },
-      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\nTime Preferences: ${profileData.time}\nReferences: ${profileData.references}`,
+      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\nReferences: ${profileData.references}`,
       updatedAt: new Date(),
     };
 
@@ -446,6 +440,35 @@ export const saveWorkerProfileFromOnboardingAction = async (
         userId: user.id,
         ...profileUpdateData,
         createdAt: new Date(),
+      });
+    }
+
+    // Save availability data to worker_availability table
+    if (profileData.availability && typeof profileData.availability === 'object') {
+      // Create proper timestamps for the required fields
+      const createTimestamp = (timeStr: string) => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+      };
+
+      await db.insert(WorkerAvailabilityTable).values({
+        userId: user.id,
+        days: profileData.availability.days || [],
+        frequency: (profileData.availability.frequency || 'never') as "never" | "weekly" | "biweekly" | "monthly",
+        startDate: profileData.availability.startDate,
+        startTimeStr: profileData.availability.startTime,
+        endTimeStr: profileData.availability.endTime,
+        // Convert time strings to timestamp for the required fields
+        startTime: createTimestamp(profileData.availability.startTime),
+        endTime: createTimestamp(profileData.availability.endTime),
+        ends: (profileData.availability.ends || 'never') as "never" | "on_date" | "after_occurrences",
+        occurrences: profileData.availability.occurrences,
+        endDate: profileData.availability.endDate || null,
+        notes: `Onboarding availability - Hourly Rate: ${profileData.hourlyRate}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
 

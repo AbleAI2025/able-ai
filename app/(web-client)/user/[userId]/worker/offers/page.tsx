@@ -20,7 +20,7 @@ import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
-import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
+import { declineGigOffer } from "@/actions/gigs/decline-gig-offer";
 
 type GigOffer = WorkerGigOffer;
 
@@ -209,8 +209,20 @@ export default function WorkerOffersPage() {
     console.log("Declining offer:", offerId);
     
     try {
-      // For declining, we can just remove it from the offers list
-      // since the worker is not assigned to the gig yet
+      // Call the declineGigOffer action to properly decline the offer
+      const result = await declineGigOffer({ 
+        gigId: offerId, 
+        userId: uid
+      });
+      
+      console.log("Debug - declineGigOffer result:", result);
+      
+      if (result.error) {
+        console.error("Debug - Server returned error:", result.error);
+        throw new Error(result.error);
+      }
+
+      // On success: remove from offers list
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
       
       // Show success message (you can add toast here)

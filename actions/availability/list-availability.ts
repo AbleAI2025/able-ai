@@ -37,8 +37,8 @@ export async function listWorkerAvailability(input: ListWorkerAvailabilityInput)
     const mappedAvailabilities = availabilities.map(availability => ({
       id: availability.id,
       userId: input.userId,
-      startTime: availability.startTime,
-      endTime: availability.endTime,
+      startTime: availability.startTime!,
+      endTime: availability.endTime!,
       notes: availability.notes || undefined,
       createdAt: availability.createdAt,
       updatedAt: availability.updatedAt,

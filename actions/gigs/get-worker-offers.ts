@@ -5,17 +5,17 @@ import { and, eq, desc, asc, inArray, ne } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
 
 // Gig statuses for offers (pending worker acceptance)
-const PENDING_WORKER_ACCEPTANCE = "PENDING_WORKER_ACCEPTANCE";
-const PAYMENT_HELD_PENDING_ACCEPTANCE = "PAYMENT_HELD_PENDING_ACCEPTANCE";
+const PENDING_WORKER_ACCEPTANCE = gigStatusEnum.enumValues[0];
+const PAYMENT_HELD_PENDING_ACCEPTANCE = gigStatusEnum.enumValues[1];
 
 // Gig statuses for accepted gigs
-const ACCEPTED = "ACCEPTED";
-const IN_PROGRESS = "IN_PROGRESS";
-const PENDING_COMPLETION_WORKER = "PENDING_COMPLETION_WORKER";
-const PENDING_COMPLETION_BUYER = "PENDING_COMPLETION_BUYER";
-const COMPLETED = "COMPLETED";
-const AWAITING_PAYMENT = "AWAITING_PAYMENT";
-const PAID = "PAID";
+const ACCEPTED = gigStatusEnum.enumValues[2];
+const IN_PROGRESS = gigStatusEnum.enumValues[4];
+const PENDING_COMPLETION_WORKER = gigStatusEnum.enumValues[5];
+const PENDING_COMPLETION_BUYER = gigStatusEnum.enumValues[6];
+const COMPLETED = gigStatusEnum.enumValues[7];
+const AWAITING_PAYMENT = gigStatusEnum.enumValues[8];
+const PAID = gigStatusEnum.enumValues[9];
 
 // Debug: Log the actual enum values
 console.log("Debug - Enum values:", gigStatusEnum.enumValues);
@@ -96,7 +96,7 @@ export async function getWorkerOffers(userId: string) {
     // Filter for accepted gigs (assigned to this worker)
     const acceptedGigs = allGigs.filter(gig => 
       gig.workerUserId === user.id &&
-      [ACCEPTED, IN_PROGRESS, PENDING_COMPLETION_WORKER, PENDING_COMPLETION_BUYER, COMPLETED, AWAITING_PAYMENT, PAID].includes(gig.statusInternal)
+      ([ACCEPTED, IN_PROGRESS, PENDING_COMPLETION_WORKER, PENDING_COMPLETION_BUYER, COMPLETED, AWAITING_PAYMENT, PAID] as string[]).includes(gig.statusInternal)
     );
     
     console.log("Debug - Accepted gigs after filtering:", acceptedGigs.length);

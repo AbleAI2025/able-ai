@@ -4,10 +4,10 @@ import { db } from "@/lib/drizzle/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
 
-// Use the exact string value instead of accessing by index
-const ACCEPTED = gigStatusEnum.enumValues[2];
+// Use the exact string value for declined status
+const DECLINED_BY_WORKER = "DECLINED_BY_WORKER";
 
-export async function acceptGigOffer({ gigId, userId }: { gigId: string; userId: string }) {
+export async function declineGigOffer({ gigId, userId }: { gigId: string; userId: string }) {
   try {
     // First, verify the user exists and get their ID
     const user = await db.query.UsersTable.findFirst({
@@ -21,7 +21,7 @@ export async function acceptGigOffer({ gigId, userId }: { gigId: string; userId:
       return { error: 'User not found', status: 404 };
     }
 
-    // Check if the gig exists and is available for acceptance
+    // Check if the gig exists and is available for declining
     const gig = await db.query.GigsTable.findFirst({
       where: and(
         eq(GigsTable.id, gigId),
@@ -31,14 +31,13 @@ export async function acceptGigOffer({ gigId, userId }: { gigId: string; userId:
     });
 
     if (!gig) {
-      return { error: 'Gig not found or not available for acceptance', status: 404 };
+      return { error: 'Gig not found or not available for declining', status: 404 };
     }
 
-    // Update the gig to assign the worker and change status
+    // Update the gig status to declined
     await db.update(GigsTable)
       .set({ 
-        workerUserId: user.id,
-        statusInternal: ACCEPTED,
+        statusInternal: DECLINED_BY_WORKER,
         updatedAt: new Date()
       })
       .where(eq(GigsTable.id, gigId));
@@ -46,13 +45,13 @@ export async function acceptGigOffer({ gigId, userId }: { gigId: string; userId:
     return { 
       success: true, 
       status: 200,
-      message: 'Gig offer accepted successfully'
+      message: 'Gig offer declined successfully'
     };
 
   } catch (error: any) {
-    console.error('Error accepting gig offer:', error);
+    console.error('Error declining gig offer:', error);
     return { 
-      error: error.message || 'Failed to accept gig offer', 
+      error: error.message || 'Failed to decline gig offer', 
       status: 500 
     };
   }

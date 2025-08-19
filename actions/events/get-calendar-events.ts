@@ -232,25 +232,27 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
       });
 
       // Map worker availability to calendar events
-      const availabilityEvents: CalendarEvent[] = workerAvailability.map((availability) => ({
-        id: availability.id,
-        title: availability.notes ? `Unavailable: ${availability.notes}` : 'Unavailable',
-        start: new Date(availability.startTime),
-        end: new Date(availability.endTime),
-        allDay: !(availability.startTime && availability.endTime),
-        status: EventStatusEnum.UNAVAILABLE,
-        eventType: 'unavailability',
-        buyerName: 'Unavailable',
-        workerName: 'You',
-        isMyGig: true,
-        isBuyerAccepted: false,
-        location: availability.notes || 'Unavailable period',
-        description: availability.notes || undefined,
-        resource: {
-          availabilityId: availability.id,
-          userId: user.id,
-        },
-      }));
+      const availabilityEvents: CalendarEvent[] = workerAvailability
+        .filter((availability) => availability.startTime && availability.endTime)
+        .map((availability) => ({
+          id: availability.id,
+          title: availability.notes ? `Unavailable: ${availability.notes}` : 'Unavailable',
+          start: new Date(availability.startTime!),
+          end: new Date(availability.endTime!),
+          allDay: false,
+          status: EventStatusEnum.UNAVAILABLE,
+          eventType: 'unavailability',
+          buyerName: 'Unavailable',
+          workerName: 'You',
+          isMyGig: true,
+          isBuyerAccepted: false,
+          location: availability.notes || 'Unavailable period',
+          description: availability.notes || undefined,
+          resource: {
+            availabilityId: availability.id,
+            userId: user.id,
+          },
+        }));
 
       calendarEvents = [...acceptedEvents, ...offerEvents, ...availabilityEvents];
     } else {

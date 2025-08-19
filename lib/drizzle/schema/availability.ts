@@ -6,6 +6,9 @@ import {
   text,
   timestamp,
   index,
+  jsonb,
+  varchar,
+  integer,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -23,11 +26,19 @@ export const WorkerAvailabilityTable = pgTable("worker_availability", {
     .notNull()
     .references(() => UsersTable.id, { onDelete: "cascade" }), // If user is deleted, their availability is too
   
-  startTime: timestamp("start_time", { withTimezone: true })
-    .notNull(),
+  // For recurring availability patterns (new fields)
+  days: jsonb("days"), // Array of days like ["Mon", "Wed", "Fri"]
+  frequency: varchar("frequency", { length: 50 }), // "daily", "weekly", "monthly", "yearly"
+  startDate: varchar("start_date", { length: 50 }), // Start date for recurring pattern
+  startTimeStr: varchar("start_time_str", { length: 10 }), // Time like "09:00" for recurring pattern
+  endTimeStr: varchar("end_time_str", { length: 10 }), // Time like "19:00" for recurring pattern
+  ends: varchar("ends", { length: 50 }), // "never", "after_occurrences", "on_date"
+  occurrences: integer("occurrences"), // Number of occurrences if ends = "after_occurrences"
+  endDate: varchar("end_date", { length: 50 }), // End date if ends = "on_date"
   
-  endTime: timestamp("end_time", { withTimezone: true })
-    .notNull(),
+  // For individual time slots (existing fields)
+  startTime: timestamp("start_time", { withTimezone: true }), // Individual slot start
+  endTime: timestamp("end_time", { withTimezone: true }), // Individual slot end
   
   notes: text("notes"), // Optional notes about the availability period
   
@@ -50,5 +61,12 @@ export const WorkerAvailabilityTable = pgTable("worker_availability", {
   timeRangeIndex: index("worker_availability_time_range_idx").on(
     table.startTime,
     table.endTime
+  ),
+  
+  // Index for recurring pattern queries
+  userPatternIndex: index("worker_availability_user_pattern_idx").on(
+    table.userId,
+    table.frequency,
+    table.startDate
   ),
 }));

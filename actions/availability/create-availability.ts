@@ -49,8 +49,8 @@ export async function createWorkerAvailability(input: CreateWorkerAvailabilityIn
       availability: {
         id: newAvailability.id,
         userId: input.userId,
-        startTime: newAvailability.startTime,
-        endTime: newAvailability.endTime,
+        startTime: newAvailability.startTime!,
+        endTime: newAvailability.endTime!,
         notes: newAvailability.notes || undefined,
         createdAt: newAvailability.createdAt,
         updatedAt: newAvailability.updatedAt,

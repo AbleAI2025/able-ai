@@ -3,6 +3,12 @@ import { AvailabilitySlot, AvailabilityEvent } from "@/app/types/AvailabilityTyp
 export function convertAvailabilitySlotsToEvents(slots: AvailabilitySlot[], startDate: Date, endDate: Date): AvailabilityEvent[] {
   const events: AvailabilityEvent[] = [];
   
+  // Safety check: ensure slots is an array
+  if (!Array.isArray(slots)) {
+    console.warn('convertAvailabilitySlotsToEvents: slots is not an array:', slots);
+    return events;
+  }
+  
   slots.forEach(slot => {
     const slotEvents = generateEventsFromSlot(slot, startDate, endDate);
     events.push(...slotEvents);
@@ -66,10 +72,17 @@ function generateEventsFromSlot(slot: AvailabilitySlot, startDate: Date, endDate
     endDate: endDate.toDateString()
   });
   
-  // Start from today if the provided start date is in the past
+  // Start from the slot's startDate if provided, otherwise use the provided startDate
+  const slotStartDate = slot.startDate ? new Date(slot.startDate) : startDate;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const effectiveStartDate = new Date(Math.max(startDate.getTime(), today.getTime()));
+  
+  // Use the later of: slot start date, provided start date, or today
+  const effectiveStartDate = new Date(Math.max(
+    slotStartDate.getTime(), 
+    startDate.getTime(), 
+    today.getTime()
+  ));
   
   // Handle single occurrence
   if (slot.frequency === 'never') {
@@ -213,6 +226,20 @@ function createEventFromSlot(slot: AvailabilitySlot, date: Date): AvailabilityEv
   // Set end time
   const [endHour, endMinute] = slot.endTime.split(':').map(Number);
   eventEnd.setHours(endHour, endMinute, 0, 0);
+  
+  // Debug logging
+  console.log('createEventFromSlot:', {
+    slotId: slot.id,
+    date: date.toDateString(),
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    eventStart: eventStart.toISOString(),
+    eventEnd: eventEnd.toISOString(),
+    startHour,
+    startMinute,
+    endHour,
+    endMinute
+  });
   
   return {
     id: `${slot.id}-${date.toISOString().split('T')[0]}`,
