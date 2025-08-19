@@ -16,10 +16,10 @@ interface EventDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   userRole: 'worker' | 'buyer';
-  onAccept: (offerId: string) => void;
-  onDecline: (offerId: string) => void;
-  isProcessingAccept: boolean;
-  isProcessingDecline: boolean;
+  onAccept?: (offerId: string) => void;
+  onDecline?: (offerId: string) => void;
+  isProcessingAccept?: boolean;
+  isProcessingDecline?: boolean;
 }
 
 const EventDetailModal: React.FC<EventDetailModalProps> = ({
@@ -202,8 +202,8 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
                       className={styles.actionButton}
                        onClick={(e) => {
                         e.stopPropagation();
-                        if (event.id) {
-                          onAccept(event.id);
+                        if (event?.id) {
+                          onAccept?.(event.id);
                         }
                         onClose();
                       }}
@@ -219,8 +219,8 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
                       className={styles.actionButton}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (event.id) {
-                          onDecline(event.id);
+                        if (event?.id) {
+                          onDecline?.(event.id);
                         }
                         onClose();
                       }}

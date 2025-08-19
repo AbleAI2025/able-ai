@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 /* eslint-disable max-lines-per-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 // Worker Calendar Page Component
