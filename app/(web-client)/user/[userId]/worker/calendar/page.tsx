@@ -27,6 +27,7 @@ import Image from "next/image";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
+import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
 
@@ -411,6 +412,7 @@ const WorkerCalendarPage = () => {
       
       // Use the Firebase UID directly, not the page user ID
       const result = await acceptGigOffer({ gigId: offerId, userId: authUserId });
+
       
       console.log("Debug - acceptGigOffer result:", result);
       
@@ -427,6 +429,7 @@ const WorkerCalendarPage = () => {
       if (acceptedOffer) {
         const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
+        updateGigOfferStatus({ gigId: offerId, userId: authUserId, role: 'worker', action: 'accept' });
       }
 
       // Show success message (you can add toast here)
@@ -458,7 +461,8 @@ const WorkerCalendarPage = () => {
       // For declining, we can just remove it from the offers list
       // since the worker is not assigned to the gig yet
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
+      updateGigOfferStatus({ gigId: offerId, userId: authUserId, role: 'worker', action: 'cancel' });
+
       // Show success message (you can add toast here)
       console.log("Offer declined successfully!");
       
