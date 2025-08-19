@@ -137,10 +137,11 @@ export async function runRtwCheckAndStore(params: {
     };
 
     // Persist with Drizzle
-    await db.update(UsersTable)
+    await db
+      .update(UsersTable)
       .set({
-      updatedAt: new Date(),
-      rtwStatus: payload.outcome,
+        updatedAt: new Date(),
+        rtwStatus: payload.outcome,
       })
       .where(eq(UsersTable.firebaseUid, userId));
 
@@ -151,6 +152,9 @@ export async function runRtwCheckAndStore(params: {
     };
   } catch (error) {
     console.error("Error in runRtwCheckAndStore:", error);
-    return { error: error instanceof Error ? error.message : "Unknown error", status: 500 };
+    return {
+      error: error instanceof Error ? error.message : "Unknown error",
+      status: 500,
+    };
   }
 }
