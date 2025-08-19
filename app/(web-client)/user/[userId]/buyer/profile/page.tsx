@@ -21,6 +21,7 @@ import PieChartComponent from "@/app/components/shared/PiChart";
 import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
 import { getGigWorkerProfile } from "@/actions/buyer/profile";
+import { getGigBuyerProfile } from "@/actions/user/gig-buyer-profile";
 
 // Types
 interface Badge {
@@ -142,9 +143,7 @@ export default function BuyerProfilePage() {
       setIsLoadingData(false);
     } else {
       // TODO: Replace with real data fetching logic for non-QA users
-      const { profile, success, error } = await getGigWorkerProfile({
-        userId: authUserId,
-      });
+      const {profile, success} = getGigBuyerProfile(user?.token)
       if (!success) {
         setError(error || "Failed to fetch profile data");
         setIsLoadingData(false);
