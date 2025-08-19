@@ -43,7 +43,7 @@ service firebase.storage {
     // --- Buyer Intro Videos ---
     // Path: buyer/{userId}/introVideo/{fileName}
     // - Anyone can read intro videos (if they are public).
-    // - Only the authenticated owner (who is a worker) can upload/update.
+    // - Only the authenticated owner (who is a buyer) can upload/update.
     // - Limit file size and type.
     match /buyer/{userId}/introVideo/{fileName} {
       allow read: if true; // Assuming intro videos are public for workers to see
