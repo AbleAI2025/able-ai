@@ -399,25 +399,15 @@ const WorkerCalendarPage = () => {
 
  const handleAcceptOffer = async (offerId: string) => {
     if (!authUserId) {
-      console.error("User not authenticated");
       return;
     }
     
     setProcessingOfferId(offerId);
-    setProcessingAction("accept");
-    console.log("Accepting offer:", offerId);
-    
-    try {
-      console.log("Debug - About to call acceptGigOffer with:", { gigId: offerId, userId: authUserId });
-      
+    setProcessingAction("accept");  
+    try {    
       // Use the Firebase UID directly, not the page user ID
-      const result = await acceptGigOffer({ gigId: offerId, userId: authUserId });
-
-      
-      console.log("Debug - acceptGigOffer result:", result);
-      
+      const result = await acceptGigOffer({ gigId: offerId, userId: authUserId });   
       if (result.error) {
-        console.error("Debug - Server returned error:", result.error);
         throw new Error(result.error);
       }
 
@@ -431,16 +421,8 @@ const WorkerCalendarPage = () => {
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
         updateGigOfferStatus({ gigId: offerId, userId: authUserId, role: 'worker', action: 'accept' });
       }
-
-      // Show success message (you can add toast here)
-      console.log("Offer accepted successfully!");
-      
-      // Optionally navigate to the accepted gig details
-      // router.push(`/user/${uid}/worker/gigs/${offerId}`);
-      
     } catch (err) {
       console.error("Error accepting offer:", err);
-      // Show error message (you can add toast here)
     } finally {
       setProcessingOfferId(null);
       setProcessingAction(null);
@@ -449,22 +431,16 @@ const WorkerCalendarPage = () => {
  
   const handleDeclineOffer = async (offerId: string) => {
     if (!authUserId) {
-      console.error("User not authenticated");
       return;
     }
 
     setProcessingOfferId(offerId);
-    setProcessingAction("decline");
-    console.log("Declining offer:", offerId);
-    
+    setProcessingAction("decline"); 
     try {
       // For declining, we can just remove it from the offers list
       // since the worker is not assigned to the gig yet
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
       updateGigOfferStatus({ gigId: offerId, userId: authUserId, role: 'worker', action: 'cancel' });
-
-      // Show success message (you can add toast here)
-      console.log("Offer declined successfully!");
       
     } catch (err) {
       console.error("Error declining offer:", err);
