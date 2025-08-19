@@ -420,7 +420,6 @@ const WorkerCalendarPage = () => {
       if (acceptedOffer) {
         const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
-        acceptGigOffer({gigId: offerId, userId: authUserId});
       }
     } catch (err) {
       console.error("Error accepting offer:", err);
