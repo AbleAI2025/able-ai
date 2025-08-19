@@ -372,11 +372,6 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({
             <div style={{ color: '#fff', fontSize: 15 }}>
               {formattedAddress}
             </div>
-            {marker && (
-              <div style={{ color: '#ccc', fontSize: 12, marginTop: 4 }}>
-                Coordinates: {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
-              </div>
-            )}
           </div>
         )}
         

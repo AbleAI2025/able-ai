@@ -1782,20 +1782,21 @@ Make the conversation feel natural and build on what they've already told you.`;
              step.content.includes("We might offer you gigs")
            )) {
              console.log('🎯 Reference/follow-up message detected in worker onboarding!');
-             return (
-               <div key={key} className="messageWrapper alignBot" data-role="GIG_WORKER" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '1rem' }}>
-                 {/* No avatar for reference and follow-up messages */}
-                 <div className="bubble bubbleBot" style={{ 
-                   maxWidth: '70%', 
-                   padding: '0.75rem 1rem', 
-                   borderRadius: '18px', 
-                   fontSize: '14px', 
-                   lineHeight: '1.4', 
-                   wordWrap: 'break-word',
-                   backgroundColor: '#333',
-                   color: '#fff',
-                   borderBottomLeftRadius: '4px'
-                 }}>
+                           return (
+                <div key={key} className="messageWrapper alignBot" data-role="GIG_WORKER" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {/* No avatar for reference and follow-up messages, but maintain alignment as if avatar was present */}
+                  <div style={{ flexShrink: 0, width: '32px' }}></div> {/* Spacer to align with avatar-containing messages */}
+                  <div className="bubble bubbleBot" style={{ 
+                    maxWidth: '70%', 
+                    padding: '0.75rem 1rem', 
+                    borderRadius: '18px', 
+                    fontSize: '14px', 
+                    lineHeight: '1.4', 
+                    wordWrap: 'break-word',
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    borderBottomLeftRadius: '4px'
+                  }}>
                                        {/* Make URLs clickable with copy/share functionality for reference messages */}
                     {step.content.includes("You need two references") ? (
                       (step.content as string).split(/(https?:\/\/[^\s\n]+)/g).map((part, index) => {
