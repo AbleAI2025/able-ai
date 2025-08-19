@@ -18,7 +18,7 @@ import {
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const getPublicWorkerProfileAction = async (workerId: string) => {
   if (!workerId) throw "Worker ID is required";
@@ -79,7 +79,17 @@ export const getGigWorkerProfile = async (
     });
 
     const reviews = await db.query.ReviewsTable.findMany({
-      where: eq(ReviewsTable.targetUserId, workerProfile.userId),
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile.userId),
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+      ),
+    });
+
+    const recommendations = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile.userId),
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+      ),
     });
 
     const totalReviews = reviews?.length;
@@ -104,6 +114,7 @@ export const getGigWorkerProfile = async (
       equipment,
       skills,
       reviews,
+      recommendations,
       qualifications,
     };
 
@@ -151,17 +162,40 @@ export const getSkillDetailsWorker = async (id: string) => {
       )
       .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
 
-
     const qualifications = await db.query.QualificationsTable.findMany({
       where: eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
     });
 
     const reviews = await db.query.ReviewsTable.findMany({
-      where: eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+      ),
+    });
+
+    const recommendations = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+      ),
     });
 
     const reviewsData = await Promise.all(
       reviews.map(async (review) => {
+        const author = await db.query.UsersTable.findFirst({
+          where: eq(UsersTable.id, review.authorUserId),
+        });
+
+        return {
+          name: author?.fullName || "Unknown",
+          date: review.createdAt,
+          text: review.comment,
+        };
+      })
+    );
+
+    const recommendationsData = await Promise.all(
+      recommendations.map(async (review) => {
         const author = await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
         });
@@ -199,6 +233,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       badges,
       qualifications,
       buyerReviews: reviewsData,
+      recommendations: recommendationsData,
     };
 
     return { success: true, data: skillProfile };
@@ -231,21 +266,21 @@ export const createSkillWorker = async (
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw new Error("Unauthorized");
 
-      const user = await db.query.UsersTable.findFirst({
-    where: eq(UsersTable.firebaseUid, uid),
-  });
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
 
-  if (!user) {
-    throw new Error("User not found");
-  }
+    if (!user) {
+      throw new Error("User not found");
+    }
 
-  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-    where: eq(GigWorkerProfilesTable.userId, user.id),
-  });
-  
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+
     if (!workerProfile) {
-    throw new Error("Worker profile not found");
-  }
+      throw new Error("Worker profile not found");
+    }
 
     const [newSkill] = await db
       .insert(SkillsTable)
@@ -409,7 +444,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
     if (!user) throw "User not found";
 
     // Check if worker profile already exists
-    let workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.userId, user.id),
     });
 

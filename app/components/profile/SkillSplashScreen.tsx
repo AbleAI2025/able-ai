@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { Star, Paperclip } from "lucide-react";
+import { Star, Paperclip, CheckCircle, Copy } from "lucide-react";
 import styles from "./SkillSplashScreen.module.css";
 import AwardDisplayBadge from "./AwardDisplayBadge";
 import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import RecommendationCardItem from "@/app/components/shared/RecommendationCardItem";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import {
@@ -17,10 +17,10 @@ import {
 } from "firebase/storage";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { updateProfileImageAction } from "@/actions/user/gig-worker-profile";
+import { getPrivateWorkerProfileAction, updateProfileImageAction, updateVideoUrlProfileAction } from "@/actions/user/gig-worker-profile";
 import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
-import ProfileMedia from "./ProfileMedia";
+import ProfileVideo from "./WorkerProfileVideo";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -79,8 +79,86 @@ const SkillSplashScreen = ({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadImage, setIsUploadImage] = useState(false);
-  const [workerLink, setWorkerLink] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [disabled, setDisabled] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [onCopy, setOnCopy] = useState<(copiedText: string) => void>(
+    () => () => {}
+  );
 
+    const handleVideoUpload = useCallback(
+      async (file: Blob) => {
+        if (!user) {
+          console.error("Missing required parameters for video upload");
+          setError("Failed to upload video. Please try again.");
+          return;
+        }
+  
+        if (!file || file.size === 0) {
+          console.error("Invalid file for video upload");
+          setError("Invalid video file. Please try again.");
+          return;
+        }
+  
+        // Check file size (limit to 50MB)
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (file.size > maxSize) {
+          setError("Video file too large. Please use a file smaller than 50MB.");
+          return;
+        }
+  
+        try {
+          const filePath = `workers/${
+            user.uid
+          }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+          const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+          const uploadTask = uploadBytesResumable(fileStorageRef, file);
+  
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              // Progress handling if needed
+            },
+            (error) => {
+              console.error("Upload failed:", error);
+              setError("Video upload failed. Please try again.");
+            },
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref)
+                .then((downloadURL) => {
+                  updateVideoUrlProfileAction(downloadURL, user.token);
+                  toast.success("Video upload successfully");
+                  getPrivateWorkerProfileAction(user.token);
+                })
+                .catch((error) => {
+                  console.error("Failed to get download URL:", error);
+                  setError("Failed to get video URL. Please try again.");
+                });
+            }
+          );
+        } catch (error) {
+          console.error("Video upload error:", error);
+          setError("Failed to upload video. Please try again.");
+        }
+      },
+      [user]
+    );
+
+  const handleCopy = async () => {
+    if (disabled || !linkUrl || !navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(linkUrl);
+      setCopied(true);
+      if (onCopy) onCopy(linkUrl);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied to clipboard!");
+    } catch (err) {
+      console.error("Failed to copy link: ", err);
+    }
+  };
   const handleAddImageClick = () => {
     fileInputRef.current?.click();
   };
@@ -119,8 +197,8 @@ const SkillSplashScreen = ({
 
   useEffect(() => {
     if (profile && profile.profileId) {
-      setWorkerLink(
-        `${window.location.origin}/worker/${profile.profileId}/profile`
+      setLinkUrl(
+        `${window.location.origin}/worker/${profile.profileId}/recommendation`
       );
     }
   }, [profile]);
@@ -131,11 +209,10 @@ const SkillSplashScreen = ({
     <div className={styles.skillSplashContainer}>
       {/* Header */}
       <div className={styles.header}>
-        <ProfileMedia
-          workerProfile={profile}
-          isSelfView={false}
-          workerLink={workerLink}
-          onVideoUpload={() => {}}
+        <ProfileVideo
+          videoUrl={profile?.videoUrl}
+          isSelfView={isSelfView}
+          onVideoUpload={handleVideoUpload}
         />
         <h2 className={styles.name}>
           {profile.name}: {profile.title}
@@ -161,7 +238,7 @@ const SkillSplashScreen = ({
         </thead>
         <tbody>
           <tr>
-            <td>{profile.ableGigs}</td>
+            <td>{profile.ableGigs ?? 0}</td>
             <td>{profile.experienceYears} years</td>
             <td>£{profile.Eph}</td>
           </tr>
@@ -311,15 +388,35 @@ const SkillSplashScreen = ({
       </div>
 
       {/* Recommendations */}
-      {profile.recommendation && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Recommendations</h3>
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Recommendations</h3>
+        {profile?.recommendations?.map((recommendation, index) => (
           <RecommendationCardItem
-            recommenderName={profile.recommendation.name}
-            date={profile.recommendation.date}
-            comment={profile.recommendation.text}
+            key={index}
+            recommenderName={recommendation.name}
+            date={recommendation?.date?.toString()}
+            comment={recommendation?.text}
           />
-        </div>
+        ))}
+      </div>
+
+      {linkUrl && navigator.clipboard && (
+        <button
+          type="button"
+          onClick={handleCopy}
+          disabled={disabled}
+          className={styles.share_button}
+          title="Generate link to ask for a recommendation"
+        >
+          {copied ? (
+            <CheckCircle size={16} className={styles.copiedIcon} />
+          ) : (
+            <Copy size={16} />
+          )}
+          <span style={{ marginLeft: "8px" }}>
+            Generate link to ask for a recommendation
+          </span>
+        </button>
       )}
     </div>
   );
