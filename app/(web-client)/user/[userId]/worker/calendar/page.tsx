@@ -1,3 +1,6 @@
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 // Worker Calendar Page Component
@@ -23,6 +26,8 @@ import MonthlyAvailabilityView from "@/app/components/availability/MonthlyAvaila
 import styles from "./WorkerCalendarPage.module.css";
 import Image from "next/image";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
+import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
 
@@ -38,6 +43,32 @@ function filterEvents(events: CalendarEvent[], filter: string): CalendarEvent[] 
     default:
       return events;
   }
+}
+
+type GigOffer = WorkerGigOffer;
+
+async function fetchWorkerData(
+  userId: string,
+  filters?: string[],
+): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
+  console.log(
+    "Fetching worker data for workerId:",
+    userId,
+    "with filters:",
+    filters
+  );
+
+  const result = await getWorkerOffers(userId);
+  
+  if (result.error) {
+    throw new Error(result.error);
+  }
+
+  if (!result.data) {
+    throw new Error('No data received from server');
+  }
+
+  return result.data;
 }
 
 const WorkerCalendarPage = () => {
@@ -68,6 +99,10 @@ const WorkerCalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [processingOfferId, setProcessingOfferId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<"accept" | "decline" | null>(null);
+  const [offers, setOffers] = useState<GigOffer[]>([]);
+    const [acceptedGigs, setAcceptedGigs] = useState<GigOffer[]>([]);
 
   useEffect(() => {
     if (loadingAuth) {
@@ -133,7 +168,23 @@ const WorkerCalendarPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeFilter, date]);
 
-
+  useEffect(() => {
+    // Check if user is authorized to view this page
+    if (!loadingAuth && user && authUserId === pageUserId) {
+      console.log("Debug - User authorized, fetching worker data...");
+      fetchWorkerData(pageUserId)
+        .then((data) => {
+          console.log("Debug - offer received:", data);
+          setOffers(data.offers);
+          setAcceptedGigs(data.acceptedGigs);
+        })
+        .catch((err) => {
+          console.error("Error fetching worker data:", err);
+          setOffers([]);
+          setAcceptedGigs([]);
+        })
+      }
+  }, [user, loadingAuth, authUserId, pageUserId]);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -346,6 +397,81 @@ const WorkerCalendarPage = () => {
     setIsAvailabilityModalOpen(true);
   };
 
+ const handleAcceptOffer = async (offerId: string) => {
+    if (!authUserId) {
+      console.error("User not authenticated");
+      return;
+    }
+    
+    setProcessingOfferId(offerId);
+    setProcessingAction("accept");
+    console.log("Accepting offer:", offerId);
+    
+    try {
+      console.log("Debug - About to call acceptGigOffer with:", { gigId: offerId, userId: authUserId });
+      
+      // Use the Firebase UID directly, not the page user ID
+      const result = await acceptGigOffer({ gigId: offerId, userId: authUserId });
+      
+      console.log("Debug - acceptGigOffer result:", result);
+      
+      if (result.error) {
+        console.error("Debug - Server returned error:", result.error);
+        throw new Error(result.error);
+      }
+
+      // On success: remove from offers list and add to accepted gigs
+      setOffers((prev) => prev.filter((o) => o.id !== offerId));
+      
+      // Find the accepted offer to add to accepted gigs
+      const acceptedOffer = offers.find(o => o.id === offerId);
+      if (acceptedOffer) {
+        const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
+        setAcceptedGigs((prev) => [...prev, acceptedGig]);
+      }
+
+      // Show success message (you can add toast here)
+      console.log("Offer accepted successfully!");
+      
+      // Optionally navigate to the accepted gig details
+      // router.push(`/user/${uid}/worker/gigs/${offerId}`);
+      
+    } catch (err) {
+      console.error("Error accepting offer:", err);
+      // Show error message (you can add toast here)
+    } finally {
+      setProcessingOfferId(null);
+      setProcessingAction(null);
+    }
+ };
+ 
+  const handleDeclineOffer = async (offerId: string) => {
+    if (!authUserId) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    setProcessingOfferId(offerId);
+    setProcessingAction("decline");
+    console.log("Declining offer:", offerId);
+    
+    try {
+      // For declining, we can just remove it from the offers list
+      // since the worker is not assigned to the gig yet
+      setOffers((prev) => prev.filter((o) => o.id !== offerId));
+      
+      // Show success message (you can add toast here)
+      console.log("Offer declined successfully!");
+      
+    } catch (err) {
+      console.error("Error declining offer:", err);
+      // Show error message (you can add toast here)
+    } finally {
+      setProcessingOfferId(null);
+      setProcessingAction(null);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <ScreenHeaderWithBack onBackClick={() => router.back()} />
@@ -431,6 +557,18 @@ const WorkerCalendarPage = () => {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         userRole="worker"
+        onAccept={() => selectedEvent && selectedEvent.id && handleAcceptOffer(selectedEvent.id)}
+        onDecline={() => selectedEvent && selectedEvent.id && handleDeclineOffer(selectedEvent.id)}
+        isProcessingAccept={
+          selectedEvent != null &&
+          processingOfferId === selectedEvent.id &&
+          processingAction === "accept"
+        }
+        isProcessingDecline={
+          selectedEvent != null &&
+          processingOfferId === selectedEvent.id &&
+          processingAction === "decline"
+        }
       />
 
       <NewAvailabilityModal
