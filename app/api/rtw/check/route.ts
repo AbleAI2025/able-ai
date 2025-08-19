@@ -1,4 +1,4 @@
-import { runRtwCheckAndStore } from "@/app/rtw/rtwActions";
+import { runRtwCheckAndStore } from "@/app/(web-client)/user/[userId]/worker/rtw/rtwActions";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {

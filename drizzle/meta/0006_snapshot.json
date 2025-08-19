@@ -1,5 +1,5 @@
 {
-  "id": "b0daf36a-22af-4c4d-804b-e33c7ecf9258",
+  "id": "b717bc9a-f8bf-47a5-a3d8-ef54a1068279",
   "prevId": "b1aa2e2e-aafc-48b4-b8da-7d940f06f42d",
   "version": "7",
   "dialect": "postgresql",
@@ -997,12 +997,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "video_url": {
-          "name": "video_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1122,12 +1116,6 @@
         "semantic_profile_json": {
           "name": "semantic_profile_json",
           "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "video_url": {
-          "name": "video_url",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -2584,6 +2572,10 @@
         "NOT_SUBMITTED",
         "PENDING",
         "VERIFIED",
+        "ACCEPTED",
+        "EXPIRED",
+        "NOT_FOUND",
+        "LOCKED",
         "REJECTED"
       ]
     },

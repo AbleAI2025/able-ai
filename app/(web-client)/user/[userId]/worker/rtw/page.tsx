@@ -29,29 +29,29 @@ type Result = {
 type FormState = { share_code: string; dob: string; forename: string; surname: string };
 
 /* ---------- DOB helpers ---------- */
-function parseDob(dobStr: string): Date | null {
+function parseDob(dobStr: string): string | null {
   if (!dobStr) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(dobStr)) {
     const [y, m, d] = dobStr.split("-").map(Number);
     const dt = new Date(y, m - 1, d);
-    return isNaN(dt.getTime()) ? null : dt;
+    return isNaN(dt.getTime()) ? null : dobStr;
   }
   if (/^\d{2}-\d{2}-\d{4}$/.test(dobStr)) {
     const [d, m, y] = dobStr.split("-").map(Number);
     const dt = new Date(y, m - 1, d);
-    return isNaN(dt.getTime()) ? null : dt;
+    return isNaN(dt.getTime()) ? null : dobStr;
   }
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dobStr)) {
     const [d, m, y] = dobStr.split("/").map(Number);
     const dt = new Date(y, m - 1, d);
-    return isNaN(dt.getTime()) ? null : dt;
+    return isNaN(dt.getTime()) ? null : dobStr;
   }
   return null;
 }
-function isUnder18(dob: Date): boolean {
+function isUnder18(dob: string): boolean {
   const today = new Date();
   const cutOff = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-  return dob > cutOff;
+  return new Date(dob) > cutOff;
 }
 
 /* ---------- Small UI helpers ---------- */
@@ -132,6 +132,7 @@ export default function RTWPage() {
       setError("Applicants must be at least 18 years old.");
       return;
     }
+
     if (!user?.uid) return;
 
     setLoading(true);
@@ -140,11 +141,12 @@ export default function RTWPage() {
         userId: user?.uid,
         forename: form.forename,
         surname: form.surname,
-        dob: new Date(dobDate).toDateString(),
+        dob: dobDate,
         shareCode: form.share_code,
       });
 
       if (error) throw new Error();
+      console.warn(payload);
       setResult(payload as Result);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -266,14 +268,6 @@ export default function RTWPage() {
                 <p style={s.resultDetail}>
                   <strong>Status:</strong> {result.details}
                 </p>
-              )}
-
-              {/* Optional: show name mismatch warning if you added name matching */}
-              {!result.name_match && result.provider_name && (
-                <div style={s.nameMismatch}>
-                  Name mismatch: provider returned "<strong>{result.provider_name}</strong>" but you
-                  entered "<strong>{result.name.forename} {result.name.surname}</strong>".
-                </div>
               )}
             </div>
           </section>
