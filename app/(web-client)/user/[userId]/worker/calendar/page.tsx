@@ -50,7 +50,8 @@ type GigOffer = WorkerGigOffer;
 async function fetchWorkerData(
   userId: string,
   filters?: string[],
-): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
+): Promise<{ offers: GigOffer[]; 
+  acceptedGigs: GigOffer[] }> {
   console.log(
     "Fetching worker data for workerId:",
     userId,
@@ -401,7 +402,7 @@ const WorkerCalendarPage = () => {
     if (!authUserId) {
       return;
     }
-    
+
     setProcessingOfferId(offerId);
     setProcessingAction("accept");  
     try {    
@@ -419,7 +420,7 @@ const WorkerCalendarPage = () => {
       if (acceptedOffer) {
         const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
-        updateGigOfferStatus({ gigId: offerId, userId: authUserId, role: 'worker', action: 'accept' });
+        acceptGigOffer({gigId: offerId, userId: authUserId});
       }
     } catch (err) {
       console.error("Error accepting offer:", err);
