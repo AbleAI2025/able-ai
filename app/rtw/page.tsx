@@ -1,8 +1,12 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/rtw/page.tsx
 "use client";
 
 import { useState } from "react";
 import { styles as s } from "./pageStyles";
+import { runRtwCheckAndStore } from "./rtwActions";
+import { useAuth } from "@/context/AuthContext";
 
 /* ---------- Types ---------- */
 type Result = {
@@ -20,6 +24,7 @@ type Result = {
   // Optional extras if you added name matching earlier
   provider_name?: string;
   name_match?: boolean;
+  raw?: any; // Raw response from the RTW API
 };
 type FormState = { share_code: string; dob: string; forename: string; surname: string };
 
@@ -108,6 +113,7 @@ export default function RTWPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -126,17 +132,20 @@ export default function RTWPage() {
       setError("Applicants must be at least 18 years old.");
       return;
     }
+    if (!user?.uid) return;
 
     setLoading(true);
     try {
-      const res = await fetch("/api/rtw/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      const { error, payload } = await runRtwCheckAndStore({
+        userId: user?.uid,
+        forename: form.forename,
+        surname: form.surname,
+        dob: new Date(dobDate).toDateString(),
+        shareCode: form.share_code,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Request failed");
-      setResult(data);
+
+      if (error) throw new Error();
+      setResult(payload as Result);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {

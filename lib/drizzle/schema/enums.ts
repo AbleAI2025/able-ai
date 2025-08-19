@@ -19,6 +19,10 @@ export const rtwKycStatusEnum = pgEnum("rtw_kyc_status_enum", [
   "NOT_SUBMITTED",
   "PENDING",
   "VERIFIED",
+  "ACCEPTED",
+  "EXPIRED",
+  "NOT_FOUND",
+  "LOCKED",
   "REJECTED",
 ]);
 
