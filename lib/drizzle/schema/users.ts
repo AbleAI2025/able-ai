@@ -19,6 +19,7 @@ import {
   rtwKycStatusEnum,
   stripeAccountStatusEnum,
 } from "./enums"; // Assuming enums.ts is in the same directory
+import { date } from "drizzle-orm/mysql-core";
 
 // --- USERS TABLE ---
 export const UsersTable = pgTable("users", {

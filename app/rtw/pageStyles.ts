@@ -2,7 +2,7 @@
 export const styles = {
   // page structure
   page: { minHeight: "100vh", background: "#000", color: "white" },
-  header: { padding: "32px 24px", textAlign: "center" },
+  header: { padding: "32px 24px" },
   title: { fontSize: 28, fontWeight: 800, marginBottom: 6 },
   subtitle: { opacity: 0.85, marginTop: 6, maxWidth: 960, marginInline: "auto" },
 
@@ -43,7 +43,7 @@ export const styles = {
   },
   inputFocus: { boxShadow: "0 0 0 2px rgba(96,165,250,0.45)" },
 
-  banner: { color: "#e5e7eb", textAlign: "center", lineHeight: 1.5, fontSize: 16 },
+  banner: { color: "#e5e7eb", lineHeight: 1.5, fontSize: 16 },
 
   error: { color: "#fca5a5", fontSize: 13 },
 
