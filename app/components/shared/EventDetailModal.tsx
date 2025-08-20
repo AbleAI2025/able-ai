@@ -1,8 +1,9 @@
+/* eslint-disable max-lines-per-function */
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { X, Calendar, Clock, MapPin, User } from "lucide-react";
+import { X, Calendar, Clock, MapPin, User, Loader2 } from "lucide-react";
 import { CalendarEvent } from "@/app/types/CalendarEventTypes";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
@@ -15,13 +16,21 @@ interface EventDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   userRole: 'worker' | 'buyer';
+  onAccept?: (offerId: string) => void;
+  onDecline?: (offerId: string) => void;
+  isProcessingAccept?: boolean;
+  isProcessingDecline?: boolean;
 }
 
 const EventDetailModal: React.FC<EventDetailModalProps> = ({
   event,
   isOpen,
   onClose,
-  userRole
+  userRole,
+  onAccept,
+  onDecline,
+  isProcessingAccept,
+  isProcessingDecline
 }) => {
   const router = useRouter();
   const params = useParams();
@@ -172,25 +181,61 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
             <div className={styles.actions}>
               {event.status === 'OFFER' && userRole === 'worker' ? (
                 // For offers, redirect to gig offers page
-                                                   <button 
-                    className={styles.actionButton}
-                    onClick={() => {
-                      if (resolvedUserId) {
-                        router.push(`/user/${resolvedUserId}/worker/offers`);
-                      }
-                      onClose();
-                    }}
-                    style={{
-                      backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                      borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
-                      color: userRole === 'worker' ? '#ffffff' : '#000000'
-                    }}
-                  >
-                    View All Offers
+                <>
+                  <button 
+                      className={styles.actionButton}
+                      onClick={() => {
+                        if (resolvedUserId) {
+                          router.push(`/user/${resolvedUserId}/worker/offers`);
+                        }
+                        onClose();
+                      }}
+                      style={{
+                        backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                        borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                        color: userRole === 'worker' ? '#ffffff' : '#000000'
+                      }}
+                    >
+                      View All Offers
                   </button>
+                   <button 
+                      className={styles.actionButton}
+                       onClick={(e) => {
+                        e.stopPropagation();
+                        if (event?.id) {
+                          onAccept?.(event.id);
+                        }
+                        onClose();
+                      }}
+                      style={{
+                        backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                        borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                        color: userRole === 'worker' ? '#ffffff' : '#000000'
+                      }}
+                    >
+                      {isProcessingAccept ? <Loader2 size={16} className="animate-spin"/> : 'Accept'}
+                  </button>
+                  <button 
+                      className={styles.actionButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (event?.id) {
+                          onDecline?.(event.id);
+                        }
+                        onClose();
+                      }}
+                      style={{
+                        backgroundColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                        borderColor: userRole === 'worker' ? 'var(--primary-color)' : 'var(--secondary-color)',
+                        color: userRole === 'worker' ? '#ffffff' : '#000000'
+                      }}
+                    >
+                     {isProcessingDecline ? <Loader2 size={16} className="animate-spin"/> : 'Decline'}
+                  </button>
+                </>
               ) : (
                 // For accepted gigs, show the original button
-                                                   <button 
+                  <button 
                     className={styles.actionButton}
                     onClick={handleGoToOffer}
                     style={{

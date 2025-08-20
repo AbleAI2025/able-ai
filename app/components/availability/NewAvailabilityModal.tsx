@@ -267,24 +267,38 @@ const RepeatAvailabilitySheet: React.FC<RepeatAvailabilitySheetProps> = ({
               </div>
             </div>
           ) : (
-            <div className={styles.daysSection}>
-              <label className={styles.sectionLabel}>Days</label>
-              <div className={styles.daysGrid}>
-                {dayNames.map((day, index) => {
-                  const fullDayName = fullDayNames[index];
-                  const isSelected = localData.days.includes(fullDayName);
-                  return (
-                    <button
-                      key={day}
-                      className={`${styles.dayButton} ${isSelected ? styles.dayButtonSelected : ''}`}
-                      onClick={() => handleDayToggle(day)}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
+            <>
+              <div className={styles.startDateSection}>
+                <label className={styles.sectionLabel}>Date</label>
+                <div className={styles.dateInput}>
+                  <input
+                    type="date"
+                    value={localData.startDate || new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setLocalData(prev => ({ ...prev, startDate: e.target.value }))}
+                    className={styles.datePicker}
+                  />
+                </div>
               </div>
-            </div>
+              
+              <div className={styles.daysSection}>
+                <label className={styles.sectionLabel}>Days</label>
+                <div className={styles.daysGrid}>
+                  {dayNames.map((day, index) => {
+                    const fullDayName = fullDayNames[index];
+                    const isSelected = localData.days.includes(fullDayName);
+                    return (
+                      <button
+                        key={day}
+                        className={`${styles.dayButton} ${isSelected ? styles.dayButtonSelected : ''}`}
+                        onClick={() => handleDayToggle(day)}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
 
           <div className={styles.frequencySection}>
@@ -324,32 +338,42 @@ const RepeatAvailabilitySheet: React.FC<RepeatAvailabilitySheetProps> = ({
              { label: 'Every Month', value: 'monthly' },
            ]}
            selectedValue={localData.frequency}
-           onSelect={(value) => {
-             const newFrequency = value as any;
-             setLocalData(prev => {
-               // If changing to single occurrence, clear days and set endDate to today
-               if (newFrequency === 'never') {
-                 return {
-                   ...prev,
-                   frequency: newFrequency,
-                   days: [],
-                   endDate: new Date().toISOString().split('T')[0], // Today's date
-                   ends: 'on_date'
-                 };
-               }
-               // If changing from single occurrence to recurring, clear endDate
-               if (prev.frequency === 'never' && newFrequency !== 'never') {
-                 return {
-                   ...prev,
-                   frequency: newFrequency,
-                   endDate: undefined,
-                   ends: 'never'
-                 };
-               }
-               return { ...prev, frequency: newFrequency };
-             });
-             setShowFrequencyModal(false);
-           }}
+                       onSelect={(value) => {
+              const newFrequency = value as any;
+              setLocalData(prev => {
+                // If changing to single occurrence, clear days and set endDate to today
+                if (newFrequency === 'never') {
+                  return {
+                    ...prev,
+                    frequency: newFrequency,
+                    days: [],
+                    endDate: new Date().toISOString().split('T')[0], // Today's date
+                    startDate: undefined, // Clear startDate for single occurrences
+                    ends: 'on_date'
+                  };
+                }
+                // If changing from single occurrence to recurring, preserve the existing startDate or use today
+                if (prev.frequency === 'never' && newFrequency !== 'never') {
+                  return {
+                    ...prev,
+                    frequency: newFrequency,
+                    startDate: prev.startDate || new Date().toISOString().split('T')[0], // Keep existing startDate or use today
+                    endDate: undefined,
+                    ends: 'never'
+                  };
+                }
+                // If already recurring, preserve the existing startDate or use today
+                if (newFrequency !== 'never' && !prev.startDate) {
+                  return {
+                    ...prev,
+                    frequency: newFrequency,
+                    startDate: prev.startDate || new Date().toISOString().split('T')[0] // Keep existing startDate or use today
+                  };
+                }
+                return { ...prev, frequency: newFrequency };
+              });
+              setShowFrequencyModal(false);
+            }}
          />
        )}
 

@@ -1,61 +1,13 @@
 import React from 'react';
 import MessageBubble from './MessageBubble';
+import ReferenceMessageBubble from './ReferenceMessageBubble';
 import InputBubble from './InputBubble';
 import LocationPickerBubble from './LocationPickerBubble';
 import CalendarPickerBubble from './CalendarPickerBubble';
 import { ChatStep } from '@/app/hooks';
 import { StepInputConfig } from '@/app/types';
 
-// Utility function to format time for display
-function formatTimeForDisplay(timeValue: any): string {
-  if (!timeValue) return '';
-  try {
-    // Handle time ranges like "12:00 to 16:00"
-    if (typeof timeValue === 'string' && timeValue.includes(' to ')) {
-      const [startTime, endTime] = timeValue.split(' to ');
-      const formattedStart = formatSingleTime(startTime);
-      const formattedEnd = formatSingleTime(endTime);
-      return `${formattedStart} to ${formattedEnd}`;
-    }
-    
-    // Handle single times
-    return formatSingleTime(timeValue);
-  } catch {
-    return String(timeValue);
-  }
-}
 
-function formatSingleTime(timeValue: any): string {
-  if (!timeValue) return '';
-  try {
-    // Handle time strings like "14:30" or "2:30 PM"
-    if (typeof timeValue === 'string') {
-      const time = timeValue.trim();
-      
-      // Check if it's already in a readable format
-      if (time.match(/^\d{1,2}:\d{2}\s*[AaPp][Mm]$/)) {
-        return time; // Already formatted like "2:30 PM"
-      }
-      
-      // Handle 24-hour format like "14:30"
-      if (time.match(/^\d{1,2}:\d{2}$/)) {
-        const [hours, minutes] = time.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-        return date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
-      }
-    }
-    
-    // Handle Date objects
-    if (timeValue instanceof Date) {
-      return timeValue.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
-    }
-    
-    return String(timeValue);
-  } catch {
-    return String(timeValue);
-  }
-}
 
 interface ChatStepRendererProps {
   step: ChatStep;
@@ -104,6 +56,11 @@ export default function ChatStepRenderer({
   isSubmitting = false,
   role = 'GIG_WORKER',
 }: ChatStepRendererProps) {
+  // TEST: Check if components are imported correctly
+  console.log('🔍 ChatStepRenderer loaded');
+  console.log('🔍 ReferenceMessageBubble imported:', typeof ReferenceMessageBubble);
+  console.log('🔍 MessageBubble imported:', typeof MessageBubble);
+  
   const key = `step-${step.id}-${step.type}-${step.inputConfig?.name || Math.random()}`;
 
   // Handle summary rendering
@@ -168,13 +125,11 @@ export default function ChatStepRenderer({
                   <span>
                     {field === 'hourlyRate' && typeof value === 'number'
                       ? `£${value.toFixed(2)}`
-                      : field === 'gigTime' && typeof value === 'string'
-                        ? formatTimeForDisplay(value)
-                        : value && typeof value === 'object' && 'lat' in value && 'lng' in value
-                          ? (value as any).formatted_address || `Coordinates: ${(value as any).lat.toFixed(6)}, ${(value as any).lng.toFixed(6)}`
-                          : typeof value === 'object'
-                            ? JSON.stringify(value)
-                            : String(value)}
+                      : value && typeof value === 'object' && 'lat' in value && 'lng' in value
+                        ? (value as any).formatted_address || `Coordinates: ${(value as any).lat.toFixed(6)}, ${(value as any).lng.toFixed(6)}`
+                        : typeof value === 'object'
+                          ? JSON.stringify(value)
+                          : String(value)}
                   </span>
                 </li>
               );
@@ -187,15 +142,66 @@ export default function ChatStepRenderer({
 
   // Bot message
   if (step.type === "bot") {
+    const content = step.content as string;
+    console.log('=== BOT MESSAGE DEBUG ===');
+    console.log('Bot message content:', content);
+    console.log('Content type:', typeof content);
+    console.log('Content length:', content?.length);
+    console.log('Contains "You need two references":', content && content.includes("You need two references"));
+    console.log('ReferenceMessageBubble component:', ReferenceMessageBubble);
+    console.log('MessageBubble component:', MessageBubble);
+    
+    // TEST: Log the exact string we're checking
+    if (content && content.includes("You need two references")) {
+      console.log('✅ STRING MATCH FOUND!');
+      console.log('✅ Content contains the target string');
+    } else {
+      console.log('❌ NO STRING MATCH');
+      console.log('❌ Content does NOT contain the target string');
+    }
+    
+    // Check if this is a reference message - FORCE TEST
+    if (content && content.includes("You need two references")) {
+      console.log('🎯 MATCH FOUND! Using ReferenceMessageBubble for reference message');
+      console.log('ReferenceMessageBubble component exists:', typeof ReferenceMessageBubble);
+      console.log('ReferenceMessageBubble component:', ReferenceMessageBubble);
+      
+      // Force use ReferenceMessageBubble for testing
+      try {
+        console.log('Attempting to render ReferenceMessageBubble...');
+        const result = <ReferenceMessageBubble key={key} content={content} />;
+        console.log('ReferenceMessageBubble rendered successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Error rendering ReferenceMessageBubble:', error);
+        // Fallback to regular message bubble
+        console.log('Falling back to regular MessageBubble due to error');
+        return (
+          <MessageBubble
+            key={key}
+            text={content}
+            senderType="bot"
+            showAvatar={false}
+            role="GIG_WORKER"
+          />
+        );
+      }
+    }
+    
+    // Regular bot message with avatar
+    console.log('Using regular MessageBubble for bot message');
     return (
       <MessageBubble
         key={key}
-        text={step.content as string}
+        text={content}
         senderType="bot"
+        showAvatar={true}
         role="GIG_WORKER"
       />
     );
   }
+
+
 
   // User message
   if (step.type === "user") {

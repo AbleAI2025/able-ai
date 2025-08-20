@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 "use client";
 
 // Worker Calendar Page Component
@@ -23,6 +25,9 @@ import MonthlyAvailabilityView from "@/app/components/availability/MonthlyAvaila
 import styles from "./WorkerCalendarPage.module.css";
 import Image from "next/image";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
+import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
+import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
 
@@ -38,6 +43,33 @@ function filterEvents(events: CalendarEvent[], filter: string): CalendarEvent[] 
     default:
       return events;
   }
+}
+
+type GigOffer = WorkerGigOffer;
+
+async function fetchWorkerData(
+  userId: string,
+  filters?: string[],
+): Promise<{ offers: GigOffer[]; 
+  acceptedGigs: GigOffer[] }> {
+  console.log(
+    "Fetching worker data for workerId:",
+    userId,
+    "with filters:",
+    filters
+  );
+
+  const result = await getWorkerOffers(userId);
+  
+  if (result.error) {
+    throw new Error(result.error);
+  }
+
+  if (!result.data) {
+    throw new Error('No data received from server');
+  }
+
+  return result.data;
 }
 
 const WorkerCalendarPage = () => {
@@ -68,6 +100,10 @@ const WorkerCalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [processingOfferId, setProcessingOfferId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<"accept" | "decline" | null>(null);
+  const [offers, setOffers] = useState<GigOffer[]>([]);
+    const [acceptedGigs, setAcceptedGigs] = useState<GigOffer[]>([]);
 
   useEffect(() => {
     if (loadingAuth) {
@@ -106,6 +142,12 @@ const WorkerCalendarPage = () => {
           console.error('Error fetching availability:', availabilityRes.error);
         }
 
+        // Debug: Log what we're getting
+        console.log('availabilityRes:', availabilityRes);
+        console.log('availabilityRes.availability:', availabilityRes.availability);
+        console.log('typeof availabilityRes.availability:', typeof availabilityRes.availability);
+        console.log('Array.isArray(availabilityRes.availability):', Array.isArray(availabilityRes.availability));
+
         const calendarData: CalendarEvent[] = calendarRes.events;
         const parsed = calendarData.map((event: CalendarEvent) => ({ ...event, start: new Date(event.start), end: new Date(event.end) }));
         
@@ -120,7 +162,14 @@ const WorkerCalendarPage = () => {
         const allEventsCombined = [...parsed, ...availabilityEvents];
         
         setAllEvents(allEventsCombined);
-        setAvailabilitySlots(availabilityRes.availability || []);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
         
         const filteredEvents = filterEvents(allEventsCombined, activeFilter);
         setEvents(filteredEvents);
@@ -133,7 +182,23 @@ const WorkerCalendarPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeFilter, date]);
 
-
+  useEffect(() => {
+    // Check if user is authorized to view this page
+    if (!loadingAuth && user && authUserId === pageUserId) {
+      console.log("Debug - User authorized, fetching worker data...");
+      fetchWorkerData(pageUserId)
+        .then((data) => {
+          console.log("Debug - offer received:", data);
+          setOffers(data.offers);
+          setAcceptedGigs(data.acceptedGigs);
+        })
+        .catch((err) => {
+          console.error("Error fetching worker data:", err);
+          setOffers([]);
+          setAcceptedGigs([]);
+        })
+      }
+  }, [user, loadingAuth, authUserId, pageUserId]);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -144,7 +209,7 @@ const WorkerCalendarPage = () => {
   const handleEventClick = (event: CalendarEvent) => {
     if (event.status === 'AVAILABLE') {
       // For availability events, show availability edit modal
-      const slot = availabilitySlots.find(s => s.id === event.originalSlotId);
+      const slot = Array.isArray(availabilitySlots) ? availabilitySlots.find(s => s.id === event.originalSlotId) : null;
       setSelectedAvailabilitySlot(slot || null);
       setIsAvailabilityModalOpen(true);
     } else if (event.status === 'OFFER') {
@@ -197,9 +262,22 @@ const WorkerCalendarPage = () => {
   // Handle availability management
   const handleAvailabilitySave = async (data: any) => {
     console.log('handleAvailabilitySave called with data:', data);
+    console.log('handleAvailabilitySave data type:', typeof data);
+    console.log('handleAvailabilitySave data keys:', Object.keys(data || {}));
+    
     if (!user) {
       console.log('No user found');
       return;
+    }
+
+    // Test server action first
+    try {
+      const { testAvailabilityAction } = await import('@/actions/availability/test-availability');
+      console.log('Testing server action...');
+      const testResult = await testAvailabilityAction(user.uid);
+      console.log('Test result:', testResult);
+    } catch (testError) {
+      console.error('Test action failed:', testError);
     }
 
     try {
@@ -209,12 +287,29 @@ const WorkerCalendarPage = () => {
         const { updateAvailabilitySlot } = await import('@/actions/availability/manage-availability');
         const result = await updateAvailabilitySlot(user.uid, selectedAvailabilitySlot.id, data);
         console.log('Update result:', result);
+        
+        if (result.error) {
+          console.error('Update failed:', result.error);
+          return;
+        }
       } else {
         // Create new slot
         console.log('Creating new slot');
         const { createAvailabilitySlot } = await import('@/actions/availability/manage-availability');
+        console.log('createAvailabilitySlot function imported:', typeof createAvailabilitySlot);
+        console.log('About to call createAvailabilitySlot with:', { userId: user.uid, data });
         const result = await createAvailabilitySlot(user.uid, data);
         console.log('Create result:', result);
+        console.log('Create result type:', typeof result);
+        console.log('Create result keys:', Object.keys(result || {}));
+        
+        if (result.error) {
+          console.error('Create failed:', result.error);
+          console.error('Full result object:', result);
+          console.error('Error details:', result.details);
+          console.error('Error type:', result.errorType);
+          return;
+        }
       }
       
       // Close the modal
@@ -236,7 +331,15 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
-        setAvailabilitySlots(availabilityRes.availability || []);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
+
         setEvents(filterEvents(allEventsCombined, activeFilter));
       };
       
@@ -272,7 +375,15 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
-        setAvailabilitySlots(availabilityRes.availability || []);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
+
         setEvents(filterEvents(allEventsCombined, activeFilter));
       };
       
@@ -330,7 +441,15 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
-        setAvailabilitySlots(availabilityRes.availability || []);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
+
         setEvents(filterEvents(allEventsCombined, activeFilter));
       };
       
@@ -344,6 +463,59 @@ const WorkerCalendarPage = () => {
   const handleAvailabilityEdit = (slot: AvailabilitySlot) => {
     setSelectedAvailabilitySlot(slot);
     setIsAvailabilityModalOpen(true);
+  };
+
+ const handleAcceptOffer = async (offerId: string) => {
+    if (!authUserId) {
+      return;
+    }
+
+    setProcessingOfferId(offerId);
+    setProcessingAction("accept");  
+    try {    
+      // Use the Firebase UID directly, not the page user ID
+      const result = await acceptGigOffer({ gigId: offerId, userId: authUserId });   
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // On success: remove from offers list and add to accepted gigs
+      setOffers((prev) => prev.filter((o) => o.id !== offerId));
+      
+      // Find the accepted offer to add to accepted gigs
+      const acceptedOffer = offers.find(o => o.id === offerId);
+      if (acceptedOffer) {
+        const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
+        setAcceptedGigs((prev) => [...prev, acceptedGig]);
+      }
+    } catch (err) {
+      console.error("Error accepting offer:", err);
+    } finally {
+      setProcessingOfferId(null);
+      setProcessingAction(null);
+    }
+ };
+ 
+  const handleDeclineOffer = async (offerId: string) => {
+    if (!authUserId) {
+      return;
+    }
+
+    setProcessingOfferId(offerId);
+    setProcessingAction("decline"); 
+    try {
+      // For declining, we can just remove it from the offers list
+      // since the worker is not assigned to the gig yet
+      setOffers((prev) => prev.filter((o) => o.id !== offerId));
+      updateGigOfferStatus({ gigId: offerId, userId: authUserId, role: 'worker', action: 'cancel' });
+      
+    } catch (err) {
+      console.error("Error declining offer:", err);
+      // Show error message (you can add toast here)
+    } finally {
+      setProcessingOfferId(null);
+      setProcessingAction(null);
+    }
   };
 
   return (
@@ -431,6 +603,18 @@ const WorkerCalendarPage = () => {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         userRole="worker"
+        onAccept={() => selectedEvent && selectedEvent.id && handleAcceptOffer(selectedEvent.id)}
+        onDecline={() => selectedEvent && selectedEvent.id && handleDeclineOffer(selectedEvent.id)}
+        isProcessingAccept={
+          selectedEvent != null &&
+          processingOfferId === selectedEvent.id &&
+          processingAction === "accept"
+        }
+        isProcessingDecline={
+          selectedEvent != null &&
+          processingOfferId === selectedEvent.id &&
+          processingAction === "decline"
+        }
       />
 
       <NewAvailabilityModal

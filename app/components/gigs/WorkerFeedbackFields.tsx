@@ -26,91 +26,133 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
   onToggleTeamBuilder,
   submitting,
 }) => (
-  <>
-    <div className={stylesFeed.textareaContainer}>
-      <textarea
-        id="feedbackText"
-        name="feedbackText"
-        className={stylesFeed.textareaContainer}
-        placeholder="Share your experience...Provide feedback to earn awards"
-        value={formData.feedbackText}
-        onChange={onChange}
-        aria-label="Feedback text"
-      />
+  <div className={stylesFeed.workerFeedbackContainer}>
+
+    {/* Step 1 */}
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>1</span></div>
+      <div className={`${styles.stepContent} ${stylesFeed.textareaContainer}`}>
+        <textarea
+          id="feedbackText"
+          name="feedbackText"
+          className={stylesFeed.textarea}
+          placeholder="Share your experience...Provide feedback to earn awards"
+          value={formData.feedbackText}
+          onChange={onChange}
+          aria-label="Feedback text"
+        />
+      </div>
     </div>
-    <div className="mb-4">
-      <h3 className="font-medium mb-1">
-        Would you work with <span className="font-semibold">{gigDetails.workerName.split(" ")[0]}</span> again?
-      </h3>
-      <div className="flex gap-4">
+
+    {/* Step 2 */}
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>2</span></div>
+      <div className={`${styles.stepContent} ${stylesFeed.workAgainContainer}`}>
+        <h3 className={stylesFeed.workAgainText}>
+          Would you work with {gigDetails.workerName.split(" ")[0]} again?
+        </h3>
+        <div className={stylesFeed.thumbsContainer}>
+          <button
+            type="button"
+            className={stylesFeed.thumbButton}
+            onClick={onThumbsUp}
+            aria-label="Would work again"
+          >
+            <ThumbsUp size={28} />
+          </button>
+          <button
+            type="button"
+            className={stylesFeed.thumbButton}
+            onClick={onThumbsDown}
+            aria-label="Would not work again"
+          >
+            <ThumbsDown size={28} />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* Step 3 */}
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>3</span></div>
+      <div className={`${styles.stepContent} ${stylesFeed.awardContainer}`}>
+        <h3 className={stylesFeed.awardTitle}>
+          Would you like to award <span className={stylesFeed.workerName}>{gigDetails.workerName.split(" ")[0]}</span>?
+        </h3>
+        <div className={stylesFeed.badgeContainer}>
+          <button
+            type="button"
+            className={stylesFeed.badgeButton}
+            onClick={onToggleTopCommunicator}
+            aria-label="Top communicator award"
+          >
+            <AwardDisplayBadge icon={Trophy} textLines="Top communicator" />
+          </button>
+          <button
+            type="button"
+            className={stylesFeed.badgeButton}
+            onClick={onToggleTeamBuilder}
+            aria-label="Team builder award"
+          >
+            <AwardDisplayBadge icon={Star} textLines="Team builder" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* Step 4 */}
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>4</span></div>
+      <div className={`${styles.stepContent} ${stylesFeed.expensesContainer}`}>
+        <h3 className={stylesFeed.expensesTitle}>
+          Log any expenses you incurred here
+        </h3>
+        <label className={stylesFeed.expensesInputContainer}>
+          <Paperclip size={20} />
+          <input
+            type="file"
+            className={stylesFeed.expensesInput}
+            onChange={onChange}
+            aria-label="Upload expenses"
+          />
+        </label>
+        {formData.expensesFiles.length > 0 && (
+          <div className={stylesFeed.expensesFilesList}>
+            {formData.expensesFiles.map((file, index) => (
+              <div key={index} className={stylesFeed.expensesFileItem}>
+                {file.name}
+              </div>
+            ))}
+          </div>
+        )}
+        <textarea
+          id="expensesText"
+          name="expensesText"
+          className={stylesFeed.expensesTextarea}
+          placeholder="Note & upload images of costs incurred for your taxes"
+          value={formData.expensesText}
+          onChange={onChange}
+          aria-label="Expenses text"
+        />
+      </div>
+    </div>
+
+    {/* Step 5 */}
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>5</span></div>
+      <div className={`${styles.stepContent} ${stylesFeed.submitContainer}`}>
         <button
-          type="button"
-          className={`border rounded-full p-2 ${formData.wouldWorkAgain === true ? "bg-green-200" : ""}`}
-          onClick={onThumbsUp}
-          aria-label="Would work again"
-          tabIndex={0}
+          type="submit"
+          className={stylesFeed.submitButton}
+          disabled={submitting}
+          aria-label="Submit for payment"
         >
-          <ThumbsUp size={28} />
-        </button>
-        <button
-          type="button"
-          className={`border rounded-full p-2 ${formData.wouldWorkAgain === false ? "bg-red-200" : ""}`}
-          onClick={onThumbsDown}
-          aria-label="Would not work again"
-          tabIndex={0}
-        >
-          <ThumbsDown size={28} />
+          <Send size={16} /> Submit for payment
         </button>
       </div>
     </div>
-    <div className="mb-4">
-      <h3 className="font-medium mb-1">Would you like to award <span className="font-semibold">{gigDetails.workerName.split(" ")[0]}</span>?</h3>
-      <div className="flex gap-4">
-        <button
-          type="button"
-          className={`border rounded p-2 ${formData.topCommunicator ? "bg-blue-200" : ""}`}
-          onClick={onToggleTopCommunicator}
-          aria-label="Top communicator award"
-          tabIndex={0}
-        >
-          <AwardDisplayBadge icon={Trophy} textLines="Top communicator" />
-        </button>
-        <button
-          type="button"
-          className={`border rounded p-2 ${formData.teamBuilder ? "bg-blue-200" : ""}`}
-          onClick={onToggleTeamBuilder}
-          aria-label="Team builder award"
-          tabIndex={0}
-        >
-          <AwardDisplayBadge icon={Star} textLines="Team builder" />
-        </button>
-      </div>
-    </div>
-    <div className="mb-4">
-      <h3 className="font-medium mb-1 flex items-center gap-2">
-        Log any expenses you incurred here <Paperclip size={20} />
-      </h3>
-      <textarea
-        id="expensesText"
-        name="expensesText"
-        className="w-full border rounded p-2 min-h-[60px]"
-        placeholder="Note & upload images of costs incurred for your taxes"
-        value={formData.expensesText}
-        onChange={onChange}
-        aria-label="Expenses text"
-      />
-    </div>
-    <div className="flex justify-end gap-2 mt-6">
-      <button
-        type="submit"
-        className={stylesFeed.submitButton}
-        disabled={submitting}
-        aria-label="Submit for payment"
-      >
-        <Send size={16} /> Submit for payment
-      </button>
-    </div>
-  </>
+
+  </div>
 );
 
-export default WorkerFeedbackFields; 
+export default WorkerFeedbackFields;

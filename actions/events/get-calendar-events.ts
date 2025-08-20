@@ -4,7 +4,7 @@ import { db } from "@/lib/drizzle/db";
 import { eq, and, ne, isNull } from "drizzle-orm";
 import { MOCK_EVENTS } from '@/app/(web-client)/user/[userId]/worker/calendar/mockData';
 import { BUYER_MOCK_EVENTS } from '@/app/(web-client)/user/[userId]/buyer/calendar/mockData';
-import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
+import { GigsTable, gigStatusEnum, UsersTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
 import { CalendarEvent, EventStatusEnum, EventStatusEnumType } from "@/app/types/CalendarEventTypes";
 
 const mapEventStatus = (status: string): EventStatusEnumType => {
@@ -51,7 +51,7 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
     let calendarEvents: CalendarEvent[] = [];
 
     if (role === 'worker') {
-      // For workers: get both their accepted gigs AND available gig offers
+      // For workers: get their accepted gigs, available gig offers, AND unavailability periods
       
       // Test basic database connectivity
       try {
@@ -225,7 +225,36 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
         };
       });
 
-      calendarEvents = [...acceptedEvents, ...offerEvents];
+      // 3. Get worker availability (unavailability periods)
+      const workerAvailability = await db.query.WorkerAvailabilityTable.findMany({
+        where: eq(WorkerAvailabilityTable.userId, user.id),
+        orderBy: WorkerAvailabilityTable.startTime,
+      });
+
+      // Map worker availability to calendar events
+      const availabilityEvents: CalendarEvent[] = workerAvailability
+        .filter((availability) => availability.startTime && availability.endTime)
+        .map((availability) => ({
+          id: availability.id,
+          title: availability.notes ? `Unavailable: ${availability.notes}` : 'Unavailable',
+          start: new Date(availability.startTime!),
+          end: new Date(availability.endTime!),
+          allDay: false,
+          status: EventStatusEnum.UNAVAILABLE,
+          eventType: 'unavailability',
+          buyerName: 'Unavailable',
+          workerName: 'You',
+          isMyGig: true,
+          isBuyerAccepted: false,
+          location: availability.notes || 'Unavailable period',
+          description: availability.notes || undefined,
+          resource: {
+            availabilityId: availability.id,
+            userId: user.id,
+          },
+        }));
+
+      calendarEvents = [...acceptedEvents, ...offerEvents, ...availabilityEvents];
     } else {
       // For buyers: get their created gigs (existing logic)
       const columnConditionId = GigsTable.buyerUserId;

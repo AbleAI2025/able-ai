@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { GigWorkerProfilesTable, UsersTable } from "@/lib/drizzle/schema/users";
+import { UsersTable } from "@/lib/drizzle/schema/users";
+import { WorkerAvailabilityTable } from "@/lib/drizzle/schema/availability";
 import { eq } from "drizzle-orm";
 import { AvailabilitySlot, AvailabilityFormData } from "@/app/types/AvailabilityTypes";
 import { revalidatePath } from "next/cache";
@@ -13,18 +14,35 @@ export async function getWorkerAvailability(userId: string) {
     });
 
     if (!user) {
+      console.log('getWorkerAvailability: User not found for userId:', userId);
       return { error: "User not found", availability: [] };
     }
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
+    // Use the WorkerAvailabilityTable instead of GigWorkerProfilesTable
+    const availabilitySlots = await db.query.WorkerAvailabilityTable.findMany({
+      where: eq(WorkerAvailabilityTable.userId, user.id),
     });
 
-    if (!workerProfile || !workerProfile.availabilityJson) {
-      return { availability: [] };
-    }
+    console.log('getWorkerAvailability: availabilitySlots from WorkerAvailabilityTable:', availabilitySlots);
 
-    const availability = workerProfile.availabilityJson as AvailabilitySlot[];
+    // Convert the database records to AvailabilitySlot format
+    const availability: AvailabilitySlot[] = availabilitySlots.map(slot => ({
+      id: slot.id,
+      startTime: slot.startTimeStr || '09:00',
+      endTime: slot.endTimeStr || '17:00',
+      days: slot.days as string[] || [],
+      frequency: (slot.frequency || 'never') as "never" | "weekly" | "biweekly" | "monthly",
+      ends: (slot.ends || 'never') as "never" | "on_date" | "after_occurrences",
+      startDate: slot.startDate || undefined,
+      endDate: slot.endDate || undefined,
+      occurrences: slot.occurrences || undefined,
+      notes: slot.notes || undefined,
+      createdAt: slot.createdAt,
+      updatedAt: slot.updatedAt,
+    }));
+
+    console.log('getWorkerAvailability: converted availability:', availability);
+    
     return { availability };
   } catch (error) {
     console.error("Error fetching availability:", error);
@@ -34,53 +52,138 @@ export async function getWorkerAvailability(userId: string) {
 
 export async function createAvailabilitySlot(userId: string, data: AvailabilityFormData) {
   try {
+    console.log('createAvailabilitySlot called with userId:', userId);
+    console.log('createAvailabilitySlot called with data:', data);
+    console.log('createAvailabilitySlot data structure:', {
+      startTime: data.startTime,
+      endTime: data.endTime,
+      days: data.days,
+      frequency: data.frequency,
+      ends: data.ends,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      occurrences: data.occurrences,
+      notes: data.notes
+    });
+    
+    // Validate required fields
+    if (!data.startTime || !data.endTime || !data.days || !data.frequency || !data.ends) {
+      console.error('createAvailabilitySlot: Missing required fields:', {
+        startTime: !!data.startTime,
+        endTime: !!data.endTime,
+        days: !!data.days,
+        frequency: !!data.frequency,
+        ends: !!data.ends
+      });
+      return { error: "Missing required fields" };
+    }
+    
+    // Validate data types
+    if (!Array.isArray(data.days)) {
+      console.error('createAvailabilitySlot: days is not an array:', data.days);
+      return { error: "Days must be an array" };
+    }
+    
+    if (data.days.length === 0) {
+      console.error('createAvailabilitySlot: days array is empty');
+      return { error: "At least one day must be selected" };
+    }
+    
+    console.log('createAvailabilitySlot: All validations passed, proceeding with database operations');
+    
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
     });
 
     if (!user) {
+      console.log('createAvailabilitySlot: User not found for userId:', userId);
       return { error: "User not found" };
     }
 
-    let workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
+    console.log('createAvailabilitySlot: Found user:', user.id);
+
+    // Insert directly into WorkerAvailabilityTable
+    console.log('createAvailabilitySlot: About to insert into WorkerAvailabilityTable with data:', {
+      userId: user.id,
+      days: data.days,
+      frequency: data.frequency,
+      startDate: data.startDate,
+      startTimeStr: data.startTime,
+      endTimeStr: data.endTime,
+      ends: data.ends,
+      occurrences: data.occurrences,
+      endDate: data.endDate,
+      notes: data.notes,
     });
 
-    if (!workerProfile) {
-      // Create worker profile if it doesn't exist
-      const [newProfile] = await db.insert(GigWorkerProfilesTable).values({
+    console.log('createAvailabilitySlot: Data types:', {
+      startDate: typeof data.startDate,
+      endDate: typeof data.endDate,
+      startTime: typeof data.startTime,
+      endTime: typeof data.endTime,
+    });
+
+    let newSlot;
+    try {
+      // Create proper timestamps for the required fields
+      const createTimestamp = (timeStr: string) => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+      };
+
+      [newSlot] = await db.insert(WorkerAvailabilityTable).values({
         userId: user.id,
-        availabilityJson: [],
+        days: data.days,
+        frequency: data.frequency as "never" | "weekly" | "biweekly" | "monthly",
+        startDate: data.startDate,
+        startTimeStr: data.startTime,
+        endTimeStr: data.endTime,
+        // Convert time strings to timestamp for the required fields
+        startTime: createTimestamp(data.startTime),
+        endTime: createTimestamp(data.endTime),
+        ends: data.ends,
+        occurrences: data.occurrences,
+        endDate: data.endDate || null,
+        notes: data.notes,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }).returning();
-      workerProfile = newProfile;
+    } catch (dbError) {
+      console.error('createAvailabilitySlot: Database insert error:', dbError);
+      console.error('createAvailabilitySlot: Database error details:', {
+        message: dbError instanceof Error ? dbError.message : 'Unknown error',
+        stack: dbError instanceof Error ? dbError.stack : undefined,
+        error: dbError
+      });
+      return { 
+        error: "Failed to create availability slot", 
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
+        errorType: 'database_error'
+      };
     }
 
-    const newSlot: AvailabilitySlot = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const currentAvailability = (workerProfile.availabilityJson as AvailabilitySlot[]) || [];
-    const updatedAvailability = [...currentAvailability, newSlot];
-
-    await db.update(GigWorkerProfilesTable)
-      .set({
-        availabilityJson: updatedAvailability,
-        updatedAt: new Date(),
-      })
-      .where(eq(GigWorkerProfilesTable.userId, user.id));
+    console.log('createAvailabilitySlot: Created new slot in WorkerAvailabilityTable:', newSlot);
 
     revalidatePath(`/user/${userId}/worker/calendar`);
     return { success: true, slot: newSlot };
   } catch (error) {
     console.error("Error creating availability slot:", error);
-    return { error: "Failed to create availability slot" };
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
+    return { 
+      error: "Failed to create availability slot",
+      details: error instanceof Error ? error.message : 'Unknown error',
+      errorType: 'general_error'
+    };
   }
 }
 
-export async function updateAvailabilitySlot(userId: string, slotId: string, data: Partial<AvailabilityFormData>) {
+export async function updateAvailabilitySlot(userId: string, slotId: string, data: AvailabilityFormData) {
   try {
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
@@ -90,35 +193,26 @@ export async function updateAvailabilitySlot(userId: string, slotId: string, dat
       return { error: "User not found" };
     }
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile || !workerProfile.availabilityJson) {
-      return { error: "No availability found" };
-    }
-
-    const currentAvailability = workerProfile.availabilityJson as AvailabilitySlot[];
-    const slotIndex = currentAvailability.findIndex(slot => slot.id === slotId);
-
-    if (slotIndex === -1) {
-      return { error: "Availability slot not found" };
-    }
-
-    const updatedSlot = {
-      ...currentAvailability[slotIndex],
-      ...data,
-      updatedAt: new Date(),
-    };
-
-    currentAvailability[slotIndex] = updatedSlot;
-
-    await db.update(GigWorkerProfilesTable)
+    // Update the slot in WorkerAvailabilityTable
+    const [updatedSlot] = await db.update(WorkerAvailabilityTable)
       .set({
-        availabilityJson: currentAvailability,
+        days: data.days,
+        frequency: data.frequency as "never" | "weekly" | "biweekly" | "monthly",
+        startDate: data.startDate,
+        startTimeStr: data.startTime,
+        endTimeStr: data.endTime,
+        ends: data.ends,
+        occurrences: data.occurrences,
+        endDate: data.endDate,
+        notes: data.notes,
         updatedAt: new Date(),
       })
-      .where(eq(GigWorkerProfilesTable.userId, user.id));
+      .where(eq(WorkerAvailabilityTable.id, slotId))
+      .returning();
+
+    if (!updatedSlot) {
+      return { error: "Availability slot not found" };
+    }
 
     revalidatePath(`/user/${userId}/worker/calendar`);
     return { success: true, slot: updatedSlot };
@@ -138,23 +232,14 @@ export async function deleteAvailabilitySlot(userId: string, slotId: string) {
       return { error: "User not found" };
     }
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
+    // Delete the slot from WorkerAvailabilityTable
+    const deletedSlot = await db.delete(WorkerAvailabilityTable)
+      .where(eq(WorkerAvailabilityTable.id, slotId))
+      .returning();
 
-    if (!workerProfile || !workerProfile.availabilityJson) {
-      return { error: "No availability found" };
+    if (deletedSlot.length === 0) {
+      return { error: "Availability slot not found" };
     }
-
-    const currentAvailability = workerProfile.availabilityJson as AvailabilitySlot[];
-    const filteredAvailability = currentAvailability.filter(slot => slot.id !== slotId);
-
-    await db.update(GigWorkerProfilesTable)
-      .set({
-        availabilityJson: filteredAvailability,
-        updatedAt: new Date(),
-      })
-      .where(eq(GigWorkerProfilesTable.userId, user.id));
 
     revalidatePath(`/user/${userId}/worker/calendar`);
     return { success: true };
@@ -174,12 +259,9 @@ export async function clearAllAvailability(userId: string) {
       return { error: "User not found" };
     }
 
-    await db.update(GigWorkerProfilesTable)
-      .set({
-        availabilityJson: [],
-        updatedAt: new Date(),
-      })
-      .where(eq(GigWorkerProfilesTable.userId, user.id));
+    // Delete all availability slots for this user from WorkerAvailabilityTable
+    await db.delete(WorkerAvailabilityTable)
+      .where(eq(WorkerAvailabilityTable.userId, user.id));
 
     revalidatePath(`/user/${userId}/worker/calendar`);
     return { success: true };

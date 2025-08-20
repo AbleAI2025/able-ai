@@ -36,7 +36,7 @@
 }
 
 .gigSummaryCard {
-  padding: 1rem;
+  padding: 0 1rem;
   font-size: 0.9rem;
   display: flex;
   flex-direction: column;
@@ -57,21 +57,41 @@
 }
 
 .earnings {
-  width: 85%;
   color: #ffffff;
-  font-weight: 700;
-  line-height: 18px;
-  margin: 0 1rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid #2b2b2b;
-  padding-top: 0.4rem;
+  padding-top: 1rem;
+  color: #ffffff;
+  font-family: var(--font-family);
+  font-weight: 700;
+  line-height: 1.4;
 }
 
-.textareaContainer {
+.workerFeedbackContainer, .buyerFeedbackContainer {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding-right: 1rem;
+  margin-bottom: 1rem;
+}
+
+.textarea {
+  height: 105px;
+  border-radius: 24px;
+  border: 0;
+  background-color: #2b2b2b;
+  color: #c2c2c2;
+  font-size: 14px;
+  font-family: "Source Sans Pro";
+  font-weight: 400;
+  line-height: 16px;
+  outline: none;
+  width: 100%;
+  padding: 1rem;
+  width: 90%;
 }
 
 .feedbackTextarea {
@@ -89,15 +109,15 @@
 }
 
 .workAgainContainer {
-  padding: 1rem;
   display: flex;
+  align-items: center;
 }
 
 .workAgainText,
 .awardTitle,
 .expensesTitle {
   color: #ffffff;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 23px;
 }
@@ -144,22 +164,12 @@
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* .badgeButton:hover,
-.badgeButton.selected {
-    background-color: #5dade2;
-    color: #fff;
-}
-
-.badgeIcon {
-    font-size: 1.2rem;
-    margin-bottom: 0.25rem;
-} */
-.expensesContainer {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .expensesInput {
+  display: none;
+}
+
+.expensesTextarea {
+  margin-top: 1rem;
   padding: 0.75rem;
   border: 0;
   border-radius: 1.5rem;
@@ -168,6 +178,7 @@
   font-size: 0.87rem;
   line-height: 16px;
   outline: none;
+  width: 100%;
 }
 
 .submitButton {
@@ -234,7 +245,7 @@
 
 .releaseButton {
   cursor: pointer;
-  width: 100%;
+  width: 95%;
   padding: 0.85rem 1.5rem;
   border: 0;
   border-radius: 1.5rem;
@@ -244,6 +255,11 @@
   font-weight: 700;
   line-height: 16px;
   outline: none;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
 }
 
 .releaseButton:hover:not(:disabled) {
