@@ -25,7 +25,6 @@
   color: var(--text-primary-light);
   padding: 0.5rem;
   border-radius: 0.5rem;
-  flex-grow: 1; /* Allow text to take available space */
   min-width: 0; /* Prevents flex item from overflowing */
 }
 
