@@ -291,18 +291,20 @@ export default function WorkerOffersPage() {
           userId={uid}
         />
       )}
-      <div className={styles.pageWrapper}>        
-        <div className={styles.pageHeader}>
-          <h1 className={styles.sectionTitle}>Pending Gigs</h1>
-          <button 
-            onClick={() => router.push(`/user/${pageUserId}/worker/calendar`)}
-            className={styles.calendarNavButton}
-            title="View Calendar"
+      <div className={styles.pageWrapper}>
+        {offers.filter((o) => o.status !== "expired").length > 0 && (
+          <div className={styles.pageHeader}>
+            <h1 className={styles.sectionTitle}>Pending Gigs</h1>
+            <button
+              onClick={() => router.push(`/user/${pageUserId}/worker/calendar`)}
+              className={styles.calendarNavButton}
+              title="View Calendar"
           >
             <Calendar size={24} />
             <span>Calendar</span>
           </button>
         </div>
+        )}
         {isLoadingData ? ( // Use renamed loading state
           <div className={styles.loadingContainer}>
             <div className={styles.loadingContent}>
