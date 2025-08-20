@@ -162,7 +162,7 @@ export default function WorkerDashboardPage() {
         <main className={styles.contentWrapper}>
           <IconGrid items={actionItems} />
           <ReferralBanner />
-        </main> 
+        </main>
         <footer className={styles.pageFooter}>
           <RoleToggle />
           <SettingsButton />

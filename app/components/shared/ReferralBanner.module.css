@@ -69,6 +69,11 @@
   background-color: var(--primary-color);
 }
 
+.buyer:hover {
+  background-color: var(--secondary-color);
+  color: #0f0f0f;
+}
+
 .button:hover .tooltip {
   opacity: 1;
 }

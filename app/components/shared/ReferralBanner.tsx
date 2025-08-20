@@ -6,10 +6,10 @@ import { useAuth } from '@/context/AuthContext';
 import { is } from 'drizzle-orm';
 
 interface ReferralBannerProps {
-  className?: string;
+  role?: string;
 }
 
-const ReferralBanner: React.FC<ReferralBannerProps> = ({ className }) => {
+const ReferralBanner: React.FC<ReferralBannerProps> = ({ role }) => {
   const [tooltipText, setTooltipText] = useState("Click to copy");
   const [tooltipVisible, setTooltipVisible] = useState(false);
   
@@ -61,7 +61,7 @@ const handleReferralClick = () => {
 
   return (
     <button 
-      className={`${styles.banner} ${styles.button} ${className}`}
+      className={`${styles.banner} ${styles.button} ${role === 'BUYER' ? styles.buyer : ''}`}
       onClick={handleReferralClick}
     >
       <div className={styles.iconWrapper}>
