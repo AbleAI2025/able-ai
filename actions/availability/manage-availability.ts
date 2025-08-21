@@ -185,40 +185,96 @@ export async function createAvailabilitySlot(userId: string, data: AvailabilityF
 
 export async function updateAvailabilitySlot(userId: string, slotId: string, data: AvailabilityFormData) {
   try {
+    console.log('updateAvailabilitySlot called with userId:', userId);
+    console.log('updateAvailabilitySlot called with slotId:', slotId);
+    console.log('updateAvailabilitySlot called with data:', data);
+    
+    // Validate required fields
+    if (!data.startTime || !data.endTime) {
+      console.error('updateAvailabilitySlot: Missing required time fields');
+      return { error: "Missing required time fields" };
+    }
+    
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
     });
 
     if (!user) {
+      console.log('updateAvailabilitySlot: User not found for userId:', userId);
       return { error: "User not found" };
     }
 
+    console.log('updateAvailabilitySlot: Found user:', user.id);
+
+    // Validate that the slot exists and belongs to the user
+    const existingSlot = await db.query.WorkerAvailabilityTable.findFirst({
+      where: eq(WorkerAvailabilityTable.id, slotId),
+    });
+
+    if (!existingSlot) {
+      console.log('updateAvailabilitySlot: Slot not found for slotId:', slotId);
+      return { error: "Availability slot not found" };
+    }
+
+    if (existingSlot.userId !== user.id) {
+      console.log('updateAvailabilitySlot: Slot does not belong to user');
+      return { error: "Access denied" };
+    }
+
+    // Create proper timestamps for the required fields
+    const createTimestamp = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return date;
+    };
+
+    // Prepare update data
+    const updateData: any = {
+      days: data.days,
+      frequency: data.frequency as "never" | "weekly" | "biweekly" | "monthly",
+      startDate: data.startDate,
+      startTimeStr: data.startTime,
+      endTimeStr: data.endTime,
+      // Convert time strings to timestamp for the required fields
+      startTime: createTimestamp(data.startTime),
+      endTime: createTimestamp(data.endTime),
+      ends: data.ends,
+      occurrences: data.occurrences,
+      endDate: data.endDate || null,
+      notes: data.notes,
+      updatedAt: new Date(),
+    };
+
+    console.log('updateAvailabilitySlot: About to update with data:', updateData);
+
     // Update the slot in WorkerAvailabilityTable
     const [updatedSlot] = await db.update(WorkerAvailabilityTable)
-      .set({
-        days: data.days,
-        frequency: data.frequency as "never" | "weekly" | "biweekly" | "monthly",
-        startDate: data.startDate,
-        startTimeStr: data.startTime,
-        endTimeStr: data.endTime,
-        ends: data.ends,
-        occurrences: data.occurrences,
-        endDate: data.endDate,
-        notes: data.notes,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(WorkerAvailabilityTable.id, slotId))
       .returning();
 
     if (!updatedSlot) {
-      return { error: "Availability slot not found" };
+      console.log('updateAvailabilitySlot: Failed to update slot');
+      return { error: "Failed to update availability slot" };
     }
+
+    console.log('updateAvailabilitySlot: Successfully updated slot:', updatedSlot);
 
     revalidatePath(`/user/${userId}/worker/calendar`);
     return { success: true, slot: updatedSlot };
   } catch (error) {
     console.error("Error updating availability slot:", error);
-    return { error: "Failed to update availability slot" };
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
+    return { 
+      error: "Failed to update availability slot",
+      details: error instanceof Error ? error.message : 'Unknown error',
+      errorType: 'update_error'
+    };
   }
 }
 
