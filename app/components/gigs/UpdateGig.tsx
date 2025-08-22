@@ -124,7 +124,7 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Pay per hour:</span>
 						<span className={styles.detailItemValue}>
-							&#8364;{gigDetailsData.payPerHour}
+							£{gigDetailsData.payPerHour}
 						</span>
 					</div>
 					<div className={styles.detailItem}>

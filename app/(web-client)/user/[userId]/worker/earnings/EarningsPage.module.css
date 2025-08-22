@@ -1,13 +1,15 @@
 .container {
-  min-height: 100vh;
-  background-color: #161616;
+  height: 100vh;
+  background-color: #000000;
   color: #e0e0e0;
   font-family: var(--font-family);
 }
 
 .pageWrapper {
+  background-color: #161616;
   width: 100%;
-  max-width: 900px;
+  height: 100%;
+  max-width: 450px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -24,16 +26,12 @@
   padding: 0.5rem;
 }
 
-.headerLeftContainer {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
+
 
 .backButton {
   background: none;
   border: none;
-  color: #a0a0a0;
+  color: #ffffff;
   cursor: pointer;
   padding: 0.5rem;
   margin-right: 0.75rem;
@@ -167,21 +165,6 @@
   margin-bottom: 1rem;
 }
 
-.earningFooter {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: flex-start;
-}
-
-@media (min-width: 600px) {
-  .earningFooter {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-}
-
 .amount {
   font-size: 1.25rem;
   font-weight: 600;
@@ -227,18 +210,6 @@
   justify-content: center;
   color: #737373;
 }
-
-.footer {
-  padding-top: 1rem;
-  display: flex;
-  justify-content: center;
-  background-color: #2b2b2b;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-
 
 .emptyState, .loadingContainer {
   text-align: center;

@@ -20,6 +20,7 @@ export interface WorkerFeedbackFormData {
   topCommunicator?: boolean;
   teamBuilder: boolean;
   expensesText: string;
+  expensesFiles: File[];
 }
 
 export interface BuyerFeedbackFormData {
@@ -43,4 +44,5 @@ export type FeedbackProps = {
   onSubmit: (e: React.FormEvent) => void;
   loading?: boolean;
   submitting?: boolean;
+  handleBack: () => void;
 };

@@ -141,10 +141,10 @@ export default function WorkerEarningsPage() {
     <div className={styles.container}>
       <div className={styles.pageWrapper}>
         <header className={styles.header}>
-          <div className={styles.headerLeftContainer}>
-            <ClipboardList size={15} color='#ffffff' />
-            <h1 className={styles.pageTitle}>Earnings</h1>
-          </div>
+          <button onClick={() => router.back()} className={styles.backButton}>
+            <ArrowLeft size={16} />
+          </button>
+          <h1 className={styles.pageTitle}>Earnings</h1>
           <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
             <Filter size={16} /> Filter
           </button>
@@ -213,12 +213,6 @@ export default function WorkerEarningsPage() {
             </ResponsiveContainer>
           ) : !isLoadingEarnings ? "No earnings data available for chart." : ""}
         </div> */}
-
-        <footer className={styles.footer}>
-          <Link href={`/user/${pageUserId}/worker`} passHref>
-            <Image src="/images/home.svg" alt="Home" width={40} height={40} />
-          </Link>
-        </footer>
       </div>
     </div>
   );

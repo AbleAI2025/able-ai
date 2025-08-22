@@ -1,9 +1,9 @@
 /* app/user/[userId]/buyer/payments/PaymentsPage.module.css */
 .container {
   min-height: 100vh;
-  background-color: #161616;
-  color: #e0e0e0;
-  /* padding: 1.5rem; */
+  background-color: #000000;
+  color: #e0e0e0;  
+  margin: auto;
   font-family: var(--font-family);
 }
 
@@ -14,6 +14,8 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  max-width: 450px;
+  background-color: #161616; 
 }
 
 .header {
@@ -26,10 +28,16 @@
   padding: 0.5rem;
 }
 
-.headerLeftContainer {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+.backButton {
+  border: 0;
+  outline: 0;
+  background-color: transparent;
+  color: #ffffff;
+  transition: color 0.2s ease;
+}
+
+.backButton:hover {
+  color: var(--secondary-color);
 }
 
 .totalsNote {
@@ -167,18 +175,6 @@
   justify-content: center;
   color: #737373;
 }
-
-.footer {
-  padding-top: 1rem;
-  display: flex;
-  justify-content: center;
-  background-color: #2b2b2b;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-
 
 .emptyState, .loadingContainer {
   text-align: center;

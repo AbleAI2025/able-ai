@@ -63,8 +63,8 @@ interface InvoiceData {
             },
           ],
           subtotal: 200.0,
-          tax: 40.0,
-          total: 240.0,
+          tax: 13.0,
+          total: 213.0,
           status: "Paid",
         };
         // const data = await getInvoiceData(params.userId, invoiceId);
@@ -201,7 +201,7 @@ export default function InvoicePage() {
             <span>£{invoiceData.subtotal.toFixed(2)}</span>
           </div>
           <div className={styles.totalRow}>
-            <span>Tax (20%):</span>
+            <span>Tax (6.5%):</span>
             <span>£{invoiceData.tax.toFixed(2)}</span>
           </div>
           <div className={styles.totalRow}>

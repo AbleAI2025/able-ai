@@ -77,7 +77,7 @@
 }
 
 .summaryTextContainer p {
-  margin: 0.2rem 0;
+  margin: 0 0 0.5rem;
   color: var(--text-primary-light);
 }
 .summaryTextContainer strong {
@@ -99,7 +99,7 @@
 .stepperContainer::before {
   content: '';
   position: absolute;
-  left: 17px; /* (Indicator width / 2) - (Line width / 2) */
+  left: 25px; /* (Indicator width / 2) - (Line width / 2) */
   top: 15px; /* Start below the first indicator's center */
   bottom: 15px; /* End above the last indicator's center */
   width: 2px;
@@ -110,14 +110,13 @@
 .stepItem {
   display: flex;
   align-items: flex-start; /* Align items to the top for multi-line content */
-  margin-bottom: 2rem; /* Spacing between steps */
   position: relative;
   min-height: 36px; /* Ensure space for indicator */
 }
 
 .stepIndicator {
   position: absolute;
-  left: -26px; /* Pulls it left into the padding of .stepperContainer */
+  left: -30px; /* Pulls it left into the padding of .stepperContainer */
   top: 0;
   width: 34px;
   height: 34px;
@@ -130,7 +129,14 @@
   align-items: center;
   justify-content: center;
   z-index: 2; /* Above the line */
-  font-size: 1rem;
+  font-size: 0.75rem;
+}
+
+.stepNumber {
+  background-color: #000000;
+  border: 1px solid #ffffff;
+  padding: 2px 4px;
+  color: #ffffff;
 }
 
 .stepContent {
@@ -211,6 +217,8 @@ textarea.input[id="privateNotes"] { min-height: 80px; }
   align-items: center;
   justify-content: center;
   text-align: center;
+  flex: 1;
+  max-width: 100px;
 }
 
 /* Hide the actual radio button */
@@ -225,9 +233,9 @@ textarea.input[id="privateNotes"] { min-height: 80px; }
     font-weight: bold;
 }
 
-
 .submitButtonContainer {
-  margin-top: 2rem; /* Ensure it's well-spaced if it's the last item in a step */
+  display: flex;
+  justify-content: center;
 }
 
 .submitButton {

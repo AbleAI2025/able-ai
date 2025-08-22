@@ -151,6 +151,12 @@ const WorkerCalendarPage = () => {
         console.log('typeof availabilityRes.availability:', typeof availabilityRes.availability);
         console.log('Array.isArray(availabilityRes.availability):', Array.isArray(availabilityRes.availability));
 
+        // Debug: Log what we're getting
+        console.log('availabilityRes:', availabilityRes);
+        console.log('availabilityRes.availability:', availabilityRes.availability);
+        console.log('typeof availabilityRes.availability:', typeof availabilityRes.availability);
+        console.log('Array.isArray(availabilityRes.availability):', Array.isArray(availabilityRes.availability));
+
         const calendarData: CalendarEvent[] = calendarRes.events;
         const parsed = calendarData.map((event: CalendarEvent) => ({ ...event, start: new Date(event.start), end: new Date(event.end) }));
         
@@ -165,6 +171,14 @@ const WorkerCalendarPage = () => {
         const allEventsCombined = [...parsed, ...availabilityEvents];
         
         setAllEvents(allEventsCombined);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
         
         // Ensure availabilitySlots is always an array
         const availabilityArray = Array.isArray(availabilityRes.availability) 
@@ -284,6 +298,16 @@ const WorkerCalendarPage = () => {
       return;
     }
 
+    // Test server action first
+    try {
+      const { testAvailabilityAction } = await import('@/actions/availability/test-availability');
+      console.log('Testing server action...');
+      const testResult = await testAvailabilityAction(user.uid);
+      console.log('Test result:', testResult);
+    } catch (testError) {
+      console.error('Test action failed:', testError);
+    }
+
     try {
       if (selectedAvailabilitySlot) {
         if (isEditingSingleOccurrence) {
@@ -319,6 +343,8 @@ const WorkerCalendarPage = () => {
         // Create new slot
         console.log('Creating new slot');
         const { createAvailabilitySlot } = await import('@/actions/availability/manage-availability');
+        console.log('createAvailabilitySlot function imported:', typeof createAvailabilitySlot);
+        console.log('About to call createAvailabilitySlot with:', { userId: user.uid, data });
         console.log('createAvailabilitySlot function imported:', typeof createAvailabilitySlot);
         console.log('About to call createAvailabilitySlot with:', { userId: user.uid, data });
         const result = await createAvailabilitySlot(user.uid, data);
@@ -366,6 +392,15 @@ const WorkerCalendarPage = () => {
             : [];
         setAvailabilitySlots(availabilityArray);
 
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
+
         setEvents(filterEvents(allEventsCombined, activeFilter));
       };
       
@@ -403,6 +438,15 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
+
         
         // Ensure availabilitySlots is always an array
         const availabilityArray = Array.isArray(availabilityRes.availability) 
@@ -488,6 +532,15 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
+        
+        // Ensure availabilitySlots is always an array
+        const availabilityArray = Array.isArray(availabilityRes.availability) 
+          ? availabilityRes.availability 
+          : availabilityRes.availability 
+            ? [availabilityRes.availability] 
+            : [];
+        setAvailabilitySlots(availabilityArray);
+
         
         // Ensure availabilitySlots is always an array
         const availabilityArray = Array.isArray(availabilityRes.availability) 

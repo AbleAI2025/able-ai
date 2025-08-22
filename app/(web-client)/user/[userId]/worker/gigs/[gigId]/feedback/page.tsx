@@ -9,7 +9,6 @@ import { useAuth } from "@/context/AuthContext";
 
 async function getGigData(workerUserId: string, gigId: string): Promise<GigDetails | null> {
   await new Promise((resolve) => setTimeout(resolve, 500));
-  if (gigId === "gig123-accepted") {
     return {
       id: gigId,
       role: "Bartender",
@@ -24,8 +23,6 @@ async function getGigData(workerUserId: string, gigId: string): Promise<GigDetai
       details: "Completed gig on Monday, 9:00 am. Location: Central Train station",
       earnings: 80.0,
     };
-  }
-  return null;
 }
 
 export default function WorkerFeedbackPage() {
@@ -121,6 +118,7 @@ export default function WorkerFeedbackPage() {
       loading={isSubmitting}
       error={error}
       successMessage={successMessage}
+      handleBack={() => router.back()}
     />
   );
 }

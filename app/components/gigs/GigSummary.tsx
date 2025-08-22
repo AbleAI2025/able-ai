@@ -5,11 +5,11 @@ import stylesFeed from "@/app/components/gigs/Feedback.module.css";
 
 type GigSummaryProps = {
   gigDetails: GigDetails;
+  role: "GIG_WORKER" | "BUYER";
 };
 
-const GigSummary: React.FC<GigSummaryProps> = ({ gigDetails }) => (
+const GigSummary: React.FC<GigSummaryProps> = ({ gigDetails, role }) => (
   <div className={`${stylesFeed.gigSummaryCard}`}>
-    <h2 className="">Confirm Hours Worked & Feedback</h2>
     <div className={styles.summaryTextContainer}>
       <p>
         <strong>{gigDetails?.role}</strong>
@@ -19,7 +19,7 @@ const GigSummary: React.FC<GigSummaryProps> = ({ gigDetails }) => (
     </div>
     {gigDetails?.earnings !== undefined && (
       <div className={stylesFeed.earnings}>
-        <span className="font-medium">Earnings:</span>
+        <span className="font-medium">{role === "GIG_WORKER" ? "Earnings:" : "Payments:"}</span>
         <span className="font-bold">£{gigDetails.earnings.toFixed(2)}</span>
       </div>
     )}

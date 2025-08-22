@@ -1,36 +1,31 @@
-import styles from "./GigActionButton.module.css";
+import styles from "./GigStausIndicator.module.css";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 
-interface ActionButtonProps {
+interface GigStatusIndicatorProps {
   label: React.ReactNode;
-  handleGigAction?: () => void;
   isActive?: boolean;
   isDisabled?: boolean;
 }
 
-const GigActionButton = ({
+const GigStatusIndicator = ({
   label,
-  handleGigAction,
   isActive,
   isDisabled,
-}: ActionButtonProps) => {
+}: GigStatusIndicatorProps) => {
   const lastRoleUsed = getLastRoleUsed();
   return (
-    <button
-      type="button"
-      className={`${styles.actionButton} ${
+    <div
+      className={`${styles.statusIndicator} ${
         isActive
           ? lastRoleUsed === "GIG_WORKER"
             ? styles.activeWorker
             : styles.activeBuyer
           : ""
       } ${isDisabled ? styles.disabled : ""}`}
-      onClick={handleGigAction}
-      disabled={isDisabled}
     >
       {label}
-    </button>
+    </div>
   );
 };
 
-export default GigActionButton;
+export default GigStatusIndicator;

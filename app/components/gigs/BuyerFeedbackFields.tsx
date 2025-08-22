@@ -1,15 +1,20 @@
 import React from "react";
-import { Send } from "lucide-react";
+import { Send, Star, Trophy } from "lucide-react";
 import { BuyerFeedbackFormData, GigDetails } from "@/app/types/GigFeedbackTypes";
 import styles from "@/app/(web-client)/user/[userId]/buyer/gigs/[gigId]/feedback/FeedbackPage.module.css";
 import stylesFeed from "@/app/components/gigs/Feedback.module.css";
 import stylesLoader from '@/app/components/shared/Loader.module.css'; // Adjust the path as necessary
+import AwardDisplayBadge from "../profile/AwardDisplayBadge";
 
 type BuyerFeedbackFieldsProps = {
   gigDetails: GigDetails;
   formData: BuyerFeedbackFormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   submitting?: boolean;
+  onToggleTopCommunicator: () => void;
+  onToggleTeamBuilder: () => void;
+  onThumbsUp: () => void;
+  onThumbsDown: () => void;
 };
 
 const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
@@ -17,18 +22,23 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
   formData,
   onChange,
   submitting,
+  onToggleTopCommunicator,
+  onToggleTeamBuilder,
+  onThumbsUp,
+  onThumbsDown
+
 }) => (
-  <>
-    <div className={`${stylesFeed.textareaContainer} ${styles.stepItem} ${styles.stepContent}`}>
-      <div className={styles.stepIndicator} />
-      <div className={styles.stepContent}>
+  <div className={stylesFeed.buyerFeedbackContainer}>
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>1</span></div>
+      <div className={`${stylesFeed.textareaContainer} ${styles.stepContent}`}>
         <label htmlFor="publicComment" className={styles.label}>
           Public Comment (visible on {gigDetails.workerName.split(" ")[0]}&apos;s profile):
         </label>
         <textarea
           id="publicComment"
           name="publicComment"
-          className={`${stylesFeed.feedbackTextarea} ${styles.input}`}
+          className={`${stylesFeed.textarea}`}
           placeholder="e.g., Punctual, professional, great skills..."
           value={formData.publicComment}
           onChange={onChange}
@@ -37,7 +47,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
       </div>
     </div>
     <div className={`${stylesFeed.textareaContainer} ${styles.stepItem}`}>
-      <div className={styles.stepIndicator} />
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>2</span></div>
 
       <div className={styles.stepContent}>
         <label htmlFor="privateNotes" className={styles.label}>
@@ -46,7 +56,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
         <textarea
           id="privateNotes"
           name="privateNotes"
-          className={styles.input}
+          className={stylesFeed.textarea}
           placeholder="Any internal notes about this worker or gig?"
           value={formData.privateNotes}
           onChange={onChange}
@@ -55,7 +65,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
       </div>
     </div>
     <div className={`${styles.stepItem}`}>
-      <div className={styles.stepIndicator} />
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>3</span></div>
       <div className={styles.stepContent}>
         <label className={`${stylesFeed.workAgainText} ${styles.label}`}>
           Would you hire {gigDetails.workerName.split(" ")[0]} again? <span className="text-primary">*</span>
@@ -96,30 +106,60 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
           </label>
         </div>
       </div>
-
     </div>
-    <div className={`${styles.submitButtonContainer} ${styles.stepItem} ${styles.stepContent}`}>
-      <div className={styles.stepIndicator} />
-      <button
-        type="submit"
-        className={stylesFeed.releaseButton}
-        disabled={submitting}
-        aria-label="Submit feedback"
-      >
+    {formData.wouldHireAgain === 'yes' && 
+      <div className={styles.stepItem}>
+        <div className={styles.stepIndicator}><span className={styles.stepNumber}>4</span></div>
+        <div className={`${styles.stepContent} ${stylesFeed.awardContainer}`}>
+          <h3 className={stylesFeed.awardTitle}>
+            Would you like to award <span className={stylesFeed.workerName}>{gigDetails.workerName.split(" ")[0]}</span>?
+          </h3>
+          <div className={stylesFeed.badgeContainer}>
+            <button
+              type="button"
+              className={stylesFeed.badgeButton}
+              onClick={onToggleTopCommunicator}
+              aria-label="Top communicator award"
+            >
+              <AwardDisplayBadge icon={Trophy} textLines="Top communicator" />
+            </button>
+            <button
+              type="button"
+              className={stylesFeed.badgeButton}
+              onClick={onToggleTeamBuilder}
+              aria-label="Team builder award"
+            >
+              <AwardDisplayBadge icon={Star} textLines="Team builder" />
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+    <div className={styles.stepItem}>
+      <div className={styles.stepIndicator}><span className={styles.stepNumber}>5</span></div>
+      <div className={`${styles.submitButtonContainer} ${styles.stepContent}`}>
+         <button
+          type="submit"
+          className={stylesFeed.releaseButton}
+          disabled={submitting}
+          aria-label="Submit feedback"
+        >
 
-        {
-          submitting ?
-            <div className={stylesFeed.loaderContainer}>
-              <div className={stylesLoader.loader}></div>
-            </div>:
-            <>
-              <Send size={16} /> End gig, release payment
-            </>
-        }
+          {
+            submitting ?
+              <div className={stylesFeed.loaderContainer}>
+                <div className={stylesLoader.loader}></div>
+              </div>:
+              <>
+                <Send size={16} /> End gig, release payment
+              </>
+          }
 
-      </button>
+        </button>
+      </div>
+     
     </div>
-  </>
+  </div>
 );
 
 export default BuyerFeedbackFields; 

@@ -63,12 +63,6 @@
   fill: var(--primary-color);
 }
 
-
-.customHover:hover {
-  background-color: var(--secondary-color);
-  color: #0f0f0f;
-}
-
 .sectionTitle {
     font-size: 1.25rem;
     font-weight: 600;

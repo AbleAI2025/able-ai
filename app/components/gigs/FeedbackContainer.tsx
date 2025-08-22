@@ -17,6 +17,7 @@ type FeedbackContainerProps = {
   loading?: boolean;
   error?: string | null;
   successMessage?: string | null;
+  handleBack: () => void;
 };
 
 const defaultWorkerForm: WorkerFeedbackFormData = {
@@ -25,6 +26,7 @@ const defaultWorkerForm: WorkerFeedbackFormData = {
   topCommunicator: false,
   teamBuilder: false,
   expensesText: "",
+  expensesFiles: [],
 };
 
 const defaultBuyerForm: BuyerFeedbackFormData = {
@@ -44,6 +46,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   loading,
   error,
   successMessage,
+  handleBack
 }) => {
   const [formData, setFormData] = useState<WorkerFeedbackFormData | BuyerFeedbackFormData>(
     (mode === "worker" ? defaultWorkerForm : defaultBuyerForm)
@@ -54,12 +57,28 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, type, value } = e.target;
-    const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
-    setFormData((prev: WorkerFeedbackFormData | BuyerFeedbackFormData) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+
+    setFormData((prev: WorkerFeedbackFormData | BuyerFeedbackFormData) => {
+      if ('expensesFiles' in prev && type === "file") {
+        const input = e.target as HTMLInputElement; // narrow the type
+        return {
+          ...prev,
+          expensesFiles: [
+          ...prev.expensesFiles, // keep old files
+          ...(input.files ? Array.from(input.files) : []), // add new files
+        ],
+        };
+      }
+
+      const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+      return {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+    });
   };
+
+
 
   const handleThumbsUp = () => {
     setFormData((prev) => ({ ...prev, wouldWorkAgain: true }));
@@ -126,6 +145,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
       onSubmit={handleSubmit}
       loading={loading}
       submitting={submitting}
+      handleBack={handleBack}
     />
   );
 };
