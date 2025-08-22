@@ -180,14 +180,6 @@ const WorkerCalendarPage = () => {
             : [];
         setAvailabilitySlots(availabilityArray);
         
-        // Ensure availabilitySlots is always an array
-        const availabilityArray = Array.isArray(availabilityRes.availability) 
-          ? availabilityRes.availability 
-          : availabilityRes.availability 
-            ? [availabilityRes.availability] 
-            : [];
-        setAvailabilitySlots(availabilityArray);
-        
         const filteredEvents = filterEvents(allEventsCombined, activeFilter);
         setEvents(filteredEvents);
       } catch (error) {
@@ -392,15 +384,6 @@ const WorkerCalendarPage = () => {
             : [];
         setAvailabilitySlots(availabilityArray);
 
-        
-        // Ensure availabilitySlots is always an array
-        const availabilityArray = Array.isArray(availabilityRes.availability) 
-          ? availabilityRes.availability 
-          : availabilityRes.availability 
-            ? [availabilityRes.availability] 
-            : [];
-        setAvailabilitySlots(availabilityArray);
-
         setEvents(filterEvents(allEventsCombined, activeFilter));
       };
       
@@ -438,15 +421,6 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
-        
-        // Ensure availabilitySlots is always an array
-        const availabilityArray = Array.isArray(availabilityRes.availability) 
-          ? availabilityRes.availability 
-          : availabilityRes.availability 
-            ? [availabilityRes.availability] 
-            : [];
-        setAvailabilitySlots(availabilityArray);
-
         
         // Ensure availabilitySlots is always an array
         const availabilityArray = Array.isArray(availabilityRes.availability) 
@@ -532,15 +506,6 @@ const WorkerCalendarPage = () => {
 
         const allEventsCombined = [...parsed, ...availabilityEvents];
         setAllEvents(allEventsCombined);
-        
-        // Ensure availabilitySlots is always an array
-        const availabilityArray = Array.isArray(availabilityRes.availability) 
-          ? availabilityRes.availability 
-          : availabilityRes.availability 
-            ? [availabilityRes.availability] 
-            : [];
-        setAvailabilitySlots(availabilityArray);
-
         
         // Ensure availabilitySlots is always an array
         const availabilityArray = Array.isArray(availabilityRes.availability) 
