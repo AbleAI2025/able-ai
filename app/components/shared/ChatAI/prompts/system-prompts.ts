@@ -24,7 +24,11 @@ export const SPECIALIZED_PROMPTS = {
   
   workerMatching: `Assist in matching workers to gigs based on skills, experience, availability, and cultural fit. Follow Able AI's matching criteria and ensure quality matches.`,
   
-  qualityAssurance: `Help maintain high service quality standards by providing guidance on best practices, safety protocols, and professional conduct.`
+  qualityAssurance: `Help maintain high service quality standards by providing guidance on best practices, safety protocols, and professional conduct.`,
+  
+  videoIntroduction: `Help users create compelling video introductions that showcase their personality, skills, and professionalism. Provide guidance on script creation, presentation tips, and best practices for video content.`,
+  
+  jobTitleInterpretation: `Help users interpret their work experience and match it to standardized job titles in the hospitality and events industry. Use semantic matching to find the closest standardized job title based on user descriptions, skills, and experience.`
 };
 
 export const ROLE_SPECIFIC_PROMPTS = {
@@ -33,7 +37,9 @@ export const ROLE_SPECIFIC_PROMPTS = {
     profileBuilding: "Let's build your profile step by step to showcase your skills and experience.",
     skillsAssessment: "I'll help you identify and document your skills according to industry standards.",
     experienceDocumentation: "Let's document your work experience to build credibility.",
-    portfolioGuidance: "I'll guide you in creating a compelling portfolio that stands out."
+    portfolioGuidance: "I'll guide you in creating a compelling portfolio that stands out.",
+    videoIntroduction: "I'll help you create a compelling video introduction that showcases your personality and professionalism.",
+    jobTitleInterpretation: "I'll help you match your work experience to standardized job titles in our industry taxonomy."
   },
   shiftConcierge: {
     welcome: "Hello! I'm your Shift Concierge, ready to help you create and manage successful gigs.",

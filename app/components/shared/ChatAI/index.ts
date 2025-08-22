@@ -14,6 +14,9 @@ export * from './skills/skill-categories';
 export * from './skills/skill-levels';
 export * from './skills/semantic-matching';
 
+// Job Titles and Classification
+export * from './roles/JobTitles';
+
 // Roles and Behaviors
 export * from './roles/gigfolio-coach';
 export * from './roles/shift-concierge';

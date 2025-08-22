@@ -8,17 +8,17 @@ import { SHIFT_CONCIERGE_CONTENT } from '../roles/shift-concierge';
 export const buildContextPrompt = (contextType: string, userQuery?: string, additionalContext?: string): string => {
   const basePrompt = CONTEXT_PROMPTS[contextType as keyof typeof CONTEXT_PROMPTS] || CONTEXT_PROMPTS.general;
   
-  let prompt = `${BASE_SYSTEM_PROMPT}\n\n${basePrompt}`;
+  let result = `${BASE_SYSTEM_PROMPT}\n\n${basePrompt}`;
   
   if (additionalContext) {
-    prompt += `\n\nAdditional Context: ${additionalContext}`;
+    result += `\n\nAdditional Context: ${additionalContext}`;
   }
   
   if (userQuery) {
-    prompt += `\n\nUser Query: ${userQuery}`;
+    result += `\n\nUser Query: ${userQuery}`;
   }
   
-  return prompt;
+  return result;
 };
 
 export const buildRolePrompt = (role: 'gigfolioCoach' | 'shiftConcierge', context: string, userQuery?: string): string => {
@@ -54,15 +54,15 @@ Please provide specialized assistance in this area.`;
 };
 
 export const buildTemplatePrompt = (template: string, variables: Record<string, string>): string => {
-  let prompt = template;
+  let result = template;
   
   // Replace template variables with actual values
   Object.entries(variables).forEach(([key, value]) => {
     const placeholder = `{${key}}`;
-    prompt = prompt.replace(new RegExp(placeholder, 'g'), value);
+    result = result.replace(new RegExp(placeholder, 'g'), value);
   });
   
-  return prompt;
+  return result;
 };
 
 export const buildMultiContextPrompt = (contexts: string[], userQuery: string): string => {
@@ -82,7 +82,7 @@ export const buildProgressivePrompt = (steps: string[], currentStep: number, use
   const completedSteps = steps.slice(0, currentStep);
   const nextSteps = steps.slice(currentStep);
   
-  let prompt = `${BASE_SYSTEM_PROMPT}
+  const result = `${BASE_SYSTEM_PROMPT}
 
 Progress Update:
 Completed Steps:
@@ -94,7 +94,7 @@ User Query: ${userQuery}
 
 Please provide guidance appropriate to the current progress level.`;
 
-  return prompt;
+  return result;
 };
 
 export const buildErrorHandlingPrompt = (errorType: string, userQuery: string, context: string): string => {
