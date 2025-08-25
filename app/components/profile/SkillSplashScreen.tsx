@@ -17,18 +17,10 @@ import {
 } from "firebase/storage";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-<<<<<<< Updated upstream
-import { updateProfileImageAction } from "@/actions/user/gig-worker-profile";
-=======
-import {
-  getPrivateWorkerProfileAction,
-  updateProfileImageAction,
-  updateVideoUrlProfileAction,
-} from "@/actions/user/gig-worker-profile";
->>>>>>> Stashed changes
 import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
 import ProfileMedia from "./ProfileMedia";
+import { updateProfileImageAction } from "@/actions/user/gig-worker-profile";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -89,81 +81,6 @@ const SkillSplashScreen = ({
   const [isUploadImage, setIsUploadImage] = useState(false);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
 
-<<<<<<< Updated upstream
-=======
-  const handleVideoUpload = useCallback(
-    async (file: Blob) => {
-      if (!user) {
-        console.error("Missing required parameters for video upload");
-        setError("Failed to upload video. Please try again.");
-        return;
-      }
-
-      if (!file || file.size === 0) {
-        console.error("Invalid file for video upload");
-        setError("Invalid video file. Please try again.");
-        return;
-      }
-
-      // Check file size (limit to 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
-        setError("Video file too large. Please use a file smaller than 50MB.");
-        return;
-      }
-
-      try {
-        const filePath = `workers/${
-          user.uid
-        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
-        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
-        const uploadTask = uploadBytesResumable(fileStorageRef, file);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // Progress handling if needed
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            setError("Video upload failed. Please try again.");
-          },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {
-                updateVideoUrlProfileAction(downloadURL, user.token);
-                toast.success("Video upload successfully");
-                getPrivateWorkerProfileAction(user.token);
-              })
-              .catch((error) => {
-                console.error("Failed to get download URL:", error);
-                setError("Failed to get video URL. Please try again.");
-              });
-          }
-        );
-      } catch (error) {
-        console.error("Video upload error:", error);
-        setError("Failed to upload video. Please try again.");
-      }
-    },
-    [user]
-  );
-
-  const handleCopy = async () => {
-    if (disabled || !linkUrl || !navigator.clipboard) return;
-    try {
-      await navigator.clipboard.writeText(linkUrl);
-      setCopied(true);
-      if (onCopy) onCopy(linkUrl);
-      setTimeout(() => setCopied(false), 2000);
-      toast.success("Link copied to clipboard!");
-    } catch (err) {
-      console.error("Failed to copy link: ", err);
-    }
-  };
->>>>>>> Stashed changes
   const handleAddImageClick = () => {
     fileInputRef.current?.click();
   };
@@ -363,7 +280,7 @@ const SkillSplashScreen = ({
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Badges Awarded</h3>
         <div className={styles.badges}>
-          {profile.badges.map((badge) => (
+          {profile?.badges?.map((badge) => (
             <div className={styles.badge} key={badge.id}>
               <AwardDisplayBadge
                 {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}

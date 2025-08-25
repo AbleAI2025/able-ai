@@ -1,14 +1,20 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { BuyerProfilesTable, ReviewsTable, UsersTable } from "@/lib/drizzle/schema";
+import {
+  BadgeDefinitionsTable,
+  BuyerProfilesTable,
+  ReviewsTable,
+  UserBadgesLinkTable,
+  UsersTable,
+} from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { eq } from "drizzle-orm";
 
 export const getGigBuyerProfileAction = async (
   token: string | undefined
-): Promise<{ success: true; profile: any }> => {
+): Promise<{ success: boolean; profile: any }> => {
   try {
     if (!token) {
       throw new Error("User ID is required to fetch buyer profile");
@@ -33,6 +39,31 @@ export const getGigBuyerProfileAction = async (
       where: eq(ReviewsTable.targetUserId, buyerProfile?.userId || ""),
     });
 
+    if (!buyerProfile) {
+      throw new Error("Buyer profile not found");
+    }
+
+    const badges = await db
+      .select({
+        id: UserBadgesLinkTable.id,
+        awardedAt: UserBadgesLinkTable.awardedAt,
+        awardedBySystem: UserBadgesLinkTable.awardedBySystem,
+        notes: UserBadgesLinkTable.notes,
+        badge: {
+          id: BadgeDefinitionsTable.id,
+          name: BadgeDefinitionsTable.name,
+          description: BadgeDefinitionsTable.description,
+          icon: BadgeDefinitionsTable.iconUrlOrLucideName,
+          type: BadgeDefinitionsTable.type,
+        },
+      })
+      .from(UserBadgesLinkTable)
+      .innerJoin(
+        BadgeDefinitionsTable,
+        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+      )
+      .where(eq(UserBadgesLinkTable.userId, buyerProfile?.userId || ""));
+
     const reviewsData = await Promise.all(
       reviews.map(async (review) => {
         const author = await db.query.UsersTable.findFirst({
@@ -40,6 +71,7 @@ export const getGigBuyerProfileAction = async (
         });
 
         return {
+          id: review.id,
           name: author?.fullName || "Unknown",
           date: review.createdAt,
           text: review.comment,
@@ -47,20 +79,27 @@ export const getGigBuyerProfileAction = async (
       })
     );
 
+        const totalReviews = reviews?.length;
+
+    const positiveReviews = reviews?.filter((item) => item.rating === 1).length;
+
+    const averageRating =
+      totalReviews > 0 ? (positiveReviews / totalReviews) * 100 : 0;
+
     const data = {
       ...user,
       ...buyerProfile,
-      reviewsData
+      reviews: reviewsData,
+      badges: badges,
+      averageRating
     };
 
     console.log(data);
 
-    //if (!buyerProfile) throw "Getting worker profile error";
-
     return { success: true, profile: data };
   } catch (error) {
     console.error("Error fetching buyer profile:", error);
-    throw error;
+    return { success: false, profile: null };
   }
 };
 

@@ -3,13 +3,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import {
-  ThumbsUp,
-  Award,
-  Loader2,
-  Sparkles,
-  MessageCircleCode,
-} from "lucide-react";
+import { ThumbsUp, Loader2, MessageSquare } from "lucide-react";
+import { Star as DefaultBadgeIcon } from "lucide-react";
 import styles from "./BuyerProfilePage.module.css";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
@@ -31,6 +26,7 @@ import {
 import { toast } from "sonner";
 import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
 import Link from "next/link";
+import ContentCard from "@/app/components/shared/ContentCard";
 
 // Types
 interface Badge {
@@ -40,12 +36,11 @@ interface Badge {
 }
 interface Review {
   id: string;
-  workerName: string;
+  name: string;
   date: string;
-  reviewText: string;
-  rating: number;
-  workerAvatarUrl?: string;
+  text: string;
 }
+
 interface DashboardData {
   fullName: string;
   username: string;
@@ -69,74 +64,25 @@ interface DashboardData {
     value: string;
     label: string;
   }>;
+  averageRating: number;
+  responseRateInternal: number;
   completedHires: number;
   typesOfStaffHired: string[];
   pieChartData?: Array<{ name: string; value: number; fill: string }>;
   barChartData?: Array<{ name: string; hires: number; spend?: number }>;
   badgesEarnedByTheirWorkers: Badge[];
-  reviewsFromWorkers: Review[];
+  reviews: Review[];
+  badges: {
+    id: string | number;
+    icon?: React.ElementType | null;
+    notes: string;
+    badge: {
+      id: string | number;
+      icon?: React.ElementType | null;
+      description?: string | null;
+    };
+  }[];
 }
-
-// Mock data for QA/testing
-const mockDashboardData: DashboardData = {
-  fullName: "Alexander Smith",
-  username: "@AlexanderS",
-  introVideoThumbnailUrl: "/images/benji.jpeg",
-  introVideoUrl: "https://www.youtube.com/watch?v=some_video_id",
-  fullCompanyName: "Friendship Cafe and Bar",
-  companyRole: "Owner, manager",
-  statistics: [
-    {
-      icon: ThumbsUp,
-      value: "100%",
-      label: "Would work with Alexandra again",
-    },
-    {
-      icon: MessageCircleCode,
-      value: "100%",
-      label: "Response rate",
-    },
-  ],
-  completedHires: 150,
-  typesOfStaffHired: ["Waiters", "Bartender", "Chef"],
-  pieChartData: [
-    { name: "Bartenders", value: 400, fill: "#FFBB28" },
-    { name: "Waiters", value: 300, fill: "#00C49F" },
-    { name: "Chefs", value: 300, fill: "#0088FE" },
-    { name: "Event Staff", value: 200, fill: "#FF8042" },
-  ],
-  barChartData: [
-    { name: "Jan", hires: 10, spend: 1500 },
-    { name: "Feb", hires: 12, spend: 1800 },
-    { name: "Mar", hires: 15, spend: 2200 },
-    { name: "Apr", hires: 13, spend: 2000 },
-  ],
-  badgesEarnedByTheirWorkers: [
-    { id: "b1", name: "Mixology Master Hired", icon: Award },
-    { id: "b2", name: "Consistent Positive Feedback", icon: ThumbsUp },
-    { id: "b3", name: "Top Venue Choice", icon: Sparkles },
-  ],
-  reviewsFromWorkers: [
-    {
-      id: "rw1",
-      workerName: "Benji A.",
-      date: "2023-10-15",
-      reviewText:
-        "Alexander is a great manager, very clear with instructions and fair. Always a pleasure to work for Friendship Cafe!",
-      rating: 5,
-      workerAvatarUrl: "/images/benji.jpeg",
-    },
-    {
-      id: "rw2",
-      workerName: "Sarah K.",
-      date: "2023-09-20",
-      reviewText:
-        "Professional environment and prompt payment. Would definitely work with Alexander again.",
-      rating: 4,
-      workerAvatarUrl: "/images/jessica.jpeg",
-    },
-  ],
-}; // TODO: Replace with real data fetching logic
 
 export default function BuyerProfilePage() {
   const router = useRouter();
@@ -156,25 +102,24 @@ export default function BuyerProfilePage() {
   ] = useState<string | null>(null);
 
   const fetchUserProfile = async () => {
-    if (user?.claims.role === "QA") {
-      setDashboardData(mockDashboardData);
-      setIsLoadingData(false);
-    } else {
-      // TODO: Replace with real data fetching logic for non-QA users
-      const { success, profile } = await getGigBuyerProfileAction(user?.token);
-      console.log("profile data:", profile);
+    const { success, profile } = await getGigBuyerProfileAction(user?.token);
+    console.log("profile data:", profile);
 
-      if (!success) {
-        setError(error || "Failed to fetch profile data");
-        setIsLoadingData(false);
-        setDashboardData(profile);
-        return;
-      } else {
-        setDashboardData(profile);
-        setIsLoadingData(false);
-      }
+    if (success && profile) {
+      const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
+        ...badge,
+        icon: badge.icon || DefaultBadgeIcon,
+      }));
+      setDashboardData({ ...profile, badges: updatedBadges });
+      setError(null);
+    } else {
+      setError("Failed to fetch profile data");
+      setDashboardData(null);
     }
+
+    setIsLoadingData(false);
   };
+
   useEffect(() => {
     // At this point, user is authenticated and authorized for this pageUserId
     if (user) {
@@ -389,20 +334,32 @@ export default function BuyerProfilePage() {
 
         {/* Statistics Section */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Statistics</h2>
-          <div className={styles.statsGrid}>
-            {dashboardData?.statistics?.map((stat, index) => (
-              <StatisticItemDisplay
-                key={index}
-                stat={{
-                  id: index,
-                  icon: ThumbsUp,
-                  value: stat.value,
-                  label: stat.label,
-                }}
-              />
-            ))}
-          </div>
+          <ContentCard title="Statistics" className={styles.statisticsCard}>
+            <div className={styles.statisticsItemsContainer}>
+              {dashboardData?.responseRateInternal && (
+                <StatisticItemDisplay
+                  stat={{
+                    id: 1,
+                    icon: ThumbsUp,
+                    value: dashboardData.responseRateInternal,
+                    label: "Would work with Benji again",
+                    iconColor: "#0070f3",
+                  }}
+                />
+              )}
+              {dashboardData?.averageRating && (
+                <StatisticItemDisplay
+                  stat={{
+                    id: 2,
+                    icon: MessageSquare,
+                    value: dashboardData.averageRating,
+                    label: "Response rate",
+                    iconColor: "#0070f3",
+                  }}
+                />
+              )}
+            </div>
+          </ContentCard>
         </section>
 
         {/* Completed Hires Card */}
@@ -437,14 +394,14 @@ export default function BuyerProfilePage() {
         {/* Badges Awarded Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Badges Awarded</h2>
-          <div className={styles.badgesGridDisplay}>
-            {dashboardData?.badgesEarnedByTheirWorkers?.map((award) => (
-              <AwardDisplayBadge
-                key={award.id}
-                icon={award.icon}
-                textLines={award.name}
-                color="#eab308"
-              />
+          <div className={styles.badges}>
+            {dashboardData?.badges?.map((badge) => (
+              <div className={styles.badge} key={badge.id}>
+                <AwardDisplayBadge
+                  {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
+                  textLines={badge?.badge?.description ?? ""}
+                />
+              </div>
             ))}
           </div>
         </section>
@@ -452,18 +409,16 @@ export default function BuyerProfilePage() {
         {/* Worker Reviews Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Worker Reviews</h2>
-          {dashboardData?.reviewsFromWorkers?.length > 0 ? (
+          {dashboardData?.reviews?.length > 0 ? (
             <div className={styles.reviewsListContainer}>
-              {dashboardData?.reviewsFromWorkers
-                .slice(0, 2)
-                .map((review, index) => (
-                  <ReviewCardItem
-                    key={index}
-                    reviewerName={review.workerName}
-                    date={review.date}
-                    comment={review.reviewText}
-                  />
-                ))}
+              {dashboardData?.reviews.map((review, index) => (
+                <ReviewCardItem
+                  key={index}
+                  reviewerName={review.name}
+                  date={review.date.toString()}
+                  comment={review.text}
+                />
+              ))}
             </div>
           ) : (
             <p style={{ fontSize: "0.9rem", color: "#a0a0a0" }}>

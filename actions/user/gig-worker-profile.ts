@@ -408,7 +408,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
     if (!user) throw "User not found";
 
     // Check if worker profile already exists
-    let workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.userId, user.id),
     });
 
