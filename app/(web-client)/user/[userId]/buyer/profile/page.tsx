@@ -1,14 +1,11 @@
 /* eslint-disable max-lines-per-function */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import Image from "next/image";
 import {
   ThumbsUp,
   Award,
-  Film,
-  Video,
   Loader2,
   Sparkles,
   MessageCircleCode,
@@ -20,8 +17,17 @@ import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import PieChartComponent from "@/app/components/shared/PiChart";
 import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
-import { getGigWorkerProfile } from "@/actions/buyer/profile";
-import { getGigBuyerProfile } from "@/actions/user/gig-buyer-profile";
+import { getGigBuyerProfileAction, updateVideoUrlBuyerProfileAction } from "@/actions/user/gig-buyer-profile";
+import { firebaseApp } from "@/lib/firebase/clientApp";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+import { toast } from "sonner";
+import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
+import Link from "next/link";
 
 // Types
 interface Badge {
@@ -38,13 +44,21 @@ interface Review {
   workerAvatarUrl?: string;
 }
 interface DashboardData {
-  displayName: string;
+  fullName: string;
   username: string;
   introVideoThumbnailUrl?: string;
   introVideoUrl?: string;
-  businessName: string;
-  businessLocation: string;
+  fullCompanyName: string;
+  businessLocation?: {
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state?: string;
+    postalCode?: string;
+    country: string;
+  };
   userRoleInBusiness: string;
+  videoUrl?: string;
   statistics: Array<{
     icon: React.ElementType;
     value: string;
@@ -60,12 +74,11 @@ interface DashboardData {
 
 // Mock data for QA/testing
 const mockDashboardData: DashboardData = {
-  displayName: "Alexander Smith",
+  fullName: "Alexander Smith",
   username: "@AlexanderS",
   introVideoThumbnailUrl: "/images/benji.jpeg",
   introVideoUrl: "https://www.youtube.com/watch?v=some_video_id",
-  businessName: "Friendship Cafe and Bar",
-  businessLocation: "Soho, W1 56T",
+  fullCompanyName: "Friendship Cafe and Bar",
   userRoleInBusiness: "Owner, manager",
   statistics: [
     {
@@ -143,10 +156,13 @@ export default function BuyerProfilePage() {
       setIsLoadingData(false);
     } else {
       // TODO: Replace with real data fetching logic for non-QA users
-      const {profile, success} = getGigBuyerProfile(user?.token)
+      const {success, profile} = await getGigBuyerProfileAction(user?.token)
+      console.log("profile data:", profile);
+      
       if (!success) {
         setError(error || "Failed to fetch profile data");
         setIsLoadingData(false);
+        setDashboardData(profile);
         return;
       } else {
         setDashboardData(profile);
@@ -162,13 +178,68 @@ export default function BuyerProfilePage() {
     }
   }, [loadingAuth, user, authUserId, pageUserId, , pathname, router]);
 
-  const handlePlayIntroVideo = () => {
-    if (dashboardData?.introVideoUrl) {
-      window.open(dashboardData.introVideoUrl, "_blank");
-    } else {
-      alert("Intro video not available.");
-    }
-  };
+  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const isSelfView = authUserId === pageUserId;
+
+    const handleVideoUpload = useCallback(
+      async (file: Blob) => {
+        if (!user) {
+          console.error("Missing required parameters for video upload");
+          setError("Failed to upload video. Please try again.");
+          return;
+        }
+  
+        if (!file || file.size === 0) {
+          console.error("Invalid file for video upload");
+          setError("Invalid video file. Please try again.");
+          return;
+        }
+  
+        // Check file size (limit to 50MB)
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (file.size > maxSize) {
+          setError("Video file too large. Please use a file smaller than 50MB.");
+          return;
+        }
+  
+        try {
+          const filePath = `buyer/${
+            user.uid
+          }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+          const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+          const uploadTask = uploadBytesResumable(fileStorageRef, file);
+  
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              // Progress handling if needed
+            },
+            (error) => {
+              console.error("Upload failed:", error);
+              setError("Video upload failed. Please try again.");
+            },
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref)
+                .then((downloadURL) => {
+                  updateVideoUrlBuyerProfileAction(downloadURL, user.token);
+                  toast.success("Video upload successfully");
+                  fetchUserProfile();
+                })
+                .catch((error) => {
+                  console.error("Failed to get download URL:", error);
+                  setError("Failed to get video URL. Please try again.");
+                });
+            }
+          );
+        } catch (error) {
+          console.error("Video upload error:", error);
+          setError("Failed to upload video. Please try again.");
+        }
+      },
+      [user]
+    );
 
   if (!user || isLoadingData) {
     return (
@@ -202,7 +273,7 @@ export default function BuyerProfilePage() {
         {/* Profile Header */}
         <header className={styles.profileHeader}>
           <h3 className={styles.profileHeaderName}>
-            {dashboardData.displayName}
+            {dashboardData.fullName}
           </h3>
           <p className={styles.profileHeaderUsername}>
             {dashboardData.username}
@@ -213,34 +284,98 @@ export default function BuyerProfilePage() {
         <section className={`${styles.section} ${styles.introBusinessCard}`}>
           <div
             className={styles.videoThumbnailContainer}
-            onClick={handlePlayIntroVideo}
-            role="button"
-            tabIndex={0}
-            onKeyPress={(e) => e.key === "Enter" && handlePlayIntroVideo()}
           >
             <span className={styles.videoThumbnailTitle}>Intro Video</span>
             <div className={styles.videoPlaceholderImage}>
-              {dashboardData.introVideoThumbnailUrl ? (
-                <Image
-                  src={dashboardData.introVideoThumbnailUrl}
-                  alt="Intro video thumbnail"
-                  width={116}
-                  height={116}
-                  style={{ objectFit: "cover" }}
-                  className={styles.actualVideoImage}
+                      {!dashboardData?.videoUrl ? (
+          isSelfView ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <h3>Please, introduce yourself</h3>
+              <VideoRecorderBubble
+                key={1}
+                onVideoRecorded={handleVideoUpload}
+              />
+            </div>
+          ) : (
+            <p
+              style={{
+                textAlign: "center",
+                fontStyle: "italic",
+                color: "#888",
+              }}
+            >
+              User presentation not exist
+            </p>
+          )
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <Link
+              href={dashboardData.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-block", textDecoration: "none" }}
+            >
+              <video
+                width="180"
+                height="180"
+                style={{ borderRadius: "8px", objectFit: "cover" }}
+                preload="metadata"
+                muted
+                poster="/video-placeholder.jpg"
+              >
+                <source
+                  src={dashboardData.videoUrl + "#t=0.1"}
+                  type="video/webm"
                 />
-              ) : (
-                <Film size={48} color="#0f0f0f" />
-              )}
-              <Video size={32} className={styles.playIconOverlay} />
+              </video>
+            </Link>
+
+            {isSelfView && (
+              <div style={{ marginTop: "8px" }}>
+                <button
+                  onClick={() => setIsEditingVideo(true)}
+                  style={{
+                    padding: "6px 12px",
+                    backgroundColor: "#0070f3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Edit video
+                </button>
+              </div>
+            )}
+
+            {isEditingVideo && (
+              <div style={{ marginTop: "12px" }}>
+                <VideoRecorderBubble
+                  key={2}
+                  onVideoRecorded={(video) => {
+                    handleVideoUpload(video);
+                    setIsEditingVideo(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
             </div>
           </div>
           <div className={styles.businessInfoCard}>
             <h4>Business:</h4>
             <p>
-              {dashboardData.businessName}
+              {dashboardData.fullCompanyName}
               <br />
-              {dashboardData.businessLocation}
+              {dashboardData?.businessLocation?.addressLine1 || dashboardData?.businessLocation?.addressLine2}
             </p>
             <h4>Role:</h4>
             <p>{dashboardData.userRoleInBusiness}</p>
@@ -251,7 +386,7 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Statistics</h2>
           <div className={styles.statsGrid}>
-            {dashboardData.statistics.map((stat, index) => (
+            {dashboardData?.statistics?.map((stat, index) => (
               <StatisticItemDisplay
                 key={index}
                 stat={{
@@ -278,7 +413,7 @@ export default function BuyerProfilePage() {
               Types of Staff Hired:
             </span>
             <ul>
-              {dashboardData.typesOfStaffHired.map((type) => (
+              {dashboardData?.typesOfStaffHired?.map((type) => (
                 <li key={type}>{type}</li>
               ))}
             </ul>
@@ -298,7 +433,7 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Badges Awarded</h2>
           <div className={styles.badgesGridDisplay}>
-            {dashboardData.badgesEarnedByTheirWorkers.map((award) => (
+            {dashboardData?.badgesEarnedByTheirWorkers?.map((award) => (
               <AwardDisplayBadge
                 key={award.id}
                 icon={award.icon}
@@ -312,9 +447,9 @@ export default function BuyerProfilePage() {
         {/* Worker Reviews Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Worker Reviews</h2>
-          {dashboardData.reviewsFromWorkers.length > 0 ? (
+          {dashboardData?.reviewsFromWorkers?.length > 0 ? (
             <div className={styles.reviewsListContainer}>
-              {dashboardData.reviewsFromWorkers
+              {dashboardData?.reviewsFromWorkers
                 .slice(0, 2)
                 .map((review, index) => (
                   <ReviewCardItem

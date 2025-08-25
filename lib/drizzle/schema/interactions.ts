@@ -8,14 +8,13 @@ import {
   boolean,
   integer,
   jsonb,
-  primaryKey,
   varchar,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // Import enums
-import { reviewTypeEnum, moderationStatusEnum, badgeTypeEnum } from "./enums";
+import { reviewTypeEnum, moderationStatusEnum, badgeTypeEnum, activeRoleContextEnum } from "./enums";
 
 // Import related tables for foreign keys
 import { UsersTable } from "./users";
@@ -46,6 +45,7 @@ export const ReviewsTable = pgTable(
     moderationStatus: moderationStatusEnum("moderation_status")
       .default("PENDING")
       .notNull(),
+    targetRole: activeRoleContextEnum("target_role"),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
