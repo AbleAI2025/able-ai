@@ -123,6 +123,7 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
   }),
   billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
   videoUrl: text("video_url"),
+  companyRole: varchar("company_role", { length: 100 }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
