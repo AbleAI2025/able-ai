@@ -3,19 +3,23 @@ import styles from './ConfirmAmendedGigDetailsPage.module.css';
 
 type Props = {
   lastRoleUsed: string | null;
+  isLoadingConfirm: boolean;
   handleConfirm: () => void;
   handleSuggestNew: () => void;
   handleDecline: () => void;
 };
 
-const ConfirmAmendedGigDetailsFooterActions: React.FC<Props> = ({ lastRoleUsed, handleConfirm, handleSuggestNew, handleDecline }) => (
+const ConfirmAmendedGigDetailsFooterActions: React.FC<Props> = ({ lastRoleUsed, isLoadingConfirm, handleConfirm, handleSuggestNew, handleDecline }) => (
   <footer className={styles.actionsFooter}>
     <button
       type="button"
       className={`${styles.actionButton} ${lastRoleUsed === 'BUYER' ? styles.buyerColor : styles.workerColor}`}
       onClick={handleConfirm}
+      disabled={isLoadingConfirm}
     >
-      Confirm changes
+      {
+        isLoadingConfirm ? <>Loading...</> : <>Confirm changes</>
+      }
     </button>
     <button
       type="button"

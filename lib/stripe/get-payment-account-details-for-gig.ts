@@ -9,6 +9,8 @@ export async function getPaymentAccountDetailsForGig(gigId: string) {
       buyerUserId: true,
       workerUserId: true,
       id: true,
+      finalAgreedPrice: true,
+      totalAgreedPrice: true,
     }
   });
 

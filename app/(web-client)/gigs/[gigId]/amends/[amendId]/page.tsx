@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import Logo from "@/app/components/brand/Logo";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 import SubmitButton from "@/app/components/form/SubmitButton";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
@@ -23,6 +23,8 @@ const gigDetailsData = {
 };
 
 export default function CancelOrAmendGigDetailsPage() {
+  const router = useRouter();
+  const path = usePathname();
   const params = useParams();
   const gigId = params.gigId as string;
   const { user } = useAuth();
@@ -31,7 +33,6 @@ export default function CancelOrAmendGigDetailsPage() {
   const [editedGigDetails, setEditedGigDetails] = useState(gigDetailsData); // State for edited details
   const [isLoading, setIsLoading] = useState(false);
   const lastRoleUsed = getLastRoleUsed();
-  const router = useRouter();
   /*
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,6 +53,11 @@ export default function CancelOrAmendGigDetailsPage() {
     // Logic for submitting the amendment/cancellation request
     console.log("Submit for Confirmation clicked. Message:", userMessage);
     console.log("Edited Gig Details:", editedGigDetails);
+    localStorage.setItem(
+      'amendedGig',
+      JSON.stringify({ ...editedGigDetails, hourlyRate: editedGigDetails.payPerHour, estimatedEarnings: editedGigDetails.totalPay })
+    );
+    router.push(`${path}/review`);
     // TODO: Call API to submit amendment request
   };
 

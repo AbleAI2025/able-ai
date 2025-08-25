@@ -118,6 +118,10 @@ export const GigsTable = pgTable("gigs", {
   estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
   totalAgreedPrice: decimal("total_agreed_price", { precision: 10, scale: 2 }),
 
+  finalRate: decimal("final_rate", { precision: 10, scale: 2 }),
+  finalHours: decimal("final_hours", { precision: 5, scale: 2 }),
+  finalAgreedPrice: decimal("final_agreed_price", { precision: 10, scale: 2 }),
+
   statusInternal: gigStatusEnum("status_internal")
     .default("PENDING_WORKER_ACCEPTANCE")
     .notNull(),
@@ -135,7 +139,9 @@ export const GigsTable = pgTable("gigs", {
 
   notesForWorker: text("notes_for_worker"),
   notesForBuyer: text("notes_for_buyer"),
+  adjustmentNotes: text("adjustment_notes"),
 
+  adjustedAt: timestamp("adjusted_at", { mode: "date", withTimezone: true }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

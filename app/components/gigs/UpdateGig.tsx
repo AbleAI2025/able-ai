@@ -2,6 +2,7 @@ import { Pencil, X } from 'lucide-react';
 import styles from './UpdateGig.module.css';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
+import { calculateHoursInRange } from "@/utils/calculate-hours";
 
 interface GigDetailsProps {
 	editedGigDetails: GigReviewDetailsData;
@@ -20,9 +21,12 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
 		const { name, value } = e.target;
+
 		setEditedGigDetails((prevState) => ({
 			...prevState,
 			[name]: value,
+			...('payPerHour' === name ? { totalPay: (calculateHoursInRange(editedGigDetails.time) * Number(value)).toString() } : {}),
+			...('time' === name ? { totalPay: (calculateHoursInRange(value) * Number(editedGigDetails.payPerHour)).toString() } : {})
 		}));
 	};
 
