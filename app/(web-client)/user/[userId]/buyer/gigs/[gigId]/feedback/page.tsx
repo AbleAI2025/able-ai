@@ -14,7 +14,6 @@ async function fetchGigForBuyerFeedback(
 ): Promise<GigDetails | null> {
 
   await new Promise((resolve) => setTimeout(resolve, 500));
-  if (gigId === "gig123-accepted") {
     return {
       id: gigId,
       role: "Bartender",
@@ -29,8 +28,6 @@ async function fetchGigForBuyerFeedback(
       details: "Completed gig on Monday, 9:00 am. Location: Central Train station",
       earnings: 80,
     };
-  }
-  return null;
 }
 
 export default function BuyerFeedbackPage() {
@@ -115,6 +112,7 @@ export default function BuyerFeedbackPage() {
       loading={isSubmitting}
       error={error}
       successMessage={successMessage}
+      handleBack={() => router.back()}
     />
   );
 }

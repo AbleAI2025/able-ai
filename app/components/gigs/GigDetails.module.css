@@ -601,3 +601,8 @@
     border-radius: 16px;
     border: 1px solid rgba(121, 240, 247, 0.1);
 } 
+
+.awaitingText {
+  display: flex;
+  align-items: center;
+}

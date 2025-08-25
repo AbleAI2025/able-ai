@@ -137,29 +137,9 @@ export default function BuyerDashboardPage() {
             />
           )}
         <main className={styles.contentWrapper}>
-          
-
-          {/* <h2 className={styles.sectionTitle}>Manage Your Activity</h2> */}
-           <IconGrid items={actionItems} color={"#7eeef9"} />
-
-          {/* Optional Summary Section - Example Structure
-          {summaryData.length > 0 && (
-            <section className={styles.summarySection}>
-              <h2 className={styles.sectionTitle}>
-                Your Next Gig
-              </h2>
-              <ul className={styles.summaryList}>
-                {summaryData.slice(0,3).map(item => ( // Show first 3
-                    <li key={item.id}><Link href={item.link}>{item.title} with {item.partnerName} on {item.dateTime}</Link></li>
-                ))}
-              </ul>
-              {summaryData.length > 3 && <Link href='/worker/calendar' className={styles.viewAllLink}>View All</Link>>}
-            </section>
-          )}
-          */}
-
+          <IconGrid items={actionItems} color={"#7eeef9"} />
           <ReferralBanner
-            className={styles.customHover}
+            role='BUYER'
           />
         </main> 
          <footer className={styles.pageFooter}>

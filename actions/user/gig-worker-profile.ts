@@ -14,10 +14,11 @@ import {
   SkillsTable,
   UserBadgesLinkTable,
   UsersTable,
+  WorkerAvailabilityTable,
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const getPublicWorkerProfileAction = async (workerId: string) => {
   if (!workerId) throw "Worker ID is required";
@@ -78,7 +79,17 @@ export const getGigWorkerProfile = async (
     });
 
     const reviews = await db.query.ReviewsTable.findMany({
-      where: eq(ReviewsTable.targetUserId, workerProfile.userId),
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile.userId),
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+      ),
+    });
+
+    const recommendations = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile.userId),
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+      ),
     });
 
     const totalReviews = reviews?.length;
@@ -95,7 +106,7 @@ export const getGigWorkerProfile = async (
       privateNotes: workerProfile?.privateNotes ?? undefined,
       responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
       videoUrl: workerProfile?.videoUrl ?? undefined,
-      availabilityJson: workerProfile?.availabilityJson as Availability,
+      availabilityJson: undefined, // Set to undefined since we now use worker_availability table
       semanticProfileJson:
         workerProfile?.semanticProfileJson as SemanticProfile,
       averageRating,
@@ -103,6 +114,7 @@ export const getGigWorkerProfile = async (
       equipment,
       skills,
       reviews,
+      recommendations,
       qualifications,
     };
 
@@ -150,17 +162,40 @@ export const getSkillDetailsWorker = async (id: string) => {
       )
       .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
 
-
     const qualifications = await db.query.QualificationsTable.findMany({
       where: eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
     });
 
     const reviews = await db.query.ReviewsTable.findMany({
-      where: eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+      ),
+    });
+
+    const recommendations = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+      ),
     });
 
     const reviewsData = await Promise.all(
       reviews.map(async (review) => {
+        const author = await db.query.UsersTable.findFirst({
+          where: eq(UsersTable.id, review.authorUserId),
+        });
+
+        return {
+          name: author?.fullName || "Unknown",
+          date: review.createdAt,
+          text: review.comment,
+        };
+      })
+    );
+
+    const recommendationsData = await Promise.all(
+      recommendations.map(async (review) => {
         const author = await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
         });
@@ -198,6 +233,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       badges,
       qualifications,
       buyerReviews: reviewsData,
+      recommendations: recommendationsData,
     };
 
     return { success: true, data: skillProfile };
@@ -230,21 +266,21 @@ export const createSkillWorker = async (
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw new Error("Unauthorized");
 
-      const user = await db.query.UsersTable.findFirst({
-    where: eq(UsersTable.firebaseUid, uid),
-  });
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
 
-  if (!user) {
-    throw new Error("User not found");
-  }
+    if (!user) {
+      throw new Error("User not found");
+    }
 
-  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-    where: eq(GigWorkerProfilesTable.userId, user.id),
-  });
-  
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+
     if (!workerProfile) {
-    throw new Error("Worker profile not found");
-  }
+      throw new Error("Worker profile not found");
+    }
 
     const [newSkill] = await db
       .insert(SkillsTable)
@@ -384,12 +420,11 @@ export const saveWorkerProfileFromOnboardingAction = async (
       endTime: string; 
       frequency?: string;
       ends?: string;
+      startDate?: string; // Add this field
       endDate?: string;
       occurrences?: number;
     } | string;
     videoIntro: File | string;
-    references: string;
-    time: string;
   },
   token: string
 ) => {
@@ -418,19 +453,12 @@ export const saveWorkerProfileFromOnboardingAction = async (
       location: typeof profileData.location === 'string' ? profileData.location : profileData.location?.formatted_address || profileData.location?.name || '',
       latitude: typeof profileData.location === 'object' && profileData.location?.lat ? profileData.location.lat : null,
       longitude: typeof profileData.location === 'object' && profileData.location?.lng ? profileData.location.lng : null,
-      availabilityJson: typeof profileData.availability === 'string' ? profileData.availability : {
-        ...profileData.availability,
-        // Ensure all recurring fields are included
-        frequency: profileData.availability.frequency || 'never',
-        ends: profileData.availability.ends || 'never',
-        endDate: profileData.availability.endDate,
-        occurrences: profileData.availability.occurrences
-      },
+      // Remove availabilityJson - we'll save to worker_availability table instead
       videoUrl: typeof profileData.videoIntro === 'string' ? profileData.videoIntro : profileData.videoIntro?.name || '',
       semanticProfileJson: {
         tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
       },
-      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\nTime Preferences: ${profileData.time}\nReferences: ${profileData.references}`,
+      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
       updatedAt: new Date(),
     };
 
@@ -446,6 +474,35 @@ export const saveWorkerProfileFromOnboardingAction = async (
         userId: user.id,
         ...profileUpdateData,
         createdAt: new Date(),
+      });
+    }
+
+    // Save availability data to worker_availability table
+    if (profileData.availability && typeof profileData.availability === 'object') {
+      // Create proper timestamps for the required fields
+      const createTimestamp = (timeStr: string) => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+      };
+
+      await db.insert(WorkerAvailabilityTable).values({
+        userId: user.id,
+        days: profileData.availability.days || [],
+        frequency: (profileData.availability.frequency || 'never') as "never" | "weekly" | "biweekly" | "monthly",
+        startDate: profileData.availability.startDate,
+        startTimeStr: profileData.availability.startTime,
+        endTimeStr: profileData.availability.endTime,
+        // Convert time strings to timestamp for the required fields
+        startTime: createTimestamp(profileData.availability.startTime),
+        endTime: createTimestamp(profileData.availability.endTime),
+        ends: (profileData.availability.ends || 'never') as "never" | "on_date" | "after_occurrences",
+        occurrences: profileData.availability.occurrences,
+        endDate: profileData.availability.endDate || null,
+        notes: `Onboarding availability - Hourly Rate: ${profileData.hourlyRate}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
 

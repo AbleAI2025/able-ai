@@ -177,14 +177,13 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
           </div>
         )}
       </div>
-
-      {/* Accept button for offers */}
-      {(event.status === 'OFFER') && (
+      
+      {/* Edit button for availability events */}
+      {event.status === 'AVAILABLE' && (
         <div className={styles.actionButtons}>
-          <button 
-            className={`${styles.actionButton} ${userRole === 'buyer' ? styles.pendingBtn : styles.acceptBtn}`}
-          >
-            {userRole === 'buyer' ? 'Pending' : 'Accept'}
+          <button className={`${styles.actionButton} ${styles.editAvailabilityBtn}`}>
+            <Eye size={12} className={styles.viewIcon} />
+            Edit
           </button>
         </div>
       )}

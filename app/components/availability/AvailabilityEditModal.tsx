@@ -12,6 +12,7 @@ interface AvailabilityEditModalProps {
   onSave: (data: AvailabilityFormData) => void;
   onDelete?: () => void;
   selectedDate?: Date;
+  isEditingSingleOccurrence?: boolean; // New prop to indicate if editing just one occurrence
 }
 
 const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
@@ -21,6 +22,7 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
   onSave,
   onDelete,
   selectedDate,
+  isEditingSingleOccurrence = false,
 }) => {
   const [formData, setFormData] = useState<AvailabilityFormData>({
     startTime: "09:00",
@@ -35,15 +37,29 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
 
   useEffect(() => {
     if (slot) {
-      setFormData({
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        days: slot.days,
-        frequency: slot.frequency,
-        ends: slot.ends,
-        endDate: slot.endDate,
-        occurrences: slot.occurrences,
-      });
+      if (isEditingSingleOccurrence && selectedDate) {
+        // Editing just one occurrence of a recurring pattern
+        setFormData({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          days: [], // Empty for single occurrence
+          frequency: 'never', // Single occurrence
+          ends: 'on_date',
+          endDate: selectedDate.toISOString().split('T')[0], // The specific date
+          occurrences: undefined,
+        });
+      } else {
+        // Editing the entire recurring pattern
+        setFormData({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          days: slot.days,
+          frequency: slot.frequency,
+          ends: slot.ends,
+          endDate: slot.endDate,
+          occurrences: slot.occurrences,
+        });
+      }
     } else if (selectedDate) {
       // For single occurrences, store the actual date in the endDate field
       const dateString = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -55,9 +71,23 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
         ends: 'on_date'
       }));
     }
-  }, [slot, selectedDate]);
+  }, [slot, selectedDate, isEditingSingleOccurrence]);
 
   const handleSave = () => {
+    console.log('AvailabilityEditModal: Saving form data:', formData);
+    
+    // Validate required fields
+    if (!formData.startTime || !formData.endTime) {
+      alert('Please set both start and end times');
+      return;
+    }
+    
+    // Validate time logic
+    if (formData.startTime >= formData.endTime) {
+      alert('End time must be after start time');
+      return;
+    }
+    
     onSave(formData);
     onClose();
   };
@@ -88,10 +118,15 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
     <>
       <div className={styles.overlay} onClick={onClose}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.header}>
-            <h2 className={styles.title}>
-              Edit availability - {slot ? `${getDayName(new Date())} ${getFormattedDate(new Date())}` : 'New Slot'}
-            </h2>
+                     <div className={styles.header}>
+             <h2 className={styles.title}>
+               {isEditingSingleOccurrence && slot 
+                 ? `Edit this occurrence - ${selectedDate ? getFormattedDate(selectedDate) : 'Selected Date'}`
+                 : slot 
+                   ? `Edit recurring pattern - ${getDayName(new Date())} ${getFormattedDate(new Date())}`
+                   : 'New Slot'
+               }
+             </h2>
             <button className={styles.closeButton} onClick={onClose}>
               <X size={20} />
             </button>
@@ -118,22 +153,37 @@ const AvailabilityEditModal: React.FC<AvailabilityEditModalProps> = ({
               />
             </div>
 
-            <div className={styles.recurrenceRow} onClick={() => setShowRepeatModal(true)}>
-              <span className={styles.recurrenceText}>
-                {formData.frequency === 'never' 
-                  ? (formData.endDate 
-                      ? `Single occurrence on ${new Date(formData.endDate).toLocaleDateString('en-GB', {
-                          weekday: 'long',
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}`
-                      : 'Single occurrence (date not specified)')
-                  : `Repeats ${formData.days.join('-')} every ${formData.frequency === 'weekly' ? 'week' : formData.frequency === 'biweekly' ? '2 weeks' : 'month'}`
-                }
-              </span>
-              <span className={styles.arrow}>›</span>
-            </div>
+                         {!isEditingSingleOccurrence && (
+               <div className={styles.recurrenceRow} onClick={() => setShowRepeatModal(true)}>
+                 <span className={styles.recurrenceText}>
+                   {formData.frequency === 'never' 
+                     ? (formData.endDate 
+                         ? `Single occurrence on ${new Date(formData.endDate).toLocaleDateString('en-GB', {
+                             weekday: 'long',
+                             day: '2-digit',
+                             month: 'short',
+                             year: 'numeric',
+                           })}`
+                         : 'Single occurrence (date not specified)')
+                     : `Repeats ${formData.days.join('-')} every ${formData.frequency === 'weekly' ? 'week' : formData.frequency === 'biweekly' ? '2 weeks' : 'month'}`
+                   }
+                 </span>
+                 <span className={styles.arrow}>›</span>
+               </div>
+             )}
+             
+             {isEditingSingleOccurrence && selectedDate && (
+               <div className={styles.singleOccurrenceInfo}>
+                 <span className={styles.recurrenceText}>
+                   Single occurrence on {selectedDate.toLocaleDateString('en-GB', {
+                     weekday: 'long',
+                     day: '2-digit',
+                     month: 'short',
+                     year: 'numeric',
+                   })}
+                 </span>
+               </div>
+             )}
           </div>
 
           <div className={styles.actions}>

@@ -61,6 +61,12 @@ const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
 
   // Get availability for the current week
   const getAvailabilityForDay = (date: Date): AvailabilitySlot[] => {
+    // Safety check: ensure availabilitySlots is an array
+    if (!Array.isArray(availabilitySlots)) {
+      console.warn('WeeklyAvailabilityView: availabilitySlots is not an array:', availabilitySlots);
+      return [];
+    }
+    
     return availabilitySlots.filter(slot => {
       // Handle single occurrences
       if (slot.frequency === 'never' && slot.endDate) {
@@ -79,13 +85,14 @@ const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
       }
       
       // Check if the date is within the valid range for this recurring slot
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+                           slot.createdAt ? new Date(slot.createdAt) : new Date();
+      slotStartDate.setHours(0, 0, 0, 0);
       const checkDate = new Date(date);
       checkDate.setHours(0, 0, 0, 0);
       
-      // Don't show recurring slots for past dates
-      if (checkDate < today) {
+      // Don't show recurring slots for dates before the slot's start date
+      if (checkDate < slotStartDate) {
         return false;
       }
       
@@ -100,9 +107,46 @@ const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
       
       // Check occurrence count if specified
       if (slot.ends === 'after_occurrences' && slot.occurrences) {
-        const occurrenceCount = getOccurrenceCountForSlot(slot, date);
-        if (occurrenceCount >= slot.occurrences) {
-          return false;
+        // For weekly frequency, count by weeks, not individual occurrences
+        if (slot.frequency === 'weekly') {
+          // Find the first occurrence date to establish the pattern
+          const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+                             slot.createdAt ? new Date(slot.createdAt) : new Date();
+          slotStartDate.setHours(0, 0, 0, 0);
+          
+          // Find the first occurrence of any of our target days
+          let firstOccurrenceDate: Date | null = null;
+          let tempDate = new Date(slotStartDate);
+          
+          while (tempDate <= checkDate) {
+            const tempDayName = moment(tempDate).format('ddd');
+            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const dayIndex = moment(tempDate).isoWeekday() - 1;
+            const tempDayNameShort = dayNames[dayIndex];
+            
+            if (slot.days.includes(tempDayNameShort)) {
+              firstOccurrenceDate = new Date(tempDate);
+              break;
+            }
+            tempDate = new Date(tempDate.getTime() + 24 * 60 * 60 * 1000);
+          }
+          
+          if (firstOccurrenceDate) {
+            // Calculate weeks since first occurrence
+            const daysSinceFirst = Math.floor((checkDate.getTime() - firstOccurrenceDate.getTime()) / (24 * 60 * 60 * 1000));
+            const weeksSinceFirst = Math.floor(daysSinceFirst / 7);
+            
+            // If we have an occurrence limit, check if we've exceeded it (count by weeks)
+            if (weeksSinceFirst >= slot.occurrences) {
+              return false;
+            }
+          }
+        } else {
+          // For other frequencies, use the old logic
+          const occurrenceCount = getOccurrenceCountForSlot(slot, date);
+          if (occurrenceCount >= slot.occurrences) {
+            return false;
+          }
         }
       }
       
@@ -114,14 +158,16 @@ const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
   const getOccurrenceCountForSlot = (slot: AvailabilitySlot, targetDate: Date): number => {
     if (slot.frequency === 'never') return 0;
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(Math.max(today.getTime(), new Date(slot.createdAt).getTime()));
+    // Start from the slot's startDate if provided, otherwise use createdAt
+    const slotStartDate = slot.startDate ? new Date(slot.startDate) : 
+                         slot.createdAt ? new Date(slot.createdAt) : new Date();
+    slotStartDate.setHours(0, 0, 0, 0);
+    
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
     
     let count = 0;
-    let currentDate = new Date(startDate);
+    let currentDate = new Date(slotStartDate);
     
     while (currentDate <= endDate) {
       const dayName = moment(currentDate).format('ddd');

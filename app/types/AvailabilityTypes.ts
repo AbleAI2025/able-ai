@@ -5,8 +5,10 @@ export interface AvailabilitySlot {
   days: string[]; // ['Mon', 'Tue', 'Wed', etc.]
   frequency: 'never' | 'weekly' | 'biweekly' | 'monthly';
   ends: 'never' | 'on_date' | 'after_occurrences';
+  startDate?: string; // ISO date string - when the recurring pattern should start
   endDate?: string; // ISO date string
   occurrences?: number;
+  notes?: string; // Optional notes about the availability period
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,8 +19,10 @@ export interface AvailabilityFormData {
   days: string[];
   frequency: 'never' | 'weekly' | 'biweekly' | 'monthly';
   ends: 'never' | 'on_date' | 'after_occurrences';
+  startDate?: string; // ISO date string - when the recurring pattern should start
   endDate?: string;
   occurrences?: number;
+  notes?: string; // Optional notes about the availability period
 }
 
 export interface AvailabilityEvent {
@@ -32,4 +36,5 @@ export interface AvailabilityEvent {
   isRecurring: boolean;
   recurrenceRule?: string;
   originalSlotId?: string;
+  notes?: string;
 }

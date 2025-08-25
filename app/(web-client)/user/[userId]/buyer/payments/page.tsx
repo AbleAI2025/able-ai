@@ -35,7 +35,7 @@ async function fetchBuyerPayments(userId: string, filterType?: string): Promise<
   const allPayments: Payment[] = [
     { id: '1', gigType: 'Bartender', workerName: 'Jerimaiah Jones', date: '2023-12-12T10:00:00Z', amount: 165.00, status: 'Paid', invoiceUrl: 'invoices/inv-001.pdf', gigId: 'gig1' },
     { id: '2', gigType: 'Waiter', workerName: 'Gavin Trysdale, B. Button', date: '2023-12-10T14:30:00Z', amount: 420.00, status: 'Paid', gigId: 'gig2' },
-    { id: '3', gigType: 'Bartender', workerName: 'Megan House', date: '2023-12-08T18:00:00Z', amount: 180.00, status: 'Pending', gigId: 'gig3' },
+    { id: '3', gigType: 'Bartender', workerName: 'Megan House', date: '2023-12-08T18:00:00Z', amount: 180.00, status: 'Paid', gigId: 'gig3' },
     { id: '4', gigType: 'Chef', workerName: 'Gordon Ramsay Jr.', date: '2023-11-20T12:00:00Z', amount: 250.00, status: 'Paid', invoiceUrl: 'invoices/inv-004.pdf', gigId: 'gig4'},
     { id: '5', gigType: 'Bartender', workerName: 'Jerimaiah Jones', date: '2023-11-05T19:00:00Z', amount: 150.00, status: 'Paid', gigId: 'gig5' },
   ];
@@ -126,10 +126,10 @@ export default function BuyerPaymentsPage() {
     <div className={styles.container}>
       <div className={styles.pageWrapper}>
         <header className={styles.header}>
-          <div className={styles.headerLeftContainer}>
-            <ClipboardList size={15} color='#ffffff' />
-            <h1 className={styles.pageTitle}>Payments</h1>
-          </div>
+          <button onClick={() => router.back()} className={styles.backButton}>
+              <ArrowLeft size={16} />
+          </button>
+          <h1 className={styles.pageTitle}>Payments</h1>
           <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
             <Filter size={16} /> Filter
           </button>
@@ -195,17 +195,10 @@ export default function BuyerPaymentsPage() {
                 <div className={styles.paymentRight}>
                   <span className={styles.amount}>£{payment.amount.toFixed(2)}</span>
                   <div className={styles.actions}>
-                    
-                     {payment.status === 'Pending' && (
-                       <button onClick={() => alert(`Payment for ${payment.id} would be initiated here.`)} className={`${styles.actionButton} ${styles.primaryAction}`}>
-                         Pay Now
-                       </button>
-                    )}
-                    {payment.status === 'Paid' && (
-                        <button onClick={() => handleRepeatGig(payment.gigId)} className={styles.actionButton}>
-                           Repeat Gig
-                        </button>
-                    )}
+                      <button onClick={() => handleRepeatGig(payment.gigId)} className={styles.actionButton}>
+                          Repeat Gig
+                      </button>
+                  
                   </div>
                 </div>
               </div>
@@ -254,12 +247,6 @@ export default function BuyerPaymentsPage() {
             <div className={styles.emptyState}>No data available for chart.</div>
           ) : null}
         </div> */}
-
-        <footer className={styles.footer}>
-          <Link href={`/user/${pageUserId}/buyer`} passHref>
-            <Image src="/images/home.svg" alt="Home" width={40} height={40} />
-          </Link>
-        </footer>
       </div>
     </div>
   );

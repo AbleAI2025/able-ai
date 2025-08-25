@@ -5,7 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
 
 // Use the exact string value instead of accessing by index
-const ACCEPTED = "ACCEPTED";
+const ACCEPTED = gigStatusEnum.enumValues[2];
 
 export async function acceptGigOffer({ gigId, userId }: { gigId: string; userId: string }) {
   try {

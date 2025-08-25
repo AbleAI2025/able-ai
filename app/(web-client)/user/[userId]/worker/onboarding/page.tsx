@@ -104,7 +104,6 @@ const requiredFields: RequiredField[] = [
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "What's your preferred hourly rate?" },
   { name: "location", type: "location", defaultPrompt: "Where are you based? This helps us find gigs near you!" },
   { name: "availability", type: "availability", defaultPrompt: "When are you available to work? Let's set up your weekly schedule!" },
-  { name: "time", type: "time", defaultPrompt: "What time of day do you prefer to work?" },
   { name: "videoIntro", type: "video", defaultPrompt: "Record a short video introduction to help clients get to know you!" },
   { name: "references", type: "text", placeholder: "Provide your references...", defaultPrompt: "Do you have any references or testimonials?", rows: 3 },
 ];
@@ -139,7 +138,6 @@ interface FormData {
     endDate?: string;
     occurrences?: number;
   } | string;
-  time?: string;
   videoIntro?: string;
   references?: string;
   [key: string]: any;
@@ -190,65 +188,7 @@ function isValidDate(dateValue: unknown): boolean {
   }
 }
 
-function parseTimeToHHMM(timeValue: unknown): string | null {
-  try {
-    if (!timeValue) return null;
 
-    if (timeValue instanceof Date) {
-      const hours = timeValue.getHours().toString().padStart(2, '0');
-      const minutes = timeValue.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
-    }
-
-    if (typeof timeValue === 'string') {
-      const val = timeValue.trim();
-
-      // ISO date string with time
-      if (val.includes('T')) {
-        const d = new Date(val);
-        if (!isNaN(d.getTime())) {
-          const hours = d.getHours().toString().padStart(2, '0');
-          const minutes = d.getMinutes().toString().padStart(2, '0');
-          return `${hours}:${minutes}`;
-        }
-      }
-
-      // Formats: H:MM or HH:MM with optional AM/PM
-      const hmMatch = val.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])?$/);
-      if (hmMatch) {
-        let hours = parseInt(hmMatch[1], 10);
-        const minutes = parseInt(hmMatch[2], 10);
-        const meridiem = hmMatch[3]?.toLowerCase();
-        if (meridiem) {
-          if (hours === 12) hours = 0;
-          if (meridiem === 'pm') hours += 12;
-        }
-        if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-        }
-      }
-
-      // Formats: H AM/PM
-      const hOnly = val.match(/^(\d{1,2})\s*([AaPp][Mm])$/);
-      if (hOnly) {
-        let hours = parseInt(hOnly[1], 10);
-        const meridiem = hOnly[2].toLowerCase();
-        if (hours === 12) hours = 0;
-        if (meridiem === 'pm') hours += 12;
-        if (hours >= 0 && hours <= 23) {
-          return `${hours.toString().padStart(2, '0')}:00`;
-        }
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-function isValidTime(timeValue: unknown): boolean {
-  return parseTimeToHHMM(timeValue) !== null;
-}
 
 function isValidCoordinate(value: unknown): value is { lat: number; lng: number } {
   if (!value || typeof value !== 'object') return false;
@@ -301,49 +241,7 @@ function formatDateForDisplay(dateValue: unknown): string {
   }
 }
 
-function formatTimeForDisplay(timeValue: unknown): string {
-  if (!timeValue) return '';
 
-  try {
-    // Handle time ranges like "12:00 to 16:00"
-    if (typeof timeValue === 'string' && timeValue.includes(' to ')) {
-      const [startTime, endTime] = timeValue.split(' to ');
-      const formattedStart = formatSingleTime(startTime);
-      const formattedEnd = formatSingleTime(endTime);
-      return `${formattedStart} to ${formattedEnd}`;
-    }
-    
-    // Handle single times
-    return formatSingleTime(timeValue);
-  } catch (error) {
-    console.error('Time formatting error:', error);
-    return String(timeValue);
-  }
-}
-
-function formatSingleTime(timeValue: unknown): string {
-  if (!timeValue) return '';
-
-  try {
-    // Normalize to HH:MM first
-    const hhmm = parseTimeToHHMM(timeValue);
-    if (hhmm) {
-      const [hours, minutes] = hhmm.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-      return date.toLocaleTimeString('en-GB', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    }
-
-    return String(timeValue);
-  } catch (error) {
-    console.error('Time formatting error:', error);
-    return String(timeValue);
-  }
-}
 
 // Helper to format summary values with better error handling
 function formatSummaryValue(value: unknown, field?: string): string {
@@ -351,6 +249,10 @@ function formatSummaryValue(value: unknown, field?: string): string {
   
   try {
     if (field === 'location' && isValidCoordinate(value)) {
+      // Check if we have a formatted address, otherwise show coordinates
+      if (typeof value === 'object' && 'formatted_address' in value && (value as any).formatted_address) {
+        return (value as any).formatted_address;
+      }
       return `Lat: ${value.lat.toFixed(6)}, Lng: ${value.lng.toFixed(6)}`;
     }
     
@@ -370,10 +272,6 @@ function formatSummaryValue(value: unknown, field?: string): string {
         return `${days} ${availability.startTime} - ${availability.endTime}`;
       }
       return formatDateForDisplay(value);
-    }
-    
-    if (field === 'time') {
-      return formatTimeForDisplay(value);
     }
     
     if (field === 'hourlyRate') {
@@ -432,7 +330,6 @@ Field-specific guidance for WORKERS:
 - hourlyRate: Ask about their preferred hourly rate for their services in British Pounds (£)
 - location: Ask about their location with context about finding nearby gig opportunities
 - availability: Ask about when they are available to work for clients
-- time: Ask about their preferred working hours for gigs
 - videoIntro: Ask about recording a video introduction to help clients get to know them
 - references: Ask about references or testimonials from previous clients or employers
 
@@ -711,17 +608,7 @@ Make the conversation feel natural and build on what they've already told you.`;
           }
         }
         
-        // For time fields, ensure proper time format
-        if (field === 'time') {
-          try {
-            const hhmm = parseTimeToHHMM(value);
-            if (hhmm) {
-              return { sufficient: true, sanitized: hhmm };
-            }
-          } catch (error) {
-            console.error('Time validation error:', error);
-          }
-        }
+
         
         return {
           sufficient: true,
@@ -835,85 +722,87 @@ Make the conversation feel natural and build on what they've already told you.`;
             const afterRefFormData = { ...updatedFormData, references: recommendationLink };
             setFormData(afterRefFormData);
 
-            // Add a bot note and a share link bubble, then continue
+            // Add combined reference message with embedded link and gigfolio info
             setChatSteps((prev) => [
               ...prev,
               {
                 id: Date.now() + 3,
                 type: "bot",
-                content: "You need two references (at least one recommendation per skill) from previous managers, colleagues or teachers. If you don't have experience you can get a reference from a friend or someone in your network.\n\nSend this link to get your reference:",
+                content: `You need two references (at least one recommendation per skill) from previous managers, colleagues or teachers. If you don't have experience you can get a reference from a friend or someone in your network.\n\nSend this link to get your reference: ${recommendationLink}\n\nPlease check out your gigfolio and share with your network - if your connections make a hire on Able you get £5!`,
                 isNew: true,
-              },
-              {
-                id: Date.now() + 4,
-                type: "shareLink",
-                linkUrl: recommendationLink,
-                linkText: recommendationLink,
-                isNew: true,
-              },
-            {
-              id: Date.now() + 5,
-              type: "bot",
-              content: "Please check out your gigfolio and share with your network - if your connections make a hire on Able you get £5!",
-              isNew: true,
-            },
-            {
-              id: Date.now() + 5,
-              type: "bot",
-              content: "Watch out for notifications of your first shift offer! If you don't accept within 90 minutes we will offer the gig to someone else.",
-              isNew: true,
-            },
-            {
-              id: Date.now() + 5,
-              type: "bot",
-              content: "We might offer you gigs outside of your defined skill area, watch out for those opportunities too!",
-              isNew: true,
-            },
+              }
             ]);
 
-            const nextAfterReferences = getNextRequiredField(afterRefFormData);
-            if (nextAfterReferences) {
-              const aboutInfo = afterRefFormData.about || '';
-              const contextAwarePrompt = await generateContextAwarePrompt(nextAfterReferences.name, aboutInfo, ai);
-              const newInputConfig = {
-                type: nextAfterReferences.type as FormInputType,
-                name: nextAfterReferences.name,
-                placeholder: nextAfterReferences.placeholder,
-                ...(nextAfterReferences.rows && { rows: nextAfterReferences.rows }),
-              };
-                              let stepType: "input" | "calendar" | "location" | "video" | "availability" = "input";
-                if (nextAfterReferences.name === "availability") stepType = "availability";
-                else if (nextAfterReferences.name === "location") stepType = "location";
-                else if (nextAfterReferences.name === "videoIntro") stepType = "video";
+            setTimeout(() => {
+              setChatSteps((prev) => [
+                ...prev,
+                {
+                  id: Date.now() + 4,
+                  type: "bot",
+                  content: "Watch out for notifications of your first shift offer! If you don't accept within 90 minutes we will offer the gig to someone else.",
+                  isNew: true,
+                }
+              ]);
+            }, 1500);
 
+            setTimeout(() => {
               setChatSteps((prev) => [
                 ...prev,
                 {
                   id: Date.now() + 5,
                   type: "bot",
-                  content: contextAwarePrompt,
+                  content: "We might offer you gigs outside of your defined skill area, watch out for those opportunities too!",
                   isNew: true,
-                },
-                {
-                  id: Date.now() + 6,
-                  type: stepType,
-                  inputConfig: newInputConfig,
-                  isComplete: false,
-                  isNew: true,
-                },
+                }
               ]);
-            } else {
-              // No more fields -> summary
-              setChatSteps((prev) => [
-                ...prev,
-                {
-                  id: Date.now() + 7,
-                  type: "bot",
-                  content: `Perfect! Here's a summary of your worker profile:\n${JSON.stringify(afterRefFormData, null, 2)}`,
-                  isNew: true,
-                },
-              ]);
-            }
+            }, 3000);
+
+            // Add next field or summary after all reference messages are shown
+            setTimeout(async () => {
+              const nextAfterReferences = getNextRequiredField(afterRefFormData);
+              if (nextAfterReferences) {
+                const aboutInfo = afterRefFormData.about || '';
+                const contextAwarePrompt = await generateContextAwarePrompt(nextAfterReferences.name, aboutInfo, ai);
+                const newInputConfig = {
+                  type: nextAfterReferences.type as FormInputType,
+                  name: nextAfterReferences.name,
+                  placeholder: nextAfterReferences.placeholder,
+                  ...(nextAfterReferences.rows && { rows: nextAfterReferences.rows }),
+                };
+                let stepType: "input" | "calendar" | "location" | "video" | "availability" = "input";
+                if (nextAfterReferences.name === "availability") stepType = "availability";
+                else if (nextAfterReferences.name === "location") stepType = "location";
+                else if (nextAfterReferences.name === "videoIntro") stepType = "video";
+
+                setChatSteps((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now() + 6,
+                    type: "bot",
+                    content: contextAwarePrompt,
+                    isNew: true,
+                  },
+                  {
+                    id: Date.now() + 7,
+                    type: stepType,
+                    inputConfig: newInputConfig,
+                    isComplete: false,
+                    isNew: true,
+                  },
+                ]);
+              } else {
+                // No more fields -> summary
+                setChatSteps((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now() + 6,
+                    type: "bot",
+                    content: `Perfect! Here's a summary of your worker profile:\n${JSON.stringify(afterRefFormData, null, 2)}`,
+                    isNew: true,
+                  },
+                ]);
+              }
+            }, 4500);
             return;
           }
           // Generate context-aware prompt for next field
@@ -1020,80 +909,82 @@ Make the conversation feel natural and build on what they've already told you.`;
           const afterRefFormData = { ...formData, [fieldName]: sanitized, references: recommendationLink };
           setFormData(afterRefFormData);
 
-          // Add share link and then continue
+          // Add combined reference message with embedded link and gigfolio info
           setChatSteps((prev) => [
             ...prev,
             {
               id: Date.now() + 2,
               type: "bot",
-              content: "You need two references (at least one recommendation per skill) from previous managers, colleagues or teachers. If you don't have experience you can get a reference from a friend or someone in your network.\n\nSend this link to get your reference:",
+              content: `You need two references (at least one recommendation per skill) from previous managers, colleagues or teachers. If you don't have experience you can get a reference from a friend or someone in your network.\n\nSend this link to get your reference: ${recommendationLink}\n\nPlease check out your gigfolio and share with your network - if your connections make a hire on Able you get £5!`,
               isNew: true,
-            },
-            {
-              id: Date.now() + 3,
-              type: "shareLink",
-              linkUrl: recommendationLink,
-              linkText: recommendationLink,
-              isNew: true,
-            },
-            {
-              id: Date.now() + 4,
-              type: "bot",
-              content: "Please check out your gigfolio and share with your network - if your connections make a hire on Able you get £5!",
-              isNew: true,
-            },
-            {
-              id: Date.now() + 6,
-              type: "bot",
-              content: "Watch out for notifications of your first shift offer! If you don't accept within 90 minutes we will offer the gig to someone else.",
-              isNew: true,
-            },
-            {
-              id: Date.now() + 7,
-              type: "bot",
-              content: "We might offer you gigs outside of your defined skill area, watch out for those opportunities too!",
-              isNew: true,
-            },
+            }
           ]);
 
-          const nextAfterReferences = getNextRequiredField(afterRefFormData);
-          if (nextAfterReferences) {
-            const aboutInfo = afterRefFormData.about || '';
-            const contextAwarePrompt = await generateContextAwarePrompt(nextAfterReferences.name, aboutInfo, ai);
-            const newInputConfig = {
-              type: nextAfterReferences.type as FormInputType,
-              name: nextAfterReferences.name,
-              placeholder: nextAfterReferences.placeholder,
-              ...(nextAfterReferences.rows && { rows: nextAfterReferences.rows }),
-            };
+          setTimeout(() => {
             setChatSteps((prev) => [
               ...prev,
               {
-                id: Date.now() + 5,
+                id: Date.now() + 3,
                 type: "bot",
-                content: contextAwarePrompt,
+                content: "Watch out for notifications of your first shift offer! If you don't accept within 90 minutes we will offer the gig to someone else.",
                 isNew: true,
-              },
-              {
-                id: Date.now() + 6,
-                type: nextAfterReferences.type === "location" ? "location" : nextAfterReferences.type === "availability" ? "availability" : nextAfterReferences.type === "date" ? "calendar" : nextAfterReferences.type === "video" ? "video" : "input",
-                inputConfig: newInputConfig,
-                isComplete: false,
-                isNew: true,
-              },
+              }
             ]);
-          } else {
-            // No more fields -> summary
+          }, 1500);
+
+          setTimeout(() => {
             setChatSteps((prev) => [
               ...prev,
               {
-                id: Date.now() + 6,
+                id: Date.now() + 4,
                 type: "bot",
-                content: `Perfect! Here's a summary of your worker profile:\n${JSON.stringify(afterRefFormData, null, 2)}`,
+                content: "We might offer you gigs outside of your defined skill area, watch out for those opportunities too!",
                 isNew: true,
-              },
+              }
             ]);
-          }
+          }, 3000);
+
+          // Add next field or summary after all reference messages are shown
+          setTimeout(async () => {
+            const nextAfterReferences = getNextRequiredField(afterRefFormData);
+            if (nextAfterReferences) {
+              const aboutInfo = afterRefFormData.about || '';
+              const contextAwarePrompt = await generateContextAwarePrompt(nextAfterReferences.name, aboutInfo, ai);
+              const newInputConfig = {
+                type: nextAfterReferences.type as FormInputType,
+                name: nextAfterReferences.name,
+                placeholder: nextAfterReferences.placeholder,
+                ...(nextAfterReferences.rows && { rows: nextAfterReferences.rows }),
+              };
+              setChatSteps((prev) => [
+                ...prev,
+                {
+                  id: Date.now() + 5,
+                  type: "bot",
+                  content: contextAwarePrompt,
+                  isNew: true,
+                },
+                {
+                  id: Date.now() + 6,
+                  type: nextAfterReferences.type === "location" ? "location" : nextAfterReferences.type === "availability" ? "availability" : nextAfterReferences.type === "date" ? "calendar" : nextAfterReferences.type === "video" ? "video" : "input",
+                  inputConfig: newInputConfig,
+                  isComplete: false,
+                  isNew: true,
+                },
+              ]);
+            } else {
+              // No more fields -> summary
+              setChatSteps((prev) => [
+                ...prev,
+                {
+                  id: Date.now() + 5,
+                  type: "bot",
+                  content: `Perfect! Here's a summary of your worker profile:\n${JSON.stringify(afterRefFormData, null, 2)}`,
+                  isNew: true,
+                },
+              ]);
+            }
+          }, 4500);
           return;
         }
         // Generate context-aware prompt
@@ -1214,22 +1105,15 @@ Make the conversation feel natural and build on what they've already told you.`;
         const afterRefFormData = { ...formData, references: recommendationLink };
         setFormData(afterRefFormData);
 
-        // Add share link and then continue
+        // Add combined reference message with embedded link and gigfolio info
         setChatSteps(prev => [
           ...prev,
           {
             id: Date.now() + 2,
             type: "bot",
-            content: "You need two references (at least one recommendation per skill) from previous managers, colleagues or teachers. If you don't have experience you can get a reference from a friend or someone in your network.\n\nSend this link to get your reference:",
+            content: `You need two references (at least one recommendation per skill) from previous managers, colleagues or teachers. If you don't have experience you can get a reference from a friend or someone in your network.\n\nSend this link to get your reference: ${recommendationLink}\n\nPlease check out your gigfolio and share with your network - if your connections make a hire on Able you get £5!`,
             isNew: true,
-          },
-          {
-            id: Date.now() + 3,
-            type: "shareLink",
-            linkUrl: recommendationLink,
-            linkText: recommendationLink,
-            isNew: true,
-          },
+          }
         ]);
 
         const nextAfterReferences = getNextRequiredField(afterRefFormData);
@@ -1373,13 +1257,7 @@ Make the conversation feel natural and build on what they've already told you.`;
           }));
         }
       } else {
-        // Normalize time inputs to HH:MM for consistent storage
-        if (name === 'time' && value) {
-          const hhmm = parseTimeToHHMM(value);
-          setFormData((prev) => ({ ...prev, [name]: hhmm || value }));
-        } else {
-          setFormData((prev) => ({ ...prev, [name]: value }));
-        }
+        setFormData((prev) => ({ ...prev, [name]: value }));
       }
     } catch (error) {
       console.error('Error handling input change:', error);
@@ -1685,6 +1563,8 @@ Make the conversation feel natural and build on what they've already told you.`;
       )}
 
 
+
+
       
       {chatSteps.map((step, idx) => {
         const key = `${step.id}-${idx}`;
@@ -1894,7 +1774,132 @@ Make the conversation feel natural and build on what they've already told you.`;
           );
         }
         
-        if (step.type === "bot") {
+                 if (step.type === "bot") {
+           // Check if this is a reference message or follow-up messages (no AI avatar)
+           if (step.content && typeof step.content === 'string' && (
+             step.content.includes("You need two references") ||
+             step.content.includes("Watch out for notifications") ||
+             step.content.includes("We might offer you gigs")
+           )) {
+             console.log('🎯 Reference/follow-up message detected in worker onboarding!');
+                           return (
+                <div key={key} className="messageWrapper alignBot" data-role="GIG_WORKER" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {/* No avatar for reference and follow-up messages, but maintain alignment as if avatar was present */}
+                  <div style={{ flexShrink: 0, width: '32px' }}></div> {/* Spacer to align with avatar-containing messages */}
+                  <div className="bubble bubbleBot" style={{ 
+                    maxWidth: '70%', 
+                    padding: '0.75rem 1rem', 
+                    borderRadius: '18px', 
+                    fontSize: '14px', 
+                    lineHeight: '1.4', 
+                    wordWrap: 'break-word',
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    borderBottomLeftRadius: '4px'
+                  }}>
+                                       {/* Make URLs clickable with copy/share functionality for reference messages */}
+                    {step.content.includes("You need two references") ? (
+                      (step.content as string).split(/(https?:\/\/[^\s\n]+)/g).map((part, index) => {
+                        if (part.match(/(https?:\/\/[^\s\n]+)/g)) {
+                          return (
+                            <div key={`url-${index}-${part}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '4px 0' }}>
+                              <a
+                                href={part}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  color: '#41a1e8',
+                                  textDecoration: 'underline',
+                                  wordBreak: 'break-all'
+                                }}
+                              >
+                                Send this link to your reference
+                              </a>
+                                                           <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(part);
+                                  alert('Link copied to clipboard!');
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: '1px solid #41a1e8',
+                                  borderRadius: '4px',
+                                  padding: '6px',
+                                  color: '#41a1e8',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '28px',
+                                  height: '28px'
+                                }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.background = '#41a1e8';
+                                  e.currentTarget.style.color = 'white';
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.background = 'transparent';
+                                  e.currentTarget.style.color = '#41a1e8';
+                                }}
+                                title="Copy link"
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                </svg>
+                              </button>
+                             {navigator.share && (
+                                                               <button
+                                  onClick={() => {
+                                    navigator.share({
+                                      title: 'Worker Reference Link',
+                                      text: 'Please use this link to provide a reference:',
+                                      url: part
+                                    });
+                                  }}
+                                  style={{
+                                    background: 'transparent',
+                                    border: '1px solid #41a1e8',
+                                    borderRadius: '4px',
+                                    padding: '6px',
+                                    color: '#41a1e8',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '28px',
+                                    height: '28px'
+                                  }}
+                                  onMouseOver={(e) => {
+                                    e.currentTarget.style.background = '#41a1e8';
+                                    e.currentTarget.style.color = 'white';
+                                  }}
+                                  onMouseOut={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#41a1e8';
+                                  }}
+                                  title="Share link"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                                  </svg>
+                                </button>
+                             )}
+                           </div>
+                         );
+                       }
+                       return <span key={`text-${index}`}>{part}</span>;
+                     })
+                   ) : (
+                     // For follow-up messages, just display the text
+                     step.content
+                   )}
+                 </div>
+               </div>
+             );
+           }
+          
           // Check if this is a summary message (contains JSON)
           if (step.content && typeof step.content === 'string' && step.content.includes('{')) {
             try {
@@ -1912,15 +1917,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                             <li key={field.name} style={{ marginBottom: 8 }}>
                               <strong style={{ textTransform: 'capitalize' }}>{field.name.replace(/([A-Z])/g, ' $1')}: </strong>
                               <span>
-                                {field.name === 'location' && isValidCoordinate(summaryData[field.name])
-                                  ? `Lat: ${(summaryData[field.name] as { lat: number; lng: number }).lat.toFixed(6)}, Lng: ${(summaryData[field.name] as { lat: number; lng: number }).lng.toFixed(6)}`
-                                  : field.name === 'availability'
-                                    ? formatDateForDisplay(summaryData[field.name])
-                                    : field.name === 'time'
-                                      ? formatTimeForDisplay(summaryData[field.name])
-                                      : typeof summaryData[field.name] === 'object'
-                                        ? JSON.stringify(summaryData[field.name])
-                                        : formatSummaryValue(summaryData[field.name], field.name)}
+                                {formatSummaryValue(summaryData[field.name], field.name)}
                               </span>
                             </li>
                           ))}
@@ -1957,8 +1954,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                                  location: summaryData.location || '',
                                  availability: summaryData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
                                  videoIntro: summaryData.videoIntro || '',
-                                 references: summaryData.references || '',
-                                 time: summaryData.time || ''
+                                 references: summaryData.references || ''
                                };
                                
                                // Save the profile data to database
@@ -2043,49 +2039,6 @@ Make the conversation feel natural and build on what they've already told you.`;
         if (step.type === "shareLink") {
           return (
             <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* AI Avatar - Separated */}
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.5rem',
-                marginBottom: '0.5rem'
-              }}>
-                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'linear-gradient(135deg, var(--primary-color), var(--primary-darker-color))',
-                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)'
-                  }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: '#000000',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
-                    }}>
-                      <Image 
-                        src="/images/ableai.png" 
-                        alt="Able AI" 
-                        width={24} 
-                        height={24} 
-                        style={{
-                          borderRadius: '50%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <ShareLinkBubble linkUrl={step.linkUrl} linkText={step.linkText} />
             </div>
           );
