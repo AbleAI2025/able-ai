@@ -7,11 +7,37 @@ import { InternalGigStatusEnumType } from '@/app/types';
 
 const stripeApi: Stripe = stripeApiServer;
 
+interface ProcessGigPaymentParams {
+  gigId: string;
+}
+
 interface GigPaymentFields {
   id: string;
   amountGross: string;
   stripePaymentIntentId: string | null;
 }
+
+type ExpandedLatestCharge = Stripe.Charge & {
+  balance_transaction: Stripe.BalanceTransaction;
+};
+
+type ExpandedPaymentIntent = Stripe.PaymentIntent & {
+  latest_charge: ExpandedLatestCharge | null;
+};
+
+
+const findOriginalPaymentIntent = async (stripePaymentIntentId: string) => {
+  const originalPaymentIntent = await stripeApi.paymentIntents.retrieve(
+    stripePaymentIntentId,
+    { expand: ['latest_charge.balance_transaction'] }
+  );
+
+  if (!originalPaymentIntent || originalPaymentIntent.status !== 'requires_capture') {
+    throw new Error(`Payment Intent ${stripePaymentIntentId} is no in status 'requires_capture' (current: ${originalPaymentIntent?.status}).`);
+  }
+
+  return originalPaymentIntent as ExpandedPaymentIntent;
+};
 
 async function getPaymentsForGig(gigId: string) {
   const gigPayments = await db.query.PaymentsTable.findMany({
@@ -28,6 +54,7 @@ async function getPaymentsForGig(gigId: string) {
 
 async function markPaymentAsCompleted(paymentId: string, chargeId: string) {
   return await db.update(PaymentsTable).set({
+    paidAt: new Date(),
     status: 'COMPLETED',
     stripeChargeId: chargeId,
   })
@@ -53,13 +80,14 @@ async function colletPendingPayments(gigPayments: GigPaymentFields[], finalPrice
     }
 
     const paymentIntentId = payment.stripePaymentIntentId as string;
+    const originalPaymentIntent = await findOriginalPaymentIntent(paymentIntentId);
     const paymentAmountGross = Number(payment.amountGross);
     const amountToCapture = Math.min(amountToCollect, paymentAmountGross);
     const ableFee = Math.round(amountToCapture * (ableFeePercent || 0.065));
     const amountToTransferToWorker = amountToCapture - ableFee;
 
     const captureResult = await stripeApi.paymentIntents.capture(
-      paymentIntentId,
+      originalPaymentIntent.id,
       {
         amount_to_capture: amountToCapture,
         application_fee_amount: ableFee,
@@ -80,24 +108,25 @@ async function colletPendingPayments(gigPayments: GigPaymentFields[], finalPrice
   }
 }
 
-export async function finalizeGigPayments(gigId: string) {
-
-  const gigDetails = await db.query.GigsTable.findFirst({
-    where: eq(GigsTable.id, gigId),
-  });
-
-  if (!gigDetails) return;
-
-  const finalPrice = Number(gigDetails.finalAgreedPrice);
-  const ableFeePercent = Number(gigDetails.ableFeePercent);
-
-  const allGigPayments = await getPaymentsForGig(gigId);
-
-  if (allGigPayments.length === 0) {
-    throw new Error('No payments found for this gig.');
-  }
+export async function processGigPayment(params: ProcessGigPaymentParams) {
+  const { gigId } = params;
 
   try {
+
+    const gigDetails = await db.query.GigsTable.findFirst({
+      where: eq(GigsTable.id, gigId),
+    });
+
+    if (!gigDetails) return;
+
+    const finalPrice = Number(gigDetails.finalAgreedPrice);
+    const ableFeePercent = Number(gigDetails.ableFeePercent);
+
+    const allGigPayments = await getPaymentsForGig(gigId);
+
+    if (allGigPayments.length === 0) {
+      throw new Error('No payments found for this gig.');
+    }
 
     await colletPendingPayments(allGigPayments, finalPrice, ableFeePercent);
     await updateGigStatus(gigId, 'PAID');
