@@ -67,7 +67,7 @@ interface DashboardData {
   averageRating: number;
   responseRateInternal: number;
   completedHires: number;
-  typesOfStaffHired: string[];
+  skills: string[];
   pieChartData?: Array<{ name: string; value: number; fill: string }>;
   barChartData?: Array<{ name: string; hires: number; spend?: number }>;
   badgesEarnedByTheirWorkers: Badge[];
@@ -269,9 +269,9 @@ export default function BuyerProfilePage() {
                     style={{ display: "inline-block", textDecoration: "none" }}
                   >
                     <video
-                      width="180"
-                      height="180"
-                      style={{ borderRadius: "8px", objectFit: "cover" }}
+                      width="100"
+                      height="150"
+                      style={{ borderRadius: "8px" }}
                       preload="metadata"
                       muted
                       poster="/video-placeholder.jpg"
@@ -336,17 +336,15 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <ContentCard title="Statistics" className={styles.statisticsCard}>
             <div className={styles.statisticsItemsContainer}>
-              {dashboardData?.responseRateInternal && (
                 <StatisticItemDisplay
                   stat={{
                     id: 1,
                     icon: ThumbsUp,
-                    value: dashboardData.responseRateInternal,
+                    value: dashboardData?.responseRateInternal || 0,
                     label: "Would work with Benji again",
                     iconColor: "#0070f3",
                   }}
                 />
-              )}
               {dashboardData?.averageRating && (
                 <StatisticItemDisplay
                   stat={{
@@ -375,7 +373,7 @@ export default function BuyerProfilePage() {
               Types of Staff Hired:
             </span>
             <ul>
-              {dashboardData?.typesOfStaffHired?.map((type) => (
+              {dashboardData?.skills?.map((type) => (
                 <li key={type}>{type}</li>
               ))}
             </ul>

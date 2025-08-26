@@ -9,6 +9,7 @@ import {
   boolean,
   jsonb,
   decimal,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm"; // Import sql for default values like CURRENT_TIMESTAMP
 
@@ -121,6 +122,7 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
   businessRegistrationNumber: varchar("business_registration_number", {
     length: 100,
   }),
+  responseRateInternal: numeric("response_rate_internal", { precision: 5, scale:  2 }),
   billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
   videoUrl: text("video_url"),
   companyRole: varchar("company_role", { length: 100 }),

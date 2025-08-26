@@ -4,13 +4,14 @@ import { db } from "@/lib/drizzle/db";
 import {
   BadgeDefinitionsTable,
   BuyerProfilesTable,
+  GigsTable,
   ReviewsTable,
   UserBadgesLinkTable,
   UsersTable,
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const getGigBuyerProfileAction = async (
   token: string | undefined
@@ -38,6 +39,14 @@ export const getGigBuyerProfileAction = async (
     const reviews = await db.query.ReviewsTable.findMany({
       where: eq(ReviewsTable.targetUserId, buyerProfile?.userId || ""),
     });
+
+    const completedHires = await db.query.GigsTable.findMany({
+      where: and(
+        eq(GigsTable.buyerUserId, user.id || ""),
+        //eq(GigsTable.statusInternal, 'COMPLETED')
+      ),
+      with: { skillsRequired: { columns: { skillName: true } }}
+    })
 
     if (!buyerProfile) {
       throw new Error("Buyer profile not found");
@@ -86,12 +95,16 @@ export const getGigBuyerProfileAction = async (
     const averageRating =
       totalReviews > 0 ? (positiveReviews / totalReviews) * 100 : 0;
 
+    console.log(completedHires, 'completedHires');
+
     const data = {
       ...user,
       ...buyerProfile,
       reviews: reviewsData,
       badges: badges,
-      averageRating
+      averageRating,
+      completedHires: completedHires?.length || 0,
+      skills: completedHires?.flatMap(gig => gig.skillsRequired.map(skill => skill.skillName)) || [],
     };
 
     console.log(data);

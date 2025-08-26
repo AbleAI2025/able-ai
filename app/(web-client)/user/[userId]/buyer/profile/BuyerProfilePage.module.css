@@ -277,4 +277,19 @@
   min-height: 200px;
   color: #a0a0a0;
   font-size: 1.1rem;
-} 
+}
+
+.statisticsItemsContainer {
+  display: flex;
+  justify-content: space-between;
+}
+@media (min-width: 380px) { /* Side-by-side on slightly wider screens */
+  .statisticsItemsContainer {
+    flex-direction: row;
+    justify-content: space-around; /* Or space-between */
+    align-items: flex-start;
+  }
+  .statisticsItemsContainer > * { /* Each StatisticItemDisplay */
+    flex-basis: 48%; /* Roughly half width */
+  }
+}
