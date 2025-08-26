@@ -66,9 +66,9 @@ export const getGigBuyerProfileAction = async (
 
     const reviewsData = await Promise.all(
       reviews.map(async (review) => {
-        const author = await db.query.UsersTable.findFirst({
+        const author = review.authorUserId ? await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
-        });
+        }) : null;
 
         return {
           id: review.id,
