@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
-import Image from 'next/image'; import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
 
 import InputField from '@/app/components/form/InputField'; // Reusing shared InputField
 import { Star, Send, Loader2 } from 'lucide-react'; // Lucide icons
@@ -24,10 +25,9 @@ interface SkillsProps { id: string | number; name: string }
 
 
 async function getWorkerDetails(workerId: string): Promise<{ name: string; skills: SkillsProps[] } | null> {
-  const dummyWorkId = "ec7e31ec-aeb0-48db-bb04-a6369c63af4e" // use this if fake url not setuped
   const { data } = await getWorkerForRecommendationAction(workerId)
 
-  if (!data) throw new Error("work not found")
+  if (!data) throw new Error("worker not found")
 
   return { name: data.userName, skills: data.skills };
 }
@@ -97,7 +97,7 @@ export default function PublicRecommendationPage() {
     try {
       submitExternalRecommendationAction(submissionPayload)
       setSuccessMessage('Thank you! Your recommendation has been submitted.');
-      // setFormData({ recommendationText: '', relationship: '', recommenderName: '', recommenderEmail: '' });
+      setFormData({ recommendationText: '', relationship: '', recommenderName: '', recommenderEmail: '' });
 
     } catch (err: unknown) {
       if (err instanceof Error) {
