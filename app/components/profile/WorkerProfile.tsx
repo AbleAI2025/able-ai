@@ -50,6 +50,7 @@ const WorkerProfile = ({
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
+  const [showRtwPopup, setShowRtwPopup] = useState(false);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -131,12 +132,114 @@ const WorkerProfile = ({
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfoLeft}>
-          <h1 className={styles.workerName}>
+          <h1 className={styles.workerName} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {user?.displayName}
             {true && (
               <BadgeCheck size={22} className={styles.verifiedBadgeWorker} />
             )}
+            {/* Right to Work Verification */}
+            <span style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#38bdf8',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  fontSize: 14,
+                  padding: 0,
+                }}
+                onClick={() => setShowRtwPopup(true)}
+              >
+                Verify your right to work
+              </button>
+            </span>
           </h1>
+
+      {/* RTW Verification Popup */}
+      {showRtwPopup && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: '#18181b',
+              color: '#fff',
+              borderRadius: 12,
+              padding: 32,
+              minWidth: 320,
+              boxShadow: '0 4px 32px rgba(0,0,0,0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 24,
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>To adhere to UK law, we need to confirm you have the legal right to work.</div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Are you a</div>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <button
+                style={{
+                  background: '#38bdf8',
+                  color: '#18181b',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 24px',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: 'pointer',
+                }}
+                onClick={() => setShowRtwPopup(false)}
+              >
+                UK national
+              </button>
+              <span style={{ color: '#fff', fontWeight: 600 }}>Or</span>
+              <button
+                style={{
+                  background: '#38bdf8',
+                  color: '#18181b',
+                  border: '1px solid #38bdf8',
+                  borderRadius: 8,
+                  padding: '10px 24px',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: 'pointer',
+                }}
+                onClick={() => window.location.href = "/user/A3BDfET6iPbY0zYHUTaIU0sMucF3/worker/rtw"}
+              >
+                Non UK national
+              </button>
+            </div>
+            <button
+              style={{
+                marginTop: 16,
+                background: 'none',
+                color: '#fff',
+                border: 'none',
+                fontSize: 14,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+              onClick={() => setShowRtwPopup(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
         </div>
         <div className={styles.workerInfo}>
           {true && (
