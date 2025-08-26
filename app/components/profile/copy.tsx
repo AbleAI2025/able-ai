@@ -50,6 +50,7 @@ const WorkerProfile = ({
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
+  // RTW popup state
   const [showRtwPopup, setShowRtwPopup] = useState(false);
 
   const handleVideoUpload = useCallback(
@@ -157,7 +158,8 @@ const WorkerProfile = ({
               </button>
             </span>
           </h1>
-
+  // RTW popup state
+  const [showRtwPopup, setShowRtwPopup] = useState(false);
       {/* RTW Verification Popup */}
       {showRtwPopup && (
         <div
@@ -188,9 +190,8 @@ const WorkerProfile = ({
               gap: 24,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>To adhere to UK law, we need to confirm you have the legal right to work.</div>
             <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Are you a</div>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 16 }}>
               <button
                 style={{
                   background: '#38bdf8',
@@ -206,10 +207,9 @@ const WorkerProfile = ({
               >
                 UK national
               </button>
-              <span style={{ color: '#fff', fontWeight: 600 }}>Or</span>
               <button
                 style={{
-                  background: '#38bdf8',
+                  background: '#fff',
                   color: '#18181b',
                   border: '1px solid #38bdf8',
                   borderRadius: 8,
@@ -218,7 +218,7 @@ const WorkerProfile = ({
                   fontSize: 16,
                   cursor: 'pointer',
                 }}
-                onClick={() => window.location.href = "/user/A3BDfET6iPbY0zYHUTaIU0sMucF3/worker/rtw"}
+                onClick={() => setShowRtwPopup(false)}
               >
                 Non UK national
               </button>

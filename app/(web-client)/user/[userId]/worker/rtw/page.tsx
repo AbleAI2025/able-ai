@@ -169,11 +169,7 @@ export default function RTWPage() {
     <div style={s.page}>
       <header style={s.header}>
         <h1 style={s.title}>Validate your Right to Work in the UK</h1>
-        <p style={s.subtitle}>
-          Use mock share codes: <code>WACCEPT</code>, <code>WEXPIRED</code>, <code>WLOCKED</code>,{" "}
-          <code>WREJECT</code> (anything else = NOT_FOUND). For staging, use the provider’s test codes like{" "}
-          <code>TEST_ACCEPTED</code>.
-        </p>
+       
       </header>
 
       <main style={s.main}>
