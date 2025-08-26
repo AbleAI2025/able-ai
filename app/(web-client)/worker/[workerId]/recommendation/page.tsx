@@ -40,7 +40,7 @@ export default function PublicRecommendationPage() {
 
   const [workerDetails, setWorkerDetails] = useState<{ name: string; skills: SkillsProps[] } | null>(null);
   const [isLoadingWorker, setIsLoadingWorker] = useState(true);
-  const [selectedSkill, setSeletedSkill] = useState<string>("selected skill");
+  const [selectedSkill, setSelectedSkill] = useState<string>("");
 
   const [formData, setFormData] = useState<RecommendationFormData>({
     recommendationText: '',
@@ -95,7 +95,10 @@ export default function PublicRecommendationPage() {
     };
 
     try {
-      submitExternalRecommendationAction(submissionPayload)
+      const result = await submitExternalRecommendationAction(submissionPayload);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit recommendation.');
+      }
       setSuccessMessage('Thank you! Your recommendation has been submitted.');
       setFormData({ recommendationText: '', relationship: '', recommenderName: '', recommenderEmail: '' });
 
@@ -134,7 +137,7 @@ export default function PublicRecommendationPage() {
             <select
               className={styles.select}
               value={selectedSkill}
-              onChange={(e) => setSeletedSkill(e.target.value)}
+              onChange={(e) => setSelectedSkill(e.target.value)}
             >
               <option value="">Select a skill</option>
               {workerDetails?.skills.map((skill) => (

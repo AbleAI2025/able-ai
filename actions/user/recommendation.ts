@@ -1,12 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import {
-  GigWorkerProfilesTable,
-  SkillsTable,
-  UsersTable,
-  ReviewsTable,
-} from "@/lib/drizzle/schema";
+import { GigWorkerProfilesTable, ReviewsTable } from "@/lib/drizzle/schema";
 import { eq } from "drizzle-orm";
 
 interface WorkerForRecommendation {
@@ -31,35 +26,32 @@ export const getWorkerForRecommendationAction = async (
 
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.id, workerId),
+      with: {
+        user: {
+          columns: {
+            fullName: true,
+          },
+        },
+        skills: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!workerProfile) {
       throw new Error("Worker profile not found");
     }
 
-    // Get the user details for the worker
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.id, workerProfile.userId),
-    });
-
-    if (!user) {
+    if (!workerProfile.user) {
       throw new Error("User not found");
     }
 
-    // Get all skills for this worker
-    const skills = await db.query.SkillsTable.findMany({
-      where: eq(SkillsTable.workerProfileId, workerProfile.id),
-    });
-
-    // Format the skills data to return only id and name
-    const formattedSkills = skills.map((skill) => ({
-      id: skill.id,
-      name: skill.name,
-    }));
-
     const workerData: WorkerForRecommendation = {
-      userName: user.fullName,
-      skills: formattedSkills,
+      userName: workerProfile.user.fullName,
+      skills: workerProfile.skills,
     };
 
     return {
@@ -77,7 +69,7 @@ export const getWorkerForRecommendationAction = async (
 };
 
 interface ExternalRecommendationPayload {
-  workerId: string; 
+  workerId: string;
   recommendationText: string;
   relationship: string;
   recommenderName: string;
@@ -98,10 +90,10 @@ export const submitExternalRecommendationAction = async (
 
     if (
       !workerId ||
-      !recommendationText ||
-      !relationship ||
-      !recommenderName ||
-      !recommenderEmail
+      !recommendationText.trim() ||
+      !relationship.trim() ||
+      !recommenderName.trim() ||
+      !recommenderEmail.trim()
     ) {
       throw new Error("All fields are required to submit a recommendation.");
     }
@@ -122,13 +114,12 @@ export const submitExternalRecommendationAction = async (
 
     const targetUserId = workerProfile.userId;
 
-    // Insert the new review into the database
     await db.insert(ReviewsTable).values({
       targetUserId: targetUserId,
-      comment: recommendationText,
-      relationship: relationship,
-      recommenderName: recommenderName,
-      recommenderEmail: recommenderEmail,
+      comment: recommendationText.trim(),
+      relationship: relationship.trim(),
+      recommenderName: recommenderName.trim(),
+      recommenderEmail: recommenderEmail.trim(),
       type: "EXTERNAL_REQUESTED",
       rating: 5,
       moderationStatus: "PENDING",
