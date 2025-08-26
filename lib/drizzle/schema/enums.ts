@@ -19,6 +19,10 @@ export const rtwKycStatusEnum = pgEnum("rtw_kyc_status_enum", [
   "NOT_SUBMITTED",
   "PENDING",
   "VERIFIED",
+  "ACCEPTED",
+  "EXPIRED",
+  "NOT_FOUND",
+  "LOCKED",
   "REJECTED",
 ]);
 
@@ -91,3 +95,5 @@ export const stripeAccountStatusEnum = pgEnum("stripe_account_status_enum", [
   "restricted",
   "disabled",
 ]);
+
+const reviewRoleEnum = pgEnum("review_role", ["BUYER", "WORKER"]);

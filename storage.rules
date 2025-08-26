@@ -40,6 +40,19 @@ service firebase.storage {
       allow delete: if isOwner(userId);
     }
 
+    // --- Buyer Intro Videos ---
+    // Path: buyers/{userId}/introVideo/{fileName}
+    // - Anyone can read intro videos (if they are public).
+    // - Only the authenticated owner (who is a buyer) can upload/update.
+    // - Limit file size and type.
+    match /buyers/{userId}/introVideo/{fileName} {
+      allow read: if true; // Assuming intro videos are public for workers to see
+      allow write: if isOwner(userId) // Add && request.auth.token.appRole == "BUYER" if using custom claims for role
+                    && request.resource.size < 50 * 1024 * 1024 // Max 50MB for a short video
+                    && request.resource.contentType.matches('video/.*'); // Only videos
+      allow delete: if isOwner(userId);
+    }
+
     // --- KYC / RTW Documents (Highly Sensitive) ---
     // Path: private_documents/{userId}/kyc/{documentId}/{fileName}
     // Path: private_documents/{userId}/rtw/{documentId}/{fileName}

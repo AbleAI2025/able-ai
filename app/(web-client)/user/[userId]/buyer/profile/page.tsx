@@ -1,18 +1,10 @@
 /* eslint-disable max-lines-per-function */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import Image from "next/image";
-import {
-  ThumbsUp,
-  Award,
-  Film,
-  Video,
-  Loader2,
-  Sparkles,
-  MessageCircleCode,
-} from "lucide-react";
+import { ThumbsUp, Loader2, MessageSquare } from "lucide-react";
+import { Star as DefaultBadgeIcon } from "lucide-react";
 import styles from "./BuyerProfilePage.module.css";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
@@ -20,7 +12,21 @@ import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import PieChartComponent from "@/app/components/shared/PiChart";
 import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
-import { getGigWorkerProfile } from "@/actions/buyer/profile";
+import {
+  getGigBuyerProfileAction,
+  updateVideoUrlBuyerProfileAction,
+} from "@/actions/user/gig-buyer-profile";
+import { firebaseApp } from "@/lib/firebase/clientApp";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+import { toast } from "sonner";
+import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
+import Link from "next/link";
+import ContentCard from "@/app/components/shared/ContentCard";
 
 // Types
 interface Badge {
@@ -30,94 +36,53 @@ interface Badge {
 }
 interface Review {
   id: string;
-  workerName: string;
+  name: string;
   date: string;
-  reviewText: string;
-  rating: number;
-  workerAvatarUrl?: string;
+  text: string;
 }
+
 interface DashboardData {
-  displayName: string;
+  fullName: string;
   username: string;
   introVideoThumbnailUrl?: string;
   introVideoUrl?: string;
-  businessName: string;
-  businessLocation: string;
-  userRoleInBusiness: string;
+  fullCompanyName: string;
+  billingAddressJson?: {
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state?: string;
+    postalCode?: string;
+    country: string;
+    latitude?: string;
+    longitude?: string;
+  };
+  companyRole: string;
+  videoUrl?: string;
   statistics: Array<{
     icon: React.ElementType;
     value: string;
     label: string;
   }>;
+  averageRating: number;
+  responseRateInternal: number;
   completedHires: number;
   typesOfStaffHired: string[];
   pieChartData?: Array<{ name: string; value: number; fill: string }>;
   barChartData?: Array<{ name: string; hires: number; spend?: number }>;
   badgesEarnedByTheirWorkers: Badge[];
-  reviewsFromWorkers: Review[];
+  reviews: Review[];
+  badges: {
+    id: string | number;
+    icon?: React.ElementType | null;
+    notes: string;
+    badge: {
+      id: string | number;
+      icon?: React.ElementType | null;
+      description?: string | null;
+    };
+  }[];
 }
-
-// Mock data for QA/testing
-const mockDashboardData: DashboardData = {
-  displayName: "Alexander Smith",
-  username: "@AlexanderS",
-  introVideoThumbnailUrl: "/images/benji.jpeg",
-  introVideoUrl: "https://www.youtube.com/watch?v=some_video_id",
-  businessName: "Friendship Cafe and Bar",
-  businessLocation: "Soho, W1 56T",
-  userRoleInBusiness: "Owner, manager",
-  statistics: [
-    {
-      icon: ThumbsUp,
-      value: "100%",
-      label: "Would work with Alexandra again",
-    },
-    {
-      icon: MessageCircleCode,
-      value: "100%",
-      label: "Response rate",
-    },
-  ],
-  completedHires: 150,
-  typesOfStaffHired: ["Waiters", "Bartender", "Chef"],
-  pieChartData: [
-    { name: "Bartenders", value: 400, fill: "#FFBB28" },
-    { name: "Waiters", value: 300, fill: "#00C49F" },
-    { name: "Chefs", value: 300, fill: "#0088FE" },
-    { name: "Event Staff", value: 200, fill: "#FF8042" },
-  ],
-  barChartData: [
-    { name: "Jan", hires: 10, spend: 1500 },
-    { name: "Feb", hires: 12, spend: 1800 },
-    { name: "Mar", hires: 15, spend: 2200 },
-    { name: "Apr", hires: 13, spend: 2000 },
-  ],
-  badgesEarnedByTheirWorkers: [
-    { id: "b1", name: "Mixology Master Hired", icon: Award },
-    { id: "b2", name: "Consistent Positive Feedback", icon: ThumbsUp },
-    { id: "b3", name: "Top Venue Choice", icon: Sparkles },
-  ],
-  reviewsFromWorkers: [
-    {
-      id: "rw1",
-      workerName: "Benji A.",
-      date: "2023-10-15",
-      reviewText:
-        "Alexander is a great manager, very clear with instructions and fair. Always a pleasure to work for Friendship Cafe!",
-      rating: 5,
-      workerAvatarUrl: "/images/benji.jpeg",
-    },
-    {
-      id: "rw2",
-      workerName: "Sarah K.",
-      date: "2023-09-20",
-      reviewText:
-        "Professional environment and prompt payment. Would definitely work with Alexander again.",
-      rating: 4,
-      workerAvatarUrl: "/images/jessica.jpeg",
-    },
-  ],
-}; // TODO: Replace with real data fetching logic
 
 export default function BuyerProfilePage() {
   const router = useRouter();
@@ -137,24 +102,24 @@ export default function BuyerProfilePage() {
   ] = useState<string | null>(null);
 
   const fetchUserProfile = async () => {
-    if (user?.claims.role === "QA") {
-      setDashboardData(mockDashboardData);
-      setIsLoadingData(false);
+    const { success, profile } = await getGigBuyerProfileAction(user?.token);
+    console.log("profile data:", profile);
+
+    if (success && profile) {
+      const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
+        ...badge,
+        icon: badge.icon || DefaultBadgeIcon,
+      }));
+      setDashboardData({ ...profile, badges: updatedBadges });
+      setError(null);
     } else {
-      // TODO: Replace with real data fetching logic for non-QA users
-      const { profile, success, error } = await getGigWorkerProfile({
-        userId: authUserId,
-      });
-      if (!success) {
-        setError(error || "Failed to fetch profile data");
-        setIsLoadingData(false);
-        return;
-      } else {
-        setDashboardData(profile);
-        setIsLoadingData(false);
-      }
+      setError("Failed to fetch profile data");
+      setDashboardData(null);
     }
+
+    setIsLoadingData(false);
   };
+
   useEffect(() => {
     // At this point, user is authenticated and authorized for this pageUserId
     if (user) {
@@ -163,13 +128,68 @@ export default function BuyerProfilePage() {
     }
   }, [loadingAuth, user, authUserId, pageUserId, , pathname, router]);
 
-  const handlePlayIntroVideo = () => {
-    if (dashboardData?.introVideoUrl) {
-      window.open(dashboardData.introVideoUrl, "_blank");
-    } else {
-      alert("Intro video not available.");
-    }
-  };
+  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const isSelfView = authUserId === pageUserId;
+
+  const handleVideoUpload = useCallback(
+    async (file: Blob) => {
+      if (!user) {
+        console.error("Missing required parameters for video upload");
+        setError("Failed to upload video. Please try again.");
+        return;
+      }
+
+      if (!file || file.size === 0) {
+        console.error("Invalid file for video upload");
+        setError("Invalid video file. Please try again.");
+        return;
+      }
+
+      // Check file size (limit to 50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        setError("Video file too large. Please use a file smaller than 50MB.");
+        return;
+      }
+
+      try {
+        const filePath = `buyer/${user.uid}/introVideo/introduction-${encodeURI(
+          user.email ?? user.uid
+        )}.webm`;
+        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+        const uploadTask = uploadBytesResumable(fileStorageRef, file);
+
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            // Progress handling if needed
+          },
+          (error) => {
+            console.error("Upload failed:", error);
+            setError("Video upload failed. Please try again.");
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then((downloadURL) => {
+                updateVideoUrlBuyerProfileAction(downloadURL, user.token);
+                toast.success("Video upload successfully");
+                fetchUserProfile();
+              })
+              .catch((error) => {
+                console.error("Failed to get download URL:", error);
+                setError("Failed to get video URL. Please try again.");
+              });
+          }
+        );
+      } catch (error) {
+        console.error("Video upload error:", error);
+        setError("Failed to upload video. Please try again.");
+      }
+    },
+    [user]
+  );
 
   if (!user || isLoadingData) {
     return (
@@ -202,9 +222,7 @@ export default function BuyerProfilePage() {
       <div className={styles.pageWrapper}>
         {/* Profile Header */}
         <header className={styles.profileHeader}>
-          <h3 className={styles.profileHeaderName}>
-            {dashboardData.displayName}
-          </h3>
+          <h3 className={styles.profileHeaderName}>{dashboardData.fullName}</h3>
           <p className={styles.profileHeaderUsername}>
             {dashboardData.username}
           </p>
@@ -212,58 +230,136 @@ export default function BuyerProfilePage() {
 
         {/* Intro & Business Card Section */}
         <section className={`${styles.section} ${styles.introBusinessCard}`}>
-          <div
-            className={styles.videoThumbnailContainer}
-            onClick={handlePlayIntroVideo}
-            role="button"
-            tabIndex={0}
-            onKeyPress={(e) => e.key === "Enter" && handlePlayIntroVideo()}
-          >
+          <div className={styles.videoThumbnailContainer}>
             <span className={styles.videoThumbnailTitle}>Intro Video</span>
             <div className={styles.videoPlaceholderImage}>
-              {dashboardData.introVideoThumbnailUrl ? (
-                <Image
-                  src={dashboardData.introVideoThumbnailUrl}
-                  alt="Intro video thumbnail"
-                  width={116}
-                  height={116}
-                  style={{ objectFit: "cover" }}
-                  className={styles.actualVideoImage}
-                />
+              {!dashboardData?.videoUrl ? (
+                isSelfView ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <h3>Please, introduce yourself</h3>
+                    <VideoRecorderBubble
+                      key={1}
+                      onVideoRecorded={handleVideoUpload}
+                    />
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      fontStyle: "italic",
+                      color: "#888",
+                    }}
+                  >
+                    User presentation not exist
+                  </p>
+                )
               ) : (
-                <Film size={48} color="#0f0f0f" />
+                <div style={{ textAlign: "center" }}>
+                  <Link
+                    href={dashboardData.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "inline-block", textDecoration: "none" }}
+                  >
+                    <video
+                      width="180"
+                      height="180"
+                      style={{ borderRadius: "8px", objectFit: "cover" }}
+                      preload="metadata"
+                      muted
+                      poster="/video-placeholder.jpg"
+                    >
+                      <source
+                        src={dashboardData.videoUrl + "#t=0.1"}
+                        type="video/webm"
+                      />
+                    </video>
+                  </Link>
+
+                  {isSelfView && (
+                    <div style={{ marginTop: "8px" }}>
+                      <button
+                        onClick={() => setIsEditingVideo(true)}
+                        style={{
+                          padding: "6px 12px",
+                          backgroundColor: "#0070f3",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Edit video
+                      </button>
+                    </div>
+                  )}
+
+                  {isEditingVideo && (
+                    <div style={{ marginTop: "12px" }}>
+                      <VideoRecorderBubble
+                        key={2}
+                        onVideoRecorded={(video) => {
+                          handleVideoUpload(video);
+                          setIsEditingVideo(false);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
-              <Video size={32} className={styles.playIconOverlay} />
             </div>
           </div>
           <div className={styles.businessInfoCard}>
             <h4>Business:</h4>
             <p>
-              {dashboardData.businessName}
+              {dashboardData.fullCompanyName}
               <br />
-              {dashboardData.businessLocation}
+              {dashboardData?.billingAddressJson?.city},{" "}
+              {dashboardData?.billingAddressJson?.country}
+              <br />
+              {dashboardData?.billingAddressJson?.addressLine1 ||
+                dashboardData?.billingAddressJson?.addressLine2}
             </p>
             <h4>Role:</h4>
-            <p>{dashboardData.userRoleInBusiness}</p>
+            <p>{dashboardData?.companyRole}</p>
           </div>
         </section>
 
         {/* Statistics Section */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Statistics</h2>
-          <div className={styles.statsGrid}>
-            {dashboardData.statistics.map((stat, index) => (
-              <StatisticItemDisplay
-                key={index}
-                stat={{
-                  id: index,
-                  icon: ThumbsUp,
-                  value: stat.value,
-                  label: stat.label
-                }}
-              />
-            ))}
-          </div>
+          <ContentCard title="Statistics" className={styles.statisticsCard}>
+            <div className={styles.statisticsItemsContainer}>
+              {dashboardData?.responseRateInternal && (
+                <StatisticItemDisplay
+                  stat={{
+                    id: 1,
+                    icon: ThumbsUp,
+                    value: dashboardData.responseRateInternal,
+                    label: "Would work with Benji again",
+                    iconColor: "#0070f3",
+                  }}
+                />
+              )}
+              {dashboardData?.averageRating && (
+                <StatisticItemDisplay
+                  stat={{
+                    id: 2,
+                    icon: MessageSquare,
+                    value: dashboardData.averageRating,
+                    label: "Response rate",
+                    iconColor: "#0070f3",
+                  }}
+                />
+              )}
+            </div>
+          </ContentCard>
         </section>
 
         {/* Completed Hires Card */}
@@ -279,7 +375,7 @@ export default function BuyerProfilePage() {
               Types of Staff Hired:
             </span>
             <ul>
-              {dashboardData.typesOfStaffHired.map((type) => (
+              {dashboardData?.typesOfStaffHired?.map((type) => (
                 <li key={type}>{type}</li>
               ))}
             </ul>
@@ -298,14 +394,14 @@ export default function BuyerProfilePage() {
         {/* Badges Awarded Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Badges Awarded</h2>
-          <div className={styles.badgesGridDisplay}>
-            {dashboardData.badgesEarnedByTheirWorkers.map((award) => (
-              <AwardDisplayBadge
-                key={award.id}
-                icon={award.icon}
-                textLines={award.name}
-                color="#eab308"
-              />
+          <div className={styles.badges}>
+            {dashboardData?.badges?.map((badge) => (
+              <div className={styles.badge} key={badge.id}>
+                <AwardDisplayBadge
+                  {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
+                  textLines={badge?.badge?.description ?? ""}
+                />
+              </div>
             ))}
           </div>
         </section>
@@ -313,18 +409,16 @@ export default function BuyerProfilePage() {
         {/* Worker Reviews Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Worker Reviews</h2>
-          {dashboardData.reviewsFromWorkers.length > 0 ? (
+          {dashboardData?.reviews?.length > 0 ? (
             <div className={styles.reviewsListContainer}>
-              {dashboardData.reviewsFromWorkers
-                .slice(0, 2)
-                .map((review, index) => (
-                  <ReviewCardItem
-                    key={index}
-                    reviewerName={review.workerName}
-                    date={review.date}
-                    comment={review.reviewText}
-                  />
-                ))}
+              {dashboardData?.reviews.map((review, index) => (
+                <ReviewCardItem
+                  key={index}
+                  reviewerName={review.name}
+                  date={review.date.toString()}
+                  comment={review.text}
+                />
+              ))}
             </div>
           ) : (
             <p style={{ fontSize: "0.9rem", color: "#a0a0a0" }}>

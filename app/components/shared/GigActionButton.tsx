@@ -2,8 +2,8 @@ import styles from "./GigActionButton.module.css";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 
 interface ActionButtonProps {
-  label: string;
-  handleGigAction: () => void;
+  label: React.ReactNode;
+  handleGigAction?: () => void;
   isActive?: boolean;
   isDisabled?: boolean;
 }
@@ -24,7 +24,7 @@ const GigActionButton = ({
             ? styles.activeWorker
             : styles.activeBuyer
           : ""
-      }`}
+      } ${isDisabled ? styles.disabled : ""}`}
       onClick={handleGigAction}
       disabled={isDisabled}
     >

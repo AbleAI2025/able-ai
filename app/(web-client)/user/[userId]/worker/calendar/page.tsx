@@ -28,6 +28,7 @@ import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
+import { X } from "lucide-react";
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
 
@@ -100,6 +101,8 @@ const WorkerCalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [isEditingSingleOccurrence, setIsEditingSingleOccurrence] = useState(false);
+  const [showEditOptionsModal, setShowEditOptionsModal] = useState(false);
   const [processingOfferId, setProcessingOfferId] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<"accept" | "decline" | null>(null);
   const [offers, setOffers] = useState<GigOffer[]>([]);
@@ -141,6 +144,12 @@ const WorkerCalendarPage = () => {
         if (availabilityRes.error) {
           console.error('Error fetching availability:', availabilityRes.error);
         }
+
+        // Debug: Log what we're getting
+        console.log('availabilityRes:', availabilityRes);
+        console.log('availabilityRes.availability:', availabilityRes.availability);
+        console.log('typeof availabilityRes.availability:', typeof availabilityRes.availability);
+        console.log('Array.isArray(availabilityRes.availability):', Array.isArray(availabilityRes.availability));
 
         // Debug: Log what we're getting
         console.log('availabilityRes:', availabilityRes);
@@ -208,10 +217,20 @@ const WorkerCalendarPage = () => {
   // Handle event clicks - different behavior for offers vs accepted gigs
   const handleEventClick = (event: CalendarEvent) => {
     if (event.status === 'AVAILABLE') {
-      // For availability events, show availability edit modal
+      // For availability events, check if it's a recurring pattern
       const slot = Array.isArray(availabilitySlots) ? availabilitySlots.find(s => s.id === event.originalSlotId) : null;
-      setSelectedAvailabilitySlot(slot || null);
-      setIsAvailabilityModalOpen(true);
+      
+      if (slot && slot.frequency !== 'never') {
+        // It's a recurring pattern, show edit options
+        setSelectedAvailabilitySlot(slot);
+        setSelectedDate(event.start);
+        setShowEditOptionsModal(true);
+      } else {
+        // Single occurrence or non-recurring, edit directly
+        setSelectedAvailabilitySlot(slot || null);
+        setIsEditingSingleOccurrence(false);
+        setIsAvailabilityModalOpen(true);
+      }
     } else if (event.status === 'OFFER') {
       // For offers, show modal instead of navigating to gig details
       // (since offers aren't assigned to workers yet)
@@ -264,6 +283,7 @@ const WorkerCalendarPage = () => {
     console.log('handleAvailabilitySave called with data:', data);
     console.log('handleAvailabilitySave data type:', typeof data);
     console.log('handleAvailabilitySave data keys:', Object.keys(data || {}));
+    console.log('isEditingSingleOccurrence:', isEditingSingleOccurrence);
     
     if (!user) {
       console.log('No user found');
@@ -282,20 +302,41 @@ const WorkerCalendarPage = () => {
 
     try {
       if (selectedAvailabilitySlot) {
-        // Update existing slot
-        console.log('Updating existing slot:', selectedAvailabilitySlot.id);
-        const { updateAvailabilitySlot } = await import('@/actions/availability/manage-availability');
-        const result = await updateAvailabilitySlot(user.uid, selectedAvailabilitySlot.id, data);
-        console.log('Update result:', result);
-        
-        if (result.error) {
-          console.error('Update failed:', result.error);
-          return;
+        if (isEditingSingleOccurrence) {
+          // Create a new single occurrence slot for this specific date
+          console.log('Creating new single occurrence slot');
+          const { createAvailabilitySlot } = await import('@/actions/availability/manage-availability');
+          const result = await createAvailabilitySlot(user.uid, data);
+          console.log('Create single occurrence result:', result);
+          
+          if (result.error) {
+            console.error('Create single occurrence failed:', result.error);
+            alert(`Failed to create single occurrence: ${result.error}`);
+            return;
+          }
+          
+          console.log('Successfully created single occurrence slot');
+        } else {
+          // Update existing slot (recurring pattern)
+          console.log('Updating existing slot:', selectedAvailabilitySlot.id);
+          const { updateAvailabilitySlot } = await import('@/actions/availability/manage-availability');
+          const result = await updateAvailabilitySlot(user.uid, selectedAvailabilitySlot.id, data);
+          console.log('Update result:', result);
+          
+          if (result.error) {
+            console.error('Update failed:', result.error);
+            alert(`Failed to update availability: ${result.error}`);
+            return;
+          }
+          
+          console.log('Successfully updated availability slot');
         }
       } else {
         // Create new slot
         console.log('Creating new slot');
         const { createAvailabilitySlot } = await import('@/actions/availability/manage-availability');
+        console.log('createAvailabilitySlot function imported:', typeof createAvailabilitySlot);
+        console.log('About to call createAvailabilitySlot with:', { userId: user.uid, data });
         console.log('createAvailabilitySlot function imported:', typeof createAvailabilitySlot);
         console.log('About to call createAvailabilitySlot with:', { userId: user.uid, data });
         const result = await createAvailabilitySlot(user.uid, data);
@@ -308,8 +349,11 @@ const WorkerCalendarPage = () => {
           console.error('Full result object:', result);
           console.error('Error details:', result.details);
           console.error('Error type:', result.errorType);
+          alert(`Failed to create availability: ${result.error}`);
           return;
         }
+        
+        console.log('Successfully created availability slot');
       }
       
       // Close the modal
@@ -346,6 +390,8 @@ const WorkerCalendarPage = () => {
       fetchEvents();
     } catch (error) {
       console.error('Error saving availability:', error);
+      // You could add a toast notification here for user feedback
+      alert(`Error saving availability: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -397,6 +443,25 @@ const WorkerCalendarPage = () => {
     setIsAvailabilityModalOpen(false);
     setSelectedAvailabilitySlot(null);
     setSelectedDate(null);
+    setIsEditingSingleOccurrence(false);
+  };
+
+  const handleEditOptionsModalClose = () => {
+    setShowEditOptionsModal(false);
+    setSelectedAvailabilitySlot(null);
+    setSelectedDate(null);
+  };
+
+  const handleEditRecurringPattern = () => {
+    setIsEditingSingleOccurrence(false);
+    setShowEditOptionsModal(false);
+    setIsAvailabilityModalOpen(true);
+  };
+
+  const handleEditSingleOccurrence = () => {
+    setIsEditingSingleOccurrence(true);
+    setShowEditOptionsModal(false);
+    setIsAvailabilityModalOpen(true);
   };
 
   const handleDateSelect = (slotInfo: { start: Date; end: Date; slots: Date[] } | Date, selectedTime?: string) => {
@@ -617,23 +682,109 @@ const WorkerCalendarPage = () => {
         }
       />
 
-      <NewAvailabilityModal
-        isOpen={isAvailabilityModalOpen}
-        onClose={handleAvailabilityModalClose}
-        slot={selectedAvailabilitySlot}
-        onSave={handleAvailabilitySave}
-        onDelete={handleAvailabilityDelete}
-        selectedDate={selectedDate || undefined}
-        selectedTime={selectedTime || undefined}
-      />
+             <NewAvailabilityModal
+         isOpen={isAvailabilityModalOpen}
+         onClose={handleAvailabilityModalClose}
+         slot={selectedAvailabilitySlot}
+         onSave={handleAvailabilitySave}
+         onDelete={handleAvailabilityDelete}
+         selectedDate={selectedDate || undefined}
+         selectedTime={selectedTime || undefined}
+         isEditingSingleOccurrence={isEditingSingleOccurrence}
+       />
 
-      <ClearAvailabilityAlert
-        isOpen={showClearModal}
-        onClose={() => setShowClearModal(false)}
-        onConfirm={handleClearAllAvailability}
-      />
-    </div>
-  );
-};
+             <ClearAvailabilityAlert
+         isOpen={showClearModal}
+         onClose={() => setShowClearModal(false)}
+         onConfirm={handleClearAllAvailability}
+       />
+
+       {/* Edit Options Modal */}
+       {showEditOptionsModal && selectedAvailabilitySlot && selectedDate && (
+         <div style={{
+           position: 'fixed',
+           top: 0,
+           left: 0,
+           right: 0,
+           bottom: 0,
+           backgroundColor: 'rgba(0, 0, 0, 0.5)',
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'center',
+           zIndex: 1000
+         }} onClick={handleEditOptionsModalClose}>
+           <div style={{
+             backgroundColor: '#232323',
+             borderRadius: '12px',
+             padding: '20px',
+             maxWidth: '400px',
+             width: '90%',
+             color: '#fff'
+           }} onClick={(e) => e.stopPropagation()}>
+             <div style={{
+               display: 'flex',
+               justifyContent: 'space-between',
+               alignItems: 'center',
+               marginBottom: '20px'
+             }}>
+               <h3 style={{ margin: 0 }}>Edit Availability</h3>
+               <button 
+                 style={{
+                   background: 'none',
+                   border: 'none',
+                   color: '#fff',
+                   cursor: 'pointer',
+                   fontSize: '20px'
+                 }}
+                 onClick={handleEditOptionsModalClose}
+               >
+                 ×
+               </button>
+             </div>
+             <div>
+               <p style={{ marginBottom: '20px' }}>
+                 This is a recurring availability pattern. What would you like to edit?
+               </p>
+               <div style={{
+                 display: 'flex',
+                 flexDirection: 'column',
+                 gap: '10px'
+               }}>
+                 <button 
+                   style={{
+                     background: '#41a1e8',
+                     border: 'none',
+                     borderRadius: '8px',
+                     padding: '12px 16px',
+                     color: '#fff',
+                     cursor: 'pointer',
+                     fontWeight: '600'
+                   }}
+                   onClick={handleEditRecurringPattern}
+                 >
+                   Edit recurring pattern
+                 </button>
+                 <button 
+                   style={{
+                     background: '#7eeef9',
+                     border: 'none',
+                     borderRadius: '8px',
+                     padding: '12px 16px',
+                     color: '#000',
+                     cursor: 'pointer',
+                     fontWeight: '600'
+                   }}
+                   onClick={handleEditSingleOccurrence}
+                 >
+                   Edit just this occurrence
+                 </button>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ };
 
 export default WorkerCalendarPage; 

@@ -116,10 +116,12 @@ const RegisterView: React.FC<RegisterViewProps> = ({
         // The link was successfully sent. Inform the user.
         // Save the email locally so you don't need to ask the user for it again
         // if they open the link on the same device.
-        window.localStorage.setItem("emailForSignIn", email);
-        toast.success(
-          "Registration successful! Please check your email to sign in."
-        );
+        if (result.ok) {
+          window.localStorage.setItem("emailForSignIn", email);
+          toast.success(
+            "Registration successful! Please check your email to sign in."
+          );
+        }
       })
       .catch((error) => {
         const errorCode = error.code;

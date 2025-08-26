@@ -1242,6 +1242,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "company_role": {
+          "name": "company_role",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2030,6 +2036,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'PENDING'"
+        },
+        "target_role": {
+          "name": "target_role",
+          "type": "active_role_context_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

@@ -1,5 +1,5 @@
 {
-  "id": "cfa1a5bd-45d3-432b-80c2-e55fbd26baa9",
+  "id": "99038d0b-f635-434d-881d-196daeeb7c38",
   "prevId": "af40dd3e-532f-4564-b3da-7b09d6632d18",
   "version": "7",
   "dialect": "postgresql",
@@ -1925,6 +1925,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'PENDING'"
+        },
+        "target_role": {
+          "name": "target_role",
+          "type": "active_role_context_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

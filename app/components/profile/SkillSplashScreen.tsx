@@ -170,6 +170,12 @@ const SkillSplashScreen = ({
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed.");
+      setIsUploadImage(false);
+      return;
+    }
+
     const timestamp = Date.now();
     const path = `users/${user.uid}/profileImage/image-${encodeURI(
       user.email ?? user.uid
@@ -351,7 +357,7 @@ const SkillSplashScreen = ({
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Badges Awarded</h3>
         <div className={styles.badges}>
-          {profile.badges.map((badge) => (
+          {profile?.badges?.map((badge) => (
             <div className={styles.badge} key={badge.id}>
               <AwardDisplayBadge
                 {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}

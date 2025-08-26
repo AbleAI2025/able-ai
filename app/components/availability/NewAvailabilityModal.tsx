@@ -13,6 +13,7 @@ interface NewAvailabilityModalProps {
   onDelete?: () => void;
   selectedDate?: Date;
   selectedTime?: string;
+  isEditingSingleOccurrence?: boolean;
 }
 
 const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
@@ -23,6 +24,7 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
   onDelete,
   selectedDate,
   selectedTime,
+  isEditingSingleOccurrence = false,
 }) => {
   const [formData, setFormData] = useState<AvailabilityFormData>({
     startTime: "09:00",
@@ -43,15 +45,29 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
 
   useEffect(() => {
     if (slot) {
-      setFormData({
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        days: slot.days,
-        frequency: slot.frequency,
-        ends: slot.ends,
-        endDate: slot.endDate,
-        occurrences: slot.occurrences,
-      });
+      if (isEditingSingleOccurrence && selectedDate) {
+        // Editing just one occurrence of a recurring pattern
+        setFormData({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          days: [], // Empty for single occurrence
+          frequency: 'never', // Single occurrence
+          ends: 'on_date',
+          endDate: selectedDate.toISOString().split('T')[0], // The specific date
+          occurrences: undefined,
+        });
+      } else {
+        // Editing the entire recurring pattern
+        setFormData({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          days: slot.days,
+          frequency: slot.frequency,
+          ends: slot.ends,
+          endDate: slot.endDate,
+          occurrences: slot.occurrences,
+        });
+      }
     } else if (selectedDate) {
       // For single occurrences, store the actual date in the endDate field
       // and use an empty days array to avoid confusion with recurring patterns
@@ -68,7 +84,7 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
         endTime: selectedTime ? getEndTimeFromStart(selectedTime) : "19:00",
       }));
     }
-  }, [slot, selectedDate, selectedTime]);
+  }, [slot, selectedDate, selectedTime, isEditingSingleOccurrence]);
 
   const handleSave = () => {
     onSave(formData);

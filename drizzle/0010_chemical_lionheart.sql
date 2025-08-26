@@ -1,0 +1,1 @@
+ALTER TABLE "buyer_profiles" ADD COLUMN "company_role" varchar(100);

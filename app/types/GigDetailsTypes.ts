@@ -41,7 +41,7 @@ export default interface GigDetails {
   date: string; // ISO
   startTime: string; // ISO
   endTime: string; // ISO
-  duration?: string; // e.g., "5 hours" - can be calculated
+  duration: string; // e.g., "5 hours" - can be calculated
   location: string;
   hourlyRate: number;
   estimatedEarnings: number;

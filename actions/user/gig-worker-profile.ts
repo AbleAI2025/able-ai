@@ -425,7 +425,6 @@ export const saveWorkerProfileFromOnboardingAction = async (
       occurrences?: number;
     } | string;
     videoIntro: File | string;
-    references: string;
   },
   token: string
 ) => {
@@ -459,7 +458,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
       semanticProfileJson: {
         tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
       },
-      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\nReferences: ${profileData.references}`,
+      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
       updatedAt: new Date(),
     };
 

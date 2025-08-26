@@ -123,6 +123,7 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
   }),
   billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
   videoUrl: text("video_url"),
+  companyRole: varchar("company_role", { length: 100 }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -171,13 +172,3 @@ export const PasswordRecoveryRequestsTable = pgTable(
       .notNull(),
   }
 );
-
-// --- TODO: Define relations for these tables in relations.ts or schema/index.ts ---
-// For example:
-// export const usersRelations = relations(UsersTable, ({ one, many }) => ({
-//   gigWorkerProfile: one(GigWorkerProfilesTable, { fields: [UsersTable.id], references: [GigWorkerProfilesTable.userId] }),
-//   buyerProfile: one(BuyerProfilesTable, { fields: [UsersTable.id], references: [BuyerProfilesTable.userId] }),
-//   teamMemberships: many(TeamMembersTable, { relationName: "UserAsTeamMember" }), // where usersTable.id is TeamMembersTable.memberUserId
-//   passwordRecoveryRequests: many(PasswordRecoveryRequestsTable),
-// }));
-// ... and so on for other tables.

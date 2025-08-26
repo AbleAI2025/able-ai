@@ -8,12 +8,12 @@ const ACCEPTED = gigStatusEnum.enumValues[2];
 const CANCELLED_BY_BUYER = gigStatusEnum.enumValues[10];
 const CANCELLED_BY_WORKER = gigStatusEnum.enumValues[11];
 
-const getNewStatus = (action: 'accept' | 'cancel', role: 'buyer' | 'worker') => {
+const getNewStatus = (action: 'accept' | 'cancel' | 'start' | 'complete', role: 'buyer' | 'worker') => {
   if (action === 'accept') return ACCEPTED;
   return role === 'buyer' ? CANCELLED_BY_BUYER : CANCELLED_BY_WORKER;
 };
 
-export async function updateGigOfferStatus({ gigId, userId, role, action }: { gigId: string; userId: string; role: 'buyer' | 'worker'; action: 'accept' | 'cancel'; isViewQA?: boolean; }) {
+export async function updateGigOfferStatus({ gigId, userId, role, action }: { gigId: string; userId: string; role: 'buyer' | 'worker'; action: 'accept' | 'cancel' | 'start' | 'complete'; isViewQA?: boolean; }) {
 
   try {
     const user = await db.query.UsersTable.findFirst({
