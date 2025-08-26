@@ -57,7 +57,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
   return data;
 };
 export const getGigWorkerProfile = async (
-  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined
+  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined,
 ): Promise<{ success: true; data: PublicWorkerProfile }> => {
   try {
     if (!workerProfile) throw "Getting worker profile error";
@@ -81,14 +81,14 @@ export const getGigWorkerProfile = async (
     const reviews = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile.userId),
-        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM"),
       ),
     });
 
     const recommendations = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile.userId),
-        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
       ),
     });
 
@@ -158,7 +158,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       .from(UserBadgesLinkTable)
       .innerJoin(
         BadgeDefinitionsTable,
-        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id),
       )
       .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
 
@@ -169,19 +169,27 @@ export const getSkillDetailsWorker = async (id: string) => {
     const reviews = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
-        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM"),
       ),
     });
 
     const recommendations = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
-        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
       ),
     });
 
     const reviewsData = await Promise.all(
       reviews.map(async (review) => {
+        if (!review.authorUserId) {
+          return {
+            name: "Unknown",
+            date: review.createdAt,
+            text: review.comment,
+          };
+        }
+
         const author = await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
         });
@@ -191,11 +199,18 @@ export const getSkillDetailsWorker = async (id: string) => {
           date: review.createdAt,
           text: review.comment,
         };
-      })
+      }),
     );
 
     const recommendationsData = await Promise.all(
       recommendations.map(async (review) => {
+        if(!review.authorUserId){
+        return {
+          name: "Unknown",
+          date: review.createdAt,
+          text: review.comment,
+        };
+        }
         const author = await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
         });
@@ -205,7 +220,7 @@ export const getSkillDetailsWorker = async (id: string) => {
           date: review.createdAt,
           text: review.comment,
         };
-      })
+      }),
     );
 
     const skillProfile = {
@@ -259,7 +274,7 @@ export const createSkillWorker = async (
     skillVideoUrl?: string;
     adminTags?: string[];
     images?: string[];
-  }
+  },
 ) => {
   try {
     if (!token) throw new Error("Token is required");
@@ -308,7 +323,7 @@ export const createSkillWorker = async (
 
 export const updateVideoUrlProfileAction = async (
   videoUrl: string,
-  token?: string | undefined
+  token?: string | undefined,
 ) => {
   try {
     if (!token) {
@@ -342,7 +357,7 @@ export const updateVideoUrlProfileAction = async (
 export const updateProfileImageAction = async (
   token: string,
   id: string,
-  newImage: string
+  newImage: string,
 ) => {
   try {
     if (!token) throw new Error("User ID is required");
@@ -375,7 +390,7 @@ export const updateProfileImageAction = async (
 export const deleteImageAction = async (
   token: string,
   skillId: string,
-  imageUrl: string
+  imageUrl: string,
 ) => {
   try {
     if (!token) throw new Error("User ID is required");
@@ -405,7 +420,7 @@ export const deleteImageAction = async (
     console.error("Error deleting image:", error);
     return { success: false, data: null, error };
   }
-}
+};
 
 export const saveWorkerProfileFromOnboardingAction = async (
   profileData: {
@@ -414,19 +429,21 @@ export const saveWorkerProfileFromOnboardingAction = async (
     skills: string;
     hourlyRate: string;
     location: any;
-    availability: { 
-      days: string[]; 
-      startTime: string; 
-      endTime: string; 
-      frequency?: string;
-      ends?: string;
-      startDate?: string; // Add this field
-      endDate?: string;
-      occurrences?: number;
-    } | string;
+    availability:
+      | {
+          days: string[];
+          startTime: string;
+          endTime: string;
+          frequency?: string;
+          ends?: string;
+          startDate?: string; // Add this field
+          endDate?: string;
+          occurrences?: number;
+        }
+      | string;
     videoIntro: File | string;
   },
-  token: string
+  token: string,
 ) => {
   try {
     if (!token) {
@@ -450,13 +467,30 @@ export const saveWorkerProfileFromOnboardingAction = async (
     // Prepare profile data
     const profileUpdateData = {
       fullBio: `${profileData.about}\n\n${profileData.experience}`,
-      location: typeof profileData.location === 'string' ? profileData.location : profileData.location?.formatted_address || profileData.location?.name || '',
-      latitude: typeof profileData.location === 'object' && profileData.location?.lat ? profileData.location.lat : null,
-      longitude: typeof profileData.location === 'object' && profileData.location?.lng ? profileData.location.lng : null,
+      location:
+        typeof profileData.location === "string"
+          ? profileData.location
+          : profileData.location?.formatted_address ||
+            profileData.location?.name ||
+            "",
+      latitude:
+        typeof profileData.location === "object" && profileData.location?.lat
+          ? profileData.location.lat
+          : null,
+      longitude:
+        typeof profileData.location === "object" && profileData.location?.lng
+          ? profileData.location.lng
+          : null,
       // Remove availabilityJson - we'll save to worker_availability table instead
-      videoUrl: typeof profileData.videoIntro === 'string' ? profileData.videoIntro : profileData.videoIntro?.name || '',
+      videoUrl:
+        typeof profileData.videoIntro === "string"
+          ? profileData.videoIntro
+          : profileData.videoIntro?.name || "",
       semanticProfileJson: {
-        tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+        tags: profileData.skills
+          .split(",")
+          .map((skill) => skill.trim())
+          .filter(Boolean),
       },
       privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
       updatedAt: new Date(),
@@ -478,10 +512,13 @@ export const saveWorkerProfileFromOnboardingAction = async (
     }
 
     // Save availability data to worker_availability table
-    if (profileData.availability && typeof profileData.availability === 'object') {
+    if (
+      profileData.availability &&
+      typeof profileData.availability === "object"
+    ) {
       // Create proper timestamps for the required fields
       const createTimestamp = (timeStr: string) => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
+        const [hours, minutes] = timeStr.split(":").map(Number);
         const date = new Date();
         date.setHours(hours, minutes, 0, 0);
         return date;
@@ -490,14 +527,21 @@ export const saveWorkerProfileFromOnboardingAction = async (
       await db.insert(WorkerAvailabilityTable).values({
         userId: user.id,
         days: profileData.availability.days || [],
-        frequency: (profileData.availability.frequency || 'never') as "never" | "weekly" | "biweekly" | "monthly",
+        frequency: (profileData.availability.frequency || "never") as
+          | "never"
+          | "weekly"
+          | "biweekly"
+          | "monthly",
         startDate: profileData.availability.startDate,
         startTimeStr: profileData.availability.startTime,
         endTimeStr: profileData.availability.endTime,
         // Convert time strings to timestamp for the required fields
         startTime: createTimestamp(profileData.availability.startTime),
         endTime: createTimestamp(profileData.availability.endTime),
-        ends: (profileData.availability.ends || 'never') as "never" | "on_date" | "after_occurrences",
+        ends: (profileData.availability.ends || "never") as
+          | "never"
+          | "on_date"
+          | "after_occurrences",
         occurrences: profileData.availability.occurrences,
         endDate: profileData.availability.endDate || null,
         notes: `Onboarding availability - Hourly Rate: ${profileData.hourlyRate}`,
@@ -519,6 +563,10 @@ export const saveWorkerProfileFromOnboardingAction = async (
     return { success: true, data: "Worker profile saved successfully" };
   } catch (error) {
     console.error("Error saving worker profile:", error);
-    return { success: false, data: null, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 };

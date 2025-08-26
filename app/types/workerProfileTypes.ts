@@ -34,9 +34,9 @@ export interface Equipment {
 
 export interface Review {
   id: string;
-  gigId: string;
-  authorUserId: string;
-  targetUserId: string;
+  gigId: string | null;
+  authorUserId: string | null;
+  targetUserId: string | null;
   rating: number;
   comment: string | null;
   wouldWorkAgain?: boolean | null;
