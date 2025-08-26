@@ -2,7 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/drizzle/db';
-import { GigsTable, UsersTable } from '@/lib/drizzle/schema';
+import { GigsTable, PaymentsTable, UsersTable } from '@/lib/drizzle/schema';
 import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
 import { holdGigAmount } from '@/lib/stripe/hold-gig-amount';
 
@@ -44,48 +44,62 @@ export async function handleGigAdjustment(
     currency,
   }: GigAdjustmentParams
 ) {
-  if (!firebaseUid) {
-    return { error: 'User ID is required.', status: 400 }
-  }
 
-  const userRecord = await db.query.UsersTable.findFirst({
-    where: eq(UsersTable.firebaseUid, firebaseUid),
-  });
+  try {
+    if (!firebaseUid) {
+      return { error: 'User ID is required.', status: 400 }
+    }
 
-  if (!userRecord) throw new Error('User not found');
+    const userRecord = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, firebaseUid),
+    });
 
-  const buyerStripeCustomerId = userRecord?.stripeCustomerId;
+    if (!userRecord) throw new Error('User not found');
 
-  if (!buyerStripeCustomerId) {
-    throw new Error('User is not connected with stripe');
-  }
+    const buyerStripeCustomerId = userRecord?.stripeCustomerId;
 
-  const { receiverAccountId, gig } = await getPaymentAccountDetailsForGig(gigId);
-  const currentFinalPrice = Number(gig.finalAgreedPrice) || Number(gig.totalAgreedPrice);
-  const newFinalPriceCents = Math.round(newFinalRate * newFinalHours * 100);
+    if (!buyerStripeCustomerId) {
+      throw new Error('User is not connected with stripe');
+    }
 
-  if (newFinalPriceCents <= currentFinalPrice) {
+    const { receiverAccountId, gig } = await getPaymentAccountDetailsForGig(gigId);
+    const currentFinalPrice = Number(null) || Number(gig.totalAgreedPrice);
+    const newFinalPriceCents = Math.round(Number(newFinalRate) * Number(newFinalHours) * 100);
+
+    if (newFinalPriceCents === currentFinalPrice) throw new Error('There have been no changes in the working hours or in the rate.');
+
+    if (newFinalPriceCents < currentFinalPrice) {
+      await updateAdjustedGig({
+        gigId,
+        newFinalRate: Number(newFinalRate),
+        newFinalHours: Number(newFinalHours)
+      });
+      return;
+    }
+
+    const differenceCents = newFinalPriceCents - currentFinalPrice;
+
+    await holdGigAmount({
+      buyerStripeCustomerId,
+      destinationAccountId: receiverAccountId as string,
+      currency,
+      serviceAmountInCents: differenceCents,
+      description: `Adjustment for Gig ID: ${gigId}`,
+      internalNotes: `Adjustment for Gig ID: ${gigId}`,
+      gigPaymentInfo: {
+        gigId: gigId,
+        payerUserId: userRecord.id,
+        receiverUserId: gig?.workerUserId as string,
+      },
+      metadata: {
+        paymentType: 'ADJUSTMENT',
+      },
+    });
+
     await updateAdjustedGig({ gigId, newFinalRate, newFinalHours });
-    return;
+
+  } catch (error: any) {
+    console.error(error);
+    return { error: error.message }
   }
-
-  const differenceCents = newFinalPriceCents - currentFinalPrice;
-
-  holdGigAmount({
-    buyerStripeCustomerId,
-    destinationAccountId: receiverAccountId as string,
-    currency,
-    serviceAmountInCents: differenceCents,
-    description: `Adjustment for Gig ID: ${gigId}`,
-    gigPaymentInfo: {
-      gigId: gigId,
-      payerUserId: userRecord.id,
-      receiverUserId: gig?.workerUserId as string,
-    },
-    metadata: {
-      paymentType: 'ADJUSTMENT',
-    },
-  });
-
-  await updateAdjustedGig({ gigId, newFinalRate, newFinalHours });
 }

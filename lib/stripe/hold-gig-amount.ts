@@ -38,7 +38,7 @@ export async function holdGigAmount(params: HoldGigAmountParams) {
   const customerPaymentMethodId = userSetupIntent?.payment_method as string;
 
   const paymentIntent = await stripeApi.paymentIntents.create({
-    amount: serviceAmountInCents,
+    amount: Math.round(serviceAmountInCents),
     currency: currency || 'usd',
     customer: buyerStripeCustomerId,
     payment_method: customerPaymentMethodId,

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import moment from 'moment';
 import { getGigDetails } from '@/actions/gigs/get-gig-details';
 import GigDetails, { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
 import ConfirmAmendedGigDetailsView from './ConfirmAmendedGigDetailsView';

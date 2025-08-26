@@ -1,7 +1,9 @@
+'use server';
+
 import Stripe from 'stripe';
 import { stripeApi as stripeApiServer } from '@/lib/stripe-server';
 import { db } from "@/lib/drizzle/db";
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { GigsTable, PaymentsTable } from '@/lib/drizzle/schema';
 import { InternalGigStatusEnumType } from '@/app/types';
 
@@ -39,9 +41,9 @@ const findOriginalPaymentIntent = async (stripePaymentIntentId: string) => {
   return originalPaymentIntent as ExpandedPaymentIntent;
 };
 
-async function getPaymentsForGig(gigId: string) {
+async function getPendingPaymentsForGig(gigId: string) {
   const gigPayments = await db.query.PaymentsTable.findMany({
-    where: eq(GigsTable.id, gigId),
+    where: and(eq(PaymentsTable.gigId, gigId), eq(PaymentsTable.status, 'PENDING')),
     columns: {
       id: true,
       amountGross: true,
@@ -84,16 +86,12 @@ async function colletPendingPayments(gigPayments: GigPaymentFields[], finalPrice
     const paymentAmountGross = Number(payment.amountGross);
     const amountToCapture = Math.min(amountToCollect, paymentAmountGross);
     const ableFee = Math.round(amountToCapture * (ableFeePercent || 0.065));
-    const amountToTransferToWorker = amountToCapture - ableFee;
 
     const captureResult = await stripeApi.paymentIntents.capture(
       originalPaymentIntent.id,
       {
         amount_to_capture: amountToCapture,
         application_fee_amount: ableFee,
-        transfer_data: {
-          amount: amountToTransferToWorker,
-        },
       }
     );
 
@@ -122,7 +120,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
     const finalPrice = Number(gigDetails.finalAgreedPrice);
     const ableFeePercent = Number(gigDetails.ableFeePercent);
 
-    const allGigPayments = await getPaymentsForGig(gigId);
+    const allGigPayments = await getPendingPaymentsForGig(gigId);
 
     if (allGigPayments.length === 0) {
       throw new Error('No payments found for this gig.');
