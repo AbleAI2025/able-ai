@@ -12,6 +12,7 @@ import PublicWorkerProfile from "@/app/types/workerProfileTypes";
 import {
   getPrivateWorkerProfileAction,
 } from "@/actions/user/gig-worker-profile";
+import { mockWorkerProfile } from "./mockedprofile";
 
 export default function WorkerOwnedProfilePage() {
   const router = useRouter();
@@ -28,7 +29,13 @@ export default function WorkerOwnedProfilePage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const isViewQA = false;
+
   const fetchUserProfile = (token: string) => {
+    if (isViewQA) {
+      setProfile(mockWorkerProfile)
+      setLoadingProfile(false);
+    } else {
         setLoadingProfile(true);
         getPrivateWorkerProfileAction(token)
           .then((data) => {
@@ -40,6 +47,7 @@ export default function WorkerOwnedProfilePage() {
             setError("Could not load your profile.");
           })
           .finally(() => setLoadingProfile(false));
+        }
   }
 
   useEffect(() => {

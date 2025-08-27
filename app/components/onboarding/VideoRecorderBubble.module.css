@@ -2,6 +2,11 @@
   color: white;
   border-radius: 1rem;
   max-width: 400px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .initial {
@@ -20,19 +25,38 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.recordButton span {
   border: 1px solid white;
-  padding: 0.5rem 1.5rem;
-  border-radius: 999px;
+  padding: 0.7rem;
+  border-radius: 1.5rem;
+  margin: auto;
 }
 
-.recorder {
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;          /* full width */
+  height: 100vh;        /* full height */
+  background: rgba(0, 0, 0, 0.4); /* semi-transparent overlay */
+  backdrop-filter: blur(6px);     /* blur effect */
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  z-index: 999;        /* above other elements */
+  padding-top: 1rem;
+}
+
+.recorder, .preview {
+  width: 90%;            /* recorder content width */
+  max-width: 450px;      /* optional max width */
+  background: rgb(47, 47, 47);      /* optional background for recorder itself */
+  border-radius: 8px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
 }
+
 
 .webcam {
   border-radius: 0.5rem;
@@ -47,17 +71,14 @@
   cursor: pointer;
   outline: none;
   font-weight: 600;
+  border: 0;
+  margin: 1rem 0;
 }
 
 .note {
   font-size: 0.75rem;
   color: #9ca3af; /* Tailwind gray-400 */
-}
-
-.preview {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-self: flex-start;
 }
 
 .video {
@@ -68,25 +89,57 @@
 .actions {
   display: flex;
   gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.actionButton {
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  width: 103px;
+  border: 0;
+}
+
+.rerecordButton {
+  background-color: #ef4444; /* Tailwind red-600 */
 }
 
 .saveButton {
   background-color: #16a34a; /* Tailwind green-600 */
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
 }
 
-.rerecordButton {
-  background-color: #6b7280; /* Tailwind gray-500 */
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-}
 
 .monitorPlay {
-  width: 70px;
-  height: 60px;
+  width: 20px;
+  height: 20px;
 }
+
+.error {
+  color: #ef4444; /* Tailwind red-600 */
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Cancel button overlay */
+.cancelButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+.cancelButton:hover {
+  background-color: rgba(255,0,0,0.9);
+}
+

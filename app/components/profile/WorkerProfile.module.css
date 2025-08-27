@@ -8,7 +8,6 @@
   padding: 1rem 0.5rem; /* Padding around the entire content */
   position: relative; /* For absolute positioning of close button */
   max-width: 450px; /* Simulating mobile/narrow view from image */
-  margin: 0 auto;   /* Center on wider screens if needed */
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -50,8 +49,12 @@
 .profileImageVideo {
   flex: 2; /* Takes more space */
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 160px;
+  border: 1px solid #393636;
+  border-radius: 1.5rem;
 }
 .mainProfileVisual {
   width: 100%;
