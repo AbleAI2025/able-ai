@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import styles from "./VideoRecorderBubble.module.css";
@@ -8,9 +8,14 @@ import { MonitorPlay } from "lucide-react";
 interface VideoRecorderBubbleProps {
   onVideoRecorded?: (file: Blob) => void;
   prompt?: string;
+  isInline?: boolean;
 }
 
-const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecorded, prompt }) => {
+const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({
+  onVideoRecorded,
+  prompt,
+  isInline=true,
+}) => {
   const webcamRef = useRef<Webcam>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -56,7 +61,7 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
 
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
-        setRecordedChunks(prev => [...prev, event.data]);
+        setRecordedChunks((prev) => [...prev, event.data]);
       }
     };
 
@@ -68,7 +73,10 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -98,7 +106,12 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
       {prompt && <div className={styles.prompt}>{prompt}</div>}
       {!showRecorder ? (
         <div className={styles.initial}>
-          <button onClick={handleRecording} className={styles.recordButton}>
+          <button
+            onClick={handleRecording}
+            className={`${styles.recordButton} ${
+              isInline ? styles.inline : styles.column
+            }`}
+          >
             <MonitorPlay color="#fff" className={styles.monitorPlay} />
             <span>RECORD VIDEO</span>
           </button>
@@ -106,7 +119,7 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
       ) : (
         <>
           {permissionError && (
-            <div style={{ color: 'red', marginTop: 12 }}>{permissionError}</div>
+            <div style={{ color: "red", marginTop: 12 }}>{permissionError}</div>
           )}
           {!videoURL ? (
             <div className={styles.recorder}>
@@ -121,8 +134,10 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
                   setPermissionError(null);
                   console.log("Webcam stream started");
                 }}
-                onUserMediaError={err => {
-                  setPermissionError("Camera access denied or not available. Please allow camera access and refresh the page.");
+                onUserMediaError={(err) => {
+                  setPermissionError(
+                    "Camera access denied or not available. Please allow camera access and refresh the page."
+                  );
                   console.error("Webcam error", err);
                 }}
               />
@@ -132,7 +147,10 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
               >
                 {isRecording ? "Stop Recording" : "Start Recording"}
               </button>
-              <button onClick={handleCancelRecording} className={styles.recordButton}>
+              <button
+                onClick={handleCancelRecording}
+                className={styles.recordButton}
+              >
                 Cancel Recording
               </button>
               <p className={styles.note}>Max duration: 30 seconds</p>

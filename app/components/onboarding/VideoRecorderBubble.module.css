@@ -11,6 +11,7 @@
 }
 
 .recordButton {
+  display: flex;
   border: none;
   outline: none;
   background-color: transparent;
@@ -37,6 +38,16 @@
 .webcam {
   border-radius: 0.5rem;
   width: 100%;
+}
+
+.inline {
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+.column {
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .controlButton {
