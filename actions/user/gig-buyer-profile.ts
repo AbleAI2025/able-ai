@@ -43,10 +43,10 @@ export const getGigBuyerProfileAction = async (
     const completedHires = await db.query.GigsTable.findMany({
       where: and(
         eq(GigsTable.buyerUserId, user.id || ""),
-        //eq(GigsTable.statusInternal, 'COMPLETED')
+        eq(GigsTable.statusInternal, "COMPLETED")
       ),
-      with: { skillsRequired: { columns: { skillName: true } }}
-    })
+      with: { skillsRequired: { columns: { skillName: true } } },
+    });
 
     if (!buyerProfile) {
       throw new Error("Buyer profile not found");
@@ -88,14 +88,12 @@ export const getGigBuyerProfileAction = async (
       })
     );
 
-        const totalReviews = reviews?.length;
+    const totalReviews = reviews?.length;
 
     const positiveReviews = reviews?.filter((item) => item.rating === 1).length;
 
     const averageRating =
       totalReviews > 0 ? (positiveReviews / totalReviews) * 100 : 0;
-
-    console.log(completedHires, 'completedHires');
 
     const data = {
       ...user,
@@ -104,10 +102,11 @@ export const getGigBuyerProfileAction = async (
       badges: badges,
       averageRating,
       completedHires: completedHires?.length || 0,
-      skills: completedHires?.flatMap(gig => gig.skillsRequired.map(skill => skill.skillName)) || [],
+      skills:
+        completedHires?.flatMap((gig) =>
+          gig.skillsRequired.map((skill) => skill.skillName)
+        ) || [],
     };
-
-    console.log(data);
 
     return { success: true, profile: data };
   } catch (error) {

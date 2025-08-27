@@ -243,7 +243,10 @@ export default function BuyerProfilePage() {
                       alignItems: "center",
                     }}
                   >
-                    <h3>Please, introduce yourself</h3>
+                    <h5>
+                      Please, <br />
+                      introduce yourself
+                    </h5>
                     <VideoRecorderBubble
                       key={1}
                       onVideoRecorded={handleVideoUpload}
@@ -269,8 +272,8 @@ export default function BuyerProfilePage() {
                     style={{ display: "inline-block", textDecoration: "none" }}
                   >
                     <video
-                      width="100"
-                      height="150"
+                      width="130"
+                      height="auto"
                       style={{ borderRadius: "8px" }}
                       preload="metadata"
                       muted
@@ -284,7 +287,7 @@ export default function BuyerProfilePage() {
                   </Link>
 
                   {isSelfView && (
-                    <div style={{ marginTop: "8px" }}>
+                    <div>
                       <button
                         onClick={() => setIsEditingVideo(true)}
                         style={{
@@ -302,7 +305,7 @@ export default function BuyerProfilePage() {
                   )}
 
                   {isEditingVideo && (
-                    <div style={{ marginTop: "12px" }}>
+                    <div>
                       <VideoRecorderBubble
                         key={2}
                         onVideoRecorded={(video) => {
@@ -336,15 +339,15 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <ContentCard title="Statistics" className={styles.statisticsCard}>
             <div className={styles.statisticsItemsContainer}>
-                <StatisticItemDisplay
-                  stat={{
-                    id: 1,
-                    icon: ThumbsUp,
-                    value: dashboardData?.responseRateInternal || 0,
-                    label: "Would work with Benji again",
-                    iconColor: "#0070f3",
-                  }}
-                />
+              <StatisticItemDisplay
+                stat={{
+                  id: 1,
+                  icon: ThumbsUp,
+                  value: dashboardData?.responseRateInternal || 0,
+                  label: "Would work with Benji again",
+                  iconColor: "#0070f3",
+                }}
+              />
               {dashboardData?.averageRating && (
                 <StatisticItemDisplay
                   stat={{
