@@ -21,6 +21,7 @@ import { getPrivateWorkerProfileAction, updateProfileImageAction, updateVideoUrl
 import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
 import ProfileVideo from "./WorkerProfileVideo";
+import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -69,11 +70,13 @@ const SkillSplashScreen = ({
   skillId,
   fetchSkillData,
   isSelfView,
+  onBackClick
 }: {
   profile: SkillProfile | null;
   skillId: string;
   fetchSkillData: () => void;
   isSelfView: boolean;
+  onBackClick: () => void;
 }) => {
   const { user } = useAuth();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -212,227 +215,230 @@ const SkillSplashScreen = ({
   if (!profile) return <p className={styles.loading}>Loading...</p>;
 
   return (
-    <div className={styles.skillSplashContainer}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.videoContainer}>
-          <ProfileVideo
-            videoUrl={profile?.videoUrl}
-            isSelfView={isSelfView}
-            onVideoUpload={handleVideoUpload}
-          />
-        </div>
-        
-        <h2 className={styles.name}>
-          {profile.name?.split(" ")[0]}: {profile.title}
-        </h2>
-      </div>
-
-      {/* Hashtags */}
-      {profile.hashtags && (
-        <div className={styles.hashtags}>{profile.hashtags}</div>
-      )}
-
-      {/* Customer reviews */}
-      {profile.customerReviewsText && (
-        <p className={styles.review}>
-          Customer reviews: {profile.customerReviewsText}
-        </p>
-      )}
-
-      <table className={styles.skillDisplayTable}>
-        <thead>
-          <tr>
-            <th>Able Gigs</th>
-            <th>Experience</th>
-            <th>£ph</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{profile.ableGigs ?? 0}</td>
-            <td>{profile.experienceYears} years</td>
-            <td>£{profile.Eph}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* Statistics */}
-      <div className={styles.section}>
-        <h3>{profile.name}’s statistics</h3>
-        <div className={styles.statistics}>
-          <div className={styles.stats}>
-            <Image
-              src="/images/reviews.svg"
-              alt="Reviews"
-              width={27}
-              height={32}
+    <div>
+      <ScreenHeaderWithBack onBackClick={onBackClick} />
+      <div className={styles.skillSplashContainer}>
+        <div className={styles.header}>
+          <div className={styles.videoContainer}>
+            <ProfileVideo
+              videoUrl={profile?.videoUrl}
+              isSelfView={isSelfView}
+              onVideoUpload={handleVideoUpload}
             />
-            <p>
-              {profile.statistics.reviews}
-              <span>Customer reviews</span>
-            </p>
           </div>
-          <div className={styles.stats}>
-            <Image
-              src="/images/payments.svg"
-              alt="Payments"
-              width={38}
-              height={31}
-            />
-            <p>
-              {profile.statistics.paymentsCollected}
-              <span>Payments collected</span>
-            </p>
-          </div>
-          <div className={styles.stats}>
-            <Image src="/images/tips.svg" alt="Tips" width={46} height={30} />
-            <p>
-              {profile.statistics.tipsReceived}
-              <span>Tips received</span>
-            </p>
-          </div>
+          
+          <h2 className={styles.name}>
+            {profile.name?.split(" ")[0]}: {profile.title}
+          </h2>
         </div>
-      </div>
 
-      {/* Image placeholders */}
-      {profile.supportingImages && profile.supportingImages.length > 0 && (
-        <>
-          <h4>Images</h4>
-          <div className={styles.supportingImages}>
-            <div className={styles.images}>
-              {profile.supportingImages?.length ? (
-              profile.supportingImages.map((img, i) => (
-                <div
-                  key={i}
-                  onClick={() => setSelectedImage(img)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <Image src={img} alt={`Img ${i}`} width={109} height={68} />
-                </div>
-              ))
-              ) : (
-                <p>No images available</p>
-              )}
+        {/* Hashtags */}
+        {profile.hashtags && (
+          <div className={styles.hashtags}>{profile.hashtags}</div>
+        )}
 
-              {isSelfView && (
-                <>
-                  <button
-                    className={styles.attachButton}
-                    onClick={handleAddImageClick}
-                  >
-                    {!isUploadImage ? (
-                      <Paperclip size={29} color="#ffffff" />
-                    ) : (
-                      <Loader
-                        customClass={styles.loaderCustom}
-                        customStyle={{
-                          width: "auto",
-                          height: "auto",
-                          minHeight: 0,
-                          backgroundColor: "#121212",
-                        }}
-                      />
-                    )}
-                  </button>
+        {/* Customer reviews */}
+        {profile.customerReviewsText && (
+          <p className={styles.review}>
+            Customer reviews: {profile.customerReviewsText}
+          </p>
+        )}
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className={styles.hiddenInput}
-                    onChange={handleSupportingImageUpload}
-                  />
-                </>
-              )}
+        <table className={styles.skillDisplayTable}>
+          <thead>
+            <tr>
+              <th>Able Gigs</th>
+              <th>Experience</th>
+              <th>£ph</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{profile.ableGigs ?? 0}</td>
+              <td>{profile.experienceYears} years</td>
+              <td>£{profile.Eph}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Statistics */}
+        <div className={styles.section}>
+          <h3>{profile.name}’s statistics</h3>
+          <div className={styles.statistics}>
+            <div className={styles.stats}>
+              <Image
+                src="/images/reviews.svg"
+                alt="Reviews"
+                width={27}
+                height={32}
+              />
+              <p>
+                {profile.statistics.reviews}
+                <span>Customer reviews</span>
+              </p>
+            </div>
+            <div className={styles.stats}>
+              <Image
+                src="/images/payments.svg"
+                alt="Payments"
+                width={38}
+                height={31}
+              />
+              <p>
+                {profile.statistics.paymentsCollected}
+                <span>Payments collected</span>
+              </p>
+            </div>
+            <div className={styles.stats}>
+              <Image src="/images/tips.svg" alt="Tips" width={46} height={30} />
+              <p>
+                {profile.statistics.tipsReceived}
+                <span>Tips received</span>
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* Modal para ver las imágenes en grande */}
-          <ViewImageModal
-            isOpen={!!selectedImage}
-            onClose={() => setSelectedImage(null)}
-            imageUrl={selectedImage!}
-            userToken={user?.token || ""}
-            skillId={skillId}
-            isSelfView={isSelfView}
-            fetchSkillData={fetchSkillData}
-          />
-        </>
-      )}
-      {/* Badges */}
-      {profile.badges && profile.badges.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Badges Awarded</h3>
-          <div className={styles.badges}>
-            {profile.badges.map((badge) => (
-              <div className={styles.badge} key={badge.id}>
-                <AwardDisplayBadge
-                  {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                  textLines={badge?.badge?.description ?? ""}
-                />
+        {/* Image placeholders */}
+        {profile.supportingImages && profile.supportingImages.length > 0 && (
+          <>
+            <h4>Images</h4>
+            <div className={styles.supportingImages}>
+              <div className={styles.images}>
+                {profile.supportingImages?.length ? (
+                profile.supportingImages.map((img, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedImage(img)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Image src={img} alt={`Img ${i}`} width={109} height={68} />
+                  </div>
+                ))
+                ) : (
+                  <p>No images available</p>
+                )}
+
+                {isSelfView && (
+                  <>
+                    <button
+                      className={styles.attachButton}
+                      onClick={handleAddImageClick}
+                    >
+                      {!isUploadImage ? (
+                        <Paperclip size={29} color="#ffffff" />
+                      ) : (
+                        <Loader
+                          customClass={styles.loaderCustom}
+                          customStyle={{
+                            width: "auto",
+                            height: "auto",
+                            minHeight: 0,
+                            backgroundColor: "#121212",
+                          }}
+                        />
+                      )}
+                    </button>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className={styles.hiddenInput}
+                      onChange={handleSupportingImageUpload}
+                    />
+                  </>
+                )}
               </div>
+            </div>
+
+            {/* Modal para ver las imágenes en grande */}
+            <ViewImageModal
+              isOpen={!!selectedImage}
+              onClose={() => setSelectedImage(null)}
+              imageUrl={selectedImage!}
+              userToken={user?.token || ""}
+              skillId={skillId}
+              isSelfView={isSelfView}
+              fetchSkillData={fetchSkillData}
+            />
+          </>
+        )}
+        {/* Badges */}
+        {profile.badges && profile.badges.length > 0 && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Badges Awarded</h3>
+            <div className={styles.badges}>
+              {profile.badges.map((badge) => (
+                <div className={styles.badge} key={badge.id}>
+                  <AwardDisplayBadge
+                    {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
+                    textLines={badge?.badge?.description ?? ""}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Qualifications */}
+        {profile.qualifications && profile.qualifications.length > 0 && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
+            <ul className={styles.list}>
+              {profile?.qualifications?.map((q, index) => (
+                <li key={index}>
+                  {q.title}: {q.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {/* Buyer Reviews */}
+        {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
+            {profile?.buyerReviews?.map((review, index) => (
+              <ReviewCardItem
+                key={index}
+                reviewerName={review?.name}
+                date={review?.date.toString()}
+                comment={review?.text}
+              />
             ))}
           </div>
-        </div>
-      )}
-      {/* Qualifications */}
-      {profile.qualifications && profile.qualifications.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
-          <ul className={styles.list}>
-            {profile?.qualifications?.map((q, index) => (
-              <li key={index}>
-                {q.title}: {q.description}
-              </li>
+        )}
+        {/* Recommendations */}
+        {profile.recommendations && profile.recommendations.length > 0 &&  (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Recommendations</h3>
+            {profile?.recommendations?.map((recommendation, index) => (
+              <RecommendationCardItem
+                key={index}
+                recommenderName={recommendation.name}
+                date={recommendation?.date?.toString()}
+                comment={recommendation?.text}
+              />
             ))}
-          </ul>
-        </div>
-      )}
-      {/* Buyer Reviews */}
-      {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
-          {profile?.buyerReviews?.map((review, index) => (
-            <ReviewCardItem
-              key={index}
-              reviewerName={review?.name}
-              date={review?.date.toString()}
-              comment={review?.text}
-            />
-          ))}
-        </div>
-      )}
-      {/* Recommendations */}
-      {profile.recommendations && profile.recommendations.length > 0 &&  (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Recommendations</h3>
-          {profile?.recommendations?.map((recommendation, index) => (
-            <RecommendationCardItem
-              key={index}
-              recommenderName={recommendation.name}
-              date={recommendation?.date?.toString()}
-              comment={recommendation?.text}
-            />
-          ))}
-        </div>
-      )}
-      {isSelfView && linkUrl && navigator.clipboard && (
-        <button
-          type="button"
-          onClick={handleCopy}
-          disabled={disabled}
-          className={styles.share_button}
-        >
-          {copied ? (
-            <CheckCircle size={16} className={styles.copiedIcon} />
-          ) : (
-            <Copy size={16} className={styles.copiedIcon} />
-          )}
-            <span>Generate link to ask for a recommendation</span>
-        </button>
-      )}
-    </div>
+          </div>
+        )}
+        {isSelfView && linkUrl && navigator.clipboard && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={disabled}
+            className={styles.share_button}
+          >
+            {copied ? (
+              <CheckCircle size={16} className={styles.copiedIcon} />
+            ) : (
+              <Copy size={16} className={styles.copiedIcon} />
+            )}
+              <span>Generate link to ask for a recommendation</span>
+          </button>
+        )}
+      </div>
+   </div>
+    
   );
 };
 

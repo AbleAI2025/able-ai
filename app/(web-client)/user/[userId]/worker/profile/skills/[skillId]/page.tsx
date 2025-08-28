@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import SkillSplashScreen from "@/app/components/profile/SkillSplashScreen";
 import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
 import { Star as DefaultBadgeIcon } from "lucide-react";
@@ -13,6 +13,7 @@ export default function WorkerSkillDetailPage() {
   const params = useParams();
   const skillId = params?.skillId as string;
   const [profile, setProfile] = useState<SkillProfile | null>(null);
+  const router = useRouter();
 
   const isViewQA = false;
 
@@ -54,5 +55,11 @@ export default function WorkerSkillDetailPage() {
 
   if (!profile) return <Loader />;
 
-  return <SkillSplashScreen skillId={skillId} profile={profile} fetchSkillData={fetchSkillData} isSelfView={true}/>;
-}
+  return <SkillSplashScreen 
+            skillId={skillId} 
+            profile={profile} 
+            fetchSkillData={fetchSkillData} 
+            isSelfView={true}
+            onBackClick={() => router.back()}
+          />;
+  }
