@@ -191,13 +191,17 @@ const WorkerProfile = ({
               <span className={styles.verifiedText}>Right to work verified</span>
             </div>
           ) : (
-            <button
-              type="button"
-              className={styles.verifyRTWButton}
-              onClick={() => setShowRtwPopup(true)}
-            >
+            isSelfView ? (
+              <button
+                type="button"
+                className={styles.verifyRTWButton}
+                onClick={() => setShowRtwPopup(true)}
+              >
               Verify your right to work
             </button>
+            ) :(
+              <span className={styles.verifiedText}>Right to work not verified</span>
+            )
           )}
         </div>
         <div className={styles.workerInfo}>

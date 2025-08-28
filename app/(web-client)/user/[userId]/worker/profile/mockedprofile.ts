@@ -10,7 +10,7 @@ import PublicWorkerProfile, {
 
 
 export const mockWorkerProfile: PublicWorkerProfile = {
-  id: "worker-123",
+  id: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
   userId: "user-456",
   location: "London, UK",
 
