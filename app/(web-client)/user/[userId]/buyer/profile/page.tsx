@@ -353,7 +353,6 @@ export default function BuyerProfilePage() {
                   iconColor: "#0070f3",
                 }}
               />
-              {dashboardData?.averageRating && (
                 <StatisticItemDisplay
                   stat={{
                     id: 2,
@@ -363,7 +362,6 @@ export default function BuyerProfilePage() {
                     iconColor: "#0070f3",
                   }}
                 />
-              )}
             </div>
           </ContentCard>
         </section>
