@@ -83,7 +83,7 @@ interface DashboardData {
     };
   }[];
   skillCounts?: { name: string; value: number }[];
-  totalPayments?: { name: string; a: number }[]
+  totalPayments?: { name: string; a: number }[];
 }
 
 export default function BuyerProfilePage() {
@@ -111,7 +111,7 @@ export default function BuyerProfilePage() {
         ...badge,
         icon: badge.icon || DefaultBadgeIcon,
       }));
-      
+
       setDashboardData({ ...profile, badges: updatedBadges });
       setError(null);
     } else {
@@ -401,15 +401,18 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Badges Awarded</h2>
           <div className={styles.badges}>
-            {dashboardData ? dashboardData?.badges?.map((badge) => (
-              <div className={styles.badge} key={badge.id}>
-                <AwardDisplayBadge
-                  {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                  textLines={badge?.badge?.description ?? ""}
-                />
-              </div>
-            )) : <p>No badges available</p>
-          }
+            {dashboardData && dashboardData.badges.length > 0 ? (
+              dashboardData?.badges?.map((badge) => (
+                <div className={styles.badge} key={badge.id}>
+                  <AwardDisplayBadge
+                    {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
+                    textLines={badge?.badge?.description ?? ""}
+                  />
+                </div>
+              ))
+            ) : (
+              <p>No badges available</p>
+            )}
           </div>
         </section>
 
