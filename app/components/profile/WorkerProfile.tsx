@@ -36,7 +36,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ProfileMedia from "./ProfileMedia";
-import { is } from "drizzle-orm";
 import CancelButton from "../shared/CancelButton";
 
 const WorkerProfile = ({
@@ -239,8 +238,8 @@ const WorkerProfile = ({
                   id: 2,
                   icon: MessageSquare,
                   value: workerProfile.averageRating,
-                label: "Response rate",
-                iconColor: "#41a1e8",
+                  label: "Response rate",
+                  iconColor: "#41a1e8",
               }}
             />
           )}

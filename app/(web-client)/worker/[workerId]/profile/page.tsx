@@ -35,7 +35,7 @@ export default function PublicWorkerProfilePage() {
     const userId = user?.uid;
     const lastRoleUsed = getLastRoleUsed();
 
-    const isViewQA = true;
+    const isViewQA = false;
   
     const fetchUserProfile = (workerId: string) => {
       if (isViewQA) {

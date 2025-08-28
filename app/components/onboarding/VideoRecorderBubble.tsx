@@ -11,7 +11,7 @@ import CancelButton from "../shared/CancelButton";
 interface VideoRecorderBubbleProps {
   onVideoRecorded?: (file: Blob) => void;
   prompt?: string;
-  setIsEditingVideo: (isEditing: boolean) => void;
+  setIsEditingVideo?: (isEditing: boolean) => void;
   isCancelButtonVisible?: boolean;
 }
 
@@ -107,7 +107,7 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
             <MonitorPlay color="#fff" className={styles.monitorPlay} />
             <span>RECORD VIDEO</span>
           </button>
-          {isCancelButtonVisible && (
+          {isCancelButtonVisible && setIsEditingVideo && (
             <CancelButton handleCancel={() => setIsEditingVideo(false)} />
           )}
         </div>

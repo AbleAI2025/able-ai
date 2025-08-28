@@ -57,7 +57,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
   equipment: [
     {
       id: "e1",
-      workerProfileId: "worker-123",
+      workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       name: "Cocktail Shaker",
       description: "Professional-grade shaker kit",
       isVerifiedByAdmin: true,
@@ -66,7 +66,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
     },
     {
       id: "e2",
-      workerProfileId: "worker-123",
+      workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       name: "Portable Bar Kit",
       description: "All-in-one bar setup for events",
       isVerifiedByAdmin: false,
@@ -78,7 +78,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
   skills: [
     {
       id: "s1",
-      workerProfileId: "worker-123",
+      workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       name: "Mixology",
       experienceYears: 5,
       agreedRate: "£25/hr",
@@ -90,7 +90,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
     },
     {
       id: "s2",
-      workerProfileId: "worker-123",
+      workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       name: "Customer Service",
       experienceYears: 4,
       agreedRate: "£20/hr",
@@ -137,7 +137,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
   qualifications: [
     {
       id: "q1",
-      workerProfileId: "worker-123",
+      workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       title: "Food & Beverage Safety Certified",
       institution: "Hospitality Institute UK",
       yearAchieved: 2021,
@@ -149,7 +149,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
     },
     {
       id: "q2",
-      workerProfileId: "worker-123",
+      workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       title: "Mixology Masterclass",
       institution: "London Bartending School",
       yearAchieved: 2022,
