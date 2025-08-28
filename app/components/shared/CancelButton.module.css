@@ -1,0 +1,21 @@
+/* Cancel button overlay */
+.cancelButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+.cancelButton:hover {
+  background-color: rgba(255,0,0,0.9);
+}
