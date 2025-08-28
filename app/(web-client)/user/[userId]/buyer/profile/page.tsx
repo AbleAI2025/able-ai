@@ -103,7 +103,6 @@ export default function BuyerProfilePage() {
 
   const fetchUserProfile = async () => {
     const { success, profile } = await getGigBuyerProfileAction(user?.token);
-    console.log("profile data:", profile);
 
     if (success && profile) {
       const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
