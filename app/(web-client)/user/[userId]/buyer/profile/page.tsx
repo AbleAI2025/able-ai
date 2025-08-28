@@ -247,6 +247,7 @@ export default function BuyerProfilePage() {
                     <VideoRecorderBubble
                       key={1}
                       onVideoRecorded={handleVideoUpload}
+                      setIsEditingVideo={setIsEditingVideo}
                     />
                   </div>
                 ) : (
@@ -309,6 +310,7 @@ export default function BuyerProfilePage() {
                           handleVideoUpload(video);
                           setIsEditingVideo(false);
                         }}
+                        setIsEditingVideo={setIsEditingVideo}
                       />
                     </div>
                   )}
