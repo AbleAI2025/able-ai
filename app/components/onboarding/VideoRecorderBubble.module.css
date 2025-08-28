@@ -64,16 +64,6 @@
   width: 100%;
 }
 
-.inline {
-  flex-direction: row;
-  gap: 0.5rem;
-}
-
-.column {
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
 .controlButton {
   background-color: var(--primary-color); /* Tailwind blue-600 */
   color: white;

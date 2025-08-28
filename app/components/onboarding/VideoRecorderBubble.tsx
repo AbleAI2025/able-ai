@@ -13,10 +13,9 @@ interface VideoRecorderBubbleProps {
   prompt?: string;
   setIsEditingVideo?: (isEditing: boolean) => void;
   isCancelButtonVisible?: boolean;
-  isInline?: boolean;
 }
 
-const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecorded, prompt, setIsEditingVideo, isCancelButtonVisible = true, isInline = true  }) => {
+const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecorded, prompt, setIsEditingVideo, isCancelButtonVisible = true }) => {
   const webcamRef = useRef<Webcam>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -109,9 +108,7 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
         <div className={styles.initial}>
           <button
             onClick={handleRecording}
-            className={`${styles.recordButton} ${
-              isInline ? styles.inline : styles.column
-            }`}
+            className={styles.recordButton}
           >
             <MonitorPlay color="#fff" className={styles.monitorPlay} />
             <span>RECORD VIDEO</span>

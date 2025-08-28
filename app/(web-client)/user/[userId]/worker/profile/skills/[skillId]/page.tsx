@@ -7,6 +7,7 @@ import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
 import { Star as DefaultBadgeIcon } from "lucide-react";
 import { SkillProfile } from "./schemas/skillProfile";
 import { mockSkillProfile } from "./mockSkillProfile";
+import Loader from "@/app/components/shared/Loader";
 
 export default function WorkerSkillDetailPage() {
   const params = useParams();
@@ -50,6 +51,8 @@ export default function WorkerSkillDetailPage() {
   useEffect(() => {
     fetchSkillData();
   }, [skillId]);
+
+  if (!profile) return <Loader />;
 
   return <SkillSplashScreen skillId={skillId} profile={profile} fetchSkillData={fetchSkillData} isSelfView={true}/>;
 }
