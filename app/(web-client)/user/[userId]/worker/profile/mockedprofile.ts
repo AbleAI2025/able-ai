@@ -17,7 +17,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
   fullBio:
     "Passionate mixologist and event professional with 5+ years of experience in crafting unforgettable guest experiences.",
   privateNotes: "Strong candidate for premium gigs",
-  averageRating: 4.8,
+  averageRating: 0,
 
   responseRateInternal: "95%",
 
@@ -30,7 +30,7 @@ export const mockWorkerProfile: PublicWorkerProfile = {
     tags: ["Outgoing", "Customer-focused", "Reliable", "Cocktail enthusiast"],
   } as SemanticProfile,
 
-  videoUrl: "https://example.com/profile-video.mp4",
+  videoUrl: "",
 
   createdAt: new Date("2024-01-10T12:00:00Z"),
   updatedAt: new Date("2024-08-25T15:30:00Z"),

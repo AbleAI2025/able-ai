@@ -1,17 +1,21 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import styles from "./VideoRecorderBubble.module.css";
 import { MonitorPlay, Pencil, X } from "lucide-react";
+import CancelButton from "../shared/CancelButton";
 
 // Add prop type for onVideoRecorded
 interface VideoRecorderBubbleProps {
   onVideoRecorded?: (file: Blob) => void;
   prompt?: string;
   setIsEditingVideo: (isEditing: boolean) => void;
+  isCancelButtonVisible?: boolean;
 }
 
-const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecorded, prompt, setIsEditingVideo }) => {
+const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecorded, prompt, setIsEditingVideo, isCancelButtonVisible = true }) => {
   const webcamRef = useRef<Webcam>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -102,15 +106,10 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
           <button onClick={handleRecording} className={styles.recordButton}>
             <MonitorPlay color="#fff" className={styles.monitorPlay} />
             <span>RECORD VIDEO</span>
-          </button>          
-          <button
-            onClick={() => setIsEditingVideo(false)}
-            className={styles.cancelButton}
-            aria-label="Cancel recording"
-          >
-            <X size={18} />
           </button>
-    
+          {isCancelButtonVisible && (
+            <CancelButton handleCancel={() => setIsEditingVideo(false)} />
+          )}
         </div>
         ) : (
         <>
@@ -143,12 +142,7 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecord
                 >
                   {isRecording ? "Stop Recording" : "Start Recording"}
                 </button>
-                <button
-                  onClick={handleCancelRecording}
-                  className={styles.cancelButton}
-                >
-                  <X size={18} />
-                </button>
+                <CancelButton handleCancel={handleCancelRecording} />
                 <p className={styles.note}>Max duration: 30 seconds</p>
               </div>
             </div>

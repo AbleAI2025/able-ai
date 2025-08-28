@@ -28,6 +28,7 @@ export default function ProfileVideo({
           key={1}
           onVideoRecorded={onVideoUpload}
           setIsEditingVideo={setIsEditingVideo}
+          isCancelButtonVisible={false}
         />
       </div>
     ) : (
@@ -68,9 +69,9 @@ export default function ProfileVideo({
         >
           <source src={videoUrl! + "#t=0.1"} type="video/webm" />
         </video>
-        <MonitorPlay color="#fff" size={50} className={styles.monitorPlay} />
+        {videoUrl && <MonitorPlay color="#fff" size={50} className={styles.monitorPlay} />}
       </Link>
-      {isSelfView && (
+      {isSelfView && videoUrl && (
         <button
           onClick={() => setIsEditingVideo(true)}
           className={styles.editIconButton}

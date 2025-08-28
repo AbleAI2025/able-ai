@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 "use client";
 import Link from "next/link";
 
@@ -14,6 +15,9 @@ import {
   BadgeCheck,
   ThumbsUp,
   MessageSquare,
+  Trophy,
+  Star,
+  Flag,
 } from "lucide-react";
 import {
   getPrivateWorkerProfileAction,
@@ -32,6 +36,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ProfileMedia from "./ProfileMedia";
+import { is } from "drizzle-orm";
+import CancelButton from "../shared/CancelButton";
 
 const WorkerProfile = ({
   workerProfile,
@@ -51,6 +57,8 @@ const WorkerProfile = ({
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
+
+  const isWorkerVerified = false;
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -112,6 +120,48 @@ const WorkerProfile = ({
     [user]
   );
 
+  // const getIconFromAwardName = (awardName: string) => {
+  //   switch (awardName) {
+  //     case "Alpha Gigee":
+  //     case "Gig Pioneer":
+  //       return Flag;
+  //     case "First gig complete":
+  //       return ;
+  //     case "Golden Vibes":
+  //     case "Fairy Play":
+  //     case "Heart Mode":
+  //       return Flame;
+  //     case "Host with the most":
+  //       return Users;
+  //     case "Foam-Art Phenom":
+  //       return Coffee;
+  //     case "First impressions pro":
+  //       return ClipboardCheck;
+  //     case "Event setup hero":
+  //       return Briefcase;
+  //     case "Cash & till stylin'":
+  //       return DollarSign;
+  //     case "Customer Favourite":
+  //       return ShoppingBag;
+  //     case "Squad Recruiter":
+  //       return UserCheck;
+  //     case "Safe-guard GOAT":
+  //       return Shield;
+  //     case "Sparkle Mode":
+  //       return Sparkles;
+  //     case "Mixology Master":
+  //       return Martini;
+  //     case "Start Bartender":
+  //       return Beer;
+  //     case "Tray Jedi":
+  //       return Handshake;
+  //     case "Top Chef":
+  //       return Utensils;
+  //     default:
+  //       return undefined; // ✅ safe fallback
+  //   }
+  // };
+
   useEffect(() => {
     if (workerProfile && workerProfile.id) {
       setWorkerLink(
@@ -131,115 +181,24 @@ const WorkerProfile = ({
       />
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
-        <div className={styles.userInfoLeft}>
-          <h1 className={styles.workerName} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className={styles.userInfo}>
+          <h1 className={styles.workerName}> 
             {user?.displayName}
-            {true && (
-              <BadgeCheck size={22} className={styles.verifiedBadgeWorker} />
-            )}
-            {/* Right to Work Verification */}
-            <span style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button
-                type="button"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#38bdf8',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  fontSize: 14,
-                  padding: 0,
-                }}
-                onClick={() => setShowRtwPopup(true)}
-              >
-                Verify your right to work
-              </button>
-            </span>
           </h1>
-
-      {/* RTW Verification Popup */}
-      {showRtwPopup && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              background: '#18181b',
-              color: '#fff',
-              borderRadius: 12,
-              padding: 32,
-              minWidth: 320,
-              boxShadow: '0 4px 32px rgba(0,0,0,0.2)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 24,
-            }}
-          >
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>To adhere to UK law, we need to confirm you have the legal right to work.</div>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Are you a</div>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <button
-                style={{
-                  background: '#38bdf8',
-                  color: '#18181b',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 24px',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  cursor: 'pointer',
-                }}
-                onClick={() => setShowRtwPopup(false)}
-              >
-                UK national
-              </button>
-              <span style={{ color: '#fff', fontWeight: 600 }}>Or</span>
-              <button
-                style={{
-                  background: '#38bdf8',
-                  color: '#18181b',
-                  border: '1px solid #38bdf8',
-                  borderRadius: 8,
-                  padding: '10px 24px',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  cursor: 'pointer',
-                }}
-                onClick={() => window.location.href = "/user/A3BDfET6iPbY0zYHUTaIU0sMucF3/worker/rtw"}
-              >
-                Non UK national
-              </button>
+          {isWorkerVerified ? (
+            <div className={styles.verifiedBadgeContainer}>
+              <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
+              <span className={styles.verifiedText}>Right to work verified</span>
             </div>
+          ) : (
             <button
-              style={{
-                marginTop: 16,
-                background: 'none',
-                color: '#fff',
-                border: 'none',
-                fontSize: 14,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-              onClick={() => setShowRtwPopup(false)}
+              type="button"
+              className={styles.verifyRTWButton}
+              onClick={() => setShowRtwPopup(true)}
             >
-              Cancel
+              Verify your right to work
             </button>
-          </div>
-        </div>
-      )}
+          )}
         </div>
         <div className={styles.workerInfo}>
           {true && (
@@ -248,7 +207,7 @@ const WorkerProfile = ({
               className={styles.viewCalendarLink}
               aria-label="View calendar"
             >
-              <CalendarDays size={20} className={styles.calendarIcon} />
+              <CalendarDays size={28} className={styles.calendarIcon} />
               <span>Availability calendar</span>
             </Link>
           )}
@@ -256,33 +215,32 @@ const WorkerProfile = ({
       </div>
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
-        {/* Statistics Section (Benji Image Style) */}
-        <ContentCard title="Statistics" className={styles.statisticsCard}>
-          <div className={styles.statisticsItemsContainer}>
-            {workerProfile?.responseRateInternal && (
-              <StatisticItemDisplay
-                stat={{
-                  id: 1,
-                  icon: ThumbsUp,
-                  value: workerProfile.responseRateInternal,
-                  label: "Would work with Benji again",
-                  iconColor: "#0070f3",
-                }}
-              />
-            )}
-            {workerProfile?.averageRating && (
+        {/* Statistics Section */}
+        <div className={styles.statisticsItemsContainer}>
+          {workerProfile?.responseRateInternal && (
+            <StatisticItemDisplay
+              stat={{
+                id: 1,
+                icon: ThumbsUp,
+                value: workerProfile.responseRateInternal,
+                label: `Would work with ${user?.displayName?.split(" ")[0]} again`,
+                iconColor: "#41a1e8",
+              }}
+            />
+          )}
+          {workerProfile?.averageRating !== null &&
+            workerProfile?.averageRating !== undefined && (
               <StatisticItemDisplay
                 stat={{
                   id: 2,
                   icon: MessageSquare,
                   value: workerProfile.averageRating,
-                  label: "Response rate",
-                  iconColor: "#0070f3",
-                }}
-              />
-            )}
-          </div>
-        </ContentCard>
+                label: "Response rate",
+                iconColor: "#41a1e8",
+              }}
+            />
+          )}
+        </div>
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
         {
@@ -306,6 +264,7 @@ const WorkerProfile = ({
                 <div className={styles.awardsContainer}>
                   {workerProfile.awards.map((award) => (
                     <AwardDisplayBadge
+                      // icon={getIconFromAwardName(award.badgeId)}
                       key={award.id}
                       textLines={award.notes || ""}
                       color="#eab308"
@@ -358,18 +317,46 @@ const WorkerProfile = ({
             </div>
           </div>
         )}
-
-        {/* Bio Text (if used) */}
-        {workerProfile.fullBio && (
-          <ContentCard
-            title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}
-          >
-            <p className={styles.bioText}>{workerProfile.fullBio}</p>
-          </ContentCard>
-        )}
-      </div>{" "}
+      </div>
       {/* End Main Content Wrapper */}
+       {/* RTW Verification Popup */}
+     
+
+      {showRtwPopup && (
+        <div className={styles.overlay}>
+          <div className={styles.popup}>
+            <div className={styles.title}>
+              To adhere to UK law, we need to confirm you have the legal right to work.
+            </div>
+            <div className={styles.title}>Are you a</div>
+
+            <div className={styles.buttons}>
+              <button
+                className={styles.button}
+                onClick={() => setShowRtwPopup(false)}
+              >
+                UK national
+              </button>
+              <span className={styles.orText}>Or</span>
+              <button
+                className={styles.button}
+                onClick={() =>
+                  (window.location.href =
+                    "/user/A3BDfET6iPbY0zYHUTaIU0sMucF3/worker/rtw")
+                }
+              >
+                Non UK national
+              </button>
+            </div>
+
+            <CancelButton handleCancel={() => setShowRtwPopup(false)} />
+          </div>
+        </div>
+      )}
+
     </div>
+
+    
   );
 };
 

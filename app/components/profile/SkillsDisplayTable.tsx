@@ -37,7 +37,14 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
       <table className={styles.skillsTable}>
         <thead>
           <tr>
-            <th className={styles.skillNameHeader}>Skills:</th>
+            <th className={styles.skillNameHeader}>
+              Skills:
+              {isSelfView && (
+                <button className={styles.addSkill} onClick={handleAddSkill}>
+                  + new
+                </button>
+            )}
+            </th>
             {hasAbleGigs && <th>Able gigs:</th>}
             {hasExperience && <th>Experience:</th>}
             {hasEph && <th>£ph</th>}
@@ -63,19 +70,10 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
                       {skill.experienceYears === 1 ? "year" : "years"}
                     </td>
                   )}
-                  {hasEph && <td>£{skill.agreedRate}</td>}
+                  {hasEph && <td>{skill.agreedRate}</td>}
                 </tr>
               ))
             : "There are not skills"}
-          <tr>
-            {isSelfView && (
-              <td>
-                <button className={styles.addSkill} onClick={handleAddSkill}>
-                  + add skill
-                </button>
-              </td>
-            )}
-          </tr>
         </tbody>
       </table>
       <AddSkillModal

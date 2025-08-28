@@ -21,9 +21,9 @@ const StatisticItemDisplay: React.FC<StatisticItemDisplayProps> = ({ stat }) => 
     <div className={styles.statItem}>
       {Icon && (
         <Icon
-          size={39}
+          size={30}
           className={styles.statIcon}
-          style={{ color: "white" }}
+          color={stat.iconColor || '#41a1e8'}
         />
       )}
       <div className={styles.statText}>

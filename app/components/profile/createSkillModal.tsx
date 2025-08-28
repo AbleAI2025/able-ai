@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { createSkillWorker } from "@/actions/user/gig-worker-profile";
 import styles from "./SkillsDisplayTable.module.css";
 import { useAuth } from "@/context/AuthContext";
+import CancelButton from "../shared/CancelButton";
 
 interface AddSkillModalProps {
   isOpen: boolean;
@@ -89,10 +90,8 @@ const AddSkillModal: React.FC<AddSkillModalProps> = ({
             <button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Skill"}
             </button>
-            <button type="button" onClick={onClose}>
-              Cancel
-            </button>
           </div>
+          <CancelButton handleCancel={onClose} />
         </form>
       </div>
     </div>
