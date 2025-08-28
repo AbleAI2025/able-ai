@@ -177,3 +177,27 @@
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--error-color);
 } 
+
+.select {
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #2b2b2b;
+  background-color: #2b2b2b;
+  color: #c2c2c2;
+  font-size: 0.9rem;
+  font-family: var(--font-family);
+  outline: none;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.select option {
+  background-color: #2b2b2b;
+  color: #ffffff;
+}
+

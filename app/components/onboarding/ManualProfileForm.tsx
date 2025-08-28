@@ -24,11 +24,15 @@ function generateRandomCode(length = 8): string {
   return result;
 }
 
-function buildRecommendationLink(): string {
+function buildRecommendationLink(workerProfileId: string | null): string {
   const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000';
-  const code = generateRandomCode(10);
-  // Example format requested: /worker/{code}/recommendation
-  return `${origin}/worker/${code}/recommendation`;
+  
+  if (!workerProfileId) {
+    throw new Error('Worker profile ID is required to build recommendation link');
+  }
+  
+  // Use the worker profile ID (UUID) for the recommendation URL
+  return `${origin}/worker/${workerProfileId}/recommendation`;
 }
 
 interface FormData {
@@ -50,12 +54,14 @@ interface ManualProfileFormProps {
   onSubmit: (formData: FormData) => void;
   onSwitchToAI: () => void;
   initialData?: Partial<FormData>;
+  workerProfileId?: string | null;
 }
 
 const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
   onSubmit,
   onSwitchToAI,
-  initialData = {}
+  initialData = {},
+  workerProfileId = null
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({
@@ -70,7 +76,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
       endTime: '17:00'
     },
     videoIntro: null,
-    references: buildRecommendationLink(),
+    references: buildRecommendationLink(workerProfileId),
     ...initialData
   });
 

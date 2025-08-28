@@ -39,7 +39,7 @@ export default function SelectRolePage() {
         
         const path = isWorker
           ? `user/${user.uid || "this_user"}/worker`
-          : `user/${user.uid || "this_user"}/worker/onboarding`;
+          : `user/${user.uid || "this_user"}/worker/onboarding-ai`;
  
           localStorage.setItem("lastPathGigWorker", path);
           router.push(path);

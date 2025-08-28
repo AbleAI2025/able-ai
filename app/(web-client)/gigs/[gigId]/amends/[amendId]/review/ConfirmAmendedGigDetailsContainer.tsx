@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import moment from 'moment';
 import { getGigDetails } from '@/actions/gigs/get-gig-details';
 import GigDetails, { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
 import ConfirmAmendedGigDetailsView from './ConfirmAmendedGigDetailsView';
 import { User } from 'firebase/auth';
+import { formatTimeRange } from '@/utils/format-time';
+import { handleGigAdjustment } from '@/app/actions/stripe/handle-gig-adjustment';
+import { toast } from 'sonner';
 
 export type ConfirmAmendedGigDetailsContainerProps = {
   gigId: string;
@@ -24,20 +26,10 @@ const workerNotificationMessage = {
   prompt: "Please accept to confirm these changes"
 };
 
-function formatTimeRange(isoStartDateString: string, isoEndDateString: string) {
-  const start = moment.utc(isoStartDateString);
-  const end = moment.utc(isoEndDateString);
-  const formattedStartTime = start.format('h:mm A');
-  const formattedEndTime = end.format('h:mm A');
-  const isNextDay = start.dayOfYear() !== end.dayOfYear();
-  if (isNextDay)
-    return `${formattedStartTime} - ${formattedEndTime} (Next day)`;
-  return `${formattedStartTime} - ${formattedEndTime}`;
-}
-
 const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContainerProps> = ({ gigId, amendId, user, lastRoleUsed }) => {
   const [gigDetails, setGigDetails] = useState<GigDetails | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingConfirm, setIsLoadingConfirm] = useState<boolean>(false);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
 
   const notificationMessage = lastRoleUsed ? buyerNotificationMessage : workerNotificationMessage;
@@ -46,9 +38,20 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
     setIsEditingDetails(!isEditingDetails);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     // Logic for confirming changes
-    console.log(amendId)
+    if (!user || !gigDetails || isLoadingConfirm) return;
+
+    setIsLoadingConfirm(true);
+    await handleGigAdjustment({
+      gigId,
+      firebaseUid: user.uid,
+      newFinalRate: gigDetails.hourlyRate,
+      newFinalHours: gigDetails.estimatedEarnings,
+      currency: 'usd'
+    });
+    setIsLoadingConfirm(false);
+    toast.success('Suggested changes confirmed!');
   };
 
   const handleSuggestNew = () => {
@@ -62,12 +65,17 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
   useEffect(() => {
     const fetchGigDetails = async () => {
       if (!user || !lastRoleUsed) return;
+
+      const amendedGig = JSON.parse(localStorage.getItem('amendedGig') || '');
+
+      setIsLoading(false);
+      setGigDetails(amendedGig);
       setIsLoading(true);
       const role = lastRoleUsed.includes('BUYER') ? 'buyer' : 'worker';
-      const res = await getGigDetails({ userId: user.uid, gigId, role });
+      const res = await getGigDetails({ userId: user.uid, gigId, role, isViewQA: true });
       setIsLoading(false);
       if (!res.gig) return;
-      setGigDetails(res.gig);
+      setGigDetails({ ...amendedGig, status: res.gig.status });
     };
     fetchGigDetails();
   }, [user, lastRoleUsed, gigId]);
@@ -75,14 +83,14 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
   // Derive display data from gigDetails
   const gigDetailsData: GigReviewDetailsData | undefined = gigDetails
     ? {
-        date: gigDetails.date,
-        location: gigDetails.location,
-        summary: gigDetails.specialInstructions || '',
-        payPerHour: `${gigDetails.hourlyRate}`,
-        totalPay: `${gigDetails.estimatedEarnings}`,
-        time: formatTimeRange(gigDetails.startTime || '', gigDetails.endTime || ''),
-        status: gigDetails.status,
-      }
+      date: gigDetails.date,
+      location: gigDetails.location,
+      summary: gigDetails.specialInstructions || '',
+      payPerHour: `${gigDetails.hourlyRate}`,
+      totalPay: `${gigDetails.estimatedEarnings}`,
+      time: formatTimeRange(gigDetails.startTime || '', gigDetails.endTime || ''),
+      status: gigDetails.status,
+    }
     : undefined;
 
   if (!gigDetails) {
@@ -94,6 +102,7 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
       gigDetails={gigDetails}
       gigDetailsData={gigDetailsData}
       isLoading={isLoading}
+      isLoadingConfirm={isLoadingConfirm}
       lastRoleUsed={lastRoleUsed}
       notificationMessage={notificationMessage}
       handleEditDetails={handleEditDetails}

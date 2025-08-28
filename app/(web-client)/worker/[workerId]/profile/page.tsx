@@ -14,6 +14,7 @@ import HireButton from '@/app/components/profile/HireButton';
 import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { getPublicWorkerProfileAction } from '@/actions/user/gig-worker-profile';
+import { mockWorkerProfile } from '@/app/(web-client)/user/[userId]/worker/profile/mockedprofile';
 
 // --- COMPONENT ---
 export default function PublicWorkerProfilePage() {
@@ -31,10 +32,16 @@ export default function PublicWorkerProfilePage() {
     return router.push(`/worker/${workerProfileIdToView}/profile/skills/${name}`);
   } // TODO: Update view to only read user
 
-    const userId = params.userId as string;
+    const userId = user?.uid;
     const lastRoleUsed = getLastRoleUsed();
+
+    const isViewQA = false;
   
     const fetchUserProfile = (workerId: string) => {
+      if (isViewQA) {
+        setWorkerProfile(mockWorkerProfile)
+        setIsLoadingProfile(false);
+      } else {
           setIsLoadingProfile(true);
           getPublicWorkerProfileAction(workerId)
             .then((data) => {
@@ -43,9 +50,10 @@ export default function PublicWorkerProfilePage() {
             })
             .catch((err) => {
               console.error("Failed to fetch worker profile:", err);
-              setError("Could not load your profile.");
+              setError("Could not load worker profile.");
             })
             .finally(() => setIsLoadingProfile(false));
+        }
     }
   
     useEffect(() => {
@@ -58,14 +66,14 @@ export default function PublicWorkerProfilePage() {
     }, [loadingAuth, user?.claims.role, userId, router, lastRoleUsed]);
 
 
-  useEffect(() => {
-    if (workerProfileIdToView) {
-      setIsLoadingProfile(true);
-    } else {
-      setError("Worker ID missing.");
-      setIsLoadingProfile(false);
-    }
-  }, [workerProfileIdToView]);
+  // useEffect(() => {
+  //   if (workerProfileIdToView) {
+  //     setIsLoadingProfile(true);
+  //   } else {
+  //     setError("Worker ID missing.");
+  //     setIsLoadingProfile(false);
+  //   }
+  // }, [workerProfileIdToView]);
 
   if (loadingAuth || isLoadingProfile) {
     return <div className={styles.pageLoadingContainer}><Loader2 className="animate-spin" size={48} /> Loading Profile...</div>;

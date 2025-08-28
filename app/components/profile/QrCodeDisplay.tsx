@@ -22,8 +22,8 @@ export default function QRCodeDisplay({url}: {url?: string | undefined}) {
         <Image
           src={qrCodeUrl}
           alt="QR Code"
-          width={90}
-          height={90}
+          width={121}
+          height={110}
         />
       )}
     </>

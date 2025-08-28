@@ -250,6 +250,7 @@ export default function BuyerProfilePage() {
                       key={1}
                       onVideoRecorded={handleVideoUpload}
                       isInline={false}
+                      setIsEditingVideo={setIsEditingVideo}
                     />
                   </div>
                 ) : (
@@ -312,6 +313,7 @@ export default function BuyerProfilePage() {
                           handleVideoUpload(video);
                           setIsEditingVideo(false);
                         }}
+                        setIsEditingVideo={setIsEditingVideo}
                       />
                     </div>
                   )}

@@ -1,21 +1,22 @@
-"use client";
+/* eslint-disable max-lines-per-function */
+/* eslint-disable react-hooks/exhaustive-deps */
+'use client';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import styles from "./VideoRecorderBubble.module.css";
-import { MonitorPlay } from "lucide-react";
+import { MonitorPlay, Pencil, X } from "lucide-react";
+import CancelButton from "../shared/CancelButton";
 
 // Add prop type for onVideoRecorded
 interface VideoRecorderBubbleProps {
   onVideoRecorded?: (file: Blob) => void;
   prompt?: string;
+  setIsEditingVideo?: (isEditing: boolean) => void;
+  isCancelButtonVisible?: boolean;
   isInline?: boolean;
 }
 
-const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({
-  onVideoRecorded,
-  prompt,
-  isInline=true,
-}) => {
+const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({ onVideoRecorded, prompt, setIsEditingVideo, isCancelButtonVisible = true, isInline = true  }) => {
   const webcamRef = useRef<Webcam>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -115,51 +116,52 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({
             <MonitorPlay color="#fff" className={styles.monitorPlay} />
             <span>RECORD VIDEO</span>
           </button>
-        </div>
-      ) : (
-        <>
-          {permissionError && (
-            <div style={{ color: "red", marginTop: 12 }}>{permissionError}</div>
+          {isCancelButtonVisible && setIsEditingVideo && (
+            <CancelButton handleCancel={() => setIsEditingVideo(false)} />
           )}
-          {!videoURL ? (
-            <div className={styles.recorder}>
-              <Webcam
-                ref={webcamRef}
-                audio={true}
-                mirrored={true}
-                screenshotFormat="image/jpeg"
-                videoConstraints={true}
-                className={styles.webcam}
-                onUserMedia={() => {
-                  setPermissionError(null);
-                  console.log("Webcam stream started");
-                }}
-                onUserMediaError={(err) => {
-                  setPermissionError(
-                    "Camera access denied or not available. Please allow camera access and refresh the page."
-                  );
-                  console.error("Webcam error", err);
-                }}
-              />
-              <button
-                onClick={isRecording ? stopRecording : startRecording}
-                className={styles.controlButton}
-              >
-                {isRecording ? "Stop Recording" : "Start Recording"}
-              </button>
-              <button
-                onClick={handleCancelRecording}
-                className={styles.recordButton}
-              >
-                Cancel Recording
-              </button>
-              <p className={styles.note}>Max duration: 30 seconds</p>
+        </div>
+        ) : (
+        <>
+          {permissionError ? (
+            <div className={styles.error}>{permissionError}</div>
+          ) : !videoURL ? (
+            <div className={styles.overlay}>
+              <div className={styles.recorder}>
+                <Webcam
+                  ref={webcamRef}
+                  audio={true}
+                  mirrored={true}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={true}
+                  className={styles.webcam}
+                  onUserMedia={() => {
+                    setPermissionError(null);
+                    console.log("Webcam stream started");
+                  }}
+                  onUserMediaError={err => {
+                    setPermissionError(
+                      "Camera access denied or not available. Please allow camera access and refresh the page."
+                    );
+                    console.error("Webcam error", err);
+                  }}
+                />
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className={styles.controlButton}
+                >
+                  {isRecording ? "Stop Recording" : "Start Recording"}
+                </button>
+                <CancelButton handleCancel={handleCancelRecording} />
+                <p className={styles.note}>Max duration: 30 seconds</p>
+              </div>
             </div>
+           
           ) : (
+           <div className={styles.overlay}> 
             <div className={styles.preview}>
               <video controls src={videoURL} className={styles.video} />
               <div className={styles.actions}>
-                <button onClick={saveVideo} className={styles.saveButton}>
+                <button onClick={saveVideo} className={`${styles.actionButton} ${styles.saveButton}`}>
                   Save Video
                 </button>
                 <button
@@ -168,15 +170,19 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({
                     setRecordedChunks([]);
                     setBlob(null);
                   }}
-                  className={styles.rerecordButton}
+                  className={`${styles.actionButton} ${styles.rerecordButton}`}
                 >
                   Re-record
                 </button>
               </div>
             </div>
+           </div>
           )}
         </>
-      )}
+        )}
+
+
+      
     </div>
   );
 };

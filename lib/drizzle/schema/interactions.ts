@@ -20,6 +20,33 @@ import { reviewTypeEnum, moderationStatusEnum, badgeTypeEnum, activeRoleContextE
 import { UsersTable } from "./users";
 import { GigsTable } from "./gigs";
 
+// --- RECOMMENDATIONS TABLE ---
+export const RecommendationsTable = pgTable("recommendations", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  workerUserId: uuid("worker_user_id")
+    .notNull()
+    .references(() => UsersTable.id, { onDelete: "cascade" }),
+  recommendationCode: varchar("recommendation_code", { length: 50 })
+    .unique()
+    .notNull(),
+  recommendationText: text("recommendation_text"),
+  relationship: text("relationship"),
+  recommenderName: varchar("recommender_name", { length: 100 }),
+  recommenderEmail: varchar("recommender_email", { length: 255 }),
+  isVerified: boolean("is_verified").default(false),
+  moderationStatus: moderationStatusEnum("moderation_status")
+    .default("PENDING")
+    .notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // --- REVIEWS TABLE ---
 export const ReviewsTable = pgTable(
   "reviews",
@@ -28,14 +55,15 @@ export const ReviewsTable = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     gigId: uuid("gig_id")
-      .notNull()
       .references(() => GigsTable.id, { onDelete: "cascade" }),
     authorUserId: uuid("author_user_id")
-      .notNull()
       .references(() => UsersTable.id, { onDelete: "cascade" }),
     targetUserId: uuid("target_user_id")
       .notNull()
       .references(() => UsersTable.id, { onDelete: "cascade" }),
+    relationship: text("relationship"),
+    recommenderName: text("recommender_name"),
+    recommenderEmail: text("recommender_email"),
     rating: integer("rating").notNull(),
     comment: text("comment"),
     wouldWorkAgain: boolean("would_work_again"),
@@ -57,9 +85,9 @@ export const ReviewsTable = pgTable(
     uniqueIndex("author_target_gig_unique_idx").on(
       table.authorUserId,
       table.targetUserId,
-      table.gigId
+      table.gigId,
     ),
-  ]
+  ],
 );
 
 // --- BADGE DEFINITIONS TABLE ---
@@ -99,7 +127,7 @@ export const UserBadgesLinkTable = pgTable(
     awardedBySystem: boolean("awarded_by_system").default(false),
     awardedByUserId: uuid("awarded_by_user_id").references(
       () => UsersTable.id,
-      { onDelete: "set null" }
+      { onDelete: "set null" },
     ),
     gigId: uuid("gig_id").references(() => GigsTable.id, {
       onDelete: "set null",
@@ -108,7 +136,7 @@ export const UserBadgesLinkTable = pgTable(
   },
   (table) => [
     uniqueIndex("user_badge_unique_idx").on(table.userId, table.badgeId),
-  ]
+  ],
 );
 
 // --- CHAT MESSAGES TABLE ---

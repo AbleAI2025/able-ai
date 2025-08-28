@@ -85,6 +85,8 @@ import { useFirebase } from '@/context/FirebaseContext';
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { Schema } from '@firebase/ai';
 import { FormInputType } from "@/app/types/form";
+import { createEscalatedIssueClient } from '@/utils/client-escalation';
+import { detectEscalationTriggers, generateEscalationDescription } from '@/utils/escalation-detection';
 
 // Type assertion for Schema to resolve TypeScript errors
 const TypedSchema = Schema as any;
@@ -105,6 +107,7 @@ import {
 
 import {
   findClosestJobTitle,
+  findStandardizedJobTitleWithAIFallback,
   ALL_JOB_TITLES
 } from '@/app/components/shared/ChatAI';
 
@@ -115,7 +118,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
-import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction } from "@/actions/user/gig-worker-profile";
+import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
@@ -159,6 +162,7 @@ interface FormData {
   } | string;
   videoIntro?: string;
   references?: string;
+  jobTitle?: string; // Add job title field
   [key: string]: any;
 }
 
@@ -184,6 +188,7 @@ interface FormData {
   extractedData?: string; // New: JSON string of extracted data
   suggestedJobTitle?: string; // New: Suggested standardized job title
   matchedTerms?: string[]; // New: Terms that matched for job title
+  isAISuggested?: boolean; // New: Whether the job title was AI-suggested
   summaryData?: FormData; // New: Data for profile summary display
 };
 
@@ -320,96 +325,25 @@ Create a natural, engaging script that showcases their unique profile.`;
   return `Hi my name is [Name] I am a [job title]. I love [skills] and bring a sense of fun to every shift. I trained at [experience] and my favourite [skill] is [specific skill]. I am great with [strengths] - i hope we can work together`;
 }
 
-// Helper: interpret user experience and find standardized job title
-async function interpretJobTitle(userExperience: string, ai: any): Promise<{ jobTitle: string; confidence: number; matchedTerms: string[] } | null> {
+// Helper: interpret user experience and find standardized job title with AI fallback
+async function interpretJobTitle(userExperience: string, ai: any): Promise<{ jobTitle: string; confidence: number; matchedTerms: string[]; isAISuggested: boolean } | null> {
   try {
-    if (!ai) {
-      // Fallback to basic matching if AI is not available
-      const basicMatch = findClosestJobTitle(userExperience);
-      return basicMatch ? {
-        jobTitle: basicMatch.jobTitle.title,
-        confidence: basicMatch.confidence,
-        matchedTerms: basicMatch.matchedTerms
-      } : null;
-    }
-
-    // Build structured prompt using ChatAI components
-    const rolePrompt = buildRolePrompt('gigfolioCoach', 'jobTitleInterpretation', 'Interpret work experience and find standardized job title');
-    const contextPrompt = buildContextPrompt('onboarding', 'Job title interpretation');
-    const specializedPrompt = buildSpecializedPrompt('jobTitleInterpretation', 'Work experience analysis', 'Match experience to standardized job title');
+    // Use the new AI fallback function that handles both taxonomy matching and AI suggestions
+    const result = await findStandardizedJobTitleWithAIFallback(userExperience, ai);
     
-    const interpretationPrompt = `${rolePrompt}
-
-${contextPrompt}
-
-${specializedPrompt}
-
-Based on the following user experience description, find the closest standardized job title from our hospitality and events industry taxonomy.
-
-User Experience: "${userExperience}"
-
-Available Job Titles:
-${ALL_JOB_TITLES.map(job => `- ${job.title} (${job.category}): ${job.description}`).join('\n')}
-
-Rules:
-1. Use semantic matching to find the closest job title
-2. Consider synonyms, skills, and category relevance
-3. Return the standardized job title with confidence level
-4. Include matched terms as a comma-separated string (e.g., "cashier, customer service, food service")
-5. If no good match exists, return null
-
-Please analyze the user's experience and provide the best standardized job title match.`;
-
-    const result = await geminiAIAgent(
-      "gemini-2.0-flash",
-      {
-        prompt: interpretationPrompt,
-        responseSchema: Schema.object({
-          properties: {
-            jobTitle: Schema.string(),
-            confidence: Schema.number(),
-            matchedTerms: Schema.string(),
-            
-          },
-        }),
-        isStream: false,
-      },
-      ai
-    );
-
-    if (result.ok && result.data && typeof result.data === 'object' && result.data !== null) {
-      const data = result.data as Record<string, any>;
-      const jobTitle = data.jobTitle as string;
-      const confidence = data.confidence as number;
-      const matchedTerms = data.matchedTerms as string;
-      
-      // Parse matchedTerms from string (comma-separated)
-      const matchedTermsArray = data.matchedTerms ? (data.matchedTerms as string).split(',').map((term: string) => term.trim()) : [];
-      
-      // Validate that the returned job title exists in our taxonomy
-      const validatedJobTitle = ALL_JOB_TITLES.find(job => 
-        job.title.toLowerCase() === (data.jobTitle as string).toLowerCase()
-      );
-      
-      if (validatedJobTitle) {
-        return {
-          jobTitle: validatedJobTitle.title,
-          confidence: Math.min(data.confidence as number, 100),
-          matchedTerms: matchedTermsArray
-        };
-      }
+    if (result) {
+      return {
+        jobTitle: result.jobTitle.title,
+        confidence: result.confidence,
+        matchedTerms: result.matchedTerms,
+        isAISuggested: result.isAISuggested
+      };
     }
   } catch (error) {
-    console.error('AI job title interpretation failed:', error);
+    console.error('Job title interpretation failed:', error);
   }
   
-  // Fallback to basic matching
-  const basicMatch = findClosestJobTitle(userExperience);
-  return basicMatch ? {
-    jobTitle: basicMatch.jobTitle.title,
-    confidence: basicMatch.confidence,
-    matchedTerms: basicMatch.matchedTerms
-  } : null;
+  return null;
 }
 
 // Helper: detect if user response is unrelated to current prompt
@@ -419,10 +353,17 @@ function isUnrelatedResponse(userInput: string, currentPrompt: string): boolean 
     'help', 'support', 'contact', 'human', 'person', 'agent', 'representative',
     'complaint', 'issue', 'problem', 'broken', 'not working', 'error',
     'customer service', 'speak to someone', 'talk to human', 'real person',
-    'please', 'need', 'want', 'can i', 'could i', 'i need', 'i want'
+    'please', 'need', 'want', 'can i', 'could i', 'i need', 'i want',
+    // Curse words and inappropriate language
+    'fuck', 'shit', 'damn', 'bitch', 'ass', 'asshole', 'bastard', 'crap',
+    'piss', 'dick', 'cock', 'pussy', 'cunt', 'whore', 'slut', 'fucker',
+    'motherfucker', 'fucking', 'shitty', 'damned', 'bloody', 'bugger',
+    'wanker', 'twat', 'bellend', 'knob', 'prick', 'tosser', 'arse',
+    'bollocks', 'wank', 'fanny', 'minge', 'gash', 'snatch', 'cooch',
+    'pussy', 'vagina', 'penis', 'cock', 'dick', 'willy', 'johnson'
   ];
   
-  const userLower = userInput.toLowerCase();
+  const userLower = userInput.toLowerCase().trim();
   const promptLower = currentPrompt.toLowerCase();
   
   // Check for unrelated phrases (more strict matching)
@@ -444,35 +385,102 @@ function isUnrelatedResponse(userInput: string, currentPrompt: string): boolean 
   const relevantKeywords = promptKeywords.filter(word => word.length > 3);
   const hasRelevantKeywords = relevantKeywords.some(keyword => userLower.includes(keyword));
   
+  // Check for common valid short responses that should NOT be flagged
+  const validShortResponses = [
+    // Job titles (common short responses)
+    'developer', 'web developer', 'frontend developer', 'backend developer', 'full stack developer',
+    'designer', 'ui designer', 'ux designer', 'graphic designer',
+    'manager', 'project manager', 'event manager', 'sales manager',
+    'assistant', 'admin assistant', 'executive assistant',
+    'consultant', 'freelancer', 'contractor',
+    'chef', 'cook', 'bartender', 'server', 'waiter', 'waitress',
+    'receptionist', 'cashier', 'barista', 'baker',
+    'security', 'guard', 'technician', 'operator',
+    
+    // Numbers and rates (common short responses)
+    /\d+/, // Any number
+    /\d+\s*(pound|pounds|£|gbp|per\s*hour|hourly|rate)/i, // Rate patterns
+    
+    // Common affirmative responses
+    'yes', 'no', 'ok', 'okay', 'sure', 'fine', 'good', 'great',
+    
+    // Common location responses
+    'london', 'manchester', 'birmingham', 'leeds', 'liverpool', 'sheffield', 'edinburgh', 'glasgow',
+    'cardiff', 'belfast', 'bristol', 'newcastle', 'leicester', 'coventry', 'nottingham', 'southampton'
+  ];
+  
+  // Check if the response matches any valid short response patterns
+  const isValidShortResponse = validShortResponses.some(pattern => {
+    if (typeof pattern === 'string') {
+      return userLower.includes(pattern);
+    } else if (pattern instanceof RegExp) {
+      return pattern.test(userLower);
+    }
+    return false;
+  });
+  
+  // Check if the prompt is asking for specific types of information that might have short answers
+  const promptAskingFor = {
+    jobTitle: /(job|title|position|role|what\s*do\s*you\s*do|profession)/i.test(promptLower),
+    rate: /(rate|price|cost|hourly|per\s*hour|how\s*much|charge)/i.test(promptLower),
+    location: /(location|where|city|area|place)/i.test(promptLower),
+    availability: /(available|when|time|schedule|hours)/i.test(promptLower),
+    yesNo: /(yes|no|do\s*you|can\s*you|would\s*you|are\s*you)/i.test(promptLower)
+  };
+  
+  // If the prompt is asking for specific information types, be more lenient with short responses
+  const isSpecificQuestion = promptAskingFor.jobTitle || promptAskingFor.rate || promptAskingFor.location || promptAskingFor.yesNo;
+  
   console.log('Unrelated response check:', {
     userInput: userLower,
     promptKeywords: relevantKeywords,
     hasUnrelatedPhrase,
     isTooShort,
     hasRelevantKeywords,
-    result: hasUnrelatedPhrase || (isTooShort && !hasRelevantKeywords)
+    isValidShortResponse,
+    isSpecificQuestion,
+    promptAskingFor,
+    result: hasUnrelatedPhrase || (isTooShort && !hasRelevantKeywords && !isValidShortResponse && !isSpecificQuestion)
   });
   
-  return hasUnrelatedPhrase || (isTooShort && !hasRelevantKeywords);
+  // Only flag as unrelated if:
+  // 1. It contains unrelated phrases, OR
+  // 2. It's too short AND doesn't have relevant keywords AND isn't a valid short response AND isn't answering a specific question
+  return hasUnrelatedPhrase || (isTooShort && !hasRelevantKeywords && !isValidShortResponse && !isSpecificQuestion);
 }
 
-// Helper: save support case to Firebase
-async function saveSupportCaseToFirebase(userData: any, conversationHistory: any[], reason: string): Promise<string> {
+// Helper: save support case to database
+async function saveSupportCaseToDatabase(userData: any, conversationHistory: any[], reason: string): Promise<string> {
   try {
-    // This would integrate with your Firebase setup
-    // For now, return a mock case ID
-    console.log('Saving support case to Firebase:', { userData, conversationHistory, reason });
+    console.log('Saving support case to database:', { userData, conversationHistory, reason });
     
-    // Mock implementation - replace with actual Firebase call
-    const caseId = `SUPPORT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Simulate Firebase save
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    return caseId;
+    // Get user ID from userData
+    const userId = userData?.userId;
+    if (!userId) {
+      console.error('No user ID provided for escalation');
+      return `ERROR-${Date.now()}`;
+    }
+
+    // Create escalated issue in database via API
+    const escalationResult = await createEscalatedIssueClient({
+      userId: userId,
+      issueType: 'onboarding_difficulty',
+      description: `Onboarding escalation: ${reason}. User struggling with AI onboarding process.`,
+      contextType: 'onboarding'
+    });
+
+    if (escalationResult.success && escalationResult.issueId) {
+      console.log('✅ Escalated issue created successfully:', escalationResult.issueId);
+      return escalationResult.issueId;
+    } else {
+      console.error('❌ Failed to create escalated issue:', escalationResult.error);
+      // Fallback to mock ID if database save fails
+      return `SUPPORT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
   } catch (error) {
-    console.error('Failed to save support case:', error);
-    return `ERROR-${Date.now()}`;
+    console.error('Failed to save support case to database:', error);
+    // Fallback to mock ID if database save fails
+    return `SUPPORT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }
 
@@ -564,11 +572,15 @@ function generateRandomCode(length = 8): string {
   return result;
 }
 
-function buildRecommendationLink(): string {
+function buildRecommendationLink(workerProfileId: string | null): string {
   const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000';
-  const code = generateRandomCode(10);
-  // Example format requested: /worker/{code}/recommendation
-  return `${origin}/worker/${code}/recommendation`;
+  
+  if (!workerProfileId) {
+    throw new Error('Worker profile ID is required to build recommendation link');
+  }
+  
+  // Use the worker profile ID (UUID) for the recommendation URL
+  return `${origin}/worker/${workerProfileId}/recommendation`;
 }
 
 // Date and time formatting functions with better error handling
@@ -813,6 +825,34 @@ export default function OnboardWorkerPage() {
   const [showSetupChoice, setShowSetupChoice] = useState(true);
   const [setupMode, setSetupMode] = useState<'ai' | 'manual' | null>(null);
   const [manualFormData, setManualFormData] = useState<any>({});
+  
+  // Worker profile ID for recommendation URL
+  const [workerProfileId, setWorkerProfileId] = useState<string | null>(null);
+
+  // Create worker profile automatically when component mounts
+  useEffect(() => {
+    const createProfile = async () => {
+      if (!user?.token || workerProfileId) {
+        return;
+      }
+
+      try {
+        console.log('Creating worker profile automatically...');
+        const result = await createWorkerProfileAction(user.token);
+        
+        if (result.success && result.workerProfileId) {
+          console.log('Worker profile created successfully:', result.workerProfileId);
+          setWorkerProfileId(result.workerProfileId);
+        } else {
+          console.error('Failed to create worker profile:', result.error);
+        }
+      } catch (error) {
+        console.error('Error creating worker profile:', error);
+      }
+    };
+    
+    createProfile();
+  }, [user?.token, workerProfileId]);
 
   // Helper to get next required field not in formData - matching gig creation
   const getNextRequiredField = useCallback((formData: FormData) => {
@@ -862,7 +902,8 @@ export default function OnboardWorkerPage() {
           location: formData.location || '',
           availability: formData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
           videoIntro: formData.videoIntro || '',
-          time: formData.time || ''
+          time: formData.time || '',
+          jobTitle: formData.jobTitle || ''
         };
       
       // Save the profile data to database
@@ -1056,6 +1097,26 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
     } catch (error) {
       console.error('AI validation failed:', error);
       setError('AI validation failed. Please try again.');
+      
+      // Check if we should escalate due to AI failure
+      const escalationTrigger = detectEscalationTriggers('AI processing failed', {
+        retryCount: 1,
+        conversationLength: chatSteps.length,
+        userRole: 'worker',
+        gigId: undefined
+      });
+
+      if (escalationTrigger.shouldEscalate) {
+        console.log('🚨 Escalation triggered due to AI failure:', escalationTrigger);
+        
+        const description = generateEscalationDescription(escalationTrigger, 'AI validation failed', {
+          userRole: 'worker',
+          conversationLength: chatSteps.length
+        });
+
+        // Note: We can't await here since this is in a catch block, so we'll handle it in the calling function
+        // The escalation will be handled when the user tries to submit again
+      }
     }
     
     // Simple fallback - accept most inputs
@@ -1071,6 +1132,51 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
     }
     
     try {
+      // Check for escalation triggers in user input
+      if (typeof valueToUse === 'string') {
+        const escalationTrigger = detectEscalationTriggers(valueToUse, {
+          retryCount: 0, // Could track this if needed
+          conversationLength: chatSteps.length,
+          userRole: 'worker',
+          gigId: undefined
+        });
+
+        if (escalationTrigger.shouldEscalate) {
+          console.log('🚨 Escalation trigger detected:', escalationTrigger);
+          
+          const description = generateEscalationDescription(escalationTrigger, valueToUse, {
+            userRole: 'worker',
+            conversationLength: chatSteps.length
+          });
+
+          const caseId = await saveSupportCaseToDatabase(
+            { userId: user?.uid, formData },
+            chatSteps,
+            description
+          );
+          
+          setSupportCaseId(caseId);
+          setShowHumanSupport(true);
+          
+          setChatSteps(prev => [
+            ...prev,
+            {
+              id: Date.now() + 1,
+              type: 'bot',
+              content: `I understand you're having trouble with the AI onboarding process. I've created a support case (${caseId}) and our team will be in touch shortly.`,
+              isNew: true,
+            },
+            {
+              id: Date.now() + 2,
+              type: 'support',
+              isNew: true,
+            }
+          ]);
+          
+          return;
+        }
+      }
+
       // Check if this is an unrelated response
       const currentStep = chatSteps.find(s => s.id === stepId);
       
@@ -1093,7 +1199,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
           
           if (newCount >= 3) {
             // Escalate to human support after 3 unrelated responses
-            const caseId = await saveSupportCaseToFirebase(
+            const caseId = await saveSupportCaseToDatabase(
               { userId: user?.uid, formData },
               chatSteps,
               'Multiple unrelated responses - user struggling with AI onboarding'
@@ -1218,7 +1324,13 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
                  if (nextField) {
            // Special handling: auto-generate references link instead of asking for input
            if (nextField.name === 'references') {
-             const recommendationLink = buildRecommendationLink();
+            // Use existing worker profile ID
+            if (!workerProfileId) {
+              console.error('Worker profile not yet created');
+              return;
+            }
+            
+            const recommendationLink = buildRecommendationLink(workerProfileId);
              const afterRefFormData = { ...updatedFormData, references: recommendationLink };
              setFormData(afterRefFormData);
 
@@ -1372,6 +1484,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
               suggestedJobTitle: jobTitleResult.jobTitle,
               confidence: jobTitleResult.confidence,
               matchedTerms: jobTitleResult.matchedTerms,
+              isAISuggested: jobTitleResult.isAISuggested,
               isNew: true,
             },
           ]);
@@ -1583,7 +1696,13 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
       if (nextField) {
         // Special handling: auto-generate references link instead of asking for input
         if (nextField.name === 'references') {
-          const recommendationLink = buildRecommendationLink();
+                  // Use existing worker profile ID
+        if (!workerProfileId) {
+          console.error('Worker profile not yet created');
+          return;
+        }
+        
+        const recommendationLink = buildRecommendationLink(workerProfileId);
           const afterRefFormData = { ...formData, [fieldName]: sanitized, references: recommendationLink };
           setFormData(afterRefFormData);
 
@@ -1800,9 +1919,15 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
     const nextField = getNextRequiredField({ ...formData, [inputName]: currentValue });
 
     if (nextField) {
-      // Special handling: auto-generate references link instead of asking for input
-      if (nextField.name === 'references') {
-        const recommendationLink = buildRecommendationLink();
+              // Special handling: auto-generate references link instead of asking for input
+        if (nextField.name === 'references') {
+                  // Use existing worker profile ID
+        if (!workerProfileId) {
+          console.error('Worker profile not yet created');
+          return;
+        }
+        
+        const recommendationLink = buildRecommendationLink(workerProfileId);
         const afterRefFormData = { ...formData, references: recommendationLink };
         setFormData(afterRefFormData);
 
@@ -2084,8 +2209,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
         // Mark the sanitized step as complete so it doesn't show buttons anymore
         const updatedSteps = prev.map(step => 
           step.type === "sanitized" && step.fieldName === reformulateField 
-            ? { ...step, isComplete: true }
-            : step
+            ? { ...step, isComplete: true } : step
         );
         
         // Add typing indicator
@@ -2244,6 +2368,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
           onSubmit={handleManualFormSubmit}
           onSwitchToAI={handleSwitchToAI}
           initialData={manualFormData}
+          workerProfileId={workerProfileId}
         />
       </div>
     );
@@ -2399,7 +2524,8 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
                           location: step.summaryData?.location || '',
                           availability: step.summaryData?.availability || { days: [], startTime: '09:00', endTime: '17:00' },
                           videoIntro: step.summaryData?.videoIntro || '',
-                          references: step.summaryData?.references || ''
+                          references: step.summaryData?.references || '',
+                          jobTitle: step.summaryData?.jobTitle || ''
                         };
                         
                         // Save the profile data to database
@@ -2864,7 +2990,8 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
                                  location: summaryData.location || '',
                                  availability: summaryData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
                                  videoIntro: summaryData.videoIntro || '',
-                                 references: summaryData.references || ''
+                                 references: summaryData.references || '',
+                                 jobTitle: summaryData.jobTitle || ''
                                };
                                
                                // Save the profile data to database
@@ -3583,6 +3710,16 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
                   marginBottom: '12px'
                 }}>
                   🎯 Suggested Standardized Job Title
+                  {step.isAISuggested && (
+                    <span style={{
+                      color: '#10b981',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      marginLeft: '8px'
+                    }}>
+                      🤖 AI Suggested
+                    </span>
+                  )}
                 </div>
                 <div style={{
                   color: '#e5e5e5',
@@ -3591,6 +3728,16 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
                   marginBottom: '16px'
                 }}>
                   Based on your description "{step.originalValue}", I suggest the standardized job title:
+                  {step.isAISuggested && (
+                    <div style={{
+                      color: '#10b981',
+                      fontSize: '13px',
+                      marginTop: '8px',
+                      fontStyle: 'italic'
+                    }}>
+                      This title was AI-suggested as it wasn't in our standard taxonomy but closely matches your description.
+                    </div>
+                  )}
                 </div>
                 <div style={{
                   background: '#2a2a2a',

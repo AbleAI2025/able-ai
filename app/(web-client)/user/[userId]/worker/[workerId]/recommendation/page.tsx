@@ -10,6 +10,7 @@ import { Star, Send, Loader2 } from 'lucide-react'; // Lucide icons
 import styles from './RecommendationPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
+import { submitRecommendationAction } from '@/actions/user/recommendations';
 
 interface RecommendationFormData {
   recommendationText: string;
@@ -133,12 +134,10 @@ export default function RecommendationPage() {
     };
 
     try {
-      // Replace with your actual API endpoint
-      console.log("Submitting recommendation:", submissionPayload);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-
-      const success = true; // Assume success for now
-      if (success) {
+      // Submit recommendation using server action
+      const result = await submitRecommendationAction(submissionPayload);
+      
+      if (result.success) {
         setSuccessMessage("Recommendation submitted successfully! Thank you.");
         setFormData({
           recommendationText: '',
@@ -148,7 +147,7 @@ export default function RecommendationPage() {
         });
         // Optionally redirect or clear form further
       } else {
-        setError("Failed to submit recommendation. Please try again.");
+        setError(result.error || "Failed to submit recommendation. Please try again.");
       }
     } catch (error) {
       console.error("Submission error:", error);

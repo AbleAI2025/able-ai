@@ -1,4 +1,4 @@
-import { pgTable, foreignKey, serial, uuid, varchar, jsonb, timestamp, unique, text, integer, boolean, uniqueIndex, numeric, date, index, vector } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, serial, uuid, varchar, jsonb, timestamp, unique, text, integer, boolean, numeric, uniqueIndex, index, date, vector } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -45,7 +45,7 @@ export const badgeDefinitions = pgTable("badge_definitions", {
 	description: text().notNull(),
 	iconUrlOrLucideName: varchar("icon_url_or_lucide_name", { length: 255 }),
 	// TODO: failed to parse database type 'badge_type_enum'
-	type: varchar("type", { length: 50 }).notNull(),
+	type: text("type").notNull(),
 	criteriaJson: jsonb("criteria_json"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -63,6 +63,8 @@ export const buyerProfiles = pgTable("buyer_profiles", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	videoUrl: text("video_url"),
+	companyRole: varchar("company_role", { length: 100 }),
+	responseRateInternal: numeric("response_rate_internal", { precision: 5, scale:  2 }),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],
@@ -80,7 +82,7 @@ export const chatMessages = pgTable("chat_messages", {
 	imageUrl: text("image_url"),
 	isReadByReceiver: boolean("is_read_by_receiver").default(false).notNull(),
 	// TODO: failed to parse database type 'moderation_status_enum'
-	moderationStatus: varchar("moderation_status", { length: 50 }).notNull(),
+	moderationStatus: text("moderation_status").notNull(),
 	sentAt: timestamp("sent_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
 	foreignKey({
@@ -243,20 +245,25 @@ export const gigs = pgTable("gigs", {
 	estimatedHours: numeric("estimated_hours", { precision: 5, scale:  2 }),
 	totalAgreedPrice: numeric("total_agreed_price", { precision: 10, scale:  2 }),
 	// TODO: failed to parse database type 'gig_status_enum'
-	statusInternal: varchar("status_internal", { length: 50 }).notNull(),
+	statusInternal: text("status_internal").notNull(),
 	ableFeePercent: numeric("able_fee_percent", { precision: 5, scale:  4 }),
 	stripeFeePercent: numeric("stripe_fee_percent", { precision: 5, scale:  4 }),
 	stripeFeeFixed: numeric("stripe_fee_fixed", { precision: 10, scale:  2 }),
 	promoCodeApplied: varchar("promo_code_applied", { length: 50 }),
 	// TODO: failed to parse database type 'moderation_status_enum'
-	moderationStatus: varchar("moderation_status", { length: 50 }).notNull(),
+	moderationStatus: text("moderation_status").notNull(),
 	cancellationReason: text("cancellation_reason"),
 	// TODO: failed to parse database type 'cancellation_party_enum'
-	cancellationParty: varchar("cancellation_party", { length: 50 }),
+	cancellationParty: text("cancellation_party"),
 	notesForWorker: text("notes_for_worker"),
 	notesForBuyer: text("notes_for_buyer"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	finalRate: numeric("final_rate", { precision: 10, scale:  2 }),
+	finalHours: numeric("final_hours", { precision: 5, scale:  2 }),
+	finalAgreedPrice: numeric("final_agreed_price", { precision: 10, scale:  2 }),
+	adjustmentNotes: text("adjustment_notes"),
+	adjustedAt: timestamp("adjusted_at", { withTimezone: true, mode: 'string' }),
 }, (table) => [
 	foreignKey({
 			columns: [table.buyerUserId],
@@ -336,7 +343,7 @@ export const payments = pgTable("payments", {
 	stripeFeeAmount: numeric("stripe_fee_amount", { precision: 10, scale:  2 }).notNull(),
 	amountNetToWorker: numeric("amount_net_to_worker", { precision: 10, scale:  2 }).notNull(),
 	// TODO: failed to parse database type 'payment_status_enum'
-	status: varchar("status", { length: 50 }).notNull(),
+	status: text("status").notNull(),
 	stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
 	stripeChargeId: varchar("stripe_charge_id", { length: 255 }),
 	stripeTransferIdToWorker: varchar("stripe_transfer_id_to_worker", { length: 255 }),
@@ -389,10 +396,35 @@ export const qualifications = pgTable("qualifications", {
 		}).onDelete("cascade"),
 ]);
 
+export const recommendations = pgTable("recommendations", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	workerUserId: uuid("worker_user_id").notNull(),
+	recommendationCode: varchar("recommendation_code", { length: 50 }).notNull(),
+	recommendationText: text("recommendation_text").notNull(),
+	relationship: text().notNull(),
+	recommenderName: varchar("recommender_name", { length: 100 }).notNull(),
+	recommenderEmail: varchar("recommender_email", { length: 255 }).notNull(),
+	isVerified: boolean("is_verified").default(false).notNull(),
+	// TODO: failed to parse database type 'moderation_status_enum'
+	moderationStatus: text("moderation_status").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	index("recommendations_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
+	index("recommendations_recommendation_code_idx").using("btree", table.recommendationCode.asc().nullsLast().op("text_ops")),
+	index("recommendations_worker_user_id_idx").using("btree", table.workerUserId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.workerUserId],
+			foreignColumns: [users.id],
+			name: "recommendations_worker_user_id_users_id_fk"
+		}).onDelete("cascade"),
+	unique("recommendations_recommendation_code_key").on(table.recommendationCode),
+]);
+
 export const reviews = pgTable("reviews", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	gigId: uuid("gig_id").notNull(),
-	authorUserId: uuid("author_user_id").notNull(),
+	gigId: uuid("gig_id"),
+	authorUserId: uuid("author_user_id"),
 	targetUserId: uuid("target_user_id").notNull(),
 	rating: integer().notNull(),
 	comment: text(),
@@ -400,11 +432,17 @@ export const reviews = pgTable("reviews", {
 	awardedBadgeNamesToTargetJson: jsonb("awarded_badge_names_to_target_json"),
 	isPublic: boolean("is_public").default(true).notNull(),
 	// TODO: failed to parse database type 'review_type_enum'
-	type: varchar("type", { length: 50 }).notNull(),
+	type: text("type").notNull(),
 	// TODO: failed to parse database type 'moderation_status_enum'
-	moderationStatus: varchar("moderation_status", { length: 50 }).notNull(),
+	moderationStatus: text("moderation_status").notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	// TODO: failed to parse database type 'active_role_context_enum'
+	targetRole: text("target_role"),
+	recommendationText: text("recommendation_text"),
+	relationship: text(),
+	recommenderName: text("recommender_name"),
+	recommenderEmail: text("recommender_email"),
 }, (table) => [
 	uniqueIndex("author_target_gig_unique_idx").using("btree", table.authorUserId.asc().nullsLast().op("uuid_ops"), table.targetUserId.asc().nullsLast().op("uuid_ops"), table.gigId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
@@ -545,20 +583,20 @@ export const users = pgTable("users", {
 	fullName: varchar("full_name", { length: 255 }).notNull(),
 	phone: varchar({ length: 30 }),
 	// TODO: failed to parse database type 'user_app_role_enum'
-	appRole: varchar("app_role", { length: 50 }).notNull(),
+	appRole: text("app_role").notNull(),
 	isGigWorker: boolean("is_gig_worker").default(false).notNull(),
 	isBuyer: boolean("is_buyer").default(false).notNull(),
 	// TODO: failed to parse database type 'active_role_context_enum'
-	lastRoleUsed: varchar("last_role_used", { length: 50 }),
+	lastRoleUsed: text("last_role_used"),
 	lastViewVisitedBuyer: text("last_view_visited_buyer"),
 	lastViewVisitedWorker: text("last_view_visited_worker"),
 	stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
 	stripeConnectAccountId: varchar("stripe_connect_account_id", { length: 255 }),
 	// TODO: failed to parse database type 'rtw_kyc_status_enum'
-	rtwStatus: varchar("rtw_status", { length: 50 }),
+	rtwStatus: text("rtw_status"),
 	rtwDocumentUrl: text("rtw_document_url"),
 	// TODO: failed to parse database type 'rtw_kyc_status_enum'
-	kycStatus: varchar("kyc_status", { length: 50 }),
+	kycStatus: text("kyc_status"),
 	kycDocumentUrl: text("kyc_document_url"),
 	isBanned: boolean("is_banned").default(false).notNull(),
 	isDisabled: boolean("is_disabled").default(false).notNull(),
@@ -567,7 +605,7 @@ export const users = pgTable("users", {
 	profileVisibility: boolean("profile_visibility").default(false),
 	canReceivePayouts: boolean("can_receive_payouts").default(false).notNull(),
 	// TODO: failed to parse database type 'stripe_account_status_enum'
-	stripeAccountStatus: varchar("stripe_account_status", { length: 50 }),
+	stripeAccountStatus: text("stripe_account_status"),
 }, (table) => [
 	unique("users_firebase_uid_unique").on(table.firebaseUid),
 	unique("users_email_unique").on(table.email),
@@ -577,7 +615,7 @@ export const users = pgTable("users", {
 
 export const vectorEmbeddings = pgTable("vector_embeddings", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	entityType: varchar("entity_type", { length: 50 }).notNull(),
+	entityType: text("entity_type").notNull(),
 	entityPostgresId: uuid("entity_postgres_id"),
 	entityFirestoreId: text("entity_firestore_id"),
 	embedding: vector({ dimensions: 1536 }).notNull(),
@@ -587,4 +625,24 @@ export const vectorEmbeddings = pgTable("vector_embeddings", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
 	index("embedding_hnsw_cosine_idx").using("hnsw", table.embedding.asc().nullsLast().op("vector_cosine_ops")),
+]);
+
+export const workerAvailability = pgTable("worker_availability", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	userId: uuid("user_id").notNull(),
+	startTime: timestamp("start_time", { withTimezone: true, mode: 'string' }).notNull(),
+	endTime: timestamp("end_time", { withTimezone: true, mode: 'string' }).notNull(),
+	notes: text(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	days: jsonb(),
+	frequency: varchar({ length: 50 }),
+	startDate: varchar("start_date", { length: 50 }),
+	startTimeStr: varchar("start_time_str", { length: 10 }),
+	endTimeStr: varchar("end_time_str", { length: 10 }),
+	ends: varchar({ length: 50 }),
+	occurrences: integer(),
+	endDate: varchar("end_date", { length: 50 }),
+}, (table) => [
+	index("worker_availability_user_pattern_idx").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.frequency.asc().nullsLast().op("uuid_ops"), table.startDate.asc().nullsLast().op("uuid_ops")),
 ]);

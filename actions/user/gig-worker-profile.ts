@@ -18,7 +18,7 @@ import {
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 export const getPublicWorkerProfileAction = async (workerId: string) => {
   if (!workerId) throw "Worker ID is required";
@@ -57,7 +57,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
   return data;
 };
 export const getGigWorkerProfile = async (
-  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined
+  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined,
 ): Promise<{ success: true; data: PublicWorkerProfile }> => {
   try {
     if (!workerProfile) throw "Getting worker profile error";
@@ -81,14 +81,14 @@ export const getGigWorkerProfile = async (
     const reviews = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile.userId),
-        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM"),
       ),
     });
 
     const recommendations = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile.userId),
-        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
       ),
     });
 
@@ -158,7 +158,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       .from(UserBadgesLinkTable)
       .innerJoin(
         BadgeDefinitionsTable,
-        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id),
       )
       .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
 
@@ -169,19 +169,27 @@ export const getSkillDetailsWorker = async (id: string) => {
     const reviews = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
-        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM"),
       ),
     });
 
     const recommendations = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
-        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
       ),
     });
 
     const reviewsData = await Promise.all(
       reviews.map(async (review) => {
+        if (!review.authorUserId) {
+          return {
+            name: "Unknown",
+            date: review.createdAt,
+            text: review.comment,
+          };
+        }
+
         const author = await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
         });
@@ -191,11 +199,18 @@ export const getSkillDetailsWorker = async (id: string) => {
           date: review.createdAt,
           text: review.comment,
         };
-      })
+      }),
     );
 
     const recommendationsData = await Promise.all(
       recommendations.map(async (review) => {
+        if(!review.authorUserId){
+        return {
+          name: "Unknown",
+          date: review.createdAt,
+          text: review.comment,
+        };
+        }
         const author = await db.query.UsersTable.findFirst({
           where: eq(UsersTable.id, review.authorUserId),
         });
@@ -205,7 +220,7 @@ export const getSkillDetailsWorker = async (id: string) => {
           date: review.createdAt,
           text: review.comment,
         };
-      })
+      }),
     );
 
     const skillProfile = {
@@ -259,7 +274,7 @@ export const createSkillWorker = async (
     skillVideoUrl?: string;
     adminTags?: string[];
     images?: string[];
-  }
+  },
 ) => {
   try {
     if (!token) throw new Error("Token is required");
@@ -308,7 +323,7 @@ export const createSkillWorker = async (
 
 export const updateVideoUrlProfileAction = async (
   videoUrl: string,
-  token?: string | undefined
+  token?: string | undefined,
 ) => {
   try {
     if (!token) {
@@ -342,7 +357,7 @@ export const updateVideoUrlProfileAction = async (
 export const updateProfileImageAction = async (
   token: string,
   id: string,
-  newImage: string
+  newImage: string,
 ) => {
   try {
     if (!token) throw new Error("User ID is required");
@@ -375,7 +390,7 @@ export const updateProfileImageAction = async (
 export const deleteImageAction = async (
   token: string,
   skillId: string,
-  imageUrl: string
+  imageUrl: string,
 ) => {
   try {
     if (!token) throw new Error("User ID is required");
@@ -405,7 +420,82 @@ export const deleteImageAction = async (
     console.error("Error deleting image:", error);
     return { success: false, data: null, error };
   }
-}
+};
+
+export const createWorkerProfileAction = async (token: string) => {
+  try {
+    console.log("🔍 createWorkerProfileAction: Starting...");
+    console.log("🔍 Token received:", token ? "Yes" : "No");
+    
+    // Test database connection
+    console.log("🔍 Testing database connection...");
+    try {
+      const testQuery = await db.execute(sql`SELECT 1 as test`);
+      console.log("🔍 Database connection test successful:", testQuery);
+    } catch (dbError) {
+      console.error("❌ Database connection test failed:", dbError);
+      throw new Error(`Database connection failed: ${dbError}`);
+    }
+    
+    if (!token) {
+      throw new Error("Token is required");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    console.log("🔍 Firebase UID:", uid);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    console.log("🔍 Querying UsersTable...");
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+    console.log("🔍 User found:", user ? "Yes" : "No", user?.id);
+
+    if (!user) throw "User not found";
+
+    // Check if worker profile already exists
+    console.log("🔍 Checking for existing worker profile...");
+    const existingWorkerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+    console.log("🔍 Existing profile:", existingWorkerProfile ? "Yes" : "No");
+
+    if (existingWorkerProfile) {
+      console.log("🔍 Returning existing profile ID:", existingWorkerProfile.id);
+      return { success: true, data: "Worker profile already exists", workerProfileId: existingWorkerProfile.id };
+    }
+
+    // Create new worker profile
+    console.log("🔍 Creating new worker profile...");
+    const newProfile = await db.insert(GigWorkerProfilesTable).values({
+      userId: user.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+    console.log("🔍 New profile created:", newProfile[0].id);
+
+    const workerProfileId = newProfile[0].id;
+
+    // Update user table to mark as gig worker
+    console.log("🔍 Updating user table...");
+    await db
+      .update(UsersTable)
+      .set({
+        isGigWorker: true,
+        lastRoleUsed: "GIG_WORKER",
+        updatedAt: new Date(),
+      })
+      .where(eq(UsersTable.id, user.id));
+    console.log("🔍 User table updated successfully");
+
+    console.log("🔍 Worker profile creation completed successfully");
+    return { success: true, data: "Worker profile created successfully", workerProfileId };
+  } catch (error) {
+    console.error("❌ Error creating worker profile:", error);
+    console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    return { success: false, data: null, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+};
 
 export const saveWorkerProfileFromOnboardingAction = async (
   profileData: {
@@ -414,19 +504,22 @@ export const saveWorkerProfileFromOnboardingAction = async (
     skills: string;
     hourlyRate: string;
     location: any;
-    availability: { 
-      days: string[]; 
-      startTime: string; 
-      endTime: string; 
-      frequency?: string;
-      ends?: string;
-      startDate?: string; // Add this field
-      endDate?: string;
-      occurrences?: number;
-    } | string;
+    availability:
+      | {
+          days: string[];
+          startTime: string;
+          endTime: string;
+          frequency?: string;
+          ends?: string;
+          startDate?: string; // Add this field
+          endDate?: string;
+          occurrences?: number;
+        }
+      | string;
     videoIntro: File | string;
+    jobTitle?: string; // Add job title field
   },
-  token: string
+  token: string,
 ) => {
   try {
     if (!token) {
@@ -450,38 +543,62 @@ export const saveWorkerProfileFromOnboardingAction = async (
     // Prepare profile data
     const profileUpdateData = {
       fullBio: `${profileData.about}\n\n${profileData.experience}`,
-      location: typeof profileData.location === 'string' ? profileData.location : profileData.location?.formatted_address || profileData.location?.name || '',
-      latitude: typeof profileData.location === 'object' && profileData.location?.lat ? profileData.location.lat : null,
-      longitude: typeof profileData.location === 'object' && profileData.location?.lng ? profileData.location.lng : null,
+      location:
+        typeof profileData.location === "string"
+          ? profileData.location
+          : profileData.location?.formatted_address ||
+            profileData.location?.name ||
+            "",
+      latitude:
+        typeof profileData.location === "object" && profileData.location?.lat
+          ? profileData.location.lat
+          : null,
+      longitude:
+        typeof profileData.location === "object" && profileData.location?.lng
+          ? profileData.location.lng
+          : null,
       // Remove availabilityJson - we'll save to worker_availability table instead
-      videoUrl: typeof profileData.videoIntro === 'string' ? profileData.videoIntro : profileData.videoIntro?.name || '',
+      videoUrl:
+        typeof profileData.videoIntro === "string"
+          ? profileData.videoIntro
+          : profileData.videoIntro?.name || "",
       semanticProfileJson: {
-        tags: profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+        tags: profileData.skills
+          .split(",")
+          .map((skill) => skill.trim())
+          .filter(Boolean),
       },
       privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
       updatedAt: new Date(),
     };
 
+    let workerProfileId: string;
+    
     if (workerProfile) {
       // Update existing profile
       await db
         .update(GigWorkerProfilesTable)
         .set(profileUpdateData)
         .where(eq(GigWorkerProfilesTable.userId, user.id));
+      workerProfileId = workerProfile.id;
     } else {
       // Create new profile
-      await db.insert(GigWorkerProfilesTable).values({
+      const newProfile = await db.insert(GigWorkerProfilesTable).values({
         userId: user.id,
         ...profileUpdateData,
         createdAt: new Date(),
-      });
+      }).returning();
+      workerProfileId = newProfile[0].id;
     }
 
     // Save availability data to worker_availability table
-    if (profileData.availability && typeof profileData.availability === 'object') {
+    if (
+      profileData.availability &&
+      typeof profileData.availability === "object"
+    ) {
       // Create proper timestamps for the required fields
       const createTimestamp = (timeStr: string) => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
+        const [hours, minutes] = timeStr.split(":").map(Number);
         const date = new Date();
         date.setHours(hours, minutes, 0, 0);
         return date;
@@ -490,17 +607,41 @@ export const saveWorkerProfileFromOnboardingAction = async (
       await db.insert(WorkerAvailabilityTable).values({
         userId: user.id,
         days: profileData.availability.days || [],
-        frequency: (profileData.availability.frequency || 'never') as "never" | "weekly" | "biweekly" | "monthly",
+        frequency: (profileData.availability.frequency || "never") as
+          | "never"
+          | "weekly"
+          | "biweekly"
+          | "monthly",
         startDate: profileData.availability.startDate,
         startTimeStr: profileData.availability.startTime,
         endTimeStr: profileData.availability.endTime,
         // Convert time strings to timestamp for the required fields
         startTime: createTimestamp(profileData.availability.startTime),
         endTime: createTimestamp(profileData.availability.endTime),
-        ends: (profileData.availability.ends || 'never') as "never" | "on_date" | "after_occurrences",
+        ends: (profileData.availability.ends || "never") as
+          | "never"
+          | "on_date"
+          | "after_occurrences",
         occurrences: profileData.availability.occurrences,
         endDate: profileData.availability.endDate || null,
         notes: `Onboarding availability - Hourly Rate: ${profileData.hourlyRate}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    // Save job title as a skill if provided
+    if (profileData.jobTitle) {
+      await db.insert(SkillsTable).values({
+        workerProfileId: workerProfileId,
+        name: profileData.jobTitle,
+        experienceMonths: 0,
+        experienceYears: 0,
+        agreedRate: String(parseFloat(profileData.hourlyRate) || 0),
+        skillVideoUrl: null,
+        adminTags: null,
+        ableGigs: null,
+        images: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -516,9 +657,13 @@ export const saveWorkerProfileFromOnboardingAction = async (
       })
       .where(eq(UsersTable.id, user.id));
 
-    return { success: true, data: "Worker profile saved successfully" };
+    return { success: true, data: "Worker profile saved successfully", workerProfileId };
   } catch (error) {
     console.error("Error saving worker profile:", error);
-    return { success: false, data: null, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 };

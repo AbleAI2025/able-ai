@@ -2,6 +2,9 @@
 // Standardized job titles for hospitality and events industry
 // Based on hospitality and events skills taxonomy
 
+import { Schema } from "@firebase/ai";
+import { geminiAIAgent } from "@/lib/firebase/ai";
+
 export interface JobTitle {
   id: string;
   title: string;
@@ -283,6 +286,124 @@ export function searchJobTitles(keyword: string): JobTitle[] {
   );
 }
 
+// Enhanced function with AI fallback for job titles outside taxonomy
+export async function findStandardizedJobTitleWithAIFallback(
+  userInput: string, 
+  ai: any
+): Promise<{ jobTitle: JobTitle; confidence: number; matchedTerms: string[]; isAISuggested: boolean } | null> {
+  // First, try to find a match in our existing taxonomy
+  const existingMatch = findClosestJobTitle(userInput);
+  
+  // If we found a good match (confidence >= 30), return it
+  if (existingMatch && existingMatch.confidence >= 30) {
+    return {
+      ...existingMatch,
+      isAISuggested: false
+    };
+  }
+  
+  // If no good match found and AI is available, use AI to suggest a standardized title
+  if (ai) {
+    try {
+      const aiPrompt = `You are a job title standardization assistant for a hospitality and events platform. 
+
+The user provided this job title/description: "${userInput}"
+
+Available standardized job titles in our taxonomy:
+${ALL_JOB_TITLES.map(job => `- ${job.title} (${job.category}): ${job.description}`).join('\n')}
+
+Your task is to provide a standardized job title for the user's input. 
+
+Rules:
+1. FIRST, check if the user's input matches any existing job title in our taxonomy above
+2. If there's a good match in our taxonomy, return that existing title
+3. If the user's input is completely outside our taxonomy (e.g., "computer fixer", "plumber", "web developer"), create a NEW, appropriate standardized job title
+4. For new titles, follow these guidelines:
+   - Use professional, industry-standard terminology
+   - Make it clear and descriptive
+   - Consider the context of a hospitality/events platform
+   - Examples: "Computer Technician" for "computer fixer", "Plumber" for "plumber", "Web Developer" for "web developer"
+5. Return confidence as a number between 0-100
+6. Include matched terms as a comma-separated string (or relevant keywords for new titles)
+7. Provide reasoning for your choice
+
+Please analyze the user's input and provide either an existing standardized job title or create a new appropriate one.`;
+
+      const result = await geminiAIAgent(
+        "gemini-2.0-flash",
+        {
+          prompt: aiPrompt,
+          responseSchema: Schema.object({
+            properties: {
+              jobTitle: Schema.string(),
+              confidence: Schema.number(),
+              matchedTerms: Schema.string(),
+              reasoning: Schema.string(),
+              isNewTitle: Schema.boolean(),
+            },
+          }),
+          isStream: false,
+        },
+        ai
+      );
+
+      if (result.ok && result.data) {
+        const data = result.data as Record<string, any>;
+        const suggestedTitle = data.jobTitle as string;
+        const confidence = data.confidence as number;
+        const matchedTerms = data.matchedTerms as string;
+        const isNewTitle = data.isNewTitle as boolean;
+        
+        // Parse matchedTerms from string (comma-separated)
+        const matchedTermsArray = matchedTerms ? matchedTerms.split(',').map((term: string) => term.trim()) : [];
+        
+        if (isNewTitle) {
+          // Create a new JobTitle object for titles outside our taxonomy
+          const newJobTitle: JobTitle = {
+            id: `ai_generated_${Date.now()}`,
+            title: suggestedTitle,
+            category: 'Other Services',
+            description: `AI-generated standardized title for: ${userInput}`,
+            synonyms: [userInput.toLowerCase()],
+            requiredSkills: matchedTermsArray,
+            optionalSkills: [],
+            skillLevel: 'intermediate'
+          };
+          
+          return {
+            jobTitle: newJobTitle,
+            confidence: Math.min(confidence, 100),
+            matchedTerms: matchedTermsArray,
+            isAISuggested: true
+          };
+        } else {
+          // Validate that the AI suggested job title exists in our taxonomy
+          const validatedJobTitle = ALL_JOB_TITLES.find(job => 
+            job.title.toLowerCase() === suggestedTitle.toLowerCase()
+          );
+          
+          if (validatedJobTitle) {
+            return {
+              jobTitle: validatedJobTitle,
+              confidence: Math.min(confidence, 100),
+              matchedTerms: matchedTermsArray,
+              isAISuggested: true
+            };
+          }
+        }
+      }
+    } catch (error) {
+      console.error('AI job title standardization failed:', error);
+    }
+  }
+  
+  // If AI failed or is not available, return the existing match (if any) or null
+  return existingMatch ? {
+    ...existingMatch,
+    isAISuggested: false
+  } : null;
+}
+
 // Export default for easy importing
 export default {
   HOSPITALITY_JOB_TITLES,
@@ -290,6 +411,7 @@ export default {
   ALL_JOB_TITLES,
   JOB_CATEGORIES,
   findClosestJobTitle,
+  findStandardizedJobTitleWithAIFallback,
   getJobTitlesByCategory,
   getJobTitlesBySkillLevel,
   searchJobTitles

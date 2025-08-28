@@ -7,7 +7,7 @@ const HireButton = ({workerName, workerId}: {workerName?: string | null, workerI
     const { user: authUser } = useAuth();
     const handleHireWorker = () => {
     if (!workerName || !authUser?.uid) return; // Ensure authUser is available for booking
-    router.push(`/user/${authUser.uid}/buyer/book-gig?workerId=${workerId}`);
+    router.push(`/user/${authUser.uid}/buyer/gigs/new/?workerId=${workerId}`);
   };
 
   return (

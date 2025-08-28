@@ -1,6 +1,6 @@
 {
-  "id": "987fe52c-b515-4a72-b0c2-1d3c96da7a6d",
-  "prevId": "5111f0fc-3924-48f6-bf7a-98289798e028",
+  "id": "2a304d33-1840-4960-a0f0-7885e260be9c",
+  "prevId": "1b24ea06-f2b4-4957-ba42-b015a99f98fa",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -856,6 +856,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "final_rate": {
+          "name": "final_rate",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_hours": {
+          "name": "final_hours",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_agreed_price": {
+          "name": "final_agreed_price",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "status_internal": {
           "name": "status_internal",
           "type": "gig_status_enum",
@@ -918,6 +936,18 @@
         "notes_for_buyer": {
           "name": "notes_for_buyer",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adjustment_notes": {
+          "name": "adjustment_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adjusted_at": {
+          "name": "adjusted_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -1197,12 +1227,6 @@
         "business_registration_number": {
           "name": "business_registration_number",
           "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "response_rate_internal": {
-          "name": "response_rate_internal",
-          "type": "numeric(5, 2)",
           "primaryKey": false,
           "notNull": false
         },
@@ -1937,6 +1961,113 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.recommendations": {
+      "name": "recommendations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "worker_user_id": {
+          "name": "worker_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recommendation_code": {
+          "name": "recommendation_code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recommendation_text": {
+          "name": "recommendation_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "relationship": {
+          "name": "relationship",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommender_name": {
+          "name": "recommender_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommender_email": {
+          "name": "recommender_email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_verified": {
+          "name": "is_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "moderation_status": {
+          "name": "moderation_status",
+          "type": "moderation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recommendations_worker_user_id_users_id_fk": {
+          "name": "recommendations_worker_user_id_users_id_fk",
+          "tableFrom": "recommendations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "worker_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "recommendations_recommendation_code_unique": {
+          "name": "recommendations_recommendation_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "recommendation_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.reviews": {
       "name": "reviews",
       "schema": "",
@@ -1952,19 +2083,37 @@
           "name": "gig_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "author_user_id": {
           "name": "author_user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "target_user_id": {
           "name": "target_user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "relationship": {
+          "name": "relationship",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommender_name": {
+          "name": "recommender_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommender_email": {
+          "name": "recommender_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "rating": {
           "name": "rating",

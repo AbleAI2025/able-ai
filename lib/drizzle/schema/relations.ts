@@ -22,6 +22,7 @@ import {
   BadgeDefinitionsTable,
   UserBadgesLinkTable,
   ChatMessagesTable, // Added ChatMessagesTable
+  RecommendationsTable,
 } from "./interactions";
 import { PaymentsTable, MockPaymentsTable } from "./payments";
 import {
@@ -55,6 +56,7 @@ export const usersRelations = relations(UsersTable, ({ one, many }) => ({
   }),
   reviewsAuthored: many(ReviewsTable, { relationName: "UserAsAuthorOfReview" }),
   reviewsTargeted: many(ReviewsTable, { relationName: "UserAsTargetOfReview" }),
+  recommendationsReceived: many(RecommendationsTable, { relationName: "UserAsWorkerOfRecommendation" }),
   userBadgeLinks: many(UserBadgesLinkTable, {
     relationName: "UserBadgesEarnedByThisUser",
   }), // Badges this user has
@@ -224,6 +226,15 @@ export const reviewsRelations = relations(ReviewsTable, ({ one }) => ({
     fields: [ReviewsTable.targetUserId],
     references: [UsersTable.id],
     relationName: "UserAsTargetOfReview",
+  }),
+}));
+
+export const recommendationsRelations = relations(RecommendationsTable, ({ one }) => ({
+  worker: one(UsersTable, {
+    // Recommendation -> User (Worker being recommended)
+    fields: [RecommendationsTable.workerUserId],
+    references: [UsersTable.id],
+    relationName: "UserAsWorkerOfRecommendation",
   }),
 }));
 

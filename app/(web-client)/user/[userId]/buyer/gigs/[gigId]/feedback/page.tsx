@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import FeedbackContainer from "@/app/components/gigs/FeedbackContainer";
 import { BuyerFeedbackFormData, GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
 import { getLastRoleUsed } from "@/lib/last-role-used";
-import { processGigPayment } from "@/app/actions/stripe/process-gig-payment";
+import { processGigPayment } from "@/app/actions/stripe/finalize-gig-payments";
 
 async function fetchGigForBuyerFeedback(
   gigId: string
@@ -94,7 +94,7 @@ export default function BuyerFeedbackPage() {
   const onProcessPayment = async () => {
     if (!user || !gigData) return;
 
-    await processGigPayment({ firebaseUid: user?.uid, gigId, finalAmountToCaptureInCents: Number(gigData?.earnings), currency: 'usd', additionalCostInCents: 0 });
+    await processGigPayment({ gigId });
     setSuccessMessage(`Work paid successfully!`);
   };
 

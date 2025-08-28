@@ -219,7 +219,6 @@ function generateRandomCode(length = 8): string {
 function buildRecommendationLink(): string {
   const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000';
   const code = generateRandomCode(10);
-  // Example format requested: /worker/{code}/recommendation
   return `${origin}/worker/${code}/recommendation`;
 }
 
@@ -397,6 +396,8 @@ export default function OnboardWorkerPage() {
   const [showSetupChoice, setShowSetupChoice] = useState(true);
   const [setupMode, setSetupMode] = useState<'ai' | 'manual' | null>(null);
   const [manualFormData, setManualFormData] = useState<any>({});
+  
+
 
   // Helper to get next required field not in formData - matching gig creation
   const getNextRequiredField = useCallback((formData: FormData) => {
@@ -1099,9 +1100,9 @@ Make the conversation feel natural and build on what they've already told you.`;
     const nextField = getNextRequiredField({ ...formData, [inputName]: currentValue });
 
     if (nextField) {
-      // Special handling: auto-generate references link instead of asking for input
-      if (nextField.name === 'references') {
-        const recommendationLink = buildRecommendationLink();
+              // Special handling: auto-generate references link instead of asking for input
+        if (nextField.name === 'references') {
+          const recommendationLink = buildRecommendationLink();
         const afterRefFormData = { ...formData, references: recommendationLink };
         setFormData(afterRefFormData);
 

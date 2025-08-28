@@ -1,0 +1,46 @@
+.card {
+  background-color: #2B2B2B; /* User card background */
+  padding: 0.75rem 1rem; /* Adjust padding */
+  border-radius: 16px; /* Rounded corners */
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Space between avatar, info, button */
+}
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.userInfo {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+.username {
+  font-size: 0.85rem;
+  color: #a0a0a0;
+}
+.delegateButton {
+  background-color: #7AF0F5; /* Bright cyan/light blue */
+  color: #121212; /* Black text */
+  padding: 0.5rem 1.25rem; /* Adjust padding for button size */
+  border: none;
+  border-radius: 9999px; /* Pill shape */
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.delegateButton:hover:not(:disabled) {
+  background-color: #5edce3; /* Slightly darker on hover */
+}
+.delegateButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+} 

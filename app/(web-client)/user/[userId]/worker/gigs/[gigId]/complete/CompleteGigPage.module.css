@@ -1,0 +1,273 @@
+.container {
+  background-color: #000000;
+  min-height: 100vh;
+  color: #FFFFFF;
+  padding: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.gigSummary {
+  background: rgba(22, 22, 22, 0.8);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(121, 240, 247, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.gigSummary h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 1rem 0;
+}
+
+.gigSummary p {
+  color: #FFFFFF;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.gigSummary strong {
+  color: #79f0f7;
+}
+
+.feedbackSection {
+  background: rgba(22, 22, 22, 0.8);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(121, 240, 247, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.feedbackSection h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 0.5rem 0;
+}
+
+.feedbackSection p {
+  color: #CCCCCC;
+  font-size: 0.9rem;
+  margin: 0 0 1rem 0;
+}
+
+.feedbackInput {
+  width: 100%;
+  background: rgba(36, 36, 36, 0.6);
+  border: 1px solid rgba(121, 240, 247, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 100px;
+  margin-bottom: 1.5rem;
+}
+
+.feedbackInput::placeholder {
+  color: #999999;
+}
+
+.feedbackInput:focus {
+  outline: none;
+  border-color: rgba(121, 240, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(121, 240, 247, 0.1);
+}
+
+.workAgainSection {
+  margin-bottom: 1.5rem;
+}
+
+.workAgainSection h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 1rem 0;
+}
+
+.thumbsContainer {
+  display: flex;
+  gap: 1rem;
+}
+
+.thumbsButton {
+  background: rgba(36, 36, 36, 0.6);
+  border: 1px solid rgba(121, 240, 247, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.thumbsButton:hover {
+  background: rgba(36, 36, 36, 0.8);
+  border-color: rgba(121, 240, 247, 0.4);
+}
+
+.thumbsButton.active {
+  background: rgba(121, 240, 247, 0.2);
+  border-color: rgba(121, 240, 247, 0.6);
+}
+
+.awardSection h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 1rem 0;
+}
+
+.awardButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.awardButton {
+  background: rgba(36, 36, 36, 0.6);
+  border: 1px solid rgba(121, 240, 247, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.awardButton:hover {
+  background: rgba(36, 36, 36, 0.8);
+  border-color: rgba(121, 240, 247, 0.4);
+}
+
+.awardButton.active {
+  background: rgba(121, 240, 247, 0.2);
+  border-color: rgba(121, 240, 247, 0.6);
+}
+
+.expensesSection {
+  background: rgba(22, 22, 22, 0.8);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(121, 240, 247, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.expensesSection h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 1rem 0;
+}
+
+.expensesInput {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.paperclipIcon {
+  position: absolute;
+  left: 1rem;
+  font-size: 1.2rem;
+  color: #CCCCCC;
+  z-index: 1;
+}
+
+.expensesInput input {
+  width: 100%;
+  background: rgba(36, 36, 36, 0.6);
+  border: 1px solid rgba(121, 240, 247, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem 1rem 1rem 3rem;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+}
+
+.expensesInput input::placeholder {
+  color: #999999;
+}
+
+.expensesInput input:focus {
+  outline: none;
+  border-color: rgba(121, 240, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(121, 240, 247, 0.1);
+}
+
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.amendButton {
+  background: #808080;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.amendButton:hover {
+  background: #666666;
+  transform: translateY(-2px);
+}
+
+.submitButton {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-2px);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  font-size: 1.1rem;
+  color: #FFFFFF;
+}
+
+.error {
+  color: #ef4444;
+}

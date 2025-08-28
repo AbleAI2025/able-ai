@@ -52,6 +52,12 @@ export default interface GigDetails {
   hiringManagerUsername?: string; // Optional, if available
   isWorkerSubmittedFeedback?: boolean; // Indicates if worker has submitted feedback
   isBuyerSubmittedFeedback?: boolean; // Indicates if buyer has submitted feedback
+  // Worker-related properties
+  workerName?: string; // Name of the assigned worker
+  workerAvatarUrl?: string; // Avatar URL of the assigned worker
+  workerGigs?: number; // Number of gigs the worker has completed
+  workerExperience?: number; // Years of experience of the worker
+  isWorkerStar?: boolean; // Whether the worker is a star worker
 }
 
 export interface GigReviewDetailsData {

@@ -53,7 +53,7 @@ export async function testUpdateAvailabilityAction(userId: string, slotId: strin
     console.log('testUpdateAvailabilityAction: User found:', user.id);
     
     // Import the update function to test it
-    const { updateAvailabilitySlot } = await import('./manage-availability.js');
+    const { updateAvailabilitySlot } = await import('./manage-availability');
     
     // Test data for update
     const testData = {

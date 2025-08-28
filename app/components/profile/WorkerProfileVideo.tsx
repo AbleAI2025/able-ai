@@ -1,9 +1,10 @@
-// app/components/profile/ProfileVideo.tsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
+import styles from "./WorkerProfileVideo.module.css";
+import { MonitorPlay, Pencil, Video, X } from "lucide-react";
 
 interface ProfileVideoProps {
   videoUrl?: string | null;
@@ -18,80 +19,66 @@ export default function ProfileVideo({
 }: ProfileVideoProps) {
   const [isEditingVideo, setIsEditingVideo] = useState(false);
 
-  if (!videoUrl) {
+  // 🎥 Empty state (no video uploaded yet)
+  if (!videoUrl && !isEditingVideo) {
     return isSelfView ? (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <div className={styles.emptyContainer}>
         <h3>Please, introduce yourself</h3>
-        <VideoRecorderBubble key={1} onVideoRecorded={onVideoUpload} />
+        <VideoRecorderBubble
+          key={1}
+          onVideoRecorded={onVideoUpload}
+          setIsEditingVideo={setIsEditingVideo}
+          isCancelButtonVisible={false}
+        />
       </div>
     ) : (
-      <p
-        style={{
-          textAlign: "center",
-          fontStyle: "italic",
-          color: "#888",
-        }}
-      >
-        User presentation not exist
-      </p>
+      <p className={styles.emptyMessage}>User has not uploaded a presentation</p>
     );
   }
 
+  // 🎥 Show recorder if editing
+  if (isEditingVideo) {
+    return (
+      <div className={styles.recorderWrapper}>
+        <VideoRecorderBubble
+          key={2}
+          onVideoRecorded={(video) => {
+            onVideoUpload(video);
+            setIsEditingVideo(false);
+          }}
+          setIsEditingVideo={setIsEditingVideo}
+        />
+      </div>
+    );
+  }
+
+  // 🎥 Show existing video
   return (
-    <div style={{ textAlign: "center" }}>
+    <div className={styles.videoWrapper}>
       <Link
-        href={videoUrl}
+        href={videoUrl!}
         target="_blank"
         rel="noopener noreferrer"
-        style={{ display: "inline-block", textDecoration: "none" }}
+        className={styles.videoLink}
       >
         <video
-          width="180"
-          height="180"
-          style={{ borderRadius: "8px", objectFit: "cover" }}
+          className={styles.videoPlayer}
           preload="metadata"
           muted
           poster="/video-placeholder.jpg"
         >
-          <source src={videoUrl + "#t=0.1"} type="video/webm" />
+          <source src={videoUrl! + "#t=0.1"} type="video/webm" />
         </video>
+        {videoUrl && <MonitorPlay color="#fff" size={50} className={styles.monitorPlay} />}
       </Link>
-
-      {isSelfView && (
-        <div style={{ marginTop: "8px" }}>
-          <button
-            onClick={() => setIsEditingVideo(true)}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: "#0070f3",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Edit video
-          </button>
-        </div>
-      )}
-
-      {isEditingVideo && (
-        <div style={{ marginTop: "12px" }}>
-          <VideoRecorderBubble
-            key={2}
-            onVideoRecorded={(video) => {
-              onVideoUpload(video);
-              setIsEditingVideo(false);
-            }}
-          />
-        </div>
+      {isSelfView && videoUrl && (
+        <button
+          onClick={() => setIsEditingVideo(true)}
+          className={styles.editIconButton}
+          aria-label="Edit video"
+        >
+          <Pencil size={18} />
+        </button>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, adminLogs, aiPrompts, buyerProfiles, gigs, chatMessages, gigWorkerProfiles, equipment, escalatedIssues, gigSkillsRequired, skills, mockPayments, notificationPreferences, passwordRecoveryRequests, payments, qualifications, reviews, teamMembers, userAiUsage, userBadgesLink, badgeDefinitions } from "./schema";
+import { users, adminLogs, aiPrompts, buyerProfiles, gigs, chatMessages, gigWorkerProfiles, equipment, escalatedIssues, gigSkillsRequired, skills, mockPayments, notificationPreferences, passwordRecoveryRequests, payments, qualifications, recommendations, reviews, teamMembers, userAiUsage, userBadgesLink, badgeDefinitions } from "./schema";
 
 export const adminLogsRelations = relations(adminLogs, ({one}) => ({
 	user: one(users, {
@@ -40,6 +40,7 @@ export const usersRelations = relations(users, ({many}) => ({
 	payments_receiverUserId: many(payments, {
 		relationName: "payments_receiverUserId_users_id"
 	}),
+	recommendations: many(recommendations),
 	reviews_authorUserId: many(reviews, {
 		relationName: "reviews_authorUserId_users_id"
 	}),
@@ -197,6 +198,13 @@ export const qualificationsRelations = relations(qualifications, ({one}) => ({
 	gigWorkerProfile: one(gigWorkerProfiles, {
 		fields: [qualifications.workerProfileId],
 		references: [gigWorkerProfiles.id]
+	}),
+}));
+
+export const recommendationsRelations = relations(recommendations, ({one}) => ({
+	user: one(users, {
+		fields: [recommendations.workerUserId],
+		references: [users.id]
 	}),
 }));
 
