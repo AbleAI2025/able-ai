@@ -249,7 +249,6 @@ export default function BuyerProfilePage() {
                     <VideoRecorderBubble
                       key={1}
                       onVideoRecorded={handleVideoUpload}
-                      isInline={false}
                       setIsEditingVideo={setIsEditingVideo}
                     />
                   </div>
