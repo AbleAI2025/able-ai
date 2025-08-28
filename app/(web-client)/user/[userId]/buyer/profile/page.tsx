@@ -411,7 +411,7 @@ export default function BuyerProfilePage() {
                 </div>
               ))
             ) : (
-              <p>No badges available</p>
+              <p style={{color: "#fff"}}>No badges available</p>
             )}
           </div>
         </section>
