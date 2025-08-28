@@ -53,7 +53,7 @@ export default function WorkerOwnedProfilePage() {
   useEffect(() => {
     if (!loadingAuth && user) {
       if (lastRoleUsed === "GIG_WORKER" || user.claims.role === "QA") {
-        fetchUserProfile(user.token)
+        fetchUserProfile(user.token);
       } else {
         router.replace("/select-role");
       }

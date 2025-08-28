@@ -215,24 +215,31 @@ const SkillSplashScreen = ({
     <div className={styles.skillSplashContainer}>
       {/* Header */}
       <div className={styles.header}>
-        <ProfileVideo
-          videoUrl={profile?.videoUrl}
-          isSelfView={isSelfView}
-          onVideoUpload={handleVideoUpload}
-        />
+        <div className={styles.videoContainer}>
+          <ProfileVideo
+            videoUrl={profile?.videoUrl}
+            isSelfView={isSelfView}
+            onVideoUpload={handleVideoUpload}
+          />
+        </div>
+        
         <h2 className={styles.name}>
-          {profile.name}: {profile.title}
+          {profile.name?.split(" ")[0]}: {profile.title}
         </h2>
         <Star className={styles.icon} />
       </div>
 
       {/* Hashtags */}
-      <div className={styles.hashtags}>{profile.hashtags}</div>
+      {profile.hashtags && (
+        <div className={styles.hashtags}>{profile.hashtags}</div>
+      )}
 
       {/* Customer reviews */}
-      <p className={styles.review}>
-        Customer reviews: {profile.customerReviewsText}
-      </p>
+      {profile.customerReviewsText && (
+        <p className={styles.review}>
+          Customer reviews: {profile.customerReviewsText}
+        </p>
+      )}
 
       <table className={styles.skillDisplayTable}>
         <thead>
@@ -290,11 +297,12 @@ const SkillSplashScreen = ({
       </div>
 
       {/* Image placeholders */}
-      <>
-        <h4>Images</h4>
-        <div className={styles.supportingImages}>
-          <div className={styles.images}>
-            {profile.supportingImages?.length ? (
+      {profile.supportingImages && profile.supportingImages.length > 0 && (
+        <>
+          <h4>Images</h4>
+          <div className={styles.supportingImages}>
+            <div className={styles.images}>
+              {profile.supportingImages?.length ? (
               profile.supportingImages.map((img, i) => (
                 <div
                   key={i}
@@ -304,124 +312,126 @@ const SkillSplashScreen = ({
                   <Image src={img} alt={`Img ${i}`} width={109} height={68} />
                 </div>
               ))
-            ) : (
-              <p>No images available</p>
-            )}
+              ) : (
+                <p>No images available</p>
+              )}
 
-            {isSelfView && (
-              <>
-                <button
-                  className={styles.attachButton}
-                  onClick={handleAddImageClick}
-                >
-                  {!isUploadImage ? (
-                    <Paperclip size={29} color="#ffffff" />
-                  ) : (
-                    <Loader
-                      customClass={styles.loaderCustom}
-                      customStyle={{
-                        width: "auto",
-                        height: "auto",
-                        minHeight: 0,
-                        backgroundColor: "#121212",
-                      }}
-                    />
-                  )}
-                </button>
+              {isSelfView && (
+                <>
+                  <button
+                    className={styles.attachButton}
+                    onClick={handleAddImageClick}
+                  >
+                    {!isUploadImage ? (
+                      <Paperclip size={29} color="#ffffff" />
+                    ) : (
+                      <Loader
+                        customClass={styles.loaderCustom}
+                        customStyle={{
+                          width: "auto",
+                          height: "auto",
+                          minHeight: 0,
+                          backgroundColor: "#121212",
+                        }}
+                      />
+                    )}
+                  </button>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className={styles.hiddenInput}
-                  onChange={handleSupportingImageUpload}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className={styles.hiddenInput}
+                    onChange={handleSupportingImageUpload}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Modal para ver las imágenes en grande */}
+          <ViewImageModal
+            isOpen={!!selectedImage}
+            onClose={() => setSelectedImage(null)}
+            imageUrl={selectedImage!}
+            userToken={user?.token || ""}
+            skillId={skillId}
+            isSelfView={isSelfView}
+            fetchSkillData={fetchSkillData}
+          />
+        </>
+      )}
+      {/* Badges */}
+      {profile.badges && profile.badges.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Badges Awarded</h3>
+          <div className={styles.badges}>
+            {profile?.badges?.map((badge) => (
+              <div className={styles.badge} key={badge.id}>
+                <AwardDisplayBadge
+                  {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
+                  textLines={badge?.badge?.description ?? ""}
                 />
-              </>
-            )}
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Modal para ver las imágenes en grande */}
-        <ViewImageModal
-          isOpen={!!selectedImage}
-          onClose={() => setSelectedImage(null)}
-          imageUrl={selectedImage!}
-          userToken={user?.token || ""}
-          skillId={skillId}
-          isSelfView={isSelfView}
-          fetchSkillData={fetchSkillData}
-        />
-      </>
-
-      {/* Badges */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Badges Awarded</h3>
-        <div className={styles.badges}>
-          {profile?.badges?.map((badge) => (
-            <div className={styles.badge} key={badge.id}>
-              <AwardDisplayBadge
-                {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                textLines={badge?.badge?.description ?? ""}
-              />
-            </div>
+      )}
+      {/* Qualifications */}
+      {profile.qualifications && profile.qualifications.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
+          <ul className={styles.list}>
+            {profile?.qualifications?.map((q, index) => (
+              <li key={index}>
+                {q.title}: {q.description}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {/* Buyer Reviews */}
+      {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
+          {profile?.buyerReviews?.map((review, index) => (
+            <ReviewCardItem
+              key={index}
+              reviewerName={review?.name}
+              date={review?.date.toString()}
+              comment={review?.text}
+            />
           ))}
         </div>
-      </div>
-
-      {/* Qualifications */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
-        <ul className={styles.list}>
-          {profile?.qualifications?.map((q, index) => (
-            <li key={index}>
-              {q.title}: {q.description}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Buyer Reviews */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
-        {profile?.buyerReviews?.map((review, index) => (
-          <ReviewCardItem
-            key={index}
-            reviewerName={review?.name}
-            date={review?.date.toString()}
-            comment={review?.text}
-          />
-        ))}
-      </div>
-
+      )}
       {/* Recommendations */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Recommendations</h3>
-        {profile?.recommendations?.map((recommendation, index) => (
-          <RecommendationCardItem
-            key={index}
-            recommenderName={recommendation.name}
-            date={recommendation?.date?.toString()}
-            comment={recommendation?.text}
-          />
-        ))}
-      </div>
-
-      {linkUrl && navigator.clipboard && (
+      {profile.recommendations && profile.recommendations.length > 0 &&  (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Recommendations</h3>
+          {profile?.recommendations?.map((recommendation, index) => (
+            <RecommendationCardItem
+              key={index}
+              recommenderName={recommendation.name}
+              date={recommendation?.date?.toString()}
+              comment={recommendation?.text}
+            />
+          ))}
+        </div>
+      )}
+      {isSelfView && linkUrl && navigator.clipboard && (
         <button
           type="button"
           onClick={handleCopy}
           disabled={disabled}
           className={styles.share_button}
-          title="Generate link to ask for a recommendation"
         >
-          {copied ? (
-            <CheckCircle size={16} className={styles.copiedIcon} />
-          ) : (
-            <Copy size={16} />
-          )}
-          <span style={{ marginLeft: "8px" }}>
-            Generate link to ask for a recommendation
-          </span>
+          
+            {copied ? (
+              <CheckCircle size={16} className={styles.copiedIcon} />
+            ) : (
+              <Copy size={16} className={styles.copiedIcon} />
+            )}
+              <span>Generate link to ask for a recommendation</span>
         </button>
       )}
     </div>

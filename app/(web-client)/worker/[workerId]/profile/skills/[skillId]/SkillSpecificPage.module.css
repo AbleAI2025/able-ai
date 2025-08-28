@@ -4,69 +4,8 @@
 .skillPageContainer {
   max-width:450px; /* Adjust as needed */
   margin: 0 auto;
-  padding: 1rem;
   color: #ffffff;
   background-color: var(--foreground);
   font-family: var(--font-family);
   position: relative;
 }
-
-/* .pageLoadingContainer,
-.pageWrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-  color: var(--text-neutral);
-}
-
-.errorMessage,
-.emptyState {
-  font-size: 1.1rem;
-  text-align: center;
-}
-
-
-.section {
-    margin-bottom: 20px;
-}
-
-.sectionTitle {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-}
-
-.badgesContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px; 
-}
-
-
-.listSimple {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.listSimple li {
-  background-color: var(--surface-dark);
-  border-radius: var(--border-radius-small);
-  padding: 10px 15px;
-  margin-bottom: 8px; 
-  font-size: 0.9rem;
-  color: var(--text-neutral);
-}
-
-.listSimple li:last-child {
-    margin-bottom: 0;
-}
-
-.reviewSummaryText {
-  font-style: italic;
-  color: var(--text-neutral);
-  margin-bottom: 20px;
-} */
-

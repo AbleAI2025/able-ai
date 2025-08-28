@@ -9,6 +9,8 @@ import HireButton from '@/app/components/profile/HireButton';
 import { getSkillDetailsWorker } from '@/actions/user/gig-worker-profile';
 import { Star as DefaultBadgeIcon } from "lucide-react";
 import { SkillProfile } from '@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile';
+import { mockSkillProfile } from '@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/mockSkillProfile';
+import Loader from '@/app/components/shared/Loader';
 
 
 
@@ -18,8 +20,14 @@ export default function PublicSkillProfilePage() {
   const skillId = params?.skillId as string;
   const [profile, setProfile] = useState<SkillProfile | null>(null);
 
+  const isViewQA = false;
+
       const fetchSkillData = async () => {
       if (!skillId) return;
+      if (isViewQA) {
+        setProfile(mockSkillProfile);
+        return;
+      }
       try {
         const { success, data } = await getSkillDetailsWorker(skillId);
         if (success && data) {
@@ -49,6 +57,8 @@ export default function PublicSkillProfilePage() {
   useEffect(() => {
     fetchSkillData();
   }, [skillId]);
+
+  if (!profile) return <Loader />;
 
   return (
     <div className={styles.skillPageContainer}>

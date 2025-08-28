@@ -4,11 +4,12 @@
   gap: 1rem;
   background-color: var(--background-dark);
   color: #ffffff;
+  padding: 1rem;
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
+  gap: 1rem;
 }
 
 .name {
@@ -28,6 +29,7 @@
   color: #41a1e8;
   height: 64px;
   width: 69px;
+  align-self: center;
 }
 
 .hashtags {
@@ -151,9 +153,18 @@
   background-color: gray;
   border: none;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  margin: 0.5rem 1rem;
+  border-radius: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
 }
+
+.copiedIcon {
+  color: var(--primary-color);
+}
+
