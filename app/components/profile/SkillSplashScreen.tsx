@@ -226,7 +226,6 @@ const SkillSplashScreen = ({
         <h2 className={styles.name}>
           {profile.name?.split(" ")[0]}: {profile.title}
         </h2>
-        <Star className={styles.icon} />
       </div>
 
       {/* Hashtags */}

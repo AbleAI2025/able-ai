@@ -9,13 +9,12 @@
 
 .header {
   display: flex;
-  gap: 1rem;
+  gap: 2rem;
   height: 164px;
 }
 
 .videoContainer {
-  flex: 1; /* Takes more space */
-  min-width: 155px;
+  width: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,13 +34,6 @@
 .role {
   font-size: 0.9rem;
   color: #ccc;
-}
-
-.icon {
-  color: #41a1e8;
-  height: 64px;
-  width: 69px;
-  align-self: center;
 }
 
 .hashtags {
