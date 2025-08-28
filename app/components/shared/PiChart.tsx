@@ -69,7 +69,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] 
   return null;
 };
 
-export default function PieChartComponent({skillCounts}: {skillCounts: Record<string, number>[]}) {
+export default function PieChartComponent({skillCounts}: {skillCounts?: { name: string; value: number }[]}) {
   const [chartHeight, setChartHeight] = useState(220);
   const [tooltipActive, setTooltipActive] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);

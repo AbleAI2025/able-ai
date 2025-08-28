@@ -37,6 +37,10 @@ export const getGigBuyerProfileAction = async (
       where: eq(BuyerProfilesTable.userId, user.id),
     });
 
+    if (!buyerProfile) {
+      throw new Error("Buyer profile not found");
+    }
+
     const reviews = await db.query.ReviewsTable.findMany({
       where: eq(ReviewsTable.targetUserId, buyerProfile?.userId || ""),
     });
@@ -82,33 +86,27 @@ export const getGigBuyerProfileAction = async (
     // Group payments into 4 groups of 3 months each
     const now = new Date();
     const groups: { amountGross: string; createdAt: Date }[][] = [[], [], [], []];
-    const groupYears: number[] = [];
-
-    for (let i = 0; i < 4; i++) {
-      // Calculate the year for each group
-      const groupDate = new Date(now.getFullYear(), now.getMonth() - i * 3, 1);
-      groupYears.push(groupDate.getFullYear());
-    }
 
     payments.forEach((payment) => {
       const diffMonths =
-      (now.getFullYear() - payment.createdAt.getFullYear()) * 12 +
-      (now.getMonth() - payment.createdAt.getMonth());
-      if (diffMonths < 3) groups[0].push(payment);
-      else if (diffMonths < 6) groups[1].push(payment);
-      else if (diffMonths < 9) groups[2].push(payment);
-      else if (diffMonths < 12) groups[3].push(payment);
+        (now.getFullYear() - payment.createdAt.getFullYear()) * 12 +
+        (now.getMonth() - payment.createdAt.getMonth());
+      const groupIndex = Math.floor(diffMonths / 3);
+      if (groupIndex >= 0 && groupIndex < 4) {
+        groups[groupIndex].push(payment);
+      }
     });
 
-    // Calculate total expenses for each quarter, include year in name
-    const barData = groups.map((group, idx) => ({
-      name: `Q${idx + 1}-${groupYears[idx].toString().slice(-2)}`,
-      a: group.reduce((sum, payment) => sum + Number(payment.amountGross), 0),
-    }));
-
-    if (!buyerProfile) {
-      throw new Error("Buyer profile not found");
-    }
+    // Calculate total expenses for each quarter, with clear naming
+    const barData = groups.map((group, idx) => {
+      const groupDate = new Date(now.getFullYear(), now.getMonth() - idx * 3, 1);
+      const quarter = Math.floor(groupDate.getMonth() / 3) + 1;
+      const year = groupDate.getFullYear().toString().slice(-2);
+      return {
+        name: `Q${quarter}'${year}`,
+        a: group.reduce((sum, payment) => sum + Number(payment.amountGross), 0),
+      };
+    });
 
     // Get badges
     const badges = await db

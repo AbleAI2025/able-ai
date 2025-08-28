@@ -82,8 +82,8 @@ interface DashboardData {
       description?: string | null;
     };
   }[];
-  skillCounts: Record<string, number>[];
-  totalPayments: { amountGross: string; createdAt: Date }[][];
+  skillCounts?: { name: string; value: number }[];
+  totalPayments?: { name: string; a: number }[]
 }
 
 export default function BuyerProfilePage() {
@@ -111,7 +111,6 @@ export default function BuyerProfilePage() {
         ...badge,
         icon: badge.icon || DefaultBadgeIcon,
       }));
-      console.log("profile data fetched:", profile);
       
       setDashboardData({ ...profile, badges: updatedBadges });
       setError(null);
