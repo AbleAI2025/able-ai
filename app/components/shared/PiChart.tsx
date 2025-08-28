@@ -138,7 +138,7 @@ export default function PieChartComponent({skillCounts}: {skillCounts?: { name: 
       <ResponsiveContainer width="100%" height={chartHeight} minHeight={100}>
         <PieChart>
           {
-            skillCounts ?
+            skillCounts && skillCounts.length > 0 ?
           <Pie
             data={skillCounts}
             dataKey="value"
