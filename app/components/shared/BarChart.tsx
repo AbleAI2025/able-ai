@@ -3,10 +3,10 @@ import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, LabelList, Label } 
 import { useEffect, useState, useMemo } from 'react';
 
 const barData = [
-  { name: 'Q1', a: 100, b: 30 },
-  { name: 'Q2', a: 200, b: 60 },
-  { name: 'Q3', a: 300, b: 80 },
-  { name: 'Q4', a: 250, b: 70 },
+  { name: 'Q1 (2025)', a: 100, b: 30 },
+  { name: 'Q2 (2025)', a: 200, b: 60 },
+  { name: 'Q3 (2025)', a: 300, b: 80 },
+  { name: 'Q4 (2025)', a: 250, b: 70 },
 ];
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
@@ -45,7 +45,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null;
 };
 
-export default function BarChartComponent() {
+export default function BarChartComponent({totalPayments}: {totalPayments: { amountGross: string; createdAt: Date }[][]}) {
   const [chartHeight, setChartHeight] = useState(220);
 
   const fontSize = useMemo(() => {
@@ -76,7 +76,7 @@ export default function BarChartComponent() {
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight} minHeight={120}>
-      <BarChart data={barData} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
+      <BarChart data={totalPayments} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
         <XAxis 
             dataKey="name" 
             tick={{ fontSize, fill: '#fff' }}

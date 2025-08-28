@@ -2,13 +2,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, PieLabelRenderProps, Tooltip } from 'recharts';
 import { useEffect, useState, useMemo, useRef } from 'react';
 
-const pieData = [
-  { name: 'Group A', value: 400 },
-  { name: 'Group B', value: 300 },
-  { name: 'Group C', value: 300 },
-  { name: 'Group D', value: 200 },
-];
-
 const COLORS = ['#facc15', '#0f766e', '#a16207', '#d97706'];
 
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, value }: PieLabelRenderProps & { name?: string; value?: number }) => {
@@ -76,7 +69,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] 
   return null;
 };
 
-export default function PieChartComponent() {
+export default function PieChartComponent({skillCounts}: {skillCounts: Record<string, number>[]}) {
   const [chartHeight, setChartHeight] = useState(220);
   const [tooltipActive, setTooltipActive] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -145,14 +138,14 @@ export default function PieChartComponent() {
       <ResponsiveContainer width="100%" height={chartHeight} minHeight={100}>
         <PieChart>
           <Pie
-            data={pieData}
+            data={skillCounts}
             dataKey="value"
             outerRadius={outerRadius}
             stroke="none"
             label={renderCustomizedLabel}
             labelLine={false}
           >
-            {pieData.map((entry, index) => (
+            {skillCounts?.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

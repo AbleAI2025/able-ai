@@ -82,6 +82,8 @@ interface DashboardData {
       description?: string | null;
     };
   }[];
+  skillCounts: Record<string, number>[];
+  totalPayments: { amountGross: string; createdAt: Date }[][];
 }
 
 export default function BuyerProfilePage() {
@@ -109,6 +111,8 @@ export default function BuyerProfilePage() {
         ...badge,
         icon: badge.icon || DefaultBadgeIcon,
       }));
+      console.log("profile data fetched:", profile);
+      
       setDashboardData({ ...profile, badges: updatedBadges });
       setError(null);
     } else {
@@ -389,8 +393,8 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
           <div className={styles.analyticsChartsContainer}>
-            <PieChartComponent />
-            <BarChartComponent />
+            <PieChartComponent skillCounts={dashboardData?.skillCounts} />
+            <BarChartComponent totalPayments={dashboardData?.totalPayments} />
           </div>
         </section>
 

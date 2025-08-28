@@ -5,13 +5,14 @@ import {
   BadgeDefinitionsTable,
   BuyerProfilesTable,
   GigsTable,
+  PaymentsTable,
   ReviewsTable,
   UserBadgesLinkTable,
   UsersTable,
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 
 export const getGigBuyerProfileAction = async (
   token: string | undefined
@@ -40,36 +41,94 @@ export const getGigBuyerProfileAction = async (
       where: eq(ReviewsTable.targetUserId, buyerProfile?.userId || ""),
     });
 
+    // Get completed hires
     const completedHires = await db.query.GigsTable.findMany({
       where: and(
-        eq(GigsTable.buyerUserId, user.id || ""),
-        eq(GigsTable.statusInternal, "COMPLETED")
+      eq(GigsTable.buyerUserId, user.id || ""),
+      eq(GigsTable.statusInternal, "COMPLETED")
       ),
       with: { skillsRequired: { columns: { skillName: true } } },
     });
+
+    // Count gigs per skill name and return array with name and value
+    const skillCountsArr: { name: string; value: number }[] = [];
+    const skillCounts: Record<string, number> = {};
+    completedHires.forEach(gig => {
+      gig.skillsRequired.forEach(skill => {
+      skillCounts[skill.skillName] = (skillCounts[skill.skillName] || 0) + 1;
+      });
+    });
+    for (const [name, value] of Object.entries(skillCounts)) {
+      skillCountsArr.push({ name, value });
+    }
+
+    // Calculate date 12 months ago
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    // Get last 12 months completed payments
+    const payments = await db.query.PaymentsTable.findMany({
+      where: and(
+      eq(PaymentsTable.payerUserId, user.id || ""),
+      eq(PaymentsTable.status, "COMPLETED"),
+      gt(PaymentsTable.createdAt, twelveMonthsAgo)
+      ),
+      columns: {
+      amountGross: true,
+      createdAt: true,
+      },
+    });
+
+    // Group payments into 4 groups of 3 months each
+    const now = new Date();
+    const groups: { amountGross: string; createdAt: Date }[][] = [[], [], [], []];
+    const groupYears: number[] = [];
+
+    for (let i = 0; i < 4; i++) {
+      // Calculate the year for each group
+      const groupDate = new Date(now.getFullYear(), now.getMonth() - i * 3, 1);
+      groupYears.push(groupDate.getFullYear());
+    }
+
+    payments.forEach((payment) => {
+      const diffMonths =
+      (now.getFullYear() - payment.createdAt.getFullYear()) * 12 +
+      (now.getMonth() - payment.createdAt.getMonth());
+      if (diffMonths < 3) groups[0].push(payment);
+      else if (diffMonths < 6) groups[1].push(payment);
+      else if (diffMonths < 9) groups[2].push(payment);
+      else if (diffMonths < 12) groups[3].push(payment);
+    });
+
+    // Calculate total expenses for each quarter, include year in name
+    const barData = groups.map((group, idx) => ({
+      name: `Q${idx + 1}-${groupYears[idx].toString().slice(-2)}`,
+      a: group.reduce((sum, payment) => sum + Number(payment.amountGross), 0),
+    }));
 
     if (!buyerProfile) {
       throw new Error("Buyer profile not found");
     }
 
+    // Get badges
     const badges = await db
       .select({
-        id: UserBadgesLinkTable.id,
-        awardedAt: UserBadgesLinkTable.awardedAt,
-        awardedBySystem: UserBadgesLinkTable.awardedBySystem,
-        notes: UserBadgesLinkTable.notes,
-        badge: {
-          id: BadgeDefinitionsTable.id,
-          name: BadgeDefinitionsTable.name,
-          description: BadgeDefinitionsTable.description,
-          icon: BadgeDefinitionsTable.iconUrlOrLucideName,
-          type: BadgeDefinitionsTable.type,
-        },
+      id: UserBadgesLinkTable.id,
+      awardedAt: UserBadgesLinkTable.awardedAt,
+      awardedBySystem: UserBadgesLinkTable.awardedBySystem,
+      notes: UserBadgesLinkTable.notes,
+      badge: {
+        id: BadgeDefinitionsTable.id,
+        name: BadgeDefinitionsTable.name,
+        description: BadgeDefinitionsTable.description,
+        icon: BadgeDefinitionsTable.iconUrlOrLucideName,
+        type: BadgeDefinitionsTable.type,
+      },
       })
       .from(UserBadgesLinkTable)
       .innerJoin(
-        BadgeDefinitionsTable,
-        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+      BadgeDefinitionsTable,
+      eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
       )
       .where(eq(UserBadgesLinkTable.userId, buyerProfile?.userId || ""));
 
@@ -106,6 +165,8 @@ export const getGigBuyerProfileAction = async (
         completedHires?.flatMap((gig) =>
           gig.skillsRequired.map((skill) => skill.skillName)
         ) || [],
+      skillCounts: skillCountsArr,
+      totalPayments: barData.reverse()
     };
 
     return { success: true, profile: data };
