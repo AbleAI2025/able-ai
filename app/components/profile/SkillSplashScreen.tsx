@@ -366,7 +366,7 @@ const SkillSplashScreen = ({
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Badges Awarded</h3>
           <div className={styles.badges}>
-            {profile?.badges?.map((badge) => (
+            {profile.badges.map((badge) => (
               <div className={styles.badge} key={badge.id}>
                 <AwardDisplayBadge
                   {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
@@ -425,13 +425,12 @@ const SkillSplashScreen = ({
           disabled={disabled}
           className={styles.share_button}
         >
-          
-            {copied ? (
-              <CheckCircle size={16} className={styles.copiedIcon} />
-            ) : (
-              <Copy size={16} className={styles.copiedIcon} />
-            )}
-              <span>Generate link to ask for a recommendation</span>
+          {copied ? (
+            <CheckCircle size={16} className={styles.copiedIcon} />
+          ) : (
+            <Copy size={16} className={styles.copiedIcon} />
+          )}
+            <span>Generate link to ask for a recommendation</span>
         </button>
       )}
     </div>
