@@ -10,9 +10,7 @@ import { View } from "react-big-calendar";
 import { useAuth } from "@/context/AuthContext";
 import { CalendarEvent } from "@/app/types/CalendarEventTypes";
 import { getCalendarEvents } from "@/actions/events/get-calendar-events";
-import { BUYER_MOCK_EVENTS } from "./mockData";
 import styles from "./BuyerCalendarPage.module.css";
-import Image from "next/image";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 const FILTERS = ["Accepted gigs", "See gig offers"];

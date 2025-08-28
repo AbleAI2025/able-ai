@@ -1,10 +1,8 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq, and, ne, isNull } from "drizzle-orm";
-import { MOCK_EVENTS } from '@/app/(web-client)/user/[userId]/worker/calendar/mockData';
-import { BUYER_MOCK_EVENTS } from '@/app/(web-client)/user/[userId]/buyer/calendar/mockData';
-import { GigsTable, gigStatusEnum, UsersTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
+import { eq, and, isNull } from "drizzle-orm";
+import { GigsTable, UsersTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
 import { CalendarEvent, EventStatusEnum, EventStatusEnumType } from "@/app/types/CalendarEventTypes";
 
 const mapEventStatus = (status: string): EventStatusEnumType => {
@@ -29,12 +27,6 @@ const mapEventStatus = (status: string): EventStatusEnumType => {
 };
 
 export async function getCalendarEvents({ userId, role, isViewQA }: { userId: string; role?: 'buyer' | 'worker'; isViewQA?: boolean; }) {
-
-  // Only use mock data for QA testing, not for real users
-  if (isViewQA && process.env.NODE_ENV === 'development') {
-    return { events: role === 'buyer' ? BUYER_MOCK_EVENTS : MOCK_EVENTS };
-  }
-
   if (!userId) {
     return { error: 'User id is required', events: [], status: 404 };
   }
