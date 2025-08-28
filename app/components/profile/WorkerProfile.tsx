@@ -3,7 +3,6 @@
 import Link from "next/link";
 
 // --- SHARED & HELPER COMPONENTS ---
-import ContentCard from "@/app/components/shared/ContentCard";
 import SkillsDisplayTable from "@/app/components/profile/SkillsDisplayTable";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
@@ -15,9 +14,6 @@ import {
   BadgeCheck,
   ThumbsUp,
   MessageSquare,
-  Trophy,
-  Star,
-  Flag,
 } from "lucide-react";
 import {
   getPrivateWorkerProfileAction,
@@ -206,7 +202,7 @@ const WorkerProfile = ({
         <div className={styles.workerInfo}>
           {true && (
             <Link
-              href={workerProfile?.userId || ""}
+              href={"calendar"}
               className={styles.viewCalendarLink}
               aria-label="View calendar"
             >
