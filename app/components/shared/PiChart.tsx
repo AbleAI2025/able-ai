@@ -137,6 +137,8 @@ export default function PieChartComponent({skillCounts}: {skillCounts?: { name: 
     <div ref={chartRef} style={{ width: '100%', height: chartHeight }}>
       <ResponsiveContainer width="100%" height={chartHeight} minHeight={100}>
         <PieChart>
+          {
+            skillCounts ?
           <Pie
             data={skillCounts}
             dataKey="value"
@@ -148,7 +150,8 @@ export default function PieChartComponent({skillCounts}: {skillCounts?: { name: 
             {skillCounts?.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
-          </Pie>
+          </Pie> : <p> No skills data available </p>
+          }
           <Tooltip content={<ControlledTooltip />} />
         </PieChart>
       </ResponsiveContainer>
