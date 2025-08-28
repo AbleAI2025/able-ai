@@ -349,7 +349,7 @@ export default function BuyerProfilePage() {
                   id: 1,
                   icon: ThumbsUp,
                   value: dashboardData?.responseRateInternal || 0,
-                  label: "Would work with Benji again",
+                  label: `Would work with ${user.displayName} again`,
                   iconColor: "#0070f3",
                 }}
               />
@@ -358,7 +358,7 @@ export default function BuyerProfilePage() {
                   stat={{
                     id: 2,
                     icon: MessageSquare,
-                    value: dashboardData.averageRating,
+                    value: dashboardData?.averageRating || 0,
                     label: "Response rate",
                     iconColor: "#0070f3",
                   }}
