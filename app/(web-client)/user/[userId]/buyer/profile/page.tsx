@@ -24,67 +24,11 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { toast } from "sonner";
-import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
-import Link from "next/link";
-import ContentCard from "@/app/components/shared/ContentCard";
+import DashboardData from "@/app/types/BuyerProfileTypes";
+import mockDashboardData from "./mockBuyerProfile";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
 
-// Types
-interface Badge {
-  id: string;
-  name: string;
-  icon: React.ElementType;
-}
-interface Review {
-  id: string;
-  name: string;
-  date: string;
-  text: string;
-}
-
-interface DashboardData {
-  fullName: string;
-  username: string;
-  introVideoThumbnailUrl?: string;
-  introVideoUrl?: string;
-  fullCompanyName: string;
-  billingAddressJson?: {
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state?: string;
-    postalCode?: string;
-    country: string;
-    latitude?: string;
-    longitude?: string;
-  };
-  companyRole: string;
-  videoUrl?: string;
-  statistics: Array<{
-    icon: React.ElementType;
-    value: string;
-    label: string;
-  }>;
-  averageRating: number;
-  responseRateInternal: number;
-  completedHires: number;
-  skills: string[];
-  pieChartData?: Array<{ name: string; value: number; fill: string }>;
-  barChartData?: Array<{ name: string; hires: number; spend?: number }>;
-  badgesEarnedByTheirWorkers: Badge[];
-  reviews: Review[];
-  badges: {
-    id: string | number;
-    icon?: React.ElementType | null;
-    notes: string;
-    badge: {
-      id: string | number;
-      icon?: React.ElementType | null;
-      description?: string | null;
-    };
-  }[];
-  skillCounts?: { name: string; value: number }[];
-  totalPayments?: { name: string; a: number }[];
-}
 
 export default function BuyerProfilePage() {
   const router = useRouter();
@@ -103,16 +47,38 @@ export default function BuyerProfilePage() {
     setError,
   ] = useState<string | null>(null);
 
+  const isViewQA = false;
+
   const fetchUserProfile = async () => {
+    if (isViewQA) {
+      setDashboardData(mockDashboardData);
+      setIsLoadingData(false);
+      return;
+    }
     const { success, profile } = await getGigBuyerProfileAction(user?.token);
 
     if (success && profile) {
+      // Format review dates
+      const updatedReviews = (profile.reviews ?? []).map(
+        (rev: any) => ({
+          ...rev,
+          date: rev.date
+            ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
+            : null,
+        })
+      );
+
+      // Ensure badges always have an icon
       const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
         ...badge,
         icon: badge.icon || DefaultBadgeIcon,
       }));
 
-      setDashboardData({ ...profile, badges: updatedBadges });
+      setDashboardData({
+        ...profile,
+        badges: updatedBadges,
+        reviews: updatedReviews,
+      });
       setError(null);
     } else {
       setError("Failed to fetch profile data");
@@ -221,6 +187,7 @@ export default function BuyerProfilePage() {
 
   return (
     <div className={styles.container}>
+      <ScreenHeaderWithBack onBackClick={() => router.back()} />
       <div className={styles.pageWrapper}>
         {/* Profile Header */}
         <header className={styles.profileHeader}>
@@ -231,98 +198,14 @@ export default function BuyerProfilePage() {
         </header>
 
         {/* Intro & Business Card Section */}
-        <section className={`${styles.section} ${styles.introBusinessCard}`}>
-          <div className={styles.videoThumbnailContainer}>
-            <span className={styles.videoThumbnailTitle}>Intro Video</span>
-            <div className={styles.videoPlaceholderImage}>
-              {!dashboardData?.videoUrl ? (
-                isSelfView ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <h5>
-                      Please, <br />
-                      introduce yourself
-                    </h5>
-                    <VideoRecorderBubble
-                      key={1}
-                      onVideoRecorded={handleVideoUpload}
-                      setIsEditingVideo={setIsEditingVideo}
-                    />
-                  </div>
-                ) : (
-                  <p
-                    style={{
-                      textAlign: "center",
-                      fontStyle: "italic",
-                      color: "#888",
-                    }}
-                  >
-                    User presentation not exist
-                  </p>
-                )
-              ) : (
-                <div style={{ textAlign: "center" }}>
-                  <Link
-                    href={dashboardData.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: "inline-block", textDecoration: "none" }}
-                  >
-                    <video
-                      width="130"
-                      height="auto"
-                      style={{ borderRadius: "8px" }}
-                      preload="metadata"
-                      muted
-                      poster="/video-placeholder.jpg"
-                    >
-                      <source
-                        src={dashboardData.videoUrl + "#t=0.1"}
-                        type="video/webm"
-                      />
-                    </video>
-                  </Link>
-
-                  {isSelfView && (
-                    <div>
-                      <button
-                        onClick={() => setIsEditingVideo(true)}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#0070f3",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Re-SHOOT
-                      </button>
-                    </div>
-                  )}
-
-                  {isEditingVideo && (
-                    <div>
-                      <VideoRecorderBubble
-                        key={2}
-                        onVideoRecorded={(video) => {
-                          handleVideoUpload(video);
-                          setIsEditingVideo(false);
-                        }}
-                        setIsEditingVideo={setIsEditingVideo}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+        <section className={`${styles.section} ${styles.introCard}`}>
+          <BuyerProfileVideo
+            dashboardData={dashboardData}
+            isSelfView={isSelfView}
+            isEditingVideo={isEditingVideo}
+            setIsEditingVideo={setIsEditingVideo}
+            handleVideoUpload={handleVideoUpload}
+          />
           <div className={styles.businessInfoCard}>
             <h4>Business:</h4>
             <p>
@@ -338,31 +221,31 @@ export default function BuyerProfilePage() {
             <p>{dashboardData?.companyRole}</p>
           </div>
         </section>
+        
 
         {/* Statistics Section */}
         <section className={styles.section}>
-          <ContentCard title="Statistics" className={styles.statisticsCard}>
-            <div className={styles.statisticsItemsContainer}>
-              <StatisticItemDisplay
-                stat={{
-                  id: 1,
-                  icon: ThumbsUp,
-                  value: dashboardData?.responseRateInternal || 0,
-                  label: `Would work with ${user.displayName} again`,
-                  iconColor: "#0070f3",
-                }}
-              />
-                <StatisticItemDisplay
-                  stat={{
-                    id: 2,
-                    icon: MessageSquare,
-                    value: dashboardData?.averageRating || 0,
-                    label: "Response rate",
-                    iconColor: "#0070f3",
-                  }}
-                />
-            </div>
-          </ContentCard>
+          <h2 className={styles.sectionTitle}>Statistics</h2>
+          <div className={styles.statisticsItemsContainer}>
+            <StatisticItemDisplay
+              stat={{
+                id: 1,
+                icon: ThumbsUp,
+                value: dashboardData?.responseRateInternal || 0,
+                label: `Would work with ${user.displayName} again`,
+                iconColor: "#7eeef9",
+              }}
+            />
+            <StatisticItemDisplay
+              stat={{
+                id: 2,
+                icon: MessageSquare,
+                value: dashboardData?.averageRating || 0,
+                label: "Response rate",
+                iconColor: "#7eeef9",
+              }}
+            />
+          </div>
         </section>
 
         {/* Completed Hires Card */}
@@ -374,9 +257,7 @@ export default function BuyerProfilePage() {
             </span>
           </div>
           <div className={styles.staffTypesList}>
-            <span className={styles.staffTypesTitle}>
-              Types of Staff Hired:
-            </span>
+            <span className={styles.staffTypesTitle}>Types of Staff Hired:</span>
             <ul>
               {dashboardData?.skills?.map((type) => (
                 <li key={type}>{type}</li>
@@ -408,7 +289,7 @@ export default function BuyerProfilePage() {
                 </div>
               ))
             ) : (
-              <p style={{color: "#fff"}}>No badges available</p>
+              <p className={styles.noBadges}>No badges available</p>
             )}
           </div>
         </section>
@@ -428,16 +309,9 @@ export default function BuyerProfilePage() {
               ))}
             </div>
           ) : (
-            <p style={{ fontSize: "0.9rem", color: "#a0a0a0" }}>
-              No worker reviews yet.
-            </p>
+            <p className={styles.noReviews}>No worker reviews yet.</p>
           )}
         </section>
-
-        {/* Add Team Member Button
-                <button onClick={handleAddTeamMember} className={styles.addTeamMemberButton}>
-                    <Users size={20} /> Add team member to account
-                </button> */}
       </div>
     </div>
   );

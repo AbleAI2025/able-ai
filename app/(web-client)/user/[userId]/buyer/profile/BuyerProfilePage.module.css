@@ -17,10 +17,19 @@
   background: #161616;
 }
 
+.profileImageVideo {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 160px;
+  border: 1px solid #393636;
+  border-radius: 1.5rem;
+}
+
 .profileHeader {
-  padding: 1rem;
-  background-color: #2b2b2b;
- 
+  padding: 1rem; 
 }
 .profileHeaderName {
   font-size: 1.25rem;
@@ -45,30 +54,20 @@
   margin-bottom: 0.5rem;
 }
 
-.introBusinessCard {
+.introCard {
   display: flex;
   background-color: #2b2b2b;
   border-radius: 1.5rem;
   gap: 1.5rem;
   margin: 0 1rem;
   padding: 1rem;
+  flex: 1;
 }
 @media (min-width: 600px) {
   .introBusinessCard { flex-direction: row; }
 }
 
-.videoThumbnailContainer {
-  background-color: #2b2b2b;
-  border-radius: 0.5rem;
-  aspect-ratio: 16 / 10;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  /* padding: 0.75rem; */
-  position: relative;
-  cursor: pointer;
-}
-.videoThumbnailTitle, .businessInfoCard h4 {
+.businessInfoCard h4 {
   font-size: 1.1rem;
   margin-bottom: 0.6rem;
   color: #ffffff;
@@ -76,18 +75,16 @@
   font-weight: 700;
   line-height: 21px;
 }
-.videoPlaceholderImage {
-  width: 135px;
-  height: 150px;
-  border-radius: 1.5rem;
-  object-fit: cover;
-  border-radius: 0.375rem;
-  background-color: #7eeef9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+
+.noBadges {
+  color: #fff;
 }
+
+.noReviews {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+}
+
 .playIconOverlay {
   position: absolute;
   top: 50%;
@@ -101,7 +98,7 @@
 }
 
 .businessInfoCard {
-  flex: 1;
+  width: 50%;
   display: flex;
   flex-direction: column;
 }
@@ -218,28 +215,10 @@
   font-size: 0.9rem;
 }
 
-.badgesGridDisplay {
+.badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-}
-.badgeDisplayItem {
-  background-color: #3a3a3a;
-  color: #e0e0e0;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  min-width: 100px;
-}
-.badgeDisplayIcon {
-  margin-bottom: 0.25rem;
-  color: #c2c2c2;
+  gap: 1rem;
 }
 
 .reviewsListContainer {

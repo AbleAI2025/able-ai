@@ -1,0 +1,106 @@
+
+.videoThumbnailContainer {
+  background-color: #2b2b2b;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* padding: 0.75rem; */
+  position: relative;
+  cursor: pointer;
+}
+.videoThumbnailTitle, .businessInfoCard h4 {
+  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+  color: #ffffff;
+  font-family: var(--font-family);
+  font-weight: 700;
+  line-height: 21px;
+}
+
+.videoPlaceholderImage {
+  width: 135px;
+  height: 150px;
+  border-radius: 1rem;
+  background-color: #7eeef9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.videoIntroPrompt {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #ffffff;
+  width: 50%;
+
+  h5 {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 21px;
+    color: var(--secondary-color);
+  }
+}
+
+.videoPlaceholderText {
+  text-align: center;
+  font-style: italic;
+  color: #888;
+}
+
+.videoWrapper {
+  text-align: center;
+}
+
+.videoLink {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.videoPreview {
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+}
+
+/* Edit icon overlay */
+.editIconButton {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.editIconButton:hover {
+  background-color: rgba(0,0,0,0.8);
+}
+
+.videoIcon {
+  width: 27px;
+  height: 32px;
+  position: absolute;
+  bottom: 50%;
+  right: 50%;
+  transform: translate(50%, 50%);
+}
+
+.recorderWrapper {
+  border: 1px solid var(--secondary-color);
+  border-radius: 1.5rem;
+  padding: 0.2rem;
+  width: 50%;
+  height: 170px;
+}
