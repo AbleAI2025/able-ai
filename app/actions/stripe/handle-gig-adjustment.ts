@@ -78,8 +78,9 @@ export async function handleGigAdjustment(
       return;
     }
 
-    const differenceCents = newFinalPriceCents - currentFinalPrice;
-    const differenceAmountWithDiscount = calculateAmountWithDiscount(Number(differenceCents), discount);
+    const newTotalWithDiscount = calculateAmountWithDiscount(newFinalPriceCents, discount);
+    const oldTotalWithDiscount = calculateAmountWithDiscount(currentFinalPrice, discount);
+    const differenceAmountWithDiscount = newTotalWithDiscount - oldTotalWithDiscount;
 
     await holdGigAmount({
       buyerStripeCustomerId,
