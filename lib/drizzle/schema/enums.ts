@@ -97,3 +97,9 @@ export const stripeAccountStatusEnum = pgEnum("stripe_account_status_enum", [
 ]);
 
 const reviewRoleEnum = pgEnum("review_role", ["BUYER", "WORKER"]);
+
+export const discountTypeEnum = pgEnum("discount_type_enum", [
+  "USER_REFERRAL",
+  "PLATFORM_DISCOUNT",
+  "ONE_TIME_DISCOUNT",
+]);

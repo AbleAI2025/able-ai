@@ -1,9 +1,11 @@
 "use server";
+import { discountCodes } from "@/drizzle/schema";
 import { db } from "@/lib/drizzle/db";
 import { NotificationPreferencesTable, UsersTable } from "@/lib/drizzle/schema";
+import { DiscountCodesTable } from "@/lib/drizzle/schema/discountCodes";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 /**
  * Retrieves the complete profile of an authenticated user, including their notification preferences.
@@ -37,7 +39,7 @@ export const getProfileInfoUserAction = async (token?: string) => {
  */
 export const updateUserProfileAction = async (
   updateData: { fullName: string; phone: string },
-  token?: string
+  token?: string,
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -66,7 +68,7 @@ export const updateUserProfileAction = async (
  */
 export const updateProfileVisibilityAction = async (
   updateData: { profileVisibility: boolean },
-  token?: string
+  token?: string,
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -95,7 +97,7 @@ export const updateProfileVisibilityAction = async (
  */
 export const updateNotificationEmailAction = async (
   updateData: { emailProferences: boolean },
-  token?: string
+  token?: string,
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -116,15 +118,14 @@ export const updateNotificationEmailAction = async (
       .where(eq(NotificationPreferencesTable.userId, pgUser.id))
       .returning();
 
-    const changed = updatedUsers[0]?.emailGigUpdates === updateData.emailProferences
+    const changed =
+      updatedUsers[0]?.emailGigUpdates === updateData.emailProferences;
 
     if (changed) {
       return { success: true, data: updatedUsers[0]?.emailGigUpdates };
+    } else {
+      throw "Error updating notification email preferences";
     }
-    else {
-      throw "Error updating notification email preferences"
-    }
-
   } catch (error) {
     console.error("Error updating email preferences", error);
     return { success: false, error, data: !updateData.emailProferences };
@@ -139,7 +140,7 @@ export const updateNotificationEmailAction = async (
  */
 export const updateNotificationSmsAction = async (
   updateData: { smsGigAlerts: boolean },
-  token?: string
+  token?: string,
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -164,5 +165,59 @@ export const updateNotificationSmsAction = async (
   } catch (error) {
     console.error("Error updating SMS preferences", error);
     return { success: false, error, data: updateData.smsGigAlerts };
+  }
+};
+
+function generateReferralCode() {
+  return "REF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+export const getUserReferralCodeAction = async ({
+  firebaseUid,
+}: {
+  firebaseUid: string;
+}) => {
+  try {
+    const discountCode = await db
+      .select({ code: DiscountCodesTable.code })
+      .from(DiscountCodesTable)
+      .innerJoin(UsersTable, eq(DiscountCodesTable.userId, UsersTable.id))
+      .where(
+        and(
+          eq(UsersTable.firebaseUid, firebaseUid),
+          eq(DiscountCodesTable.alreadyUsed, false),
+        ),
+      );
+
+    if (discountCode.length) {
+      return discountCode[0];
+    }
+
+    const user = await db
+      .select({ id: UsersTable.id })
+      .from(UsersTable)
+      .where(eq(UsersTable.firebaseUid, firebaseUid));
+
+    if (!user.length) {
+      throw new Error("User not found for firebaseUid " + firebaseUid);
+    }
+
+    const newCode = generateReferralCode();
+
+    const [inserted] = await db
+      .insert(DiscountCodesTable)
+      .values({
+        code: newCode,
+        type: "USER_REFERRAL",
+        userId: user[0].id,
+        discountAmount: "5.00",
+        alreadyUsed: false,
+      })
+      .returning({ code: DiscountCodesTable.code });
+
+    return inserted;
+  } catch (error) {
+    console.error("Error in getUserReferralCodeAction:", error);
+    return null;
   }
 };
