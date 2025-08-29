@@ -222,7 +222,7 @@ export default function BuyerProfilePage() {
 
         {/* Statistics Section */}
         <section className={styles.section}>
-          <ContentCard title="Statistics" className={styles.statisticsCard}>
+          <h2 className={styles.sectionTitle}>Statistics</h2>
             <div className={styles.statisticsItemsContainer}>
               <StatisticItemDisplay
                 stat={{
@@ -232,7 +232,7 @@ export default function BuyerProfilePage() {
                   label: `Would work with ${
                     user?.displayName?.split(" ")?.[0] ?? ""
                   } again`,
-                  iconColor: "#0070f3",
+                  iconColor: "#7eeef9",
                 }}
               />
               <StatisticItemDisplay
@@ -241,11 +241,10 @@ export default function BuyerProfilePage() {
                   icon: MessageSquare,
                   value: dashboardData?.averageRating || 0,
                   label: "Response rate",
-                  iconColor: "#0070f3",
+                  iconColor: "#7eeef9",
                 }}
               />
             </div>
-          </ContentCard>
         </section>
 
         {/* Completed Hires Card */}
