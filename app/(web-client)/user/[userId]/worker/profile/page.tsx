@@ -31,23 +31,31 @@ export default function WorkerOwnedProfilePage() {
 
   const isViewQA = false;
 
-  const fetchUserProfile = (token: string) => {
+  const fetchUserProfile = async (token: string) => {
     if (isViewQA) {
       setProfile(mockWorkerProfile)
       setLoadingProfile(false);
+      return;
+    } 
+    const { data } = await getPrivateWorkerProfileAction(token);
+    console.log("worker data", data)
+    if (data) {
+      const updatedReviews = (data.reviews ?? []).map(
+        (rev: any) => ({
+          ...rev,
+          date: rev.date
+            ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
+            : null,
+        })
+      );
+
+      setProfile({ ...data, reviews: updatedReviews });
+      setError(null);
     } else {
-        setLoadingProfile(true);
-        getPrivateWorkerProfileAction(token)
-          .then((data) => {
-            setProfile(data.data);
-            setError(null);
-          })
-          .catch((err) => {
-            console.error("Failed to fetch worker profile:", err);
-            setError("Could not load your profile.");
-          })
-          .finally(() => setLoadingProfile(false));
-        }
+      setError("Could not load your profile.");
+      setProfile(null);
+    }
+    setLoadingProfile(false);
   }
 
   useEffect(() => {

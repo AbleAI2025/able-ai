@@ -37,25 +37,34 @@ export default function PublicWorkerProfilePage() {
 
     const isViewQA = false;
   
-    const fetchUserProfile = (workerId: string) => {
+    const fetchUserProfile = async (workerId: string) => {
       if (isViewQA) {
         setWorkerProfile(mockWorkerProfile)
         setIsLoadingProfile(false);
+        return;
+      }
+        
+      const { data } = await getPublicWorkerProfileAction(workerId);
+      if (data) {
+        const updatedReviews = (data.reviews ?? []).map(
+          (rev: any) => ({
+            ...rev,
+            date: rev.date
+              ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
+              : null,
+          })
+        );
+
+        setWorkerProfile({ ...data, reviews: updatedReviews });
+        setError(null);
       } else {
-          setIsLoadingProfile(true);
-          getPublicWorkerProfileAction(workerId)
-            .then((data) => {
-              setWorkerProfile(data.data);
-              setError(null);
-            })
-            .catch((err) => {
-              console.error("Failed to fetch worker profile:", err);
-              setError("Could not load worker profile.");
-            })
-            .finally(() => setIsLoadingProfile(false));
-        }
-    }
-  
+        setError("Could not load worker profile.");
+        setWorkerProfile(null);
+      }
+
+      setIsLoadingProfile(false);
+    };
+
     useEffect(() => {
       if (workerProfileIdToView) {
         console.log(workerProfileIdToView);

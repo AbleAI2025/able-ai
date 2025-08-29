@@ -219,31 +219,35 @@ const WorkerProfile = ({
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
         {/* Statistics Section */}
-        <div className={styles.statisticsItemsContainer}>
-          {workerProfile?.responseRateInternal && (
-            <StatisticItemDisplay
-              stat={{
-                id: 1,
-                icon: ThumbsUp,
-                value: workerProfile.responseRateInternal,
-                label: `Would work with ${user?.displayName?.split(" ")[0]} again`,
-                iconColor: "#41a1e8",
-              }}
-            />
-          )}
-          {workerProfile?.averageRating !== null &&
-            workerProfile?.averageRating !== undefined && (
+        <div>
+          <h3 className={styles.contentTitle}>Statistics</h3>
+          <div className={styles.statisticsItemsContainer}>
+            {workerProfile?.responseRateInternal && (
               <StatisticItemDisplay
                 stat={{
-                  id: 2,
-                  icon: MessageSquare,
-                  value: workerProfile.averageRating,
-                  label: "Response rate",
-                  iconColor: "#41a1e8",
-              }}
-            />
-          )}
+                  id: 1,
+                    icon: ThumbsUp,
+                    value: workerProfile.responseRateInternal,
+                    label: `Would work with ${user?.displayName?.split(" ")[0]} again`,
+                    iconColor: "#41a1e8",
+                  }}
+                />
+              )}
+              {workerProfile?.averageRating !== null &&
+                workerProfile?.averageRating !== undefined && (
+                  <StatisticItemDisplay
+                    stat={{
+                      id: 2,
+                      icon: MessageSquare,
+                      value: workerProfile.averageRating,
+                      label: "Response rate",
+                      iconColor: "#41a1e8",
+                  }}
+                />
+              )}
+            </div>
         </div>
+       
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
         {
@@ -278,7 +282,7 @@ const WorkerProfile = ({
               </div>
             )}
             <div>
-              <h3 className={styles.contentTitle}>Feedbacks:</h3>
+              <h3 className={styles.contentTitle}>Feedback</h3>
               {workerProfile.reviews && workerProfile.reviews.length > 0 ? (
                 workerProfile.reviews.map((review: Review) => (
                   <p key={review.id} className={styles.feedbackText}>

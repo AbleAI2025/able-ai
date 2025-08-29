@@ -44,10 +44,20 @@ export default function PublicSkillProfilePage() {
             description: q.description ?? "",
           }));
 
+          const updatedRecommendations = (data.recommendations ?? []).map(
+            (rec: any) => ({
+              ...rec,
+              date: rec.date
+                ? new Date(rec.date).toISOString().split("T")[0] // "YYYY-MM-DD"
+                : null,
+            })
+          );    
+
           setProfile({
             ...data,
             badges: updatedBadges,
             qualifications: transformedQualifications,
+            recommendations: updatedRecommendations,
           });
         }
       } catch (error) {
