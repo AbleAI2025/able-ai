@@ -3,7 +3,7 @@ import { db } from "@/lib/drizzle/db";
 import { GigsTable, UsersTable } from "@/lib/drizzle/schema";
 import { getAppliedDiscountCodeForGigPayment } from './get-applied-discount-code-for-gig-payment';
 
-const mockCode = '2ABLE_PERCENTAGE';
+const mockCode = '2NOT_ABLE_PERCENTAGE';
 
 export async function getPaymentAccountDetailsForGig(gigId: string) {
   const gigRecord = await db.query.GigsTable.findFirst({
