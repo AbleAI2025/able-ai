@@ -14,6 +14,7 @@ export async function getPaymentAccountDetailsForGig(gigId: string) {
       id: true,
       finalAgreedPrice: true,
       totalAgreedPrice: true,
+      promoCodeApplied: true,
     }
   });
 
@@ -33,7 +34,7 @@ export async function getPaymentAccountDetailsForGig(gigId: string) {
     throw new Error('Receiver is not connected with stripe');
   }
 
-  const discount = await getAppliedDiscountCodeForGigPayment(mockCode);
+  const discount = await getAppliedDiscountCodeForGigPayment(gigRecord.promoCodeApplied || mockCode);
 
   return { receiverAccountId: receiverUserRecord.stripeConnectAccountId, gig: gigRecord, discount };
 }

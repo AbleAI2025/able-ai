@@ -3,7 +3,7 @@ export interface DiscountInfo {
   code: string;
   discount_amount: string;
   discount_percentage: string;
-  type: string;
+  type: 'FIXED' | 'PERCENTAGE';
 }
 
 const DISCOUNTS: Record<string, DiscountInfo> = {

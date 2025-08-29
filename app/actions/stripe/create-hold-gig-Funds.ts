@@ -35,7 +35,7 @@ export async function holdGigFunds(params: HoldGigFundsParams) {
     }
 
     const { receiverAccountId, gig, discount } = await getPaymentAccountDetailsForGig(gigId);
-    const serviceAmountWithDiscount = calculateAmountWithDiscount(Number(serviceAmountInCents), discount);
+    const serviceAmountWithDiscount = calculateAmountWithDiscount(serviceAmountInCents, discount);
 
     const paymentIntent = await holdGigAmount({
       buyerStripeCustomerId,

@@ -64,7 +64,7 @@ export async function handleGigAdjustment(
     }
 
     const { receiverAccountId, gig, discount } = await getPaymentAccountDetailsForGig(gigId);
-    const currentFinalPrice = Number(null) || Number(gig.totalAgreedPrice);
+    const currentFinalPrice = Number(gig.totalAgreedPrice);
     const newFinalPriceCents = Math.round(Number(newFinalRate) * Number(newFinalHours) * 100);
 
     if (newFinalPriceCents === currentFinalPrice) throw new Error('There have been no changes in the working hours or in the rate.');
