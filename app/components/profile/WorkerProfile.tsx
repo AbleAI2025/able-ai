@@ -222,7 +222,7 @@ const WorkerProfile = ({
               icon: ThumbsUp,
               value: workerProfile?.responseRateInternal || 0,
               label: `Would work with ${
-                user?.displayName?.split(" ")[0]
+                user?.displayName?.split(" ")?.[0] ?? ""
               } again`,
               iconColor: "#41a1e8",
             }}
