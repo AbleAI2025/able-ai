@@ -74,6 +74,7 @@ interface ExternalRecommendationPayload {
   relationship: string;
   recommenderName: string;
   recommenderEmail: string;
+  skillId: string;
 }
 
 export const submitExternalRecommendationAction = async (
@@ -86,6 +87,7 @@ export const submitExternalRecommendationAction = async (
       relationship,
       recommenderName,
       recommenderEmail,
+      skillId,
     } = payload;
 
     if (
@@ -93,7 +95,8 @@ export const submitExternalRecommendationAction = async (
       !recommendationText.trim() ||
       !relationship.trim() ||
       !recommenderName.trim() ||
-      !recommenderEmail.trim()
+      !recommenderEmail.trim() ||
+      !skillId.trim()
     ) {
       throw new Error("All fields are required to submit a recommendation.");
     }
@@ -124,6 +127,7 @@ export const submitExternalRecommendationAction = async (
       rating: 5,
       moderationStatus: "PENDING",
       isPublic: true,
+      skillId: skillId,
     });
 
     return {

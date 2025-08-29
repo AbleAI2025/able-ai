@@ -1,17 +1,18 @@
 /* eslint-disable max-lines-per-function */
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
-import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-import InputField from '@/app/components/form/InputField'; // Reusing shared InputField
-import { Star, Send, Loader2 } from 'lucide-react'; // Lucide icons
+import InputField from "@/app/components/form/InputField"; // Reusing shared InputField
+import { Send, Loader2 } from "lucide-react"; // Lucide icons
 
-import styles from './RecommendationPage.module.css';
-import Logo from '@/app/components/brand/Logo';
-import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
-import { getWorkerForRecommendationAction, submitExternalRecommendationAction } from '@/actions/user/recommendation';
+import styles from "./RecommendationPage.module.css";
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import {
+  getWorkerForRecommendationAction,
+  submitExternalRecommendationAction,
+} from "@/actions/user/recommendation";
 
 interface RecommendationFormData {
   recommendationText: string;
@@ -20,44 +21,50 @@ interface RecommendationFormData {
   recommenderEmail: string;
 }
 
-interface SkillsProps { id: string | number; name: string }
+interface SkillsProps {
+  id: string | number;
+  name: string;
+}
 
+async function getWorkerDetails(
+  workerId: string
+): Promise<{ name: string; skills: SkillsProps[] } | null> {
+  const { data } = await getWorkerForRecommendationAction(workerId);
 
-
-async function getWorkerDetails(workerId: string): Promise<{ name: string; skills: SkillsProps[] } | null> {
-  const { data } = await getWorkerForRecommendationAction(workerId)
-
-  if (!data) throw new Error("worker not found")
+  if (!data) throw new Error("worker not found");
 
   return { name: data.userName, skills: data.skills };
 }
-
 
 export default function PublicRecommendationPage() {
   const params = useParams();
   const workerToRecommendId = params.workerId as string;
   const router = useRouter();
 
-  const [workerDetails, setWorkerDetails] = useState<{ name: string; skills: SkillsProps[] } | null>(null);
+  const [workerDetails, setWorkerDetails] = useState<{
+    name: string;
+    skills: SkillsProps[];
+  } | null>(null);
   const [isLoadingWorker, setIsLoadingWorker] = useState(true);
-  const [selectedSkill, setSelectedSkill] = useState<string>("");
+  const [selectedSkill, setSelectedSkill] = useState<{id: string, name: string} | undefined>();
 
   const [formData, setFormData] = useState<RecommendationFormData>({
-    recommendationText: '',
-    relationship: '',
-    recommenderName: '',
-    recommenderEmail: '',
+    recommendationText: "",
+    relationship: "",
+    recommenderName: "",
+    recommenderEmail: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const firstName = workerDetails?.name.split(' ')[0];
+  const firstName = workerDetails?.name.split(" ")[0];
+  
   // Fetch worker details
   useEffect(() => {
     if (workerToRecommendId) {
       setIsLoadingWorker(true);
       getWorkerDetails(workerToRecommendId)
-        .then(details => {
+        .then((details) => {
           if (details) {
             setWorkerDetails(details);
           } else {
@@ -69,9 +76,11 @@ export default function PublicRecommendationPage() {
     }
   }, [workerToRecommendId]);
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
     setSuccessMessage(null);
   };
@@ -81,7 +90,13 @@ export default function PublicRecommendationPage() {
     setError(null);
     setSuccessMessage(null);
 
-    if (!formData.recommendationText || !formData.relationship || !formData.recommenderName || !formData.recommenderEmail) {
+    if (
+      !formData.recommendationText ||
+      !formData.relationship ||
+      !formData.recommenderName ||
+      !formData.recommenderEmail ||
+      !selectedSkill
+    ) {
       setError("All fields are required.");
       return;
     }
@@ -91,22 +106,29 @@ export default function PublicRecommendationPage() {
     const submissionPayload = {
       workerId: workerToRecommendId,
       // No recommenderUserId needed for public submission
-      ...formData
+      ...formData,
+      skillId: selectedSkill.id,
     };
 
     try {
-      const result = await submitExternalRecommendationAction(submissionPayload);
+      const result = await submitExternalRecommendationAction(
+        submissionPayload
+      );
       if (!result.success) {
-        throw new Error(result.error || 'Failed to submit recommendation.');
+        throw new Error(result.error || "Failed to submit recommendation.");
       }
-      setSuccessMessage('Thank you! Your recommendation has been submitted.');
-      setFormData({ recommendationText: '', relationship: '', recommenderName: '', recommenderEmail: '' });
-
+      setSuccessMessage("Thank you! Your recommendation has been submitted.");
+      setFormData({
+        recommendationText: "",
+        relationship: "",
+        recommenderName: "",
+        recommenderEmail: "",
+      });
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || 'Failed to submit recommendation.');
+        setError(err.message || "Failed to submit recommendation.");
       } else {
-        setError('An unexpected error occurred.');
+        setError("An unexpected error occurred.");
       }
     } finally {
       setIsSubmitting(false);
@@ -114,16 +136,31 @@ export default function PublicRecommendationPage() {
   };
 
   if (isLoadingWorker) {
-    return <div className={styles.loadingContainer}><Loader2 size={32} className="animate-spin" /> Loading Recommendation Form...</div>;
+    return (
+      <div className={styles.loadingContainer}>
+        <Loader2 size={32} className="animate-spin" /> Loading Recommendation
+        Form...
+      </div>
+    );
   }
 
   if (!workerDetails) {
-    return <div className={styles.container}><p className={styles.errorMessage}>{error || "Worker not found."}</p></div>;
+    return (
+      <div className={styles.container}>
+        <p className={styles.errorMessage}>{error || "Worker not found."}</p>
+      </div>
+    );
   }
+
+  if (workerDetails?.skills.length === 0)
+    return <p>{workerDetails.name} don't have skills yet to showcase</p>;
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Recommendation" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack
+        title="Recommendation"
+        onBackClick={() => router.back()}
+      />
       <div className={styles.pageWrapper}>
         {/* <header className={styles.title}>
           <Star className={styles.starIcon} />
@@ -136,26 +173,40 @@ export default function PublicRecommendationPage() {
             Please provide a reference for {firstName}&apos;s skills as a{" "}
             <select
               className={styles.select}
-              value={selectedSkill}
-              onChange={(e) => setSelectedSkill(e.target.value)}
+              value={selectedSkill?.id || ""}
+              onChange={(e) => {
+                const skill = workerDetails.skills.find(
+                  (s) => String(s.id) === e.target.value
+                );
+                setSelectedSkill(
+                  skill ? { id: String(skill.id), name: skill.name } : undefined
+                );
+              }}
             >
               <option value="">Select a skill</option>
               {workerDetails?.skills.map((skill) => (
-                <option key={skill.id} value={skill.name}>
+                <option key={skill.id} value={skill.id}>
                   {skill.name}
                 </option>
               ))}
             </select>
           </p>
 
-          <p className={styles.note}>Your feedback will be added to their public profile.</p>
+          <p className={styles.note}>
+            Your feedback will be added to their public profile.
+          </p>
 
           {error && <p className={styles.errorMessage}>{error}</p>}
-          {successMessage && <p className={styles.successMessage}>{successMessage}</p>}
+          {successMessage && (
+            <p className={styles.successMessage}>{successMessage}</p>
+          )}
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.inputGroup}>
-              <label htmlFor="recommendationText" className={styles.label}>Your Recommendation <span style={{ color: 'var(--error-color)' }}>*</span></label>
+              <label htmlFor="recommendationText" className={styles.label}>
+                Your Recommendation{" "}
+                <span style={{ color: "var(--error-color)" }}>*</span>
+              </label>
               <textarea
                 id="recommendationText"
                 name="recommendationText"
@@ -181,7 +232,10 @@ export default function PublicRecommendationPage() {
             </div>
 
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Your Details (won&apos;t be public on their profile) <span style={{ color: 'var(--error-color)' }}>*</span></label>
+              <label className={styles.label}>
+                Your Details (won&apos;t be public on their profile){" "}
+                <span style={{ color: "var(--error-color)" }}>*</span>
+              </label>
               <div className={styles.nameEmailGroup}>
                 <InputField
                   id="recommenderName"
@@ -189,7 +243,7 @@ export default function PublicRecommendationPage() {
                   type="text"
                   value={formData.recommenderName}
                   onChange={handleChange}
-                  placeholder='Your Full Name'
+                  placeholder="Your Full Name"
                   required
                 />
                 <InputField
@@ -198,15 +252,23 @@ export default function PublicRecommendationPage() {
                   type="email"
                   value={formData.recommenderEmail}
                   onChange={handleChange}
-                  placeholder='Your Email Address'
+                  placeholder="Your Email Address"
                   required
                 />
               </div>
             </div>
 
-            <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={18} />}
-              {isSubmitting ? 'Submitting...' : 'Submit Recommendation'}
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <Send size={18} />
+              )}
+              {isSubmitting ? "Submitting..." : "Submit Recommendation"}
             </button>
           </form>
         </div>
@@ -220,4 +282,4 @@ export default function PublicRecommendationPage() {
       </div>
     </div>
   );
-} 
+}

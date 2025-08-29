@@ -178,6 +178,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
         eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
+        eq(ReviewsTable.skillId, skill.id),
       ),
     });
 
@@ -204,22 +205,11 @@ export const getSkillDetailsWorker = async (id: string) => {
     );
 
     const recommendationsData = await Promise.all(
-      recommendations.map(async (review) => {
-        if(!review.authorUserId){
+      recommendations.map(async (recommendation) => {
         return {
-          name: "Unknown",
-          date: review.createdAt,
-          text: review.comment,
-        };
-        }
-        const author = await db.query.UsersTable.findFirst({
-          where: eq(UsersTable.id, review.authorUserId),
-        });
-
-        return {
-          name: author?.fullName || "Unknown",
-          date: review.createdAt,
-          text: review.comment,
+          name: recommendation.recommenderName,
+          date: recommendation.createdAt,
+          text: recommendation.comment,
         };
       }),
     );
