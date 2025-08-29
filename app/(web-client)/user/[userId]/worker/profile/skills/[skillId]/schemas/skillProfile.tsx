@@ -20,13 +20,10 @@ export type SkillProfile = {
   supportingImages: string[];
   badges: {
     id: string | number;
-    icon?: React.ElementType | null;
+    badgeId: string | number;
+    badgeName: string;
     notes: string;
-    badge: {
-      id: string | number;
-      icon?: React.ElementType | null;
-      description?: string | null
-    }
+    awardedAt: Date | string;
   }[];
   qualifications: {
     title: string;

@@ -28,6 +28,7 @@ import DashboardData from "@/app/types/BuyerProfileTypes";
 import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
+import { BadgeId } from "@/app/components/profile/GetBadgeIcon";
 
 
 export default function BuyerProfilePage() {
@@ -283,8 +284,9 @@ export default function BuyerProfilePage() {
               dashboardData?.badges?.map((badge) => (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
-                    {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                    textLines={badge?.badge?.description ?? ""}
+                    badgeId={badge.badgeId as BadgeId}
+                    badgeName={badge.badgeName}
+                    role="buyer"
                   />
                 </div>
               ))

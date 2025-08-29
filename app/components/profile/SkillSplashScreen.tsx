@@ -22,6 +22,7 @@ import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
 import ProfileVideo from "./WorkerProfileVideo";
 import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
+import { BadgeId } from "./GetBadgeIcon";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -372,8 +373,10 @@ const SkillSplashScreen = ({
               {profile.badges.map((badge) => (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
-                    {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                    textLines={badge?.badge?.description ?? ""}
+                    badgeId={badge.badgeId as BadgeId}
+                    badgeName={badge.badgeName}
+                    role="worker"
+                    
                   />
                 </div>
               ))}
