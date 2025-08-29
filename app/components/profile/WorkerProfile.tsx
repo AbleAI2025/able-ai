@@ -177,26 +177,26 @@ const WorkerProfile = ({
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
-          <h1 className={styles.workerName}> 
-            {user?.displayName}
-          </h1>
+          <h1 className={styles.workerName}>{user?.displayName}</h1>
           {isWorkerVerified ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
-              <span className={styles.verifiedText}>Right to work verified</span>
+              <span className={styles.verifiedText}>
+                Right to work verified
+              </span>
             </div>
-          ) : (
-            isSelfView ? (
-              <button
-                type="button"
-                className={styles.verifyRTWButton}
-                onClick={() => setShowRtwPopup(true)}
-              >
+          ) : isSelfView ? (
+            <button
+              type="button"
+              className={styles.verifyRTWButton}
+              onClick={() => setShowRtwPopup(true)}
+            >
               Verify your right to work
             </button>
-            ) :(
-              <span className={styles.verifiedText}>Right to work not verified</span>
-            )
+          ) : (
+            <span className={styles.verifiedText}>
+              Right to work not verified
+            </span>
           )}
         </div>
         <div className={styles.workerInfo}>
@@ -215,33 +215,28 @@ const WorkerProfile = ({
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
         {/* Statistics Section */}
-        <div>
-          <h3 className={styles.contentTitle}>Statistics</h3>
-          <div className={styles.statisticsItemsContainer}>
-            {workerProfile?.responseRateInternal && (
-              <StatisticItemDisplay
-                stat={{
-                  id: 1,
-                    icon: ThumbsUp,
-                    value: workerProfile.responseRateInternal,
-                    label: `Would work with ${user?.displayName?.split(" ")[0]} again`,
-                    iconColor: "#41a1e8",
-                  }}
-                />
-              )}
-              {workerProfile?.averageRating !== null &&
-                workerProfile?.averageRating !== undefined && (
-                  <StatisticItemDisplay
-                    stat={{
-                      id: 2,
-                      icon: MessageSquare,
-                      value: workerProfile.averageRating,
-                      label: "Response rate",
-                      iconColor: "#41a1e8",
-                  }}
-                />
-              )}
-            </div>
+        <div className={styles.statisticsItemsContainer}>
+          <StatisticItemDisplay
+            stat={{
+              id: 1,
+              icon: ThumbsUp,
+              value: workerProfile?.responseRateInternal || 0,
+              label: `Would work with ${
+                user?.displayName?.split(" ")[0]
+              } again`,
+              iconColor: "#41a1e8",
+            }}
+          />
+
+          <StatisticItemDisplay
+            stat={{
+              id: 2,
+              icon: MessageSquare,
+              value: workerProfile?.averageRating || 0,
+              label: "Response rate",
+              iconColor: "#41a1e8",
+            }}
+          />
         </div>
        
 
@@ -322,14 +317,14 @@ const WorkerProfile = ({
         )}
       </div>
       {/* End Main Content Wrapper */}
-       {/* RTW Verification Popup */}
-     
+      {/* RTW Verification Popup */}
 
       {showRtwPopup && (
         <div className={styles.overlay}>
           <div className={styles.popup}>
             <div className={styles.title}>
-              To adhere to UK law, we need to confirm you have the legal right to work.
+              To adhere to UK law, we need to confirm you have the legal right
+              to work.
             </div>
             <div className={styles.title}>Are you a</div>
 
@@ -356,10 +351,7 @@ const WorkerProfile = ({
           </div>
         </div>
       )}
-
     </div>
-
-    
   );
 };
 

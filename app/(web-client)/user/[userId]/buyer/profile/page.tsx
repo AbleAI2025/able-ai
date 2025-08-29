@@ -28,6 +28,7 @@ import DashboardData from "@/app/types/BuyerProfileTypes";
 import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
+import ContentCard from "@/app/components/shared/ContentCard";
 
 
 export default function BuyerProfilePage() {
@@ -225,27 +226,28 @@ export default function BuyerProfilePage() {
 
         {/* Statistics Section */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Statistics</h2>
-          <div className={styles.statisticsItemsContainer}>
-            <StatisticItemDisplay
-              stat={{
-                id: 1,
-                icon: ThumbsUp,
-                value: dashboardData?.responseRateInternal || 0,
-                label: `Would work with ${user.displayName} again`,
-                iconColor: "#7eeef9",
-              }}
-            />
-            <StatisticItemDisplay
-              stat={{
-                id: 2,
-                icon: MessageSquare,
-                value: dashboardData?.averageRating || 0,
-                label: "Response rate",
-                iconColor: "#7eeef9",
-              }}
-            />
-          </div>
+          <ContentCard title="Statistics" className={styles.statisticsCard}>
+            <div className={styles.statisticsItemsContainer}>
+              <StatisticItemDisplay
+                stat={{
+                  id: 1,
+                  icon: ThumbsUp,
+                  value: dashboardData?.responseRateInternal || 0,
+                  label: `Would work with ${user?.displayName?.split(" ")[0]} again`,
+                  iconColor: "#0070f3",
+                }}
+              />
+                <StatisticItemDisplay
+                  stat={{
+                    id: 2,
+                    icon: MessageSquare,
+                    value: dashboardData?.averageRating || 0,
+                    label: "Response rate",
+                    iconColor: "#0070f3",
+                  }}
+                />
+            </div>
+          </ContentCard>
         </section>
 
         {/* Completed Hires Card */}
