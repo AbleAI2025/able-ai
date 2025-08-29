@@ -238,7 +238,6 @@ const WorkerProfile = ({
             }}
           />
         </div>
-       
 
         {/* Skills Section (Benji Image Style - Blue Card) */}
         {
@@ -288,33 +287,40 @@ const WorkerProfile = ({
         )}
 
         {/* Qualifications Section (Benji Image Style) */}
-        {workerProfile.qualifications &&
-          workerProfile.qualifications.length > 0 && (
-            // <ContentCard title="Qualifications:">
-            <div>
-              <h3 className={styles.contentTitle}>Qualifications:</h3>
-              <ul className={styles.listSimple}>
-                {workerProfile.qualifications.map((q, index) => (
+        {
+          <div>
+            <h3 className={styles.contentTitle}>Qualifications:</h3>
+            <ul className={styles.listSimple}>
+              {workerProfile?.qualifications &&
+              workerProfile?.qualifications?.length > 0 ? (
+                workerProfile.qualifications.map((q, index) => (
                   <li key={index}>
                     {q.title}: {q.description}
                   </li>
-                ))}
-              </ul>
-            </div>
-            // </ContentCard>
-          )}
+                ))
+              ) : (
+                <li>No qualifications listed.</li>
+              )}
+            </ul>
+          </div>
+        }
 
-        {/* Equipment Section (Benji Image Style) */}
-        {workerProfile.equipment && workerProfile.equipment.length > 0 && (
+        {/* Equipment Section (User Image Style) */}
+        {
           <div>
             <h3 className={styles.contentTitle}>Equipment:</h3>
             <div className={styles.equipmentListContainer}>
-              {workerProfile.equipment.map((item, index) => (
-                <CheckboxDisplayItem key={index} label={item.name} />
-              ))}
+              {workerProfile?.equipment &&
+              workerProfile?.equipment?.length > 0 ? (
+                workerProfile.equipment.map((item, index) => (
+                  <CheckboxDisplayItem key={index} label={item.name} />
+                ))
+              ) : (
+                <p className={styles.feedbackText}>No equipment listed.</p>
+              )}
             </div>
           </div>
-        )}
+        }
       </div>
       {/* End Main Content Wrapper */}
       {/* RTW Verification Popup */}
