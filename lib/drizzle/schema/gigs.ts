@@ -23,7 +23,7 @@ import {
 
 // Import related tables for foreign keys
 import { UsersTable, GigWorkerProfilesTable } from "./users"; // Assuming users.ts exports these
-import { DiscountCodesTable } from "./discountCodes";
+import { DiscountCodesTable } from "./payments";
 
 // --- SKILLS TABLE ---
 // Skills specific to a GigWorkerProfile
@@ -149,7 +149,7 @@ export const GigsTable = pgTable("gigs", {
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(), // Application logic should update this field
-  discountCodeId: integer("discount_code_id").references(
+  discountCodeId: uuid("discount_code_id").references(
     () => DiscountCodesTable.id,
   ),
 });
@@ -170,7 +170,7 @@ export const GigSkillsRequiredTable = pgTable(
     }),
     skillName: varchar("skill_name", { length: 100 }).notNull(), // Name of the skill required for THIS gig
     isRequired: boolean("is_required").default(true),
-    notes: text("notes"), // e.g. "Must have 3+ years experience in this specific skill for this gig"
+    notes: text("notes"), // e.g. "Must have 3+ years experience in this specific skill for this gig"gigs
   },
   (table) => [
     // Array syntax for table-level constraints

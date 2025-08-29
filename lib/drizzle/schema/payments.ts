@@ -18,6 +18,7 @@ import { paymentStatusEnum } from "./enums";
 // Import related tables for foreign keys
 import { UsersTable } from "./users";
 import { GigsTable } from "./gigs";
+import { discountTypeEnum } from "./enums";
 
 // --- PAYMENTS TABLE ---
 // Records all financial transactions related to gigs
@@ -109,6 +110,34 @@ export const MockPaymentsTable = pgTable("mock_payments", {
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
 });
+
+
+export const DiscountCodesTable = pgTable("discount_codes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }),
+  discountPercentage: decimal("discount_percentage", {
+    precision: 5,
+    scale: 2,
+  }),
+
+  type: discountTypeEnum("type").notNull(),
+
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => UsersTable.id, { onDelete: "cascade" }),
+
+  alreadyUsed: boolean("already_used").default(false).notNull(),
+
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 
 // --- TODO: Define relations for these tables in relations.ts or schema/index.ts ---
 // Example:

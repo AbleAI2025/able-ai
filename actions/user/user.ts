@@ -1,11 +1,11 @@
 "use server";
-import { discountCodes } from "@/drizzle/schema";
 import { db } from "@/lib/drizzle/db";
 import { NotificationPreferencesTable, UsersTable } from "@/lib/drizzle/schema";
-import { DiscountCodesTable } from "@/lib/drizzle/schema/discountCodes";
+import { DiscountCodesTable } from "@/lib/drizzle/schema/payments";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { and, eq } from "drizzle-orm";
+import crypto from "crypto";
 
 /**
  * Retrieves the complete profile of an authenticated user, including their notification preferences.
@@ -169,7 +169,7 @@ export const updateNotificationSmsAction = async (
 };
 
 function generateReferralCode() {
-  return "REF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+  return "REF-" + crypto.randomBytes(3).toString("hex").toUpperCase();
 }
 
 export const getUserReferralCodeAction = async ({
@@ -178,28 +178,24 @@ export const getUserReferralCodeAction = async ({
   firebaseUid: string;
 }) => {
   try {
-    const discountCode = await db
-      .select({ code: DiscountCodesTable.code })
-      .from(DiscountCodesTable)
-      .innerJoin(UsersTable, eq(DiscountCodesTable.userId, UsersTable.id))
-      .where(
-        and(
-          eq(UsersTable.firebaseUid, firebaseUid),
-          eq(DiscountCodesTable.alreadyUsed, false),
-        ),
-      );
-
-    if (discountCode.length) {
-      return discountCode[0];
-    }
-
-    const user = await db
-      .select({ id: UsersTable.id })
+    const userWithCode = await db
+      .select({
+        code: DiscountCodesTable.code,
+        userId: UsersTable.id,
+      })
       .from(UsersTable)
+      .leftJoin(
+        DiscountCodesTable,
+        eq(DiscountCodesTable.userId, UsersTable.id),
+      )
       .where(eq(UsersTable.firebaseUid, firebaseUid));
 
-    if (!user.length) {
+    if (!userWithCode.length) {
       throw new Error("User not found for firebaseUid " + firebaseUid);
+    }
+
+    if (userWithCode[0].code) {
+      return { code: userWithCode[0].code };
     }
 
     const newCode = generateReferralCode();
@@ -209,7 +205,7 @@ export const getUserReferralCodeAction = async ({
       .values({
         code: newCode,
         type: "USER_REFERRAL",
-        userId: user[0].id,
+        userId: userWithCode[0].userId,
         discountAmount: "5.00",
         alreadyUsed: false,
       })
