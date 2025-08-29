@@ -42,8 +42,7 @@ export default function PublicWorkerProfilePage() {
         setWorkerProfile(mockWorkerProfile)
         setIsLoadingProfile(false);
         return;
-      }
-        
+      }  
       const { data } = await getPublicWorkerProfileAction(workerId);
       if (data) {
         const updatedReviews = (data.reviews ?? []).map(

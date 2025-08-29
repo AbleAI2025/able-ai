@@ -38,7 +38,6 @@ export default function WorkerOwnedProfilePage() {
       return;
     } 
     const { data } = await getPrivateWorkerProfileAction(token);
-    console.log("worker data", data)
     if (data) {
       const updatedReviews = (data.reviews ?? []).map(
         (rev: any) => ({
