@@ -91,6 +91,7 @@ badges: [
     notes: "Hired first worker successfully",
     awardedAt: new Date("2025-01-05T10:00:00Z"),
     awardedByUserId: "admin-201",
+    type: 'other'
   },
   {
     id: "a2",
@@ -100,6 +101,7 @@ badges: [
     notes: "Led multiple shifts with excellence",
     awardedAt: new Date("2025-02-12T14:30:00Z"),
     awardedByUserId: "admin-202",
+    type: 'other'
   },
   {
     id: "a3",
@@ -109,6 +111,7 @@ badges: [
     notes: "Achieved top management performance",
     awardedAt: new Date("2025-03-01T09:15:00Z"),
     awardedByUserId: "admin-203",
+    type: 'other'
   },
   {
     id: "a4",
@@ -118,6 +121,7 @@ badges: [
     notes: "Ensured all shifts were safe and compliant",
     awardedAt: new Date("2025-03-20T16:45:00Z"),
     awardedByUserId: "admin-204",
+    type: 'other'
   },
   {
     id: "a5",
@@ -127,6 +131,7 @@ badges: [
     notes: "Consistently created a positive environment",
     awardedAt: new Date("2025-04-10T12:00:00Z"),
     awardedBySystem: true,
+    type: 'common'
   }
 ] as Award[],
 

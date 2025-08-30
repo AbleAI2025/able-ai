@@ -1,3 +1,5 @@
+import { BadgeId } from "../components/profile/GetBadgeIcon";
+
 // Types
 interface Badge {
   id: string;
@@ -8,8 +10,9 @@ interface Badge {
 export interface Award {
   id: string;
   userId: string;
-  badgeId: string;
+  badgeId: BadgeId;
   badgeName: string;
+  type: "common" | "earlyJoiner" | "other";
   gigId?: string | null;
   notes?: string | null;
   awardedAt: Date;

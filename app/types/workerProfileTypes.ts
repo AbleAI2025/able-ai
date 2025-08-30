@@ -16,6 +16,7 @@ export interface Award {
   userId: string;
   badgeId: string;
   badgeName: string;
+  type: 'common' | 'earlyJoiner' | 'other';
   gigId?: string | null;
   notes?: string | null;
   awardedAt: Date;

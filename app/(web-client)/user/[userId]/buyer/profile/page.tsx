@@ -288,6 +288,7 @@ export default function BuyerProfilePage() {
                     badgeId={badge.badgeId as BadgeId}
                     badgeName={badge.badgeName}
                     role="buyer"
+                    type={badge.type}
                   />
                 </div>
               ))

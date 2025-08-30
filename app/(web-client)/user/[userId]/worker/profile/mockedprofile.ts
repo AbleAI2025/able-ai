@@ -44,6 +44,7 @@ awards: [
     notes: "Outstanding service during July events",
     awardedAt: new Date("2024-07-01T19:00:00Z"),
     awardedBySystem: true,
+    type: 'common'
   },
   {
     id: "a2",
@@ -53,6 +54,7 @@ awards: [
     notes: "Recognized for creating great vibes at summer festival",
     awardedAt: new Date("2024-08-10T20:00:00Z"),
     awardedByUserId: "admin-101",
+    type: 'earlyJoiner'
   },
   {
     id: "a3",
@@ -62,6 +64,7 @@ awards: [
     notes: "Exemplary conduct and fairness in all gigs",
     awardedAt: new Date("2024-09-01T10:00:00Z"),
     awardedByUserId: "admin-102",
+    type: 'other'
   },
   {
     id: "a4",
@@ -71,6 +74,7 @@ awards: [
     notes: "Mastered coffee art with consistent quality",
     awardedAt: new Date("2024-09-15T14:30:00Z"),
     awardedByUserId: "admin-103",
+    type: 'other'
   },
   {
     id: "a5",
@@ -80,6 +84,7 @@ awards: [
     notes: "Successfully onboarded 3 new team members",
     awardedAt: new Date("2024-09-20T09:00:00Z"),
     awardedBySystem: true,
+    type: 'other'
   },
   {
     id: "a6",
@@ -89,6 +94,7 @@ awards: [
     notes: "Hired first worker through platform",
     awardedAt: new Date("2024-07-05T12:00:00Z"),
     awardedByUserId: "admin-104",
+    type: 'other'
   }
 ] as Award[],
 

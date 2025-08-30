@@ -1,24 +1,27 @@
 import React from 'react';
 import styles from './AwardDisplayBadge.module.css';
-import getIconFromAwardName, { BadgeId } from './GetBadgeIcon';
+import getIconFromAwardId, { BadgeId } from './GetBadgeIcon';
 
 interface AwardDisplayBadgeProps {
   badgeId: BadgeId;
   badgeName: string,
   role: 'worker' | 'buyer',
+  type: 'common' | 'earlyJoiner' | 'other',
 }
 
-const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({ badgeId, badgeName, role }) => {
-  const isCommonBadge = 
-    badgeId === 'goldenVibes' || 
-    badgeId === 'fairPlay' || 
-    badgeId === 'heartMode';
+const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({ 
+  badgeId, 
+  badgeName, 
+  role, 
+  type 
+}) => {
 
-  const isEarlyJoinerBadge = badgeId === 'alphaGigee' || badgeId === 'gigPioneer';
+  const Icon = getIconFromAwardId(badgeId);
 
-  const Icon = getIconFromAwardName(badgeId);
-
-  const borderStyle = isCommonBadge || isEarlyJoinerBadge ? styles.commonBadge : (role === 'worker' ? styles.workerBadge : styles.buyerBadge);
+  const borderStyle = type === 'common' || type === 'earlyJoiner' ? 
+                      styles.commonBadge : (
+                      role === 'worker' ? styles.workerBadge : styles.buyerBadge
+                    );
 
   return (
     <div 

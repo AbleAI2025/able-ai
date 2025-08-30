@@ -227,6 +227,7 @@ const WorkerProfile = ({
                       key={award.id}
                       badgeName={award.badgeName}
                       role="worker"
+                      type={award.type}
                     />
                   ))}
                 </div>

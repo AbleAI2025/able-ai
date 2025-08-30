@@ -47,7 +47,7 @@ export type BadgeId =
   | "inclusiveBooker"
   | "breaksMatter";
 
-const getIconFromAwardName = (awardName: BadgeId) => {
+const getIconFromAwardId = (awardName: BadgeId) => {
   switch (awardName) {
     // badges for all users
     case "goldenVibes":
@@ -58,53 +58,53 @@ const getIconFromAwardName = (awardName: BadgeId) => {
     // awards for early joiners
     case "alphaGigee":
     case "gigPioneer":
-      return <Flag color="#eab308" fill="#eab308" strokeWidth={3} className={styles.awardIcon} />;
+      return <Flag fill="#eab308" className={`${styles.awardIcon} ${styles.commonIcon}`} />;
 
     // worker badges
     case "firstGigComplete":
     case "hostWithTheMost":
-      return <Trophy color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Trophy className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "foamArtPhenom":
-      return <Coffee color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Coffee className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "firstImpressionsPro":
-      return <Handshake color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Handshake className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "eventSetupHero":
-      return <CalendarCheck2 color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <CalendarCheck2 className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "cashAndTillStylin":
-      return <Banknote color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Banknote className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "customerFavourite":
-      return <Heart color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Heart className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "squadRecruiter":
-      return <UserPlus color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <UserPlus className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "safeGuardGoat":
-      return <ShieldCheck color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <ShieldCheck className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "sparkleMode":
-      return <Sparkles color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Sparkles className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "mixologyMaster":
-      return <Martini color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Martini className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "starBartender":
-      return <Star color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Star className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "trayJedi":
-      return <Utensils color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <Utensils className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "topChef":
-      return <ChefHat color="#41a1e8" strokeWidth={3} className={styles.awardIcon} />;
+      return <ChefHat className={`${styles.awardIcon} ${styles.workerIcon}`} />;
 
     // buyer badges
     case "firstHire":
     case "shiftLeader":
-      return <Star color="#7eeef9" fill="#7eeef9" strokeWidth={3} className={styles.awardIcon} />;
+      return <Star className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
     case "bossLevel++":
-      return <User color="#7eeef9" strokeWidth={3} className={styles.awardIcon} />;
+      return <User className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
     case "safeShiftHost":
-      return <ShieldCheck color="#7eeef9" strokeWidth={3} className={styles.awardIcon} />;
+      return <ShieldCheck className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
     case "inclusiveBooker":
-      return <InfinityIcon color="#7eeef9" strokeWidth={3} className={styles.awardIcon} />;
+      return <InfinityIcon className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
     case "breaksMatter":
-      return <Moon color="#7eeef9" strokeWidth={3} className={styles.awardIcon} />;
+      return <Moon className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
 
     default:
       return;
   }
 };
 
-export default getIconFromAwardName;
+export default getIconFromAwardId;

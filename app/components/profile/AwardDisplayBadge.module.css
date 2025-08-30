@@ -16,6 +16,7 @@
 .awardIcon {
   width: 30px;
   height:30px;
+  stroke-width: 3;
 }
 
 .awardTextContainer {
@@ -41,4 +42,16 @@
 
 .buyerBadge {
   border: 3px solid var(--secondary-color);
+}
+
+.commonIcon {
+  color: #eab308;
+}
+
+.workerIcon {
+  color: var(--primary-color);
+}
+
+.buyerIcon {
+  color: var(--secondary-color);
 }
