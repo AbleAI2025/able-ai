@@ -60,14 +60,12 @@ export default function BuyerProfilePage() {
 
     if (success && profile) {
       // Format review dates
-      const updatedReviews = (profile.reviews ?? []).map(
-        (rev: any) => ({
-          ...rev,
-          date: rev.date
-            ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-            : null,
-        })
-      );
+      const updatedReviews = (profile.reviews ?? []).map((rev: any) => ({
+        ...rev,
+        date: rev.date
+          ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
+          : null,
+      }));
 
       // Ensure badges always have an icon
       const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
@@ -222,31 +220,32 @@ export default function BuyerProfilePage() {
             <p>{dashboardData?.companyRole}</p>
           </div>
         </section>
-        
 
         {/* Statistics Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Statistics</h2>
-          <div className={styles.statisticsItemsContainer}>
-            <StatisticItemDisplay
-              stat={{
-                id: 1,
-                icon: ThumbsUp,
-                value: dashboardData?.responseRateInternal || 0,
-                label: `Would work with ${user.displayName} again`,
-                iconColor: "#7eeef9",
-              }}
-            />
-            <StatisticItemDisplay
-              stat={{
-                id: 2,
-                icon: MessageSquare,
-                value: dashboardData?.averageRating || 0,
-                label: "Response rate",
-                iconColor: "#7eeef9",
-              }}
-            />
-          </div>
+            <div className={styles.statisticsItemsContainer}>
+              <StatisticItemDisplay
+                stat={{
+                  id: 1,
+                  icon: ThumbsUp,
+                  value: dashboardData?.responseRateInternal || 0,
+                  label: `Would work with ${
+                    user?.displayName?.split(" ")?.[0] ?? ""
+                  } again`,
+                  iconColor: "#7eeef9",
+                }}
+              />
+              <StatisticItemDisplay
+                stat={{
+                  id: 2,
+                  icon: MessageSquare,
+                  value: dashboardData?.averageRating || 0,
+                  label: "Response rate",
+                  iconColor: "#7eeef9",
+                }}
+              />
+            </div>
         </section>
 
         {/* Completed Hires Card */}
@@ -258,7 +257,9 @@ export default function BuyerProfilePage() {
             </span>
           </div>
           <div className={styles.staffTypesList}>
-            <span className={styles.staffTypesTitle}>Types of Staff Hired:</span>
+            <span className={styles.staffTypesTitle}>
+              Types of Staff Hired:
+            </span>
             <ul>
               {dashboardData?.skills?.map((type) => (
                 <li key={type}>{type}</li>

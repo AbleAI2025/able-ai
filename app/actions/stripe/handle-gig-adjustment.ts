@@ -5,6 +5,7 @@ import { db } from '@/lib/drizzle/db';
 import { GigsTable, PaymentsTable, UsersTable } from '@/lib/drizzle/schema';
 import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
 import { holdGigAmount } from '@/lib/stripe/hold-gig-amount';
+import { calculateAmountWithDiscount } from '@/lib/utils/calculate-amount-with-discount';
 
 interface GigAdjustmentParams {
   firebaseUid: string;
@@ -62,8 +63,8 @@ export async function handleGigAdjustment(
       throw new Error('User is not connected with stripe');
     }
 
-    const { receiverAccountId, gig } = await getPaymentAccountDetailsForGig(gigId);
-    const currentFinalPrice = Number(null) || Number(gig.totalAgreedPrice);
+    const { receiverAccountId, gig, discount } = await getPaymentAccountDetailsForGig(gigId);
+    const currentFinalPrice = Number(gig.totalAgreedPrice);
     const newFinalPriceCents = Math.round(Number(newFinalRate) * Number(newFinalHours) * 100);
 
     if (newFinalPriceCents === currentFinalPrice) throw new Error('There have been no changes in the working hours or in the rate.');
@@ -77,13 +78,15 @@ export async function handleGigAdjustment(
       return;
     }
 
-    const differenceCents = newFinalPriceCents - currentFinalPrice;
+    const newTotalWithDiscount = calculateAmountWithDiscount(newFinalPriceCents, discount);
+    const oldTotalWithDiscount = calculateAmountWithDiscount(currentFinalPrice, discount);
+    const differenceAmountWithDiscount = newTotalWithDiscount - oldTotalWithDiscount;
 
     await holdGigAmount({
       buyerStripeCustomerId,
       destinationAccountId: receiverAccountId as string,
       currency,
-      serviceAmountInCents: differenceCents,
+      serviceAmountInCents: differenceAmountWithDiscount,
       description: `Adjustment for Gig ID: ${gigId}`,
       internalNotes: `Adjustment for Gig ID: ${gigId}`,
       gigPaymentInfo: {

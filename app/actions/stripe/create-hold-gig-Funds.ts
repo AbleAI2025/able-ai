@@ -5,6 +5,7 @@ import { db } from "@/lib/drizzle/db";
 import { UsersTable } from "@/lib/drizzle/schema";
 import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
 import { holdGigAmount } from '@/lib/stripe/hold-gig-amount';
+import { calculateAmountWithDiscount } from '@/lib/utils/calculate-amount-with-discount';
 
 interface HoldGigFundsParams {
   firebaseUid: string;
@@ -33,13 +34,14 @@ export async function holdGigFunds(params: HoldGigFundsParams) {
       throw new Error('User is not connected with stripe');
     }
 
-    const { receiverAccountId, gig } = await getPaymentAccountDetailsForGig(gigId);
+    const { receiverAccountId, gig, discount } = await getPaymentAccountDetailsForGig(gigId);
+    const serviceAmountWithDiscount = calculateAmountWithDiscount(serviceAmountInCents, discount);
 
     const paymentIntent = await holdGigAmount({
       buyerStripeCustomerId,
       destinationAccountId: receiverAccountId as string,
       currency,
-      serviceAmountInCents,
+      serviceAmountInCents: serviceAmountWithDiscount,
       gigPaymentInfo: {
         gigId: gigId,
         payerUserId: userRecord.id,

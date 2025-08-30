@@ -18,7 +18,7 @@ import { reviewTypeEnum, moderationStatusEnum, badgeTypeEnum, activeRoleContextE
 
 // Import related tables for foreign keys
 import { UsersTable } from "./users";
-import { GigsTable } from "./gigs";
+import { GigsTable, SkillsTable } from "./gigs";
 
 // --- RECOMMENDATIONS TABLE ---
 export const RecommendationsTable = pgTable("recommendations", {
@@ -74,6 +74,9 @@ export const ReviewsTable = pgTable(
       .default("PENDING")
       .notNull(),
     targetRole: activeRoleContextEnum("target_role"),
+    skillId: uuid("skill_id").references(() => SkillsTable.id, {
+      onDelete: "cascade",
+    }),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

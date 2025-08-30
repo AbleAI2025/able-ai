@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from "@/lib/drizzle/db";
 import { GigsTable, UsersTable } from "@/lib/drizzle/schema";
+import { getAppliedDiscountCodeForGigPayment } from './get-applied-discount-code-for-gig-payment';
 
 export async function getPaymentAccountDetailsForGig(gigId: string) {
   const gigRecord = await db.query.GigsTable.findFirst({
@@ -11,6 +12,7 @@ export async function getPaymentAccountDetailsForGig(gigId: string) {
       id: true,
       finalAgreedPrice: true,
       totalAgreedPrice: true,
+      promoCodeApplied: true,
     }
   });
 
@@ -30,5 +32,7 @@ export async function getPaymentAccountDetailsForGig(gigId: string) {
     throw new Error('Receiver is not connected with stripe');
   }
 
-  return { receiverAccountId: receiverUserRecord.stripeConnectAccountId, gig: gigRecord };
+  const discount = await getAppliedDiscountCodeForGigPayment(gigRecord.promoCodeApplied || '');
+
+  return { receiverAccountId: receiverUserRecord.stripeConnectAccountId, gig: gigRecord, discount };
 }

@@ -1,79 +1,105 @@
-// app/components/shared/ReferralBanner.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import styles from './ReferralBanner.module.css';
-import { Gift } from 'lucide-react'; // Example icon
-import { useAuth } from '@/context/AuthContext';
-import { is } from 'drizzle-orm';
+import { Gift, Loader2 } from 'lucide-react';
+import { authClient } from '@/lib/firebase/clientApp';
+import { getUserReferralCodeAction } from '@/actions/user/user';
 
 interface ReferralBannerProps {
   role?: string;
 }
 
 const ReferralBanner: React.FC<ReferralBannerProps> = ({ role }) => {
-  const [tooltipText, setTooltipText] = useState("Click to copy");
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  
-  // const [isMobile, setIsMobile] = useState(false);
-  
+  const [tooltipText, setTooltipText] = useState("");
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeout.current) {
+        clearTimeout(tooltipTimeout.current);
+      }
+    };
+  }, []);
 
   const copyToClipboard = (text: string) => {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
     fallbackCopy(text);
-  }
-};
+    return Promise.resolve();
+  };
 
-const fallbackCopy = (text: string) => {
-  const input = document.createElement("input");
-  input.value = text;
-  document.body.appendChild(input);
-  input.select();
-  document.execCommand("copy");
-  document.body.removeChild(input);
-};
+  const fallbackCopy = (text: string) => {
+    const input = document.createElement("input");
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    document.body.removeChild(input);
+  };
 
-// Updated handleReferralClick
-const handleReferralClick = () => {
-  const referralLink = "https://example.com/referral"; // replace with actual link
+  const handleReferralClick = async () => {
+    if (isCopying) return;
 
-  // Copy to clipboard using helper
-  copyToClipboard(referralLink);
+    if (tooltipTimeout.current) {
+      clearTimeout(tooltipTimeout.current);
+    }
 
-  // Show tooltip / toast
-  setTooltipText("Copied!");
-  setTooltipVisible(true);
+    setIsCopying(true);
 
-  // Hide tooltip after 2 seconds
-  setTimeout(() => {
-    setTooltipText("Click to copy");
-    setTooltipVisible(false);
-  }, 2000);
+    const user = authClient.currentUser;
+    if (!user) {
+      setTooltipText("Please log in to get your link");
+      setIsTooltipVisible(true);
+      tooltipTimeout.current = setTimeout(() => setIsTooltipVisible(false), 3000);
+      setIsCopying(false);
+      return;
+    }
 
-  console.log("Referral link copied to clipboard");
-};
+    try {
+      const result = await getUserReferralCodeAction({ firebaseUid: user.uid });
+      if (!result || !result.code) throw new Error("Discount code not found");
 
+      const referralLink = `${window.location.origin}/signin?code=${result.code}`;
+      await copyToClipboard(referralLink);
 
-// useEffect(() => {
-//   const mobileCheck = /Mobi|Android/i.test(navigator.userAgent);
-//   setIsMobile(mobileCheck);
-// }, []);
+      setTooltipText(`Referral link ready with discount code ${result.code}`);
+      setIsTooltipVisible(true);
+    } catch (error) {
+      console.error("Failed to copy referral link:", error);
+      setTooltipText("Could not get link. Try again.");
+      setIsTooltipVisible(true);
+    } finally {
+      setIsCopying(false);
+      tooltipTimeout.current = setTimeout(() => {
+        setIsTooltipVisible(false);
+      }, 3000);
+    }
+  };
 
   return (
-    <button 
-      className={`${styles.banner} ${styles.button} ${role === 'BUYER' ? styles.buyer : ''}`}
+    <button
+      className={`${styles.banner} ${styles.button} ${role === 'BUYER' ? styles.buyer : ''} ${isCopying ? styles.loading : ''}`}
       onClick={handleReferralClick}
+      disabled={isCopying}
+      aria-describedby="referral-tooltip"
     >
       <div className={styles.iconWrapper}>
-        <Gift size={24} />
+        {isCopying ? <Loader2 size={24} className={styles.spinner} /> : <Gift size={24} />}
       </div>
       <div className={styles.textWrapper}>
         <h4 className={styles.title}>Refer a business and earn £5!</h4>
       </div>
-       <span className={`${styles.tooltip} ${tooltipVisible ? styles.show : ''}`}>
-          {tooltipText}
-        </span>
+      <span
+        id="referral-tooltip"
+        role="tooltip"
+        className={`${styles.tooltip} ${isTooltipVisible ? styles.show : ''}`}
+      >
+        {tooltipText}
+      </span>
     </button>
   );
 };
+
 export default ReferralBanner;
