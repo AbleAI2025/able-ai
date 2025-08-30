@@ -1,22 +1,40 @@
 import React from 'react';
 import styles from './AwardDisplayBadge.module.css';
+import getIconFromAwardId, { BadgeId } from './GetBadgeIcon';
 
 interface AwardDisplayBadgeProps {
-  icon?: React.ElementType;
-  textLines: string;
-  color?: string;
-  border?: string;
+  badgeId: BadgeId;
+  badgeName: string,
+  role: 'worker' | 'buyer',
+  type: 'common' | 'earlyJoiner' | 'other',
 }
 
-const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({ icon: Icon, textLines, color="#ffffff", border='none' }) => {
+const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({ 
+  badgeId, 
+  badgeName, 
+  role, 
+  type 
+}) => {
+
+  const Icon = getIconFromAwardId(badgeId);
+
+  const borderStyle = type === 'common' || type === 'earlyJoiner' ? 
+                      styles.commonBadge : (
+                      role === 'worker' ? styles.workerBadge : styles.buyerBadge
+                    );
+
   return (
-    <div className={styles.awardBadge} style={{ border: `${border}` }}>
+    <div 
+      className={
+        `${styles.awardBadge} ${borderStyle}`
+      }
+    >
       {
-        Icon && <Icon size={28} className={styles.awardIcon} color= {color} strokeWidth = '3' />
+        Icon
       }
       <div className={styles.awardTextContainer}>
           <span className={styles.awardTextLine}>
-            {textLines}
+            {badgeName}
           </span>
       </div>
     </div>

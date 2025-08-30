@@ -22,6 +22,7 @@ import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
 import ProfileVideo from "./WorkerProfileVideo";
 import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
+import { BadgeId } from "./GetBadgeIcon";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -215,7 +216,7 @@ const SkillSplashScreen = ({
   if (!profile) return <p className={styles.loading}>Loading...</p>;
 
   return (
-    <div>
+    <div className={styles.pageWrapper}>
       <ScreenHeaderWithBack onBackClick={onBackClick} />
       <div className={styles.skillSplashContainer}>
         <div className={styles.header}>
@@ -372,8 +373,10 @@ const SkillSplashScreen = ({
               {profile.badges.map((badge) => (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
-                    {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                    textLines={badge?.badge?.description ?? ""}
+                    badgeId={badge.badgeId as BadgeId}
+                    badgeName={badge.badgeName}
+                    role="worker"
+                    type={badge.type}
                   />
                 </div>
               ))}
@@ -422,19 +425,21 @@ const SkillSplashScreen = ({
           </div>
         )}
         {isSelfView && linkUrl && navigator.clipboard && (
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={disabled}
-            className={styles.share_button}
-          >
-            {copied ? (
-              <CheckCircle size={16} className={styles.copiedIcon} />
-            ) : (
-              <Copy size={16} className={styles.copiedIcon} />
-            )}
-              <span>Generate link to ask for a recommendation</span>
-          </button>
+          <div className={styles.footerAction}>
+            <button
+              type="button"
+              onClick={handleCopy}
+              disabled={disabled}
+              className={styles.share_button}
+            >
+              {copied ? (
+                <CheckCircle size={16} className={styles.copiedIcon} />
+              ) : (
+                <Copy size={16} className={styles.copiedIcon} />
+              )}
+                <span>Generate link to ask for a recommendation</span>
+            </button>
+          </div>
         )}
       </div>
    </div>

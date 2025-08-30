@@ -2,6 +2,8 @@
 
 .container {
   min-height: 100vh;
+  max-width: 450px;
+  margin: auto;
   background: #161616;
   padding-bottom: 2rem;
   font-family: var(--font-family);
@@ -14,7 +16,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  background: #161616;
+  background: #000000;
 }
 
 .profileImageVideo {
@@ -62,9 +64,6 @@
   margin: 0 1rem;
   padding: 1rem;
   flex: 1;
-}
-@media (min-width: 600px) {
-  .introCard { flex-direction: row; }
 }
 
 .businessInfoCard h4 {
@@ -192,19 +191,11 @@
 
 .analyticsChartsContainer {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+   grid-template-columns: 1fr;
   gap: 1.5rem;
   height: auto;
 }
-@media (max-width: 599px) {
-  .analyticsChartsContainer {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-}
-@media (min-width: 768px) {
-  .analyticsChartsContainer { grid-template-columns: repeat(2, 1fr); }
-}
+
 .chartPlaceholder {
   background-color: #2b2b2b;
   border-radius: 0.5rem;
@@ -269,6 +260,6 @@
     align-items: flex-start;
   }
   .statisticsItemsContainer > * { /* Each StatisticItemDisplay */
-    flex-basis: 48%; /* Roughly half width */
+    flex-basis: 48%;
   }
 }

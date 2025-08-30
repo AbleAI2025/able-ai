@@ -1,3 +1,5 @@
+import { BadgeId } from "@/app/components/profile/GetBadgeIcon";
+
 export type SkillProfile = {
   profileId?: string;
   name?: string;
@@ -20,13 +22,11 @@ export type SkillProfile = {
   supportingImages: string[];
   badges: {
     id: string | number;
-    icon?: React.ElementType | null;
+    badgeId: BadgeId;
+    badgeName: string;
+    type: 'common' | 'earlyJoiner' | 'other';
     notes: string;
-    badge: {
-      id: string | number;
-      icon?: React.ElementType | null;
-      description?: string | null
-    }
+    awardedAt: Date | string;
   }[];
   qualifications: {
     title: string;
