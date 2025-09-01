@@ -1142,6 +1142,13 @@ Make the conversation feel natural and build on what they've already told you.`;
     }
   }
 
+  const getStepTypeForField = (fieldName: string): "input" | "calendar" | "location" | "discountCode" => {
+    if (fieldName === "gigDate") return "calendar";
+    if (fieldName === "gigLocation") return "location";
+    if (fieldName === "discountCode") return "discountCode";
+    return "input";
+  }
+
   // Simple function to handle calendar and location confirmations without AI validation
   async function handlePickerConfirm(stepId: number, inputName: string) {
     const value = formData[inputName];
@@ -1182,14 +1189,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
         
         // Determine the step type based on the field
-        let stepType: "input" | "calendar" | "location" | "discountCode" = "input";
-        if (nextField.name === "gigDate") {
-          stepType = "calendar";
-        } else if (nextField.name === "gigLocation") {
-          stepType = "location";
-        } else if (nextField.name === "discountCode") {
-           stepType = "discountCode";
-        }
+        const stepType = getStepTypeForField(nextField.name)
         
         const newInputConfig = {
           type: nextField.type as FormInputType,
@@ -1263,15 +1263,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         // Generate context-aware prompt
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
         
-        // Determine the step type based on the field
-        let stepType: "input" | "calendar" | "location" | "discountCode" = "input";
-        if (nextField.name === "gigDate") {
-          stepType = "calendar";
-        } else if (nextField.name === "gigLocation") {
-          stepType = "location";
-        } else if (nextField.name === "discountCode") {
-          stepType = "discountCode";
-        }
+        const stepType = getStepTypeForField(nextField.name)
         
         const newInputConfig = {
           type: nextField.type as FormInputType,
@@ -1453,7 +1445,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         additionalInstructions: formData.additionalInstructions ? String(formData.additionalInstructions) : undefined,
         hourlyRate: formData.hourlyRate ?? 0,
         gigLocation: formData.gigLocation, // Send the original location object to preserve coordinates
-        discountCode: formData.discountCode ? String(formData.discountCode).trim() : undefined,
+        discountCode: formData.discountCode,
         gigDate: String(formData.gigDate || "").slice(0, 10),
         gigTime: formData.gigTime ? String(formData.gigTime) : undefined,
       };
@@ -1980,7 +1972,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                 onConfirm={(code) => {
                   void handleDiscountCodeConfirm(step.id, code);
                 }}
-                role="BUYER"
+                role={"BUYER"}
               />
             );
           }
