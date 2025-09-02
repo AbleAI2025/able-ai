@@ -29,6 +29,7 @@ export default function Equipments({ workerProfileId, initialEquipments, isSelfV
 
   const handleRemove = (index: number) => {
     setEquipments(equipments.filter((_, i) => i !== index));
+    setIsEditing(false);
   };
 
   return (

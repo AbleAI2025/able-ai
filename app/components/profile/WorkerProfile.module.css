@@ -202,6 +202,26 @@
   text-decoration: none;
 }
 
+@media screen and (min-width: 374px) {
+  .viewCalendarLink {
+    margin-right: 2rem;
+  }
+}
+
+
+@media screen and (min-width: 400px) {
+  .viewCalendarLink {
+    margin-right: 3rem;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .viewCalendarLink {
+    margin-right: 4.9rem;
+  }
+}
+
+
 .viewCalendarLink:hover {
   color: #ffffff;
 }

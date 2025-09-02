@@ -58,6 +58,7 @@ const Qualifications = ({
         setQualifications(updated);
     }
     setModalOpen(false);
+    setIsEditMode(false);
   };
 
   const handleDelete = () => {
@@ -65,6 +66,7 @@ const Qualifications = ({
       setQualifications(qualifications.filter((_, i) => i !== editingIndex));
     }
     setModalOpen(false);
+    setIsEditMode(false);
   };
 
   return (
@@ -115,7 +117,10 @@ const Qualifications = ({
           initialValue={editingIndex !== null ? qualifications[editingIndex] : null}
           onSave={handleSave}
           onDelete={modalMode === "edit" ? handleDelete : undefined}
-          onClose={() => setModalOpen(false)}
+          onClose={() => {
+            setModalOpen(false);
+            setIsEditMode(false);
+          }}
         />
       )}
     </div>

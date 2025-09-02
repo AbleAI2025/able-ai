@@ -224,7 +224,7 @@ const WorkerProfile = ({
               aria-label="View calendar"
             >
               <CalendarDays size={28} className={styles.calendarIcon} />
-              <span>Availability calendar</span>
+              <span>View calendar</span>
             </Link>
           )}
         </div>
