@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // --- SHARED & HELPER COMPONENTS ---
 import ContentCard from "@/app/components/shared/ContentCard";
@@ -47,10 +48,14 @@ const WorkerProfile = ({
   userId?: string;
   isSelfView: boolean;
 }) => {
+  const router = useRouter();
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
+
+  // NEW: hold the latest passport verification (to display after return)
+  const [passportResult, setPassportResult] = useState<any | null>(null);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -59,14 +64,11 @@ const WorkerProfile = ({
         setError("Failed to upload video. Please try again.");
         return;
       }
-
       if (!file || file.size === 0) {
         console.error("Invalid file for video upload");
         setError("Invalid video file. Please try again.");
         return;
       }
-
-      // Check file size (limit to 50MB)
       const maxSize = 50 * 1024 * 1024; // 50MB
       if (file.size > maxSize) {
         setError("Video file too large. Please use a file smaller than 50MB.");
@@ -74,9 +76,9 @@ const WorkerProfile = ({
       }
 
       try {
-        const filePath = `workers/${
-          user.uid
-        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+        const filePath = `workers/${user.uid}/introVideo/introduction-${encodeURI(
+          user.email ?? user.uid
+        )}.webm`;
         const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
         const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
@@ -85,7 +87,7 @@ const WorkerProfile = ({
           (snapshot) => {
             const progress =
               (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // Progress handling if needed
+            // (optional) handle progress
           },
           (error) => {
             console.error("Upload failed:", error);
@@ -120,6 +122,81 @@ const WorkerProfile = ({
     }
   }, [workerProfile]);
 
+  // -------------------------
+  // UK NATIONAL: create session on backend, then redirect to hosted PassportReader
+  // -------------------------
+  async function startPassportCapture() {
+    try {
+      const res = await fetch("/api/passportreader/session", { method: "POST" });
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Unexpected response from session API.");
+      }
+
+      if (!res.ok) {
+        const msg = data?.message || data?.error || "Failed to start session.";
+        alert(`Session error: ${msg}`);
+        console.error("Passport session error:", data);
+        return;
+      }
+
+      const token = data?.token ?? data?.raw?.token ?? null;
+      const sessionId = String(data?.sessionId ?? data?.id ?? "");
+      const host = (data?.raw?.host || data?.host || "https://passportreader.app").replace(/\/+$/, "");
+
+      if (!token || !sessionId) {
+        alert("Session created but token or sessionId missing. Check server logs.");
+        console.error("Missing token/sessionId in response:", data);
+        return;
+      }
+
+      try { sessionStorage.setItem("passportreader_session_id", sessionId); } catch {}
+
+      const redirectBack = `${window.location.origin}${window.location.pathname}?done=1`;
+      const openUrl = `${host}/open?token=${encodeURIComponent(token)}&redirect_url=${encodeURIComponent(redirectBack)}`;
+      setShowRtwPopup(false);
+      window.location.href = openUrl;
+    } catch (e: any) {
+      alert("Failed to start passport capture session.");
+      console.error(e);
+    }
+  }
+
+  // NEW: when user returns from PassportReader (?done=1), save to DB and show result
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("done") !== "1") return;
+
+    (async () => {
+      try {
+        const sessionId = sessionStorage.getItem("passportreader_session_id");
+        const uid = user?.uid;
+        if (!sessionId || !uid) return;
+
+        const res = await fetch("/api/rtw/save-passport", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: uid, sessionId }),
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          console.error("save-passport failed:", json);
+          // toast.error("Couldn’t save passport result"); // optional
+          return;
+        }
+
+        setPassportResult(json.payload || null);
+        // toast.success("Right to Work verified & saved"); // optional
+      } catch (err) {
+        console.error("post-return save error:", err);
+      }
+    })();
+  }, [user?.uid]);
+
   return (
     <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
@@ -129,6 +206,7 @@ const WorkerProfile = ({
         workerLink={workerLink}
         onVideoUpload={handleVideoUpload}
       />
+
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfoLeft}>
@@ -158,89 +236,102 @@ const WorkerProfile = ({
             </span>
           </h1>
 
-      {/* RTW Verification Popup */}
-      {showRtwPopup && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              background: '#18181b',
-              color: '#fff',
-              borderRadius: 12,
-              padding: 32,
-              minWidth: 320,
-              boxShadow: '0 4px 32px rgba(0,0,0,0.2)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 24,
-            }}
-          >
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>To adhere to UK law, we need to confirm you have the legal right to work.</div>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Are you a</div>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <button
-                style={{
-                  background: '#38bdf8',
-                  color: '#18181b',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 24px',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  cursor: 'pointer',
-                }}
-                onClick={() => setShowRtwPopup(false)}
-              >
-                UK national
-              </button>
-              <span style={{ color: '#fff', fontWeight: 600 }}>Or</span>
-              <button
-                style={{
-                  background: '#38bdf8',
-                  color: '#18181b',
-                  border: '1px solid #38bdf8',
-                  borderRadius: 8,
-                  padding: '10px 24px',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  cursor: 'pointer',
-                }}
-                onClick={() => window.location.href = "/user/A3BDfET6iPbY0zYHUTaIU0sMucF3/worker/rtw"}
-              >
-                Non UK national
-              </button>
-            </div>
-            <button
+          {/* RTW Verification Popup */}
+          {showRtwPopup && (
+            <div
               style={{
-                marginTop: 16,
-                background: 'none',
-                color: '#fff',
-                border: 'none',
-                fontSize: 14,
-                cursor: 'pointer',
-                textDecoration: 'underline',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0,0,0,0.5)',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
-              onClick={() => setShowRtwPopup(false)}
             >
-              Cancel
-            </button>
-          </div>
+              <div
+                style={{
+                  background: '#18181b',
+                  color: '#fff',
+                  borderRadius: 12,
+                  padding: 32,
+                  minWidth: 320,
+                  boxShadow: '0 4px 32px rgba(0,0,0,0.2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 24,
+                }}
+              >
+                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                  To adhere to UK law, we need to confirm you have the legal right to work.
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                  Are you a
+                </div>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  {/* UK national → hosted PassportReader */}
+                  <button
+                    style={{
+                      background: '#38bdf8',
+                      color: '#18181b',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '10px 24px',
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: 'pointer',
+                    }}
+                    onClick={startPassportCapture}
+                  >
+                    UK national
+                  </button>
+
+                  <span style={{ color: '#fff', fontWeight: 600 }}>Or</span>
+
+                  {/* Non UK national → your RTW (share-code) page */}
+                  <button
+                    style={{
+                      background: '#38bdf8',
+                      color: '#18181b',
+                      border: '1px solid #38bdf8',
+                      borderRadius: 8,
+                      padding: '10px 24px',
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: 'pointer',
+                    }}
+                    onClick={() =>
+                      (window.location.href =
+                        `/user/${workerProfile.userId}/worker/rtw`)
+                    }
+                  >
+                    Non UK national
+                  </button>
+                </div>
+                <button
+                  style={{
+                    marginTop: 16,
+                    background: 'none',
+                    color: '#fff',
+                    border: 'none',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                  onClick={() => setShowRtwPopup(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-        </div>
+
+        {/* Calendar link (unchanged) */}
         <div className={styles.workerInfo}>
           {true && (
             <Link
@@ -254,9 +345,10 @@ const WorkerProfile = ({
           )}
         </div>
       </div>
+
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
-        {/* Statistics Section (Benji Image Style) */}
+        {/* Statistics Section */}
         <ContentCard title="Statistics" className={styles.statisticsCard}>
           <div className={styles.statisticsItemsContainer}>
             {workerProfile?.responseRateInternal && (
@@ -284,7 +376,7 @@ const WorkerProfile = ({
           </div>
         </ContentCard>
 
-        {/* Skills Section (Benji Image Style - Blue Card) */}
+        {/* Skills Section */}
         {
           <SkillsDisplayTable
             skills={workerProfile?.skills}
@@ -296,11 +388,10 @@ const WorkerProfile = ({
           />
         }
 
-        {/* Awards & Feedback Section (Benji Image Style) */}
-        {workerProfile.awards && ( // Only show section if there are awards or feedback
+        {/* Awards & Feedback Section */}
+        {workerProfile.awards && (
           <div className={styles.awardsFeedbackGrid}>
             {workerProfile.awards && workerProfile.awards.length > 0 && (
-              // <ContentCard title="Awards:" className={styles.awardsCard}>
               <div>
                 <h3 className={styles.contentTitle}>Awards:</h3>
                 <div className={styles.awardsContainer}>
@@ -330,10 +421,9 @@ const WorkerProfile = ({
           </div>
         )}
 
-        {/* Qualifications Section (Benji Image Style) */}
+        {/* Qualifications Section */}
         {workerProfile.qualifications &&
           workerProfile.qualifications.length > 0 && (
-            // <ContentCard title="Qualifications:">
             <div>
               <h3 className={styles.contentTitle}>Qualifications:</h3>
               <ul className={styles.listSimple}>
@@ -344,10 +434,9 @@ const WorkerProfile = ({
                 ))}
               </ul>
             </div>
-            // </ContentCard>
           )}
 
-        {/* Equipment Section (Benji Image Style) */}
+        {/* Equipment Section */}
         {workerProfile.equipment && workerProfile.equipment.length > 0 && (
           <div>
             <h3 className={styles.contentTitle}>Equipment:</h3>
@@ -359,7 +448,7 @@ const WorkerProfile = ({
           </div>
         )}
 
-        {/* Bio Text (if used) */}
+        {/* Bio Text */}
         {workerProfile.fullBio && (
           <ContentCard
             title={`About ${user?.displayName?.split(" ")[0] || "this user"}`}
@@ -367,8 +456,23 @@ const WorkerProfile = ({
             <p className={styles.bioText}>{workerProfile.fullBio}</p>
           </ContentCard>
         )}
-      </div>{" "}
-      {/* End Main Content Wrapper */}
+
+        {/* NEW: show passport verification result when available (keeps styling) */}
+        {passportResult && (
+          <ContentCard title="Right to Work (UK passport)">
+            <div className={styles.bioText} style={{ lineHeight: 1.6 }}>
+              <div><strong>Status:</strong> {passportResult?.outcome || "—"}</div>
+              <div><strong>Name:</strong> {passportResult?.name?.forename || "—"} {passportResult?.name?.surname || ""}</div>
+              <div><strong>DOB:</strong> {passportResult?.dob || "—"}</div>
+              <div><strong>Passport No:</strong> {passportResult?.document_number || "—"}</div>
+              <div><strong>Expiry:</strong> {passportResult?.expiry_iso || passportResult?.permission_expiry_date || "—"}</div>
+              <div><strong>Nationality:</strong> {passportResult?.nationality || "—"}</div>
+              <div><strong>Issuing country:</strong> {passportResult?.issuing_country || "—"}</div>
+              <div><strong>Reference:</strong> {passportResult?.referenceNumber || "—"}</div>
+            </div>
+          </ContentCard>
+        )}
+      </div>{/* End Main Content Wrapper */}
     </div>
   );
 };
