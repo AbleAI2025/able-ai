@@ -100,7 +100,7 @@ const Qualifications = ({
         {qualifications.length > 0 ? (
           qualifications.map((q, index) => (
             <QualificationItem
-              key={index}
+              key={q.id}
               qualification={q}
               isEditMode={isEditMode}
               onEdit={() => openEditModal(index)}

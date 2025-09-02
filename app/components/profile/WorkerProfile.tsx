@@ -55,8 +55,6 @@ const WorkerProfile = ({
   const [showRtwPopup, setShowRtwPopup] = useState(false);
   const [name, setName] = useState<string | null>(user?.displayName || null);
 
-  const isWorkerVerified = false;
-
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
       if (!user) {
@@ -195,7 +193,7 @@ const WorkerProfile = ({
             />
           )}
           
-          {isWorkerVerified ? (
+          { workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
               <span className={styles.verifiedText}>
@@ -305,9 +303,9 @@ const WorkerProfile = ({
 
         {/* Qualifications Section (Benji Image Style) */}
           <Qualifications
-            initialQualifications={workerProfile.qualifications as Qualification[]}
+            initialQualifications={workerProfile.qualifications as Qualification[] ?? []}
             workerId={workerProfile.id}
-            isSelfView={isSelfView}
+             isSelfView={isSelfView}
           />
             
 

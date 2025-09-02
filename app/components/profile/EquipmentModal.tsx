@@ -25,8 +25,8 @@ export default function AddEquipmentModal({ isOpen, onClose, onSave }: AddEquipm
   };
 
   const handleChange = (value: string) => {
-    if (value.trim()) {
-      setEquipmentName(value);
+    setEquipmentName(value.trim());
+    if (error) {
       setError(null);
     }
   };

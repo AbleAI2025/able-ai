@@ -64,7 +64,7 @@ export default function Equipments({ workerProfileId, initialEquipments, isSelfV
       <div className={styles.equipmentListContainer}>
         {equipments.length > 0 ? (
           equipments.map((item, index) => (
-            <div key={index} className={styles.listItem}>
+            <div key={item.id} className={styles.listItem}>
               <CheckboxDisplayItem label={item.name} />
               {isEditing && (
                 <button
