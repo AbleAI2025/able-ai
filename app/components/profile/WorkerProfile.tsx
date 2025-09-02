@@ -190,7 +190,7 @@ const WorkerProfile = ({
             <input
               type="text"
               className={styles.workerName}
-              value={name}
+              value={name ?? ""}
               onChange={(e) => handleNameChange(e.target.value)}
             />
           )}
@@ -315,7 +315,7 @@ const WorkerProfile = ({
         {
           <Equipments
             workerProfileId={workerProfile.id}
-            initialEquipments={workerProfile.equipments}
+            initialEquipments={workerProfile.equipments || []}
             isSelfView={isSelfView}
           />
         }

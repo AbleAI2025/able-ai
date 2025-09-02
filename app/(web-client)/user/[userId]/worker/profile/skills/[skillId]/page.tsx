@@ -32,12 +32,6 @@ export default function WorkerSkillDetailPage() {
             icon: badge.icon || DefaultBadgeIcon,
           }));
 
-          const transformedQualifications = data?.qualifications?.map((q) => ({
-            title: q.title,
-            date: q.yearAchieved?.toString() ?? "",
-            description: q.description ?? "",
-          }));
-
           const updatedRecommendations = (data.recommendations ?? []).map(
             (rec: any) => ({
               ...rec,
@@ -50,7 +44,7 @@ export default function WorkerSkillDetailPage() {
           setProfile({
             ...data,
             badges: updatedBadges,
-            qualifications: transformedQualifications,
+            qualifications: data?.qualifications ?? [],
             recommendations: updatedRecommendations,
           });
         }

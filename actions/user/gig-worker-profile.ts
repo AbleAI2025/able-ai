@@ -216,7 +216,7 @@ export const getSkillDetailsWorker = async (id: string) => {
     );
 
     const skillProfile = {
-      profileId: workerProfile?.id,
+      workerProfileId: workerProfile?.id ?? '',
       name: user?.fullName,
       title: skill?.name,
       hashtags: Array.isArray(workerProfile?.hashtags)

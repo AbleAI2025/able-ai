@@ -3,7 +3,6 @@ import { Pencil, Check, Plus, Trash2 } from "lucide-react";
 import CheckboxDisplayItem from "./CheckboxDisplayItem";
 import styles from "./Equipments.module.css";
 import { Equipment } from "@/app/types";
-import { v4 as uuidv4 } from "uuid";
 import AddEquipmentModal from "./EquipmentModal";
 
 interface EquipmentProps {
@@ -19,7 +18,7 @@ export default function Equipments({ workerProfileId, initialEquipments, isSelfV
 
   const handleAdd = (name: string) => {
     const newEquipment: Equipment = {
-      id: uuidv4(),
+      id: `id-${Math.random().toString(36).substr(2, 9)}`,
       workerProfileId,
       name: name.trim(),
       createdAt: new Date(),

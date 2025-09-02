@@ -208,9 +208,9 @@ const SkillSplashScreen = ({
   };
 
   useEffect(() => {
-    if (profile && profile.profileId) {
+    if (profile && profile.workerProfileId) {
       setLinkUrl(
-        `${window.location.origin}/worker/${profile.profileId}/recommendation`
+        `${window.location.origin}/worker/${profile.workerProfileId}/recommendation`
       );
     }
   }, [profile]);
@@ -399,7 +399,7 @@ const SkillSplashScreen = ({
         <Qualifications
           initialQualifications={profile.qualifications}
           isSelfView={isSelfView}
-          workerId={profile.profileId}
+          workerId={profile.workerProfileId}
         />
         {/* Buyer Reviews */}
         {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (

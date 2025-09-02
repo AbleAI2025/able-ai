@@ -1,7 +1,7 @@
 import { Qualification } from "@/app/types";
 
 export type SkillProfile = {
-  profileId: string;
+  workerProfileId: string;
   name?: string;
   title?: string;
   hashtags?: string;

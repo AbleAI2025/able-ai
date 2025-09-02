@@ -4,7 +4,6 @@ import QualificationItem from "./QualificationItem";
 import QualificationModal, { QualificationInput } from "./QualificationModal";
 import styles from "./Qualifications.module.css";
 import { Qualification } from "@/app/types";
-import { v4 as uuidv4 } from "uuid";
 
 
 interface QualificationsProps {
@@ -41,7 +40,7 @@ const Qualifications = ({
   const handleSave = (data: QualificationInput) => {
     const newQualification: Qualification = {
         ...data,
-        id: uuidv4(),
+        id: `id-${Math.random().toString(36).substr(2, 9)}`, // Temporary ID
         workerProfileId: workerId,
         createdAt: new Date(),
         updatedAt: new Date(),

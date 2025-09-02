@@ -50,7 +50,8 @@ export interface Qualification {
   id: string;
   workerProfileId: string;
   title: string;
-  description: string;
+  description: string | null;
+  yearAchieved?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,7 +96,7 @@ export default interface PublicWorkerProfile {
   updatedAt?: Date | undefined;
 
   awards?: Award[];
-  equipments: Equipment[];
+  equipments?: Equipment[];
   skills?: Skill[];
   reviews?: Review[];
   qualifications?: Qualification[];
