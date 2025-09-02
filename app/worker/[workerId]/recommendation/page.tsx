@@ -8,7 +8,6 @@ import InputField from "@/app/components/form/InputField"; // Reusing shared Inp
 import { Send, Loader2 } from "lucide-react"; // Lucide icons
 
 import styles from "./RecommendationPage.module.css";
-import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import {
   getWorkerForRecommendationAction,
   submitExternalRecommendationAction,
@@ -39,7 +38,6 @@ async function getWorkerDetails(
 export default function PublicRecommendationPage() {
   const params = useParams();
   const workerToRecommendId = params.workerId as string;
-  const router = useRouter();
 
   const [workerDetails, setWorkerDetails] = useState<{
     name: string;
