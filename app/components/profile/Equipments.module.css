@@ -1,0 +1,115 @@
+/* EquipmentSection.module.css */
+
+/* Section Header */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Section Title */
+.contentTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Equipment List Container */
+.equipmentListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Individual equipment item */
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+}
+
+/* Feedback text (no items) */
+.feedbackText {
+  color: #888;
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+/* Buttons in header */
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
+  color: #9e9b9b;
+  transition: color 0.2s ease;
+}
+
+.actions button:hover {
+  color: var(--primary-color);
+}
+
+
+.checkDone {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.checkDone:hover {
+    background-color: #307ab2;
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  color: #ef4444; /* red */
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 4px;
+}
+
+.removeButton:hover {
+  color: #b91c1c;
+}
+
+/* Inline add input container */
+.addContainer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Input box */
+.input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Icon sizing for buttons */
+.icon {
+  width: 16px;
+  height: 16px;
+}
