@@ -19,7 +19,6 @@ export default function ProfileMedia({
   workerLink,
   onVideoUpload,
 }: ProfileMediaProps) {
-
   return (
     <div className={styles.profileHeaderImageSection}>
       <div className={styles.profileImageVideo}>
@@ -33,11 +32,13 @@ export default function ProfileMedia({
       <div className={styles.profileHeaderRightCol}>
         {workerLink && <QRCodeDisplay url={workerLink} />}
         <div className={styles.locationShareContainer}>
-          {workerProfile?.location && (
+          {workerProfile?.location ? (
             <div className={styles.locationInfo}>
               <MapPin size={16} color="#ffffff" className={styles.mapPin} />
               <span>{workerProfile.location}</span>
             </div>
+          ) : (
+            <button>Edit location</button>
           )}
           <button
             className={styles.shareProfileButton}

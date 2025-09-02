@@ -53,8 +53,6 @@ const WorkerProfile = ({
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
 
-  const isWorkerVerified = false;
-
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
       if (!user) {
@@ -178,7 +176,7 @@ const WorkerProfile = ({
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
           <h1 className={styles.workerName}>{user?.displayName}</h1>
-          {isWorkerVerified ? (
+          { workerProfile?.user?.rtwStatus == "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
               <span className={styles.verifiedText}>

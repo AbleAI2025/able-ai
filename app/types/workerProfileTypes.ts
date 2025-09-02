@@ -74,6 +74,18 @@ export default interface PublicWorkerProfile {
   id?: string | undefined;
   userId?: string | undefined;
   location?: string | undefined;
+  user?: {
+    rtwStatus?:
+      | "NOT_SUBMITTED"
+      | "PENDING"
+      | "VERIFIED"
+      | "ACCEPTED"
+      | "EXPIRED"
+      | "NOT_FOUND"
+      | "LOCKED"
+      | "REJECTED"
+      | undefined;
+  };
 
   fullBio: string | undefined;
   privateNotes?: string;

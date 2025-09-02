@@ -51,6 +51,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
 
   const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
     where: eq(GigWorkerProfilesTable.userId, user.id),
+    with: { user: {columns: { rtwStatus: true }} },
   });
 
   const data = await getGigWorkerProfile(workerProfile);
