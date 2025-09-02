@@ -222,7 +222,7 @@ export default function PublicRecommendationPage() {
                 value={formData.relationship}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder={`Please describe how you know ${getWorkerDetails.name}: e.g., Worked together at [Company/Event], Supervised them, Hired them for a gig...`}
+                placeholder={`Please describe how you know ${workerDetails.name}: e.g., Worked together at [Company/Event], Supervised them, Hired them for a gig...`}
                 required
               />
             </div>
