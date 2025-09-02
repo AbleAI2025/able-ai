@@ -176,7 +176,7 @@ const WorkerProfile = ({
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
           <h1 className={styles.workerName}>{user?.displayName}</h1>
-          { workerProfile?.user?.rtwStatus == "ACCEPTED" ? (
+          { workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
               <span className={styles.verifiedText}>
