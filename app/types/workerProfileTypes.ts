@@ -26,8 +26,6 @@ export interface Equipment {
   id: string;
   workerProfileId: string;
   name: string;
-  description?: string | null;
-  isVerifiedByAdmin?: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,11 +50,8 @@ export interface Qualification {
   id: string;
   workerProfileId: string;
   title: string;
-  institution?: string | null;
+  description: string | null;
   yearAchieved?: number | null;
-  description?: string | null;
-  documentUrl?: string | null;
-  isVerifiedByAdmin?: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,9 +66,21 @@ export interface SemanticProfile {
 }
 
 export default interface PublicWorkerProfile {
-  id?: string | undefined;
+  id: string;
   userId?: string | undefined;
   location?: string | undefined;
+  user?: {
+    rtwStatus?:
+      | "NOT_SUBMITTED"
+      | "PENDING"
+      | "VERIFIED"
+      | "ACCEPTED"
+      | "EXPIRED"
+      | "NOT_FOUND"
+      | "LOCKED"
+      | "REJECTED"
+      | undefined;
+  };
 
   fullBio: string | undefined;
   privateNotes?: string;
@@ -89,7 +96,7 @@ export default interface PublicWorkerProfile {
   updatedAt?: Date | undefined;
 
   awards?: Award[];
-  equipment?: Equipment[];
+  equipments?: Equipment[];
   skills?: Skill[];
   reviews?: Review[];
   qualifications?: Qualification[];

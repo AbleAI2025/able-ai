@@ -6,7 +6,6 @@ import Link from "next/link";
 import SkillsDisplayTable from "@/app/components/profile/SkillsDisplayTable";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
-import CheckboxDisplayItem from "@/app/components/profile/CheckboxDisplayItem";
 import styles from "./WorkerProfile.module.css";
 
 import {
@@ -27,12 +26,14 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 
-import PublicWorkerProfile, { Review } from "@/app/types/workerProfileTypes";
+import PublicWorkerProfile, { Qualification, Review } from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ProfileMedia from "./ProfileMedia";
 import CancelButton from "../shared/CancelButton";
+import Qualifications from "./Qualifications";
+import Equipments from "./Equipments";
 
 const WorkerProfile = ({
   workerProfile,
@@ -52,8 +53,7 @@ const WorkerProfile = ({
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
-
-  const isWorkerVerified = false;
+  const [name, setName] = useState<string | null>(user?.displayName || null);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -165,6 +165,11 @@ const WorkerProfile = ({
     }
   }, [workerProfile]);
 
+  const handleNameChange = (name: string) => {
+    setName(name);
+    // Update the worker's display name
+  };
+
   return (
     <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
@@ -177,8 +182,18 @@ const WorkerProfile = ({
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
-          <h1 className={styles.workerName}>{user?.displayName}</h1>
-          {isWorkerVerified ? (
+          {!isSelfView ? (
+            <h1 className={styles.workerName}>{user?.displayName}</h1>
+          ) : (
+            <input
+              type="text"
+              className={styles.workerName}
+              value={name ?? ""}
+              onChange={(e) => handleNameChange(e.target.value)}
+            />
+          )}
+          
+          { workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
               <span className={styles.verifiedText}>
@@ -207,7 +222,7 @@ const WorkerProfile = ({
               aria-label="View calendar"
             >
               <CalendarDays size={28} className={styles.calendarIcon} />
-              <span>Availability calendar</span>
+              <span>View calendar</span>
             </Link>
           )}
         </div>
@@ -287,39 +302,20 @@ const WorkerProfile = ({
         )}
 
         {/* Qualifications Section (Benji Image Style) */}
-        {
-          <div>
-            <h3 className={styles.contentTitle}>Qualifications:</h3>
-            <ul className={styles.listSimple}>
-              {workerProfile?.qualifications &&
-              workerProfile?.qualifications?.length > 0 ? (
-                workerProfile.qualifications.map((q, index) => (
-                  <li key={index}>
-                    {q.title}: {q.description}
-                  </li>
-                ))
-              ) : (
-                <li>No qualifications listed.</li>
-              )}
-            </ul>
-          </div>
-        }
+          <Qualifications
+            initialQualifications={workerProfile.qualifications as Qualification[] ?? []}
+            workerId={workerProfile.id}
+             isSelfView={isSelfView}
+          />
+            
 
         {/* Equipment Section (User Image Style) */}
         {
-          <div>
-            <h3 className={styles.contentTitle}>Equipment:</h3>
-            <div className={styles.equipmentListContainer}>
-              {workerProfile?.equipment &&
-              workerProfile?.equipment?.length > 0 ? (
-                workerProfile.equipment.map((item, index) => (
-                  <CheckboxDisplayItem key={index} label={item.name} />
-                ))
-              ) : (
-                <p className={styles.feedbackText}>No equipment listed.</p>
-              )}
-            </div>
-          </div>
+          <Equipments
+            workerProfileId={workerProfile.id}
+            initialEquipments={workerProfile.equipments || []}
+            isSelfView={isSelfView}
+          />
         }
       </div>
       {/* End Main Content Wrapper */}

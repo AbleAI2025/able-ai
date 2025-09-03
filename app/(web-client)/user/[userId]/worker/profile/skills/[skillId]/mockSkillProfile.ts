@@ -1,7 +1,7 @@
 import { SkillProfile } from "./schemas/skillProfile";
 
 export const mockSkillProfile: SkillProfile = {
-  profileId: "profile_12345",
+  workerProfileId: "profile_12345",
   name: "Jane",
   title: "Developer",
   hashtags: "#React #NextJS #NodeJS #MongoDB",
@@ -48,13 +48,19 @@ export const mockSkillProfile: SkillProfile = {
   ],
   qualifications: [
     {
+      id: "q1",
+      workerProfileId: "profile_12345",
       title: "B.Sc. Computer Science",
-      date: "2019-06-30",
+      createdAt: new Date("2019-06-30"),
+      updatedAt: new Date("2020-06-30"),
       description: "Graduated with honors from University of London.",
     },
     {
+      id: "q2",
+      workerProfileId: "profile_12345",
       title: "AWS Certified Developer",
-      date: "2021-09-15",
+      createdAt: new Date("2021-09-15"),
+      updatedAt: new Date("2021-09-15"),
       description: "Certification in AWS cloud solutions and deployment.",
     },
   ],

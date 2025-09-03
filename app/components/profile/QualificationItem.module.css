@@ -1,0 +1,25 @@
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  font-size: 0.95rem;
+}
+
+.item strong {
+  font-weight: 600;
+}
+
+.editIcon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #777;
+  padding: 0.2rem;
+  transition: color 0.2s ease;
+  align-self: flex-start;
+}
+
+.editIcon:hover {
+  color: #0070f3;
+}

@@ -1,5 +1,7 @@
+import { Qualification } from "@/app/types";
+
 export type SkillProfile = {
-  profileId?: string;
+  workerProfileId: string;
   name?: string;
   title?: string;
   hashtags?: string;
@@ -28,11 +30,7 @@ export type SkillProfile = {
       description?: string | null
     }
   }[];
-  qualifications: {
-    title: string;
-    date: string;
-    description: string;
-  }[];
+  qualifications: Qualification[];
   buyerReviews: {
     name: string;
     date: Date | string;

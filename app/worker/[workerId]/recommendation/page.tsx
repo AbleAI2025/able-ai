@@ -2,13 +2,12 @@
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import InputField from "@/app/components/form/InputField"; // Reusing shared InputField
-import { Send, Loader2 } from "lucide-react"; // Lucide icons
+import { Send, Loader2, Star } from "lucide-react"; // Lucide icons
 
 import styles from "./RecommendationPage.module.css";
-import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import {
   getWorkerForRecommendationAction,
   submitExternalRecommendationAction,
@@ -39,7 +38,6 @@ async function getWorkerDetails(
 export default function PublicRecommendationPage() {
   const params = useParams();
   const workerToRecommendId = params.workerId as string;
-  const router = useRouter();
 
   const [workerDetails, setWorkerDetails] = useState<{
     name: string;
@@ -157,15 +155,11 @@ export default function PublicRecommendationPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack
-        title="Recommendation"
-        onBackClick={() => router.back()}
-      />
       <div className={styles.pageWrapper}>
-        {/* <header className={styles.title}>
-          <Star className={styles.starIcon} />
-          <span>Recommendation for {workerDetails.name}</span> */}
-        {/* </header> */}
+        <header className={styles.title}>
+          <Star color="#ffffff" fill="#ffffff" />
+          <span>Recommendation for {workerDetails.name}</span>
+        </header>
 
         <div className={styles.recommendationCard}>
           <p className={styles.prompt}>
@@ -213,7 +207,7 @@ export default function PublicRecommendationPage() {
                 value={formData.recommendationText}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder={`Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${selectedSkill}`}
+                placeholder={`Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${selectedSkill?.name || ""}`}
                 required
               />
             </div>
@@ -226,7 +220,7 @@ export default function PublicRecommendationPage() {
                 value={formData.relationship}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder="Please describe how you know Benji: e.g., Worked together at [Company/Event], Supervised them, Hired them for a gig..."
+                placeholder={`Please describe how you know ${workerDetails.name}: e.g., Worked together at [Company/Event], Supervised them, Hired them for a gig...`}
                 required
               />
             </div>
@@ -272,13 +266,6 @@ export default function PublicRecommendationPage() {
             </button>
           </form>
         </div>
-
-        {/* <div className={styles.botMessageContainer}>
-          <Logo width={60} height={60} />
-          <p className={styles.botText}>
-            Hi! I am Able AI agent - please let me know if you have any gig work needs or would like to add a skills profile to our platform
-          </p>
-        </div> */}
       </div>
     </div>
   );
