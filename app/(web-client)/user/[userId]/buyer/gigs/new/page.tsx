@@ -9,6 +9,7 @@ import MessageBubble from "@/app/components/onboarding/MessageBubble";
 import WorkerCard, { WorkerData } from "@/app/components/onboarding/WorkerCard"; // Import shared WorkerCard and WorkerData
 import LocationPickerBubble from "@/app/components/onboarding/LocationPickerBubble";
 import CalendarPickerBubble from "@/app/components/onboarding/CalendarPickerBubble";
+import DiscountCodeBubble from "@/app/components/onboarding/DiscountCodeBubble";
 
 import Loader from "@/app/components/shared/Loader";
 
@@ -189,6 +190,7 @@ const requiredFields: RequiredField[] = [
   { name: "gigLocation", type: "location", defaultPrompt: "Where is the gig located?" },
   { name: "gigDate", type: "date", defaultPrompt: "What date is the gig?" },
   { name: "gigTime", type: "time", defaultPrompt: "What time does the gig start?" },
+  { name: "discountCode", type: "text", placeholder: "e.g., ABLE20", defaultPrompt: "Great! Just one last thing. Do you have a discount code to apply? 🎟️ If not, no worries!" },
 ];
 
 // Currency note for users
@@ -309,7 +311,7 @@ Respond as a single message, as if you are the bot in a chat.`;
 
 type ChatStep = {
   id: number;
-  type: "bot" | "user" | "input" | "sanitized" | "typing" | "calendar" | "location" | "confirm";
+  type: "bot" | "user" | "input" | "sanitized" | "typing" | "calendar" | "location" | "confirm" | "discountCode";
   content?: string;
   inputConfig?: StepInputConfig;
   isComplete?: boolean;
@@ -519,6 +521,7 @@ export default function OnboardBuyerPage() {
 
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [discountCode, setDiscountCode] = useState<string | null>();
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmedSteps, setConfirmedSteps] = useState<Set<number>>(new Set());
   const [currentFocusedInputName, setCurrentFocusedInputName] = useState<string | null>(null);
@@ -854,6 +857,7 @@ Special handling:
 - For dates: Accept any valid date format
 - For location fields: Accept coordinates, addresses, venue names, or any location information
 - For time fields: Accept single times (12:00, 2:30 PM) or time ranges (12:00-14:30, 12:00 PM - 2:30 PM)
+- For discountCode: This is optional. If the user provides a code, sanitize it (e.g., uppercase, remove spaces). If they say "no", "none", "skip", or leave it empty, that is PERFECTLY SUFFICIENT. The sanitizedValue should be an empty string in that case.
 
 If validation passes, respond with:
 - isAppropriate: true
@@ -1138,6 +1142,13 @@ Make the conversation feel natural and build on what they've already told you.`;
     }
   }
 
+  const getStepTypeForField = (fieldName: string): "input" | "calendar" | "location" | "discountCode" => {
+    if (fieldName === "gigDate") return "calendar";
+    if (fieldName === "gigLocation") return "location";
+    if (fieldName === "discountCode") return "discountCode";
+    return "input";
+  }
+
   // Simple function to handle calendar and location confirmations without AI validation
   async function handlePickerConfirm(stepId: number, inputName: string) {
     const value = formData[inputName];
@@ -1178,12 +1189,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
         
         // Determine the step type based on the field
-        let stepType: "input" | "calendar" | "location" = "input";
-        if (nextField.name === "gigDate") {
-          stepType = "calendar";
-        } else if (nextField.name === "gigLocation") {
-          stepType = "location";
-        }
+        const stepType = getStepTypeForField(nextField.name)
         
         const newInputConfig = {
           type: nextField.type as FormInputType,
@@ -1257,13 +1263,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         // Generate context-aware prompt
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
         
-        // Determine the step type based on the field
-        let stepType: "input" | "calendar" | "location" = "input";
-        if (nextField.name === "gigDate") {
-          stepType = "calendar";
-        } else if (nextField.name === "gigLocation") {
-          stepType = "location";
-        }
+        const stepType = getStepTypeForField(nextField.name)
         
         const newInputConfig = {
           type: nextField.type as FormInputType,
@@ -1310,6 +1310,30 @@ Make the conversation feel natural and build on what they've already told you.`;
     if (isReformulating) return; // Prevent multiple clicks
     setReformulateField(fieldName);
     setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-reformulate`]));
+  };
+
+  useEffect(() => {
+    const codeFromSession = sessionStorage.getItem('referralCode');
+    if (codeFromSession)  setDiscountCode(codeFromSession);
+  }, []);
+
+  const handleDiscountCodeConfirm = async (stepId: number, code: string | null) => {
+    const updatedFormData = { ...formData, discountCode: code || undefined };
+    setFormData(updatedFormData);
+
+    setChatSteps((prev) =>
+      prev.map((step) => (step.id === stepId ? { ...step, isComplete: true } : step))
+    );
+
+    setChatSteps((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "bot",
+        content: `Thank you! Here is a summary of your gig:\n${JSON.stringify(updatedFormData, null, 2)}`,
+        isNew: true,
+      },
+    ]);
   };
 
   // After the last input, show a summary message (optionally call AI for summary)
@@ -1421,6 +1445,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         additionalInstructions: formData.additionalInstructions ? String(formData.additionalInstructions) : undefined,
         hourlyRate: formData.hourlyRate ?? 0,
         gigLocation: formData.gigLocation, // Send the original location object to preserve coordinates
+        discountCode: formData.discountCode,
         gigDate: String(formData.gigDate || "").slice(0, 10),
         gigTime: formData.gigTime ? String(formData.gigTime) : undefined,
       };
@@ -1939,6 +1964,18 @@ Make the conversation feel natural and build on what they've already told you.`;
           }
 
 
+          if (step.type === "discountCode" && !step.isComplete) {
+            return (
+              <DiscountCodeBubble
+                key={key}
+                sessionCode={discountCode ?? null} // Pass the session code from state
+                onConfirm={(code) => {
+                  void handleDiscountCodeConfirm(step.id, code);
+                }}
+                role={"BUYER"}
+              />
+            );
+          }
           
 
           

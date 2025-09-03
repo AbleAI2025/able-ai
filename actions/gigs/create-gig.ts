@@ -12,6 +12,7 @@ type CreateGigInput = {
   gigLocation?: string | { lat?: number; lng?: number; formatted_address?: string; address?: string; [key: string]: any };
   gigDate: string; // YYYY-MM-DD
   gigTime?: string; // HH:mm (24h) or time range like "12:00-14:30"
+  discountCode?: string;
 };
 
 type CreateGigResult = {

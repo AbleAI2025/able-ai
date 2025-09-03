@@ -127,13 +127,6 @@
 
 /* --- User Info Bar (Benji Image Style: Name, Handle, Calendar) --- */
 .userInfoBar {
-  /* display: flex; */
-  /* justify-content: space-between; */
-  /* align-items: center; */
-  /* padding: 0.5rem 0; Slight vertical padding, or remove if part of a card */
-  /* background-color: #1f1f1f; Optional: if it needs its own card look */
-  /* border-radius: 16px; */
-  /* padding: 1rem; */
   margin: 0.5rem 0;
 }
 .userInfo {
@@ -151,7 +144,9 @@
   width: fit-content;
   padding: 0 0.75rem;
   flex: 1;
-  max-width: fit-content;
+  max-width: 173px;
+  outline: none;
+  border: none;
 }
 
 .verifiedBadgeContainer {
@@ -207,6 +202,26 @@
   text-decoration: none;
 }
 
+@media screen and (min-width: 374px) {
+  .viewCalendarLink {
+    margin-right: 2rem;
+  }
+}
+
+
+@media screen and (min-width: 400px) {
+  .viewCalendarLink {
+    margin-right: 3rem;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .viewCalendarLink {
+    margin-right: 4.9rem;
+  }
+}
+
+
 .viewCalendarLink:hover {
   color: #ffffff;
 }
@@ -222,17 +237,7 @@
 }
 .statisticsItemsContainer {
   display: flex;
-  justify-content: space-between;
-}
-@media (min-width: 380px) { /* Side-by-side on slightly wider screens */
-  .statisticsItemsContainer {
-    flex-direction: row;
-    justify-content: space-around; /* Or space-between */
-    align-items: flex-start;
-  }
-  .statisticsItemsContainer > * { /* Each StatisticItemDisplay */
-    flex-basis: 48%; /* Roughly half width */
-  }
+  gap: 2rem;
 }
 
 
@@ -280,10 +285,6 @@
   flex-direction: column;
   /* gap: 0.4rem; */
   font-size: 0.9rem;
-}
-.equipmentListContainer {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
 }
 
 /* --- Bio Text (if used) --- */

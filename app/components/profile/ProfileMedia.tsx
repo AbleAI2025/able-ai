@@ -19,7 +19,6 @@ export default function ProfileMedia({
   workerLink,
   onVideoUpload,
 }: ProfileMediaProps) {
-
   return (
     <div className={styles.profileHeaderImageSection}>
       <div className={styles.profileImageVideo}>

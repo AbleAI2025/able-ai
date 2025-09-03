@@ -51,7 +51,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
 
   const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
     where: eq(GigWorkerProfilesTable.userId, user.id),
-    with: { user: { columns: { fullName: true } } },
+    with: { user: { columns: { fullName: true, rtwStatus: true } } },
   });
 
   const data = await getGigWorkerProfile(workerProfile);
@@ -61,7 +61,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
 export const getGigWorkerProfile = async (
   workerProfile:
     | (typeof GigWorkerProfilesTable.$inferSelect & {
-        user?: { fullName: string };
+        user?: { fullName: string, rtwStatus: string};
       })
     | undefined
 ): Promise<{ success: true; data: PublicWorkerProfile }> => {
@@ -257,7 +257,7 @@ export const getSkillDetailsWorker = async (id: string) => {
     );
 
     const skillProfile = {
-      profileId: workerProfile?.id,
+      workerProfileId: workerProfile?.id ?? '',
       name: user?.fullName,
       title: skill?.name,
       hashtags: Array.isArray(workerProfile?.hashtags)

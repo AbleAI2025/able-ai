@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines */
 "use client";
 
 import Image from "next/image";
@@ -23,6 +25,7 @@ import Loader from "../shared/Loader";
 import ProfileVideo from "./WorkerProfileVideo";
 import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
 import { BadgeIcon } from "./GetBadgeIcon";
+import Qualifications from "./Qualifications";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -206,9 +209,9 @@ const SkillSplashScreen = ({
   };
 
   useEffect(() => {
-    if (profile && profile.profileId) {
+    if (profile && profile.workerProfileId) {
       setLinkUrl(
-        `${window.location.origin}/worker/${profile.profileId}/recommendation`
+        `${window.location.origin}/worker/${profile.workerProfileId}/recommendation`
       );
     }
   }, [profile]);
@@ -384,7 +387,7 @@ const SkillSplashScreen = ({
           </div>
         )}
         {/* Qualifications */}
-        {profile.qualifications && profile.qualifications.length > 0 && (
+        {/* {profile.qualifications && profile.qualifications.length > 0 && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
             <ul className={styles.list}>
@@ -395,7 +398,12 @@ const SkillSplashScreen = ({
               ))}
             </ul>
           </div>
-        )}
+        )} */}
+        <Qualifications
+          initialQualifications={profile.qualifications}
+          isSelfView={isSelfView}
+          workerId={profile.workerProfileId}
+        />
         {/* Buyer Reviews */}
         {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (
           <div className={styles.section}>

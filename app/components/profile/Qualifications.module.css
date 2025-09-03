@@ -1,0 +1,54 @@
+.contentTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 21px;
+  margin-bottom: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
+  color: #9e9b9b;
+  transition: color 0.2s ease;
+}
+
+.actions button:hover {
+  color: var(--primary-color);
+}
+
+.listSimple {
+  list-style: disc;
+  
+  margin: 0;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.checkDone {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.checkDone:hover {
+    background-color: #307ab2;
+}

@@ -1,7 +1,8 @@
 import {BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
+import { Qualification } from "@/app/types";
 
 export type SkillProfile = {
-  profileId?: string;
+  workerProfileId: string;
   name?: string;
   title?: string;
   hashtags?: string;
@@ -29,11 +30,7 @@ export type SkillProfile = {
     awardedAt: Date;
     awardedBySystem?: boolean | null;
   }[] | undefined;
-  qualifications: {
-    title: string;
-    date: string;
-    description: string;
-  }[];
+  qualifications: Qualification[];
   buyerReviews: {
     name: string;
     date: Date | string;

@@ -98,13 +98,11 @@ awards: [
   }
 ] as Award[],
 
-  equipment: [
+  equipments: [
     {
       id: "e1",
       workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       name: "Cocktail Shaker",
-      description: "Professional-grade shaker kit",
-      isVerifiedByAdmin: true,
       createdAt: new Date("2024-02-15T12:00:00Z"),
       updatedAt: new Date("2024-06-01T14:30:00Z"),
     },
@@ -112,8 +110,6 @@ awards: [
       id: "e2",
       workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       name: "Portable Bar Kit",
-      description: "All-in-one bar setup for events",
-      isVerifiedByAdmin: false,
       createdAt: new Date("2024-03-10T11:00:00Z"),
       updatedAt: new Date("2024-05-22T16:00:00Z"),
     },
@@ -183,11 +179,8 @@ awards: [
       id: "q1",
       workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       title: "Food & Beverage Safety Certified",
-      institution: "Hospitality Institute UK",
-      yearAchieved: 2021,
       description: "Certification for food and beverage handling safety",
       documentUrl: "https://example.com/fb-cert.pdf",
-      isVerifiedByAdmin: true,
       createdAt: new Date("2021-06-10T12:00:00Z"),
       updatedAt: new Date("2024-06-01T14:30:00Z"),
     },
@@ -195,10 +188,7 @@ awards: [
       id: "q2",
       workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
       title: "Mixology Masterclass",
-      institution: "London Bartending School",
-      yearAchieved: 2022,
       description: "Advanced mixology techniques and bar management",
-      isVerifiedByAdmin: false,
       createdAt: new Date("2022-08-20T10:00:00Z"),
       updatedAt: new Date("2024-05-10T15:00:00Z"),
     },

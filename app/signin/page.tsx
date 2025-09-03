@@ -23,6 +23,16 @@ export default function SignInPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loadingAuth]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = params.get('code');
+
+    if (referralCode) {
+      sessionStorage.setItem('referralCode', referralCode);
+      toast.info(`Referral code "${referralCode}" has been saved!`);
+    }
+  }, []);
+
   const handleCloseError = () => {
     setError(null);
   };

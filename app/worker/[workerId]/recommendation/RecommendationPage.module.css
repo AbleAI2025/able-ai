@@ -1,7 +1,6 @@
 /* app/worker/[workerId]/recommendation/RecommendationPage.module.css */
 .container {
-  min-height: 100vh;
-  background-color: #161616;
+  background-color: #000000;
   color: #e0e0e0;
   font-family: var(--font-family);
   display: flex;
@@ -11,8 +10,22 @@
 
 .pageWrapper {
   width: 100%;
-  max-width: 450px; /* Max width for the content area */
-  padding: 1rem;
+  max-width: 450px;
+  margin: 0 auto;
+  background-color: #161616;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  height: 60px;
+  background-color: #2b2b2b;
+  margin-bottom: 1rem;
 }
 
 .recommendationCard {
@@ -21,6 +34,10 @@
   background-color: #2b2b2b;
   border-radius: 24px;
   border: 1px solid #808080;
+  margin: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .prompt {
@@ -41,10 +58,7 @@
 .form {
     display: flex;
     flex-direction: column;
-}
-
-.inputGroup {
-  /* Removed margin-bottom here, handled by .form gap */
+    flex: 1;
 }
 
 .label {
@@ -106,6 +120,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: auto;
   gap: 1rem;
   width: 100%;
   background-color: var(--secondary-color);
@@ -117,7 +132,6 @@
   font-size: 0.875rem;
   font-weight: 600;
   align-self: center;
-  margin-top: 1rem;
   transition: background-color 0.2s ease, transform 0.15s ease;
 }
 .submitButton:hover:not(:disabled) {
@@ -181,7 +195,7 @@
 .select {
   padding: 0.6rem 1rem;
   border-radius: 0.5rem;
-  border: 1px solid #2b2b2b;
+  border: 1px solid #6a6464;
   background-color: #2b2b2b;
   color: #c2c2c2;
   font-size: 0.9rem;
