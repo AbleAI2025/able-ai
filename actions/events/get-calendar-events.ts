@@ -1,34 +1,216 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq, and, isNull } from "drizzle-orm";
-import { GigsTable, UsersTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
-import { CalendarEvent, EventStatusEnum, EventStatusEnumType } from "@/app/types/CalendarEventTypes";
+import { eq } from "drizzle-orm";
+import {
+  GigsTable,
+  UsersTable,
+  WorkerAvailabilityTable,
+} from "@/lib/drizzle/schema";
+import {
+  CalendarEvent,
+  EventStatusEnum,
+  EventStatusEnumType,
+} from "@/app/types/CalendarEventTypes";
 
 const mapEventStatus = (status: string): EventStatusEnumType => {
-  // Use the actual string values directly instead of relying on enum array order
   const mappedStatus: Record<string, EventStatusEnumType> = {
-    'PENDING_WORKER_ACCEPTANCE': EventStatusEnum.OFFER,
-    'ACCEPTED': EventStatusEnum.ACCEPTED,
-    'DECLINED_BY_WORKER': EventStatusEnum.UNAVAILABLE,
-    'IN_PROGRESS': EventStatusEnum.IN_PROGRESS,
-    'PENDING_COMPLETION_WORKER': EventStatusEnum.PENDING,
-    'PENDING_COMPLETION_BUYER': EventStatusEnum.PENDING,
-    'COMPLETED': EventStatusEnum.COMPLETED,
-    'AWAITING_PAYMENT': EventStatusEnum.COMPLETED,
-    'PAID': EventStatusEnum.COMPLETED,
-    'CANCELLED_BY_BUYER': EventStatusEnum.CANCELLED,
-    'CANCELLED_BY_WORKER': EventStatusEnum.UNAVAILABLE,
-    'CANCELLED_BY_ADMIN': EventStatusEnum.CANCELLED,
-    'DISPUTED': EventStatusEnum.OFFER,
+    PENDING_WORKER_ACCEPTANCE: EventStatusEnum.OFFER,
+    ACCEPTED: EventStatusEnum.ACCEPTED,
+    DECLINED_BY_WORKER: EventStatusEnum.UNAVAILABLE,
+    IN_PROGRESS: EventStatusEnum.IN_PROGRESS,
+    PENDING_COMPLETION_WORKER: EventStatusEnum.PENDING,
+    PENDING_COMPLETION_BUYER: EventStatusEnum.PENDING,
+    COMPLETED: EventStatusEnum.COMPLETED,
+    AWAITING_PAYMENT: EventStatusEnum.COMPLETED,
+    PAID: EventStatusEnum.COMPLETED,
+    CANCELLED_BY_BUYER: EventStatusEnum.CANCELLED,
+    CANCELLED_BY_WORKER: EventStatusEnum.UNAVAILABLE,
+    CANCELLED_BY_ADMIN: EventStatusEnum.CANCELLED,
+    DISPUTED: EventStatusEnum.OFFER,
   };
-
   return mappedStatus[status] || EventStatusEnum.UNAVAILABLE;
 };
 
-export async function getCalendarEvents({ userId, role, isViewQA }: { userId: string; role?: 'buyer' | 'worker'; isViewQA?: boolean; }) {
+// --- Worker Events Helper ---
+async function getWorkerCalendarEvents(user: any): Promise<CalendarEvent[]> {
+  // 1. Accepted/assigned gigs
+  const acceptedGigs = await db.query.GigsTable.findMany({
+    where: eq(GigsTable.workerUserId, user.id),
+    with: {
+      buyer: { columns: { id: true, fullName: true } },
+      worker: { columns: { id: true, fullName: true } },
+    },
+  });
+
+  // 2. Available gig offers
+  const allGigsForOffers = await db.query.GigsTable.findMany({
+    columns: {
+      id: true,
+      titleInternal: true,
+      statusInternal: true,
+      workerUserId: true,
+      buyerUserId: true,
+      startTime: true,
+      endTime: true,
+      agreedRate: true,
+      fullDescription: true,
+      notesForWorker: true,
+      addressJson: true,
+      exactLocation: true,
+    },
+  });
+  const availableOffers = allGigsForOffers.filter(
+    (gig) =>
+      gig.statusInternal === "PENDING_WORKER_ACCEPTANCE" &&
+      !gig.workerUserId &&
+      gig.buyerUserId !== user.id
+  );
+
+  // 3. Worker availability
+  const workerAvailability = await db.query.WorkerAvailabilityTable.findMany({
+    where: eq(WorkerAvailabilityTable.userId, user.id),
+    orderBy: WorkerAvailabilityTable.startTime,
+  });
+
+  // Map accepted gigs
+  const acceptedEvents: CalendarEvent[] = acceptedGigs.map((gig) => ({
+    id: gig.id,
+    title: gig.titleInternal,
+    start: new Date(gig.startTime),
+    end: new Date(gig.endTime),
+    allDay: !(gig.startTime && gig.endTime),
+    status: mapEventStatus(gig.statusInternal),
+    eventType: "gig",
+    buyerName: gig.buyer?.fullName || "Unknown Buyer",
+    workerName: gig.worker?.fullName || "Unassigned Worker",
+    isMyGig: true,
+    isBuyerAccepted: gig.statusInternal === "ACCEPTED",
+    location:
+      (gig.addressJson as any)?.formatted_address ||
+      gig.exactLocation ||
+      "Location not specified",
+    description: gig.fullDescription || undefined,
+    resource: {
+      gigId: gig.id,
+      buyerId: gig.buyerUserId,
+      workerId: gig.workerUserId,
+      agreedRate: gig.agreedRate,
+      totalAgreedPrice: gig.totalAgreedPrice,
+      moderationStatus: gig.moderationStatus,
+      isOffer: false,
+    },
+  }));
+
+  // Map available offers
+  const offerEvents: CalendarEvent[] = availableOffers.map((gig) => ({
+    id: gig.id,
+    title: `🎯 ${gig.titleInternal} (Offer)`,
+    start: new Date(gig.startTime),
+    end: new Date(gig.endTime),
+    allDay: !(gig.startTime && gig.endTime),
+    status: EventStatusEnum.OFFER,
+    eventType: "offer",
+    buyerName: "Available Gig",
+    workerName: "Available for you",
+    isMyGig: false,
+    isBuyerAccepted: false,
+    location:
+      (gig.addressJson as any)?.formatted_address ||
+      gig.exactLocation ||
+      "Location not specified",
+    description: gig.fullDescription || undefined,
+    resource: {
+      gigId: gig.id,
+      buyerId: gig.buyerUserId,
+      workerId: null,
+      agreedRate: gig.agreedRate,
+      totalAgreedPrice: gig.agreedRate,
+      moderationStatus: "PENDING",
+      isOffer: true,
+      notesForWorker: gig.notesForWorker,
+    },
+  }));
+
+  // Map worker availability
+  const availabilityEvents: CalendarEvent[] = workerAvailability
+    .filter((availability) => availability.startTime && availability.endTime)
+    .map((availability) => ({
+      id: availability.id,
+      title: availability.notes
+        ? `Unavailable: ${availability.notes}`
+        : "Unavailable",
+      start: new Date(availability.startTime!),
+      end: new Date(availability.endTime!),
+      allDay: false,
+      status: EventStatusEnum.UNAVAILABLE,
+      eventType: "unavailability",
+      buyerName: "Unavailable",
+      workerName: "You",
+      isMyGig: true,
+      isBuyerAccepted: false,
+      location: availability.notes || "Unavailable period",
+      description: availability.notes || undefined,
+      resource: {
+        availabilityId: availability.id,
+        userId: user.id,
+      },
+    }));
+
+  return [...acceptedEvents, ...offerEvents, ...availabilityEvents];
+}
+
+// --- Buyer Events Helper ---
+async function getBuyerCalendarEvents(user: any): Promise<CalendarEvent[]> {
+  const gigs = await db.query.GigsTable.findMany({
+    where: eq(GigsTable.buyerUserId, user.id),
+    with: {
+      buyer: { columns: { id: true, fullName: true } },
+      worker: { columns: { id: true, fullName: true } },
+    },
+  });
+
+  return gigs.map((gig) => ({
+    id: gig.id,
+    title: gig.titleInternal,
+    start: new Date(gig.startTime),
+    end: new Date(gig.endTime),
+    allDay: !(gig.startTime && gig.endTime),
+    status: mapEventStatus(gig.statusInternal),
+    eventType: "gig",
+    buyerName: gig.buyer?.fullName || "Unknown Buyer",
+    workerName: gig.worker?.fullName || "Unassigned Worker",
+    isMyGig: gig.buyerUserId === user.id || gig.workerUserId === user.id,
+    isBuyerAccepted: gig.statusInternal === "ACCEPTED",
+    location:
+      (gig.addressJson as any)?.formatted_address ||
+      gig.exactLocation ||
+      "Location not specified",
+    description: gig.fullDescription || undefined,
+    resource: {
+      gigId: gig.id,
+      buyerId: gig.buyerUserId,
+      workerId: gig.workerUserId,
+      agreedRate: gig.agreedRate,
+      totalAgreedPrice: gig.totalAgreedPrice,
+      moderationStatus: gig.moderationStatus,
+      isOffer: false,
+    },
+  }));
+}
+
+// --- Main Function ---
+export async function getCalendarEvents({
+  userId,
+  role,
+  isViewQA,
+}: {
+  userId: string;
+  role?: "buyer" | "worker";
+  isViewQA?: boolean;
+}) {
   if (!userId) {
-    return { error: 'User id is required', events: [], status: 404 };
+    return { error: "User id is required", events: [], status: 404 };
   }
 
   try {
@@ -37,278 +219,25 @@ export async function getCalendarEvents({ userId, role, isViewQA }: { userId: st
     });
 
     if (!user) {
-      return { error: 'User not found', events: [], status: 404 };
+      return { error: "User not found", events: [], status: 404 };
     }
 
     let calendarEvents: CalendarEvent[] = [];
 
-    if (role === 'worker') {
-      // For workers: get their accepted gigs, available gig offers, AND unavailability periods
-      
-      // Test basic database connectivity
-      try {
-        await db.query.UsersTable.findFirst({
-          columns: { id: true }
-        });
-      } catch (error) {
-        return { error: 'Database connection failed', events: [], status: 500 };
-      }
-      
-      // First, let's check what gigs exist at all in the database
-      const allGigs = await db.query.GigsTable.findMany({
-        columns: {
-          id: true,
-          titleInternal: true,
-          statusInternal: true,
-          workerUserId: true,
-          buyerUserId: true
-        }
-      });
-      
-      // 1. Get accepted/assigned gigs
-      const acceptedGigs = await db.query.GigsTable.findMany({
-        where: eq(GigsTable.workerUserId, user.id),
-        with: {
-          buyer: {
-            columns: {
-              id: true,
-              fullName: true,
-            },
-          },
-          worker: {
-            columns: {
-              id: true,
-              fullName: true,
-            },
-          },
-        },
-      });
-
-      // 2. Get available gig offers (pending worker acceptance, no worker assigned)
-      // Use the same approach as getWorkerOffers - fetch all gigs and filter in memory
-      const allGigsForOffers = await db.query.GigsTable.findMany({
-        columns: {
-          id: true,
-          titleInternal: true,
-          statusInternal: true,
-          workerUserId: true,
-          buyerUserId: true,
-          startTime: true,
-          endTime: true,
-          agreedRate: true,
-          fullDescription: true,
-          notesForWorker: true,
-          addressJson: true,
-          exactLocation: true,
-        }
-      });
-      
-      // Filter for offers using the same logic as getWorkerOffers
-      const availableOffers = allGigsForOffers.filter(gig => 
-        gig.statusInternal === 'PENDING_WORKER_ACCEPTANCE' &&
-        !gig.workerUserId &&
-        gig.buyerUserId !== user.id
-      );
-      
-      // Keep the original query for comparison/debugging
-      const allPendingGigs = await db.query.GigsTable.findMany({
-        where: eq(GigsTable.statusInternal, 'PENDING_WORKER_ACCEPTANCE'),
-        columns: {
-          id: true,
-          titleInternal: true,
-          workerUserId: true,
-          buyerUserId: true
-        }
-      });
-      
-      // Original complex query for comparison
-      const originalQueryOffers = await db.query.GigsTable.findMany({
-        where: and(
-          eq(GigsTable.statusInternal, 'PENDING_WORKER_ACCEPTANCE'),
-          isNull(GigsTable.workerUserId)
-        ),
-        with: {
-          buyer: {
-            columns: {
-              id: true,
-              fullName: true,
-            },
-          },
-        },
-      });
-      
-      // Debug: Check if we're getting the expected offers
-      if (availableOffers.length === 0) {
-        // Let's check what gigs exist with PENDING_WORKER_ACCEPTANCE status
-        const pendingGigs = await db.query.GigsTable.findMany({
-          where: eq(GigsTable.statusInternal, 'PENDING_WORKER_ACCEPTANCE'),
-          columns: {
-            id: true,
-            titleInternal: true,
-            workerUserId: true,
-            buyerUserId: true
-          }
-        });
-        
-        // Check how many have no worker assigned
-        const unassignedGigs = pendingGigs.filter(g => !g.workerUserId);
-        
-        // If no gigs exist at all, this might be a new database
-        if (allGigs.length === 0) {
-          // Database appears to be empty
-        }
-      }
-
-      // Map accepted gigs
-      const acceptedEvents: CalendarEvent[] = acceptedGigs.map((gig) => {
-        const displayStatus = mapEventStatus(gig.statusInternal);
-        return {
-          id: gig.id,
-          title: gig.titleInternal,
-          start: new Date(gig.startTime),
-          end: new Date(gig.endTime),
-          allDay: !(gig.startTime && gig.endTime),
-          status: displayStatus,
-          eventType: 'gig',
-          buyerName: gig.buyer?.fullName || 'Unknown Buyer',
-          workerName: gig.worker?.fullName || 'Unassigned Worker',
-          isMyGig: true,
-          isBuyerAccepted: gig.statusInternal === 'ACCEPTED',
-          location: (gig.addressJson as any)?.formatted_address || gig.exactLocation || 'Location not specified',
-          description: gig.fullDescription || undefined,
-          resource: {
-            gigId: gig.id,
-            buyerId: gig.buyerUserId,
-            workerId: gig.workerUserId,
-            agreedRate: gig.agreedRate,
-            totalAgreedPrice: gig.totalAgreedPrice,
-            moderationStatus: gig.moderationStatus,
-            isOffer: false,
-          },
-        };
-      });
-
-      // Map available offers
-      const offerEvents: CalendarEvent[] = availableOffers.map((gig) => {
-        return {
-          id: gig.id,
-          title: `🎯 ${gig.titleInternal} (Offer)`,
-          start: new Date(gig.startTime),
-          end: new Date(gig.endTime),
-          allDay: !(gig.startTime && gig.endTime),
-          status: EventStatusEnum.OFFER,
-          eventType: 'offer',
-          buyerName: 'Available Gig', // Since we don't have buyer relation loaded
-          workerName: 'Available for you',
-          isMyGig: false,
-          isBuyerAccepted: false,
-          location: (gig.addressJson as any)?.formatted_address || gig.exactLocation || 'Location not specified',
-          description: gig.fullDescription || undefined,
-          resource: {
-            gigId: gig.id,
-            buyerId: gig.buyerUserId,
-            workerId: null,
-            agreedRate: gig.agreedRate,
-            totalAgreedPrice: gig.agreedRate, // Use agreedRate since totalAgreedPrice might not be loaded
-            moderationStatus: 'PENDING', // Default since not loaded
-            isOffer: true,
-            notesForWorker: gig.notesForWorker,
-          },
-        };
-      });
-
-      // 3. Get worker availability (unavailability periods)
-      const workerAvailability = await db.query.WorkerAvailabilityTable.findMany({
-        where: eq(WorkerAvailabilityTable.userId, user.id),
-        orderBy: WorkerAvailabilityTable.startTime,
-      });
-
-      // Map worker availability to calendar events
-      const availabilityEvents: CalendarEvent[] = workerAvailability
-        .filter((availability) => availability.startTime && availability.endTime)
-        .map((availability) => ({
-          id: availability.id,
-          title: availability.notes ? `Unavailable: ${availability.notes}` : 'Unavailable',
-          start: new Date(availability.startTime!),
-          end: new Date(availability.endTime!),
-          allDay: false,
-          status: EventStatusEnum.UNAVAILABLE,
-          eventType: 'unavailability',
-          buyerName: 'Unavailable',
-          workerName: 'You',
-          isMyGig: true,
-          isBuyerAccepted: false,
-          location: availability.notes || 'Unavailable period',
-          description: availability.notes || undefined,
-          resource: {
-            availabilityId: availability.id,
-            userId: user.id,
-          },
-        }));
-
-      calendarEvents = [...acceptedEvents, ...offerEvents, ...availabilityEvents];
+    if (role === "worker") {
+      calendarEvents = await getWorkerCalendarEvents(user);
     } else {
-      // For buyers: get their created gigs (existing logic)
-      const columnConditionId = GigsTable.buyerUserId;
-      const gigs = await db.query.GigsTable.findMany({
-        where: eq(columnConditionId, user.id),
-        with: {
-          buyer: {
-            columns: {
-              id: true,
-              fullName: true,
-            },
-          },
-          worker: {
-            columns: {
-              id: true,
-              fullName: true,
-            },
-          },
-        },
-      });
-
-      calendarEvents = gigs.map((gig) => {
-        const isMyGig = gig.buyerUserId === user.id || gig.workerUserId === user.id;
-        const isBuyerAccepted = gig.statusInternal === 'ACCEPTED';
-        const displayStatus = mapEventStatus(gig.statusInternal)
-
-        return {
-          id: gig.id,
-          title: gig.titleInternal,
-          start: new Date(gig.startTime),
-          end: new Date(gig.endTime),
-          allDay: !(gig.startTime && gig.endTime),
-          status: displayStatus,
-          eventType: 'gig',
-          buyerName: gig.buyer?.fullName || 'Unknown Buyer',
-          workerName: gig.worker?.fullName || 'Unassigned Worker',
-          isMyGig: isMyGig,
-          isBuyerAccepted: isBuyerAccepted,
-          location: (gig.addressJson as any)?.formatted_address || gig.exactLocation || 'Location not specified',
-          description: gig.fullDescription || undefined,
-          resource: {
-            gigId: gig.id,
-            buyerId: gig.buyerUserId,
-            workerId: gig.workerUserId,
-            agreedRate: gig.agreedRate,
-            totalAgreedPrice: gig.totalAgreedPrice,
-            moderationStatus: gig.moderationStatus,
-            isOffer: false,
-          },
-        };
-      });
+      calendarEvents = await getBuyerCalendarEvents(user);
     }
 
     return { events: calendarEvents };
-
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Error fetching events:", error.message);
       return { error: error.message, events: [], status: 500 };
     } else {
       console.error("Unexpected error fetching events:", error);
-      return { error: 'Unexpected error', events: [], status: 500 };
+      return { error: "Unexpected error", events: [], status: 500 };
     }
   }
 }

@@ -48,10 +48,10 @@ export async function declineGigOffer({ gigId, userId }: { gigId: string; userId
       message: 'Gig offer declined successfully'
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error declining gig offer:', error);
     return { 
-      error: error.message || 'Failed to decline gig offer', 
+      error: error instanceof Error ? error.message : 'Failed to decline gig offer', 
       status: 500 
     };
   }
