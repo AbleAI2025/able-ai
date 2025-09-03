@@ -61,7 +61,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
 export const getGigWorkerProfile = async (
   workerProfile:
     | (typeof GigWorkerProfilesTable.$inferSelect & {
-        user?: { fullName: string, rtwStatus: string};
+        user?: { fullName: string, rtwStatus: string | null};
       })
     | undefined
 ): Promise<{ success: true; data: PublicWorkerProfile }> => {
