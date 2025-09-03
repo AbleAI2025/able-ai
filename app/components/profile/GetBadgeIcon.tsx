@@ -1,8 +1,8 @@
 import Logo from "../brand/Logo";
-import { 
-  Banknote, 
-  CalendarCheck2, 
-  ChefHat, 
+import {
+  Banknote,
+  CalendarCheck2,
+  ChefHat,
   Coffee,
   Flag,
   Handshake,
@@ -16,11 +16,11 @@ import {
   Trophy,
   User,
   UserPlus,
-  Utensils
+  Utensils,
 } from "lucide-react";
-import styles from './AwardDisplayBadge.module.css';
+import styles from "./AwardDisplayBadge.module.css";
 
-export type BadgeId =
+export type BadgeIcon =
   | "goldenVibes"
   | "fairPlay"
   | "heartMode"
@@ -47,18 +47,23 @@ export type BadgeId =
   | "inclusiveBooker"
   | "breaksMatter";
 
-const getIconFromAwardId = (awardName: BadgeId) => {
+const getIconFromAwardName = (awardName: BadgeIcon) => {
   switch (awardName) {
     // badges for all users
     case "goldenVibes":
     case "fairPlay":
     case "heartMode":
-      return <Logo width={30} height={30}/>;
+      return <Logo width={30} height={30} />;
 
     // awards for early joiners
     case "alphaGigee":
     case "gigPioneer":
-      return <Flag fill="#eab308" className={`${styles.awardIcon} ${styles.commonIcon}`} />;
+      return (
+        <Flag
+          fill="#eab308"
+          className={`${styles.awardIcon} ${styles.commonIcon}`}
+        />
+      );
 
     // worker badges
     case "firstGigComplete":
@@ -67,25 +72,41 @@ const getIconFromAwardId = (awardName: BadgeId) => {
     case "foamArtPhenom":
       return <Coffee className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "firstImpressionsPro":
-      return <Handshake className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <Handshake className={`${styles.awardIcon} ${styles.workerIcon}`} />
+      );
     case "eventSetupHero":
-      return <CalendarCheck2 className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <CalendarCheck2
+          className={`${styles.awardIcon} ${styles.workerIcon}`}
+        />
+      );
     case "cashAndTillStylin":
-      return <Banknote className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <Banknote className={`${styles.awardIcon} ${styles.workerIcon}`} />
+      );
     case "customerFavourite":
       return <Heart className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "squadRecruiter":
-      return <UserPlus className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <UserPlus className={`${styles.awardIcon} ${styles.workerIcon}`} />
+      );
     case "safeGuardGoat":
-      return <ShieldCheck className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <ShieldCheck className={`${styles.awardIcon} ${styles.workerIcon}`} />
+      );
     case "sparkleMode":
-      return <Sparkles className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <Sparkles className={`${styles.awardIcon} ${styles.workerIcon}`} />
+      );
     case "mixologyMaster":
       return <Martini className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "starBartender":
       return <Star className={`${styles.awardIcon} ${styles.workerIcon}`} />;
     case "trayJedi":
-      return <Utensils className={`${styles.awardIcon} ${styles.workerIcon}`} />;
+      return (
+        <Utensils className={`${styles.awardIcon} ${styles.workerIcon}`} />
+      );
     case "topChef":
       return <ChefHat className={`${styles.awardIcon} ${styles.workerIcon}`} />;
 
@@ -96,9 +117,13 @@ const getIconFromAwardId = (awardName: BadgeId) => {
     case "bossLevel++":
       return <User className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
     case "safeShiftHost":
-      return <ShieldCheck className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
+      return (
+        <ShieldCheck className={`${styles.awardIcon} ${styles.buyerIcon}`} />
+      );
     case "inclusiveBooker":
-      return <InfinityIcon className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
+      return (
+        <InfinityIcon className={`${styles.awardIcon} ${styles.buyerIcon}`} />
+      );
     case "breaksMatter":
       return <Moon className={`${styles.awardIcon} ${styles.buyerIcon}`} />;
 
@@ -107,4 +132,4 @@ const getIconFromAwardId = (awardName: BadgeId) => {
   }
 };
 
-export default getIconFromAwardId;
+export default getIconFromAwardName;

@@ -63,9 +63,9 @@ export const paymentStatusEnum = pgEnum("payment_status_enum", [
 
 // Interaction-related Enums
 export const badgeTypeEnum = pgEnum("badge_type_enum", [
-  "SKILL", // e.g., "Mixology Master"
-  "VALUE", // e.g., "Always Punctual", "Great Communicator"
-  "PLATFORM_ACHIEVEMENT", // e.g., "Founding Freelancer", "Top Buyer"
+  "COMMON",
+  "EARLY_JOINER",
+  "OTHER",
 ]);
 
 export const reviewTypeEnum = pgEnum("review_type_enum", [

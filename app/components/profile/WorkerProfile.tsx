@@ -33,7 +33,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ProfileMedia from "./ProfileMedia";
 import CancelButton from "../shared/CancelButton";
-import { BadgeId } from "./GetBadgeIcon";
+import { BadgeIcon } from "./GetBadgeIcon";
 
 const WorkerProfile = ({
   workerProfile,
@@ -183,7 +183,7 @@ const WorkerProfile = ({
                 icon: ThumbsUp,
                 value: workerProfile?.responseRateInternal || 0,
                 label: `Would work with ${
-                  user?.displayName?.split(" ")?.[0] ?? ""
+                  workerProfile?.user?.fullName?.split(" ")?.[0] ?? ""
                 } again`,
                 iconColor: "#41a1e8",
               }}
@@ -223,9 +223,9 @@ const WorkerProfile = ({
                 <div className={styles.awardsContainer}>
                   {workerProfile.awards.map((award) => (
                     <AwardDisplayBadge
-                      badgeId={award.badgeId as BadgeId}
+                      badgeName={award.icon as BadgeIcon}
                       key={award.id}
-                      badgeName={award.badgeName}
+                      title={award.name}
                       role="worker"
                       type={award.type}
                     />

@@ -28,8 +28,7 @@ import DashboardData from "@/app/types/BuyerProfileTypes";
 import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
-import { BadgeId } from "@/app/components/profile/GetBadgeIcon";
-
+import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 export default function BuyerProfilePage() {
   const router = useRouter();
@@ -67,15 +66,8 @@ export default function BuyerProfilePage() {
           : null,
       }));
 
-      // Ensure badges always have an icon
-      const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
-        ...badge,
-        icon: badge.icon || DefaultBadgeIcon,
-      }));
-
       setDashboardData({
         ...profile,
-        badges: updatedBadges,
         reviews: updatedReviews,
       });
       setError(null);
@@ -285,8 +277,8 @@ export default function BuyerProfilePage() {
               dashboardData?.badges?.map((badge) => (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
-                    badgeId={badge.badgeId as BadgeId}
-                    badgeName={badge.badgeName}
+                    badgeName={badge.icon as BadgeIcon}
+                    title={badge.name}
                     role="buyer"
                     type={badge.type}
                   />

@@ -1,3 +1,5 @@
+import { BadgeIcon } from "../components/profile/GetBadgeIcon";
+
 export interface Skill {
   id: string;
   workerProfileId: string;
@@ -13,15 +15,12 @@ export interface Skill {
 
 export interface Award {
   id: string;
-  userId: string;
-  badgeId: string;
-  badgeName: string;
-  type: 'common' | 'earlyJoiner' | 'other';
-  gigId?: string | null;
-  notes?: string | null;
+  type: "COMMON" | "EARLY_JOINER" | "OTHER";
+  name: string;
+  icon: BadgeIcon;
+  description?: string | null;
   awardedAt: Date;
   awardedBySystem?: boolean | null;
-  awardedByUserId?: string | null;
 }
 
 export interface Equipment {
@@ -76,6 +75,9 @@ export default interface PublicWorkerProfile {
   id?: string | undefined;
   userId?: string | undefined;
   location?: string | undefined;
+  user: {
+    fullName: string | undefined;
+  }
 
   fullBio: string | undefined;
   privateNotes?: string;

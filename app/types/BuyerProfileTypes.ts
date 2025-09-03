@@ -1,4 +1,4 @@
-import { BadgeId } from "../components/profile/GetBadgeIcon";
+import { BadgeIcon } from "../components/profile/GetBadgeIcon";
 
 // Types
 interface Badge {
@@ -9,16 +9,14 @@ interface Badge {
 
 export interface Award {
   id: string;
-  userId: string;
-  badgeId: BadgeId;
-  badgeName: string;
-  type: "common" | "earlyJoiner" | "other";
-  gigId?: string | null;
-  notes?: string | null;
+  type: "COMMON" | "EARLY_JOINER" | "OTHER";
+  name: string;
+  icon: BadgeIcon;
+  description?: string | null;
   awardedAt: Date;
   awardedBySystem?: boolean | null;
-  awardedByUserId?: string | null;
 }
+
 interface Review {
   id: string;
   name: string;

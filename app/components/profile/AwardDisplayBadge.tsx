@@ -1,24 +1,25 @@
 import React from 'react';
 import styles from './AwardDisplayBadge.module.css';
-import getIconFromAwardId, { BadgeId } from './GetBadgeIcon';
+import getIconFromAwardId, { BadgeIcon } from './GetBadgeIcon';
 
 interface AwardDisplayBadgeProps {
-  badgeId: BadgeId;
-  badgeName: string,
+  badgeName: BadgeIcon;
+  title: string,
   role: 'worker' | 'buyer',
-  type: 'common' | 'earlyJoiner' | 'other',
+  type: "COMMON" | "EARLY_JOINER" | "OTHER"
+  
 }
 
 const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({ 
-  badgeId, 
   badgeName, 
+  title, 
   role, 
   type 
 }) => {
 
-  const Icon = getIconFromAwardId(badgeId);
+  const Icon = getIconFromAwardId(badgeName);
 
-  const borderStyle = type === 'common' || type === 'earlyJoiner' ? 
+  const borderStyle = type === 'COMMON' || type === 'EARLY_JOINER' ? 
                       styles.commonBadge : (
                       role === 'worker' ? styles.workerBadge : styles.buyerBadge
                     );
@@ -34,7 +35,7 @@ const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({
       }
       <div className={styles.awardTextContainer}>
           <span className={styles.awardTextLine}>
-            {badgeName}
+            {title}
           </span>
       </div>
     </div>

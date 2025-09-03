@@ -1,4 +1,4 @@
-import { BadgeId } from "@/app/components/profile/GetBadgeIcon";
+import {BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 export type SkillProfile = {
   profileId?: string;
@@ -21,13 +21,14 @@ export type SkillProfile = {
   };
   supportingImages: string[];
   badges: {
-    id: string | number;
-    badgeId: BadgeId;
-    badgeName: string;
-    type: 'common' | 'earlyJoiner' | 'other';
-    notes: string;
-    awardedAt: Date | string;
-  }[];
+    id: string;
+    type: "COMMON" | "EARLY_JOINER" | "OTHER";
+    name: string;
+    icon?: BadgeIcon;
+    description?: string | null;
+    awardedAt: Date;
+    awardedBySystem?: boolean | null;
+  }[] | undefined;
   qualifications: {
     title: string;
     date: string;
