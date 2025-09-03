@@ -238,7 +238,7 @@ const WorkerProfile = ({
                 <div className={styles.awardsContainer}>
                   {workerProfile.awards.map((award) => (
                     <AwardDisplayBadge
-                      badgeName={award.icon as BadgeIcon}
+                      icon={award.icon as BadgeIcon}
                       key={award.id}
                       title={award.name}
                       role="worker"

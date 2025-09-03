@@ -3,7 +3,7 @@ import styles from './AwardDisplayBadge.module.css';
 import getIconFromAwardId, { BadgeIcon } from './GetBadgeIcon';
 
 interface AwardDisplayBadgeProps {
-  badgeName: BadgeIcon;
+  icon: BadgeIcon;
   title: string,
   role: 'worker' | 'buyer',
   type: "COMMON" | "EARLY_JOINER" | "OTHER"
@@ -11,13 +11,13 @@ interface AwardDisplayBadgeProps {
 }
 
 const AwardDisplayBadge: React.FC<AwardDisplayBadgeProps> = ({ 
-  badgeName, 
+  icon, 
   title, 
   role, 
   type 
 }) => {
 
-  const Icon = getIconFromAwardId(badgeName);
+  const Icon = getIconFromAwardId(icon);
 
   const borderStyle = type === 'COMMON' || type === 'EARLY_JOINER' ? 
                       styles.commonBadge : (

@@ -121,7 +121,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
               onClick={onToggleTopCommunicator}
               aria-label="Top communicator award"
             >
-              <AwardDisplayBadge icon={Trophy} textLines="Top communicator" />
+              <AwardDisplayBadge icon="topChef" title="Top communicator" role="buyer" type="COMMON"/>
             </button>
             <button
               type="button"
@@ -129,7 +129,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
               onClick={onToggleTeamBuilder}
               aria-label="Team builder award"
             >
-              <AwardDisplayBadge icon={Star} textLines="Team builder" />
+              <AwardDisplayBadge icon="topChef" title="Top communicator" role="buyer" type="COMMON"/>
             </button>
           </div>
         </div>

@@ -277,7 +277,7 @@ export default function BuyerProfilePage() {
               dashboardData?.badges?.map((badge) => (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
-                    badgeName={badge.icon as BadgeIcon}
+                    icon={badge.icon as BadgeIcon}
                     title={badge.name}
                     role="buyer"
                     type={badge.type}
