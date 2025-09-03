@@ -1,4 +1,5 @@
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
+import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import DashboardData, { Award } from "@/app/types/BuyerProfileTypes";
 import {
   Star,
@@ -85,54 +86,49 @@ const dashboardMockData: DashboardData = {
 badges: [
   {
     id: "a1",
-    userId: "user-789",
-    badgeId: "firstHire",
-    badgeName: "First Hire",
-    notes: "Hired first worker successfully",
+    icon: "firstHire" as BadgeIcon,
+    name: "First Hire",
+    description: "Hired first worker successfully",
     awardedAt: new Date("2025-01-05T10:00:00Z"),
     awardedByUserId: "admin-201",
-    type: 'other'
+    type: "OTHER",
   },
   {
     id: "a2",
-    userId: "user-789",
-    badgeId: "shiftLeader",
-    badgeName: "Shift Leader",
-    notes: "Led multiple shifts with excellence",
+    icon: "shiftLeader" as BadgeIcon,
+    name: "Shift Leader",
+    description: "Led multiple shifts with excellence",
     awardedAt: new Date("2025-02-12T14:30:00Z"),
     awardedByUserId: "admin-202",
-    type: 'other'
+    type: "OTHER",
   },
   {
     id: "a3",
-    userId: "user-789",
-    badgeId: "bossLevel++",
-    badgeName: "Boss Level++",
-    notes: "Achieved top management performance",
+    icon: "bossLevel++" as BadgeIcon,
+    name: "Boss Level++",
+    description: "Achieved top management performance",
     awardedAt: new Date("2025-03-01T09:15:00Z"),
     awardedByUserId: "admin-203",
-    type: 'other'
+    type: "OTHER",
   },
   {
     id: "a4",
-    userId: "user-789",
-    badgeId: "safeShiftHost",
-    badgeName: "Safe Shift Host",
-    notes: "Ensured all shifts were safe and compliant",
+    icon: "safeShiftHost" as BadgeIcon,
+    name: "Safe Shift Host",
+    description: "Ensured all shifts were safe and compliant",
     awardedAt: new Date("2025-03-20T16:45:00Z"),
     awardedByUserId: "admin-204",
-    type: 'other'
+    type: "OTHER",
   },
   {
     id: "a5",
-    userId: "user-789",
-    badgeId: "goldenVibes",
-    badgeName: "Golden Vibes",
-    notes: "Consistently created a positive environment",
+    icon: "goldenVibes" as BadgeIcon,
+    name: "Golden Vibes",
+    description: "Consistently created a positive environment",
     awardedAt: new Date("2025-04-10T12:00:00Z"),
     awardedBySystem: true,
-    type: 'common'
-  }
+    type: "COMMON",
+  },
 ] as Award[],
 
 
