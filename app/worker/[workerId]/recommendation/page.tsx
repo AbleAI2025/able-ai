@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import InputField from "@/app/components/form/InputField"; // Reusing shared InputField
-import { Send, Loader2 } from "lucide-react"; // Lucide icons
+import { Send, Loader2, Star } from "lucide-react"; // Lucide icons
 
 import styles from "./RecommendationPage.module.css";
 import {
@@ -156,10 +156,10 @@ export default function PublicRecommendationPage() {
   return (
     <div className={styles.container}>
       <div className={styles.pageWrapper}>
-        {/* <header className={styles.title}>
-          <Star className={styles.starIcon} />
-          <span>Recommendation for {workerDetails.name}</span> */}
-        {/* </header> */}
+        <header className={styles.title}>
+          <Star color="#ffffff" fill="#ffffff" />
+          <span>Recommendation for {workerDetails.name}</span>
+        </header>
 
         <div className={styles.recommendationCard}>
           <p className={styles.prompt}>
@@ -266,13 +266,6 @@ export default function PublicRecommendationPage() {
             </button>
           </form>
         </div>
-
-        {/* <div className={styles.botMessageContainer}>
-          <Logo width={60} height={60} />
-          <p className={styles.botText}>
-            Hi! I am Able AI agent - please let me know if you have any gig work needs or would like to add a skills profile to our platform
-          </p>
-        </div> */}
       </div>
     </div>
   );
