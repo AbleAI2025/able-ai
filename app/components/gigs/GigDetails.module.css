@@ -1,10 +1,5 @@
-/* app/user/[userId]/worker/gigs/[gigId]/GigDetailsPage.module.css */
-
-/* app/user/[userId]/worker/gigs/[gigId]/GigDetailsPage.module.css */
-
-/* Main container with dark background */
 .container {
-  background-color: #000000;
+  background-color: var(--foreground);
   border-radius: 10px;
   color: #fff; /* White text */
   width: 100%;
@@ -12,275 +7,6 @@
   margin: 0 auto;
   position: relative;
   overflow: hidden;
-}
-
-/* Worker-specific UI styles based on the image design */
-.workerContainer {
-  background-color: #000000;
-  min-height: 100vh;
-  color: #ffffff;
-  max-width: 450px;
-  margin: 0 auto;
-  position: relative;
-}
-
-.workerHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0.5rem;
-  background-color: #2b2b2b;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  width: 100%;
-}
-
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.backButton {
-  background: none;
-  border: none;
-  color: #ffffff;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-}
-
-.backButton:hover {
-  opacity: 0.8;
-}
-
-.logoContainer {
-  display: flex;
-  align-items: center;
-}
-
-.workerPageTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0;
-  margin-left: 0.5rem;
-}
-
-.workerChatButton {
-  background: none;
-  border: none;
-  color: #ffffff;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-}
-
-.workerChatButton:hover {
-  opacity: 0.8;
-}
-
-
-
-.workerMain {
-  padding: 1rem;
-}
-
-.workerGigDetailsSection {
-  background: #333333;
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.workerGigDetailsHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.workerSectionTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
-}
-
-.workerGigDetailsRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.workerGigDetailsRow:last-child {
-  border-bottom: none;
-}
-
-.workerLabel {
-  font-size: 0.9rem;
-  color: #cccccc;
-  font-weight: 500;
-  flex: 0 0 auto;
-  min-width: 100px;
-}
-
-.workerDetailValue {
-  font-size: 0.9rem;
-  color: #ffffff;
-  font-weight: 500;
-  text-align: right;
-  flex: 1;
-  word-wrap: break-word;
-}
-
-.workerNegotiationButton {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: #808080;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: not-allowed;
-  margin-bottom: 1rem;
-  opacity: 0.6;
-}
-
-.workerInstructionsSection {
-  background: #333333;
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.workerSpecialInstTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0 0 0.75rem 0;
-}
-
-.workerSpecialInstructions {
-  font-size: 0.9rem;
-  color: #ffffff;
-  line-height: 1.5;
-  margin: 0;
-  white-space: pre-line;
-}
-
-.workerWorkflowSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-}
-
-.workerWorkflowSection::before {
-  content: '';
-  position: absolute;
-  left: 20px;
-  top: 40px;
-  bottom: 40px;
-  width: 2px;
-  background: rgba(255, 255, 255, 0.2);
-  z-index: 1;
-}
-
-.workerWorkflowButton {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 2;
-  background: #ffffff;
-  color: #333333;
-}
-
-.workerWorkflowButtonActive {
-  background: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-}
-
-.workerWorkflowButtonActive:hover:not(:disabled) {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-}
-
-.workerWorkflowButtonInactive {
-  background: #ffffff;
-  color: #666666;
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
-.workerWorkflowStep {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #333333;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-.workerWorkflowButtonActive .workerWorkflowStep {
-  background: #ffffff;
-  color: #3b82f6;
-}
-
-.workerAdditionalActions {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.workerAdditionalButton {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  background: #808080;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.workerTermsButton {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: #808080;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 /* Gig Offer Actions Section */
@@ -494,7 +220,7 @@
   padding: 0.75rem;
   border-radius: 1.5rem;
   border: 1px solid rgba(121, 240, 247, 0.15);
-  background: rgba(22, 22, 22, 0.8);
+  background: rgba(36, 36, 36, 0.6);
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
@@ -638,14 +364,14 @@
   text-align: center;
   font-size: 0.87rem;
   transition: all 0.3s ease;
-  background: #808080;
+  background: linear-gradient(135deg, #808080 0%, #666666 100%);
   color: var(--text-white);
   outline: none;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .negotiationButton:hover { 
-  background: #666666;
+  background: linear-gradient(135deg, #666666 0%, #555555 100%);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
@@ -655,7 +381,7 @@
   padding: 1.25rem;
   border-radius: 1.5rem;
   border: 1px solid rgba(121, 240, 247, 0.15);
-  background: rgba(22, 22, 22, 0.8);
+  background: rgba(36, 36, 36, 0.6);
   backdrop-filter: blur(8px);
   transition: all 0.3s ease;
 }
@@ -665,12 +391,11 @@
   transform: translateY(-2px);
 }
 
-/* Action Section */
 .actionSection {
-  margin-bottom: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
 }
 
 .actionButton {
@@ -714,8 +439,8 @@
 }
 
 .actionButton:disabled {
-    background: #808080;
-    color: var(--text-white);
+    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    color: #9ca3af;
     cursor: not-allowed;
     transform: none;
 }
@@ -732,7 +457,7 @@
   padding: 0.75rem 1rem;
   border: 0;
   border-radius: 1.5rem;
-  background: #808080;
+  background: linear-gradient(135deg, #808080 0%, #666666 100%);
   color: var(--text-white);
   font-size: 0.87rem;
   font-family: var(--font-family);
@@ -744,7 +469,6 @@
 }
 
 .secondaryActionButton:hover {
-  background: #666666;
   color: var(--primary-accent-color);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
@@ -807,59 +531,6 @@
 .statusAwaitingConfirmation { background-color: #8b5cf6; color: white; }
 .statusCompleted { background-color: var(--success-color); color: #0f0f0f; }
 .statusCancelled { background-color: var(--error-color); color: white; }
-
-/* Status Messages */
-.statusMessage {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(36, 36, 36, 0.8);
-  border: 1px solid rgba(121, 240, 247, 0.2);
-  backdrop-filter: blur(8px);
-}
-
-.statusSuccess {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #10b981;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.statusInProgress {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #f59e0b;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.statusCompleted {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #10b981;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.statusCancelled {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #ef4444;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.statusDescription {
-  color: #ccc;
-  font-size: 0.9rem;
-  margin: 0;
-  line-height: 1.4;
-}
 
 .specialInstructions {
   font-size: 0.87rem;
@@ -929,52 +600,4 @@
 .awaitingText {
   display: flex;
   align-items: center;
-}
-
-/* Worker Information Section */
-.workerInfoSection {
-  border-left: 4px solid #10b981;
-}
-
-.workerInfoContainer {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.workerInfoDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.workerInfoDetails .workerName {
-  font-weight: 600;
-  color: #ffffff;
-  font-size: 1rem;
-}
-
-.workerInfoDetails .workerStats {
-  color: #ccc;
-  font-size: 0.85rem;
-}
-
-.starBadge {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #fbbf24;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.sectionHeader {
-  margin-bottom: 1rem;
-}
-
-.sectionHeader .sectionTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
 }

@@ -68,12 +68,12 @@ function getMockedQAData(gigId: string) {
     hourlyRate: 20,
     estimatedEarnings: 40,
     specialInstructions: "Arrive 20 mins early for setup.",
-    status: "COMPLETED",
+    status: "PENDING",
     statusInternal: "PENDING_WORKER_ACCEPTANCE",
     hiringManager: "Alex Doe",
     hiringManagerUsername: "@alexd",
-    isBuyerSubmittedFeedback: true,
-    isWorkerSubmittedFeedback: true,
+    isBuyerSubmittedFeedback: false,
+    isWorkerSubmittedFeedback: false,
   } as GigDetails;
 }
 
