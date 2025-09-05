@@ -91,7 +91,7 @@ awards: [
   }
 ] as Award[],
 
-  equipments: [
+  equipment: [
     {
       id: "e1",
       workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",
