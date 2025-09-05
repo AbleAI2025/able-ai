@@ -49,10 +49,10 @@ export async function acceptGigOffer({ gigId, userId }: { gigId: string; userId:
       message: 'Gig offer accepted successfully'
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error accepting gig offer:', error);
     return { 
-      error: error.message || 'Failed to accept gig offer', 
+      error: error instanceof Error ? error.message : 'Failed to accept gig offer', 
       status: 500 
     };
   }

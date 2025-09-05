@@ -47,8 +47,8 @@ export async function deleteGig({ gigId, userId }: { gigId: string; userId: stri
 
     return { status: 200, message: 'Gig deleted successfully' };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting gig:", error);
-    return { error: error.message, status: 500 };
+    return { error: error instanceof Error ? error.message : 'Failed to delete gig', status: 500 };
   }
 }

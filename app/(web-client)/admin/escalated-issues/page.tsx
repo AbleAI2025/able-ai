@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import EscalatedIssuesDashboard from '@/components/admin/EscalatedIssuesDashboard';
 
 export default function AdminEscalatedIssuesPage() {

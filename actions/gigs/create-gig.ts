@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { GigsTable, UsersTable, gigStatusEnum, moderationStatusEnum } from "@/lib/drizzle/schema";
 
 type CreateGigInput = {
@@ -238,7 +238,7 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
     }
   } catch (error: any) {
     console.error("Error creating gig:", error);
-    return { status: 500, error: error?.message || "Unknown error" };
+    return { status: 500, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
