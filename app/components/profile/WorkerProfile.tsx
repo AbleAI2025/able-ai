@@ -28,6 +28,7 @@ import {
 } from "firebase/storage";
 
 import PublicWorkerProfile, {
+  Equipment,
   Qualification,
   Review,
 } from "@/app/types/workerProfileTypes";
@@ -290,15 +291,7 @@ const WorkerProfile = ({
         {
           <Equipments
             workerProfileId={workerProfile.id}
-            equipments={
-              (workerProfile.equipment as {
-                id: string;
-                workerProfileId: string;
-                name: string;
-                createdAt: Date;
-                updatedAt: Date;
-              }[]) ?? []
-            }
+            equipments={(workerProfile.equipment as Equipment[]) ?? []}
             isSelfView={isSelfView}
             fetchUserProfile={fetchUserProfile}
           />

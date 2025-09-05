@@ -44,26 +44,6 @@ export default function AddEquipmentModal({
     }
   };
 
-  const handleChange = async () => {
-    try {
-      if (equipmentName.length > 50)
-        throw "Equipment name cannot exceed 50 characters";
-      const { success, error } = await editEquipmentAction(
-        equipmentName,
-        equipmentName,
-        user?.token
-      );
-
-      if (!success) throw error;
-
-      toast.success("Equipment updated successfully");
-      onSave();
-    } catch (error) {
-      toast.error("Error editing equipment");
-      console.error("Error editing equipment:", error);
-    }
-  };
-
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>

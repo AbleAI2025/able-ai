@@ -1,6 +1,11 @@
 "use server";
 import { db } from "@/lib/drizzle/db";
-import { EquipmentTable, GigWorkerProfilesTable, QualificationsTable, UsersTable } from "@/lib/drizzle/schema";
+import {
+  EquipmentTable,
+  GigWorkerProfilesTable,
+  QualificationsTable,
+  UsersTable,
+} from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { eq } from "drizzle-orm";
@@ -54,8 +59,11 @@ export const addQualificationAction = async (
 
     return { success: true, data: "Qualification created successfully" };
   } catch (error) {
-        console.log("Error subscribing to topic", error);
-    return { success: false, error: error };
+    console.log("Error adding qualification", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred while adding the qualification.",
+    };
   }
 };
 
@@ -110,7 +118,7 @@ export const deleteQualificationAction = async (
 
     return { success: true, data: "Qualification deleted successfully" };
   } catch (error) {
-        console.log("Error subscribing to topic", error);
+    console.log("Error subscribing to topic", error);
     return { success: false, error: error };
   }
 };
@@ -176,7 +184,7 @@ export const editQualificationAction = async (
 
     return { success: true, data: "Qualification edited successfully" };
   } catch (error) {
-        console.log("Error subscribing to topic", error);
+    console.log("Error subscribing to topic", error);
     return { success: false, error: error };
   }
 };
@@ -215,7 +223,7 @@ export const addEquipmentAction = async (
       .insert(EquipmentTable)
       .values({
         name: name,
-        description: "",
+        description: description,
         workerProfileId: workerProfile.id,
       })
       .returning();
@@ -226,7 +234,7 @@ export const addEquipmentAction = async (
 
     return { success: true, data: "Equipment created successfully" };
   } catch (error) {
-        console.log("Error subscribing to topic", error);
+    console.log("Error subscribing to topic", error);
     return { success: false, error: error };
   }
 };
@@ -282,7 +290,7 @@ export const deleteEquipmentAction = async (
 
     return { success: true, data: "Equipment deleted successfully" };
   } catch (error) {
-        console.log("Error subscribing to topic", error);
+    console.log("Error subscribing to topic", error);
     return { success: false, error: error };
   }
 };
@@ -291,8 +299,7 @@ export const editEquipmentAction = async (
   equipmentId: string,
   name: string,
   token?: string,
-  description?: string,
-  documentUrl?: string
+  description?: string
 ) => {
   try {
     if (!token) {
@@ -345,7 +352,7 @@ export const editEquipmentAction = async (
 
     return { success: true, data: "Equipment edited successfully" };
   } catch (error) {
-        console.log("Error subscribing to topic", error);
+    console.log("Error subscribing to topic", error);
     return { success: false, error: error };
   }
 };
