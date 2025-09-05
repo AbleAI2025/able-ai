@@ -15,6 +15,7 @@ interface QualificationsProps {
   workerId: string;
   isSelfView: boolean;
   fetchUserProfile: (id: string) => void;
+  skillId?: string;
 }
 
 const Qualifications = ({
@@ -22,6 +23,7 @@ const Qualifications = ({
   isSelfView,
   workerId,
   fetchUserProfile,
+  skillId,
 }: QualificationsProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -100,10 +102,12 @@ const Qualifications = ({
 
       {modalOpen && (
         <QualificationModal
+          skillId={skillId}
           mode={modalMode}
           initialValue={
             editingIndex !== null ? qualifications[editingIndex] : null
           }
+          workerId={workerId}
           onSave={handleSave}
           onDelete={modalMode === "edit" ? handleDelete : undefined}
           onClose={() => {

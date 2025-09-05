@@ -68,6 +68,9 @@ export const QualificationsTable = pgTable("qualifications", {
   description: text("description"),
   documentUrl: text("document_url"),
   isVerifiedByAdmin: boolean("is_verified_by_admin").default(false),
+  skillId: uuid("skill_id").references(() => SkillsTable.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -150,7 +153,7 @@ export const GigsTable = pgTable("gigs", {
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(), // Application logic should update this field
   discountCodeId: uuid("discount_code_id").references(
-    () => DiscountCodesTable.id,
+    () => DiscountCodesTable.id
   ),
 });
 
@@ -176,9 +179,9 @@ export const GigSkillsRequiredTable = pgTable(
     // Array syntax for table-level constraints
     uniqueIndex("gig_id_skill_name_unique_idx").on(
       table.gigId,
-      table.skillName,
+      table.skillName
     ), // Ensures a gig doesn't list the same skill name twice
-  ],
+  ]
 );
 
 // Note: Changed primaryKey strategy for GigSkillsRequiredTable to a composite unique key

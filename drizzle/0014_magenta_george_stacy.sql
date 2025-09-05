@@ -1,0 +1,2 @@
+ALTER TABLE "qualifications" ADD COLUMN "skill_id" uuid;
+ALTER TABLE "qualifications" ADD CONSTRAINT "qualifications_skill_id_skills_id_fk" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE set null ON UPDATE no action;

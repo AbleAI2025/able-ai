@@ -108,3 +108,26 @@
 .errorText {
   color: #ff0000;
 }
+
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 14px;
+  color: #333;
+  margin-top: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #4f46e5; /* un azul tipo Tailwind indigo-600 */
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.select option {
+  padding: 10px;
+}
+

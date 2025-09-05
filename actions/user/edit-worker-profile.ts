@@ -4,6 +4,7 @@ import {
   EquipmentTable,
   GigWorkerProfilesTable,
   QualificationsTable,
+  SkillsTable,
   UsersTable,
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
@@ -13,6 +14,7 @@ import { eq } from "drizzle-orm";
 export const addQualificationAction = async (
   title: string,
   token?: string,
+  skillId?: string,
   description?: string,
   institution?: string,
   documentUrl?: string
@@ -20,6 +22,10 @@ export const addQualificationAction = async (
   try {
     if (!token) {
       throw new Error("User ID is required to fetch buyer profile");
+    }
+
+    if (!skillId) {
+      throw new Error("Skill id is required")
     }
 
     const { uid } = await isUserAuthenticated(token);
@@ -49,6 +55,7 @@ export const addQualificationAction = async (
         description: description,
         institution: institution,
         documentUrl: documentUrl,
+        skillId: skillId,
         yearAchieved: new Date().getFullYear(),
       })
       .returning();
@@ -356,3 +363,15 @@ export const editEquipmentAction = async (
     return { success: false, error: error };
   }
 };
+
+export const getAllSkillsAction = async (workerId: string) => {
+  try {
+    const skills = await db.query.SkillsTable.findMany({where: eq(
+      SkillsTable.workerProfileId, workerId
+    )});
+    return { success: true, data: skills };
+  } catch (error) {
+    console.log("Error fetching skills", error);
+    return { success: false, error: error };
+  }
+}
