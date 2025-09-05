@@ -4,10 +4,6 @@ import { db } from "@/lib/drizzle/db";
 import { UsersTable, PaymentsTable, GigsTable } from "@/lib/drizzle/schema";
 import { InternalGigStatusEnumType } from "@/app/types";
 import { and, eq, gte, lte } from "drizzle-orm";
-import { stripeApi as stripeApiServer } from "@/lib/stripe-server";
-import Stripe from "stripe";
-
-const stripeApi: Stripe = stripeApiServer
 
 export interface BuyerPayment {
   id: string;
@@ -100,7 +96,7 @@ export async function getBuyerPayments(buyerId: string, filters: FilterState): P
     };
 
   } catch (error) {
-    console.error('Error fetching worker details:', error);
+    console.error('Error fetching buyer payments:', error);
     return {
       success: false,
       error: 'Internal server error'

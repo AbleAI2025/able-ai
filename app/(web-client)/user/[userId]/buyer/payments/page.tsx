@@ -83,7 +83,7 @@ export default function BuyerPaymentsPage() {
   // Available gig types for filtering (could be fetched or predefined)
   const gigTypes = ['All', 'Bartender', 'Waiter', 'Chef', 'Event Staff'];
 
-  const retireveBuyerPayments = async () => {
+  const retrieveBuyerPayments = async () => {
     setIsLoadingPayments(true);
     fetchBuyerPayments(authUserId || "", filters)
       .then(data => {
@@ -99,8 +99,8 @@ export default function BuyerPaymentsPage() {
 
   // Auth check and data load
   useEffect(() => {
-    retireveBuyerPayments();
-  }, [isLoading, user, authUserId, pageUserId, router]);
+    retrieveBuyerPayments();
+  }, [isLoading, user, authUserId, pageUserId]);
 
   const handleGenerateInvoice = (paymentId: string) => {
     console.log("Generate invoice for payment ID:", paymentId);
@@ -117,7 +117,7 @@ export default function BuyerPaymentsPage() {
   };
 
   const submitFilters = async () => {
-    await retireveBuyerPayments();
+    await retrieveBuyerPayments();
   };
 
   const handleRepeatGig = (gigId?: string) => {
@@ -182,10 +182,10 @@ export default function BuyerPaymentsPage() {
                 </div>
 
                 <div>
-                  <p className={styles.modalHeader}>Price</p>
+                  <p className={styles.modalHeader}>Date</p>
                   <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
                     <div className={styles.filterItem}>
-                      <label htmlFor="dateFrom" className="text-xs text-muted-foreground">
+                      <label htmlFor="dateFrom">
                         From
                       </label>
                       <input
@@ -196,7 +196,7 @@ export default function BuyerPaymentsPage() {
                       />
                     </div>
                     <div className={styles.filterItem}>
-                      <label htmlFor="dateTo" className="text-xs text-muted-foreground">
+                      <label htmlFor="dateTo">
                         To
                       </label>
                       <input
@@ -210,11 +210,11 @@ export default function BuyerPaymentsPage() {
                 </div>
 
                 <div>
-                  <p className={styles.modalHeader}>Date</p>
+                  <p className={styles.modalHeader}>Price</p>
                   <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
                     <div className={styles.filterItem}>
-                      <label htmlFor="priceFrom" className="text-xs text-muted-foreground">
-                        Precio mínimo
+                      <label htmlFor="priceFrom">
+                        Minimum price
                       </label>
                       <input
                         id="priceFrom"
@@ -227,8 +227,8 @@ export default function BuyerPaymentsPage() {
                       />
                     </div>
                     <div className={styles.filterItem}>
-                      <label htmlFor="priceTo" className="text-xs text-muted-foreground">
-                        Precio máximo
+                      <label htmlFor="priceTo">
+                        Maximum price
                       </label>
                       <input
                         id="priceTo"
