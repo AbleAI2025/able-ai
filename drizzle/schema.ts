@@ -1,4 +1,4 @@
-import { pgTable, foreignKey, serial, uuid, varchar, jsonb, timestamp, unique, text, integer, boolean, numeric, uniqueIndex, index, date, vector } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, serial, uuid, varchar, jsonb, timestamp, unique, text, integer, boolean, numeric, uniqueIndex, index, date, vector, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -95,6 +95,26 @@ export const chatMessages = pgTable("chat_messages", {
 			foreignColumns: [users.id],
 			name: "chat_messages_sender_user_id_users_id_fk"
 		}).onDelete("cascade"),
+]);
+
+export const discountCodes = pgTable("discount_codes", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	code: varchar({ length: 50 }).notNull(),
+	discountAmount: numeric("discount_amount", { precision: 10, scale:  2 }),
+	discountPercentage: numeric("discount_percentage", { precision: 5, scale:  2 }),
+	// TODO: failed to parse database type 'discount_type_enum'
+	type: text("type").notNull(),
+	userId: uuid("user_id").notNull(),
+	alreadyUsed: boolean("already_used").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "discount_codes_user_id_users_id_fk"
+		}).onDelete("cascade"),
+	unique("discount_codes_code_unique").on(table.code),
 ]);
 
 export const equipment = pgTable("equipment", {
@@ -264,6 +284,7 @@ export const gigs = pgTable("gigs", {
 	finalAgreedPrice: numeric("final_agreed_price", { precision: 10, scale:  2 }),
 	adjustmentNotes: text("adjustment_notes"),
 	adjustedAt: timestamp("adjusted_at", { withTimezone: true, mode: 'string' }),
+	discountCodeId: integer("discount_code_id"),
 }, (table) => [
 	foreignKey({
 			columns: [table.buyerUserId],
@@ -443,6 +464,7 @@ export const reviews = pgTable("reviews", {
 	relationship: text(),
 	recommenderName: text("recommender_name"),
 	recommenderEmail: text("recommender_email"),
+	skillId: uuid("skill_id"),
 }, (table) => [
 	uniqueIndex("author_target_gig_unique_idx").using("btree", table.authorUserId.asc().nullsLast().op("uuid_ops"), table.targetUserId.asc().nullsLast().op("uuid_ops"), table.gigId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
@@ -454,6 +476,11 @@ export const reviews = pgTable("reviews", {
 			columns: [table.gigId],
 			foreignColumns: [gigs.id],
 			name: "reviews_gig_id_gigs_id_fk"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.skillId],
+			foreignColumns: [skills.id],
+			name: "reviews_skill_id_skills_id_fk"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.targetUserId],
@@ -615,7 +642,7 @@ export const users = pgTable("users", {
 
 export const vectorEmbeddings = pgTable("vector_embeddings", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	entityType: text("entity_type").notNull(),
+	entityType: vector("entity_type", { dimensions: 1536 }).notNull(),
 	entityPostgresId: uuid("entity_postgres_id"),
 	entityFirestoreId: text("entity_firestore_id"),
 	embedding: vector({ dimensions: 1536 }).notNull(),

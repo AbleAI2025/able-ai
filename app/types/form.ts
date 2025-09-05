@@ -11,7 +11,8 @@ export type FormInputType =
   | "checkbox"
   | "radio"
   | "tel"
-  | "url";
+  | "url"
+  | "button";
 
 export interface StepInputConfig {
   type: FormInputType;

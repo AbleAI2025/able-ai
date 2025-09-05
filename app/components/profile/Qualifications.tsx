@@ -1,29 +1,35 @@
+"use client";
 import React, { useState } from "react";
 import { Check, Pencil, Plus } from "lucide-react";
 import QualificationItem from "./QualificationItem";
-import QualificationModal, { QualificationInput } from "./QualificationModal";
+import QualificationModal from "./QualificationModal";
 import styles from "./Qualifications.module.css";
 import { Qualification } from "@/app/types";
-
+import { useAuth } from "@/context/AuthContext";
+import {
+  deleteQualificationAction,
+} from "@/actions/user/edit-worker-profile";
 
 interface QualificationsProps {
-  initialQualifications: Qualification[];
+  qualifications: Qualification[];
   workerId: string;
   isSelfView: boolean;
+  fetchUserProfile: (id: string) => void;
 }
 
 const Qualifications = ({
-  initialQualifications,
-  workerId,
+  qualifications,
   isSelfView,
+  workerId,
+  fetchUserProfile,
 }: QualificationsProps) => {
-  const [qualifications, setQualifications] = useState<Qualification[]>(initialQualifications || []);
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const { user } = useAuth();
 
   const openAddModal = () => {
     setModalMode("add");
@@ -37,34 +43,15 @@ const Qualifications = ({
     setModalOpen(true);
   };
 
-  const handleSave = (data: QualificationInput) => {
-    const newQualification: Qualification = {
-        ...data,
-        id: `id-${Math.random().toString(36).substr(2, 9)}`, // Temporary ID
-        workerProfileId: workerId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        };
-    if (modalMode === "add") {
-        
-      setQualifications([...qualifications, newQualification]);
-    } else if (modalMode === "edit" && editingIndex !== null) {
-        const updated = [...qualifications];
-        updated[editingIndex] = {
-        ...updated[editingIndex],
-        ...data,
-        updatedAt: new Date(),
-        } as Qualification;
-        setQualifications(updated);
-    }
+  const handleSave = () => {
+    fetchUserProfile(user?.token || workerId);
     setModalOpen(false);
     setIsEditMode(false);
   };
 
-  const handleDelete = () => {
-    if (editingIndex !== null) {
-      setQualifications(qualifications.filter((_, i) => i !== editingIndex));
-    }
+  const handleDelete = async (id: string) => {
+    await deleteQualificationAction(id, user?.token);
+    fetchUserProfile(user?.token || workerId);
     setModalOpen(false);
     setIsEditMode(false);
   };
@@ -87,12 +74,12 @@ const Qualifications = ({
                   <span className={styles.checkDone}>
                     <Check size={16} color="#ffffff" /> Done
                   </span>
-                  ) : (
-                    <Pencil size={16} />
-                  )}
+                ) : (
+                  <Pencil size={16} />
+                )}
               </button>
             )}
-        </div>
+          </div>
         )}
       </h3>
 
@@ -114,7 +101,9 @@ const Qualifications = ({
       {modalOpen && (
         <QualificationModal
           mode={modalMode}
-          initialValue={editingIndex !== null ? qualifications[editingIndex] : null}
+          initialValue={
+            editingIndex !== null ? qualifications[editingIndex] : null
+          }
           onSave={handleSave}
           onDelete={modalMode === "edit" ? handleDelete : undefined}
           onClose={() => {

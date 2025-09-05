@@ -4,7 +4,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { ThumbsUp, Loader2, MessageSquare } from "lucide-react";
-import { Star as DefaultBadgeIcon } from "lucide-react";
 import styles from "./BuyerProfilePage.module.css";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
@@ -28,7 +27,7 @@ import DashboardData from "@/app/types/BuyerProfileTypes";
 import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
-import ContentCard from "@/app/components/shared/ContentCard";
+import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 export default function BuyerProfilePage() {
   const router = useRouter();
@@ -66,15 +65,8 @@ export default function BuyerProfilePage() {
           : null,
       }));
 
-      // Ensure badges always have an icon
-      const updatedBadges = (profile.badges ?? []).map((badge: any) => ({
-        ...badge,
-        icon: badge.icon || DefaultBadgeIcon,
-      }));
-
       setDashboardData({
         ...profile,
-        badges: updatedBadges,
         reviews: updatedReviews,
       });
       setError(null);
@@ -284,8 +276,10 @@ export default function BuyerProfilePage() {
               dashboardData?.badges?.map((badge) => (
                 <div className={styles.badge} key={badge.id}>
                   <AwardDisplayBadge
-                    {...(badge?.badge?.icon ? { icon: badge.badge?.icon } : {})}
-                    textLines={badge?.badge?.description ?? ""}
+                    icon={badge.icon as BadgeIcon}
+                    title={badge.name}
+                    role="buyer"
+                    type={badge.type}
                   />
                 </div>
               ))

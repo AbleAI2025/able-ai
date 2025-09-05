@@ -35,26 +35,63 @@ export const mockWorkerProfile: PublicWorkerProfile = {
   createdAt: new Date("2024-01-10T12:00:00Z"),
   updatedAt: new Date("2024-08-25T15:30:00Z"),
 
-  awards: [
-    {
-      id: "a1",
-      userId: "user-456",
-      badgeId: "badge-top-performer",
-      notes: "Outstanding service during July events",
-      awardedAt: new Date("2024-07-01T19:00:00Z"),
-      awardedBySystem: true,
-    },
-    {
-      id: "a2",
-      userId: "user-456",
-      badgeId: "badge-golden-vibes",
-      notes: "Recognized for creating great vibes at summer festival",
-      awardedAt: new Date("2024-08-10T20:00:00Z"),
-      awardedByUserId: "admin-101",
-    },
-  ] as Award[],
+awards: [
+  {
+    id: "a1",
+    icon: "goldenVibes",
+    name: "Golden Vibes",
+    description: "Outstanding service during July events",
+    awardedAt: new Date("2024-07-01T19:00:00Z"),
+    awardedBySystem: true,
+    type: 'COMMON'
+  },
+  {
+    id: "a2",
+    icon: "alphaGigee",
+    name: "Alpha Gigee",
+    description: "Recognized for creating great vibes at summer festival",
+    awardedAt: new Date("2024-08-10T20:00:00Z"),
+    awardedByUserId: "admin-101",
+    type: 'EARLY_JOINER'
+  },
+  {
+    id: "a3",
+    icon: "hostWithTheMost",
+    name: "Host With The Most",
+    description: "Exemplary conduct and fairness in all gigs",
+    awardedAt: new Date("2024-09-01T10:00:00Z"),
+    awardedByUserId: "admin-102",
+    type: 'OTHER'
+  },
+  {
+    id: "a4",
+    icon: "foamArtPhenom",
+    name: "Foam Art Phenom",
+    description: "Mastered coffee art with consistent quality",
+    awardedAt: new Date("2024-09-15T14:30:00Z"),
+    awardedByUserId: "admin-103",
+    type: 'OTHER'
+  },
+  {
+    id: "a5",
+    icon: "squadRecruiter",
+    name: "Squad Recruiter",
+    description: "Successfully onboarded 3 new team members",
+    awardedAt: new Date("2024-09-20T09:00:00Z"),
+    awardedBySystem: true,
+    type: 'OTHER'
+  },
+  {
+    id: "a6",
+    icon: "firstGigComplete",
+    name: "First gig complete",
+    description: "Hired first worker through platform",
+    awardedAt: new Date("2024-07-05T12:00:00Z"),
+    type: 'OTHER'
+  }
+] as Award[],
 
-  equipments: [
+  equipment: [
     {
       id: "e1",
       workerProfileId: "01b15a22-9b4d-4c10-b7a6-726bd638023a",

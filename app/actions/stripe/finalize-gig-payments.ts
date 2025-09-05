@@ -54,11 +54,12 @@ async function getPendingPaymentsForGig(gigId: string) {
   return gigPayments;
 }
 
-async function markPaymentAsCompleted(paymentId: string, chargeId: string) {
+async function markPaymentAsCompleted(paymentId: string, latestCharge: Stripe.Charge) {
   return await db.update(PaymentsTable).set({
     paidAt: new Date(),
     status: 'COMPLETED',
-    stripeChargeId: chargeId,
+    stripeChargeId: latestCharge.id,
+    invoiceUrl: latestCharge.receipt_url,
   })
     .where(eq(PaymentsTable.id, paymentId))
     .returning();
@@ -92,6 +93,7 @@ async function colletPendingPayments(gigPayments: GigPaymentFields[], finalPrice
       {
         amount_to_capture: amountToCapture,
         application_fee_amount: ableFee,
+        expand: ['latest_charge']
       }
     );
 
@@ -99,7 +101,12 @@ async function colletPendingPayments(gigPayments: GigPaymentFields[], finalPrice
       throw new Error(`Failed to capture PaymentIntent ${paymentIntentId}: ${captureResult.status}`);
     }
 
-    await markPaymentAsCompleted(payment.id, captureResult.latest_charge as string);
+    const latestCharge = captureResult.latest_charge as Stripe.Charge;
+
+    await markPaymentAsCompleted(
+      payment.id,
+      latestCharge
+    );
     console.log(`Captured ${amountToCapture} cents from PaymentIntent ${paymentIntentId}.`);
 
     amountToCollect -= amountToCapture;

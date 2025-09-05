@@ -13,12 +13,12 @@ export const gigFormValidation: ValidationRules = {
   ],
   hourlyRate: [
     {
-      test: (value: number) => !isNaN(value) && value >= 10,
-      message: 'Hourly rate must be at least £10'
+      test: (value: number) => !isNaN(value) && value >= 12.21,
+      message: 'Hourly rate must be at least £12.21 (London minimum wage)'
     },
     {
-      test: (value: number) => !isNaN(value) && value <= 100,
-      message: 'Hourly rate must not exceed £100'
+      test: (value: number) => !isNaN(value) && value <= 500,
+      message: 'Hourly rate must not exceed £500'
     }
   ],
   gigLocation: [

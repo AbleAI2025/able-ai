@@ -13,6 +13,7 @@ import {
   BadgeCheck,
   ThumbsUp,
   MessageSquare,
+  Edit2,
 } from "lucide-react";
 import {
   getPrivateWorkerProfileAction,
@@ -26,14 +27,20 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 
-import PublicWorkerProfile, { Qualification, Review } from "@/app/types/workerProfileTypes";
+import PublicWorkerProfile, {
+  Equipment,
+  Qualification,
+  Review,
+} from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ProfileMedia from "./ProfileMedia";
 import CancelButton from "../shared/CancelButton";
+import { BadgeIcon } from "./GetBadgeIcon";
 import Qualifications from "./Qualifications";
 import Equipments from "./Equipments";
+import UserNameModal from "./UserNameModal";
 
 const WorkerProfile = ({
   workerProfile,
@@ -45,7 +52,7 @@ const WorkerProfile = ({
   workerProfile: PublicWorkerProfile;
   handleAddSkill?: () => void;
   handleSkillDetails: (id: string) => void; // Now optional
-  fetchUserProfile: (token: string) => void;
+  fetchUserProfile: (id: string) => void;
   userId?: string;
   isSelfView: boolean;
 }) => {
@@ -53,7 +60,6 @@ const WorkerProfile = ({
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
-  const [name, setName] = useState<string | null>(user?.displayName || null);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -115,48 +121,6 @@ const WorkerProfile = ({
     [user]
   );
 
-  // const getIconFromAwardName = (awardName: string) => {
-  //   switch (awardName) {
-  //     case "Alpha Gigee":
-  //     case "Gig Pioneer":
-  //       return Flag;
-  //     case "First gig complete":
-  //       return ;
-  //     case "Golden Vibes":
-  //     case "Fairy Play":
-  //     case "Heart Mode":
-  //       return Flame;
-  //     case "Host with the most":
-  //       return Users;
-  //     case "Foam-Art Phenom":
-  //       return Coffee;
-  //     case "First impressions pro":
-  //       return ClipboardCheck;
-  //     case "Event setup hero":
-  //       return Briefcase;
-  //     case "Cash & till stylin'":
-  //       return DollarSign;
-  //     case "Customer Favourite":
-  //       return ShoppingBag;
-  //     case "Squad Recruiter":
-  //       return UserCheck;
-  //     case "Safe-guard GOAT":
-  //       return Shield;
-  //     case "Sparkle Mode":
-  //       return Sparkles;
-  //     case "Mixology Master":
-  //       return Martini;
-  //     case "Start Bartender":
-  //       return Beer;
-  //     case "Tray Jedi":
-  //       return Handshake;
-  //     case "Top Chef":
-  //       return Utensils;
-  //     default:
-  //       return undefined; // ✅ safe fallback
-  //   }
-  // };
-
   useEffect(() => {
     if (workerProfile && workerProfile.id) {
       setWorkerLink(
@@ -165,10 +129,7 @@ const WorkerProfile = ({
     }
   }, [workerProfile]);
 
-  const handleNameChange = (name: string) => {
-    setName(name);
-    // Update the worker's display name
-  };
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className={styles.profilePageContainer}>
@@ -185,15 +146,28 @@ const WorkerProfile = ({
           {!isSelfView ? (
             <h1 className={styles.workerName}>{user?.displayName}</h1>
           ) : (
-            <input
-              type="text"
-              className={styles.workerName}
-              value={name ?? ""}
-              onChange={(e) => handleNameChange(e.target.value)}
-            />
+            <>
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "24px",
+                  fontWeight: 600,
+                }}
+              >
+                {workerProfile.user?.fullName ?? ""}{" "}
+                <Edit2
+                  size={20}
+                  className={styles.icon}
+                  onClick={() => setIsOpen(true)}
+                  style={{ cursor: "pointer" }}
+                />
+              </span>
+            </>
           )}
-          
-          { workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
+
+          {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
               <span className={styles.verifiedText}>
@@ -230,31 +204,34 @@ const WorkerProfile = ({
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
         {/* Statistics Section */}
-        <div className={styles.statisticsItemsContainer}>
-          <StatisticItemDisplay
-            stat={{
-              id: 1,
-              icon: ThumbsUp,
-              value: workerProfile?.responseRateInternal || 0,
-              label: `Would work with ${
-                user?.displayName?.split(" ")?.[0] ?? ""
-              } again`,
-              iconColor: "#41a1e8",
-            }}
-          />
+        <div>
+          <h3 className={styles.contentTitle}>Statistics</h3>
+          <div className={styles.statisticsItemsContainer}>
+            <StatisticItemDisplay
+              stat={{
+                id: 1,
+                icon: ThumbsUp,
+                value: workerProfile?.responseRateInternal || 0,
+                label: `Would work with ${
+                  workerProfile?.user?.fullName?.split(" ")?.[0] ?? ""
+                } again`,
+                iconColor: "#41a1e8",
+              }}
+            />
 
-          <StatisticItemDisplay
-            stat={{
-              id: 2,
-              icon: MessageSquare,
-              value: workerProfile?.averageRating || 0,
-              label: "Response rate",
-              iconColor: "#41a1e8",
-            }}
-          />
+            <StatisticItemDisplay
+              stat={{
+                id: 2,
+                icon: MessageSquare,
+                value: workerProfile?.averageRating || 0,
+                label: "Response rate",
+                iconColor: "#41a1e8",
+              }}
+            />
+          </div>
         </div>
 
-        {/* Skills Section (Benji Image Style - Blue Card) */}
+        {/* Skills Section (User Image Style - Blue Card) */}
         {
           <SkillsDisplayTable
             skills={workerProfile?.skills}
@@ -266,21 +243,20 @@ const WorkerProfile = ({
           />
         }
 
-        {/* Awards & Feedback Section (Benji Image Style) */}
+        {/* Awards & Feedback Section (User Image Style) */}
         {workerProfile.awards && ( // Only show section if there are awards or feedback
           <div className={styles.awardsFeedbackGrid}>
             {workerProfile.awards && workerProfile.awards.length > 0 && (
-              // <ContentCard title="Awards:" className={styles.awardsCard}>
               <div>
                 <h3 className={styles.contentTitle}>Awards:</h3>
                 <div className={styles.awardsContainer}>
                   {workerProfile.awards.map((award) => (
                     <AwardDisplayBadge
-                      // icon={getIconFromAwardName(award.badgeId)}
+                      icon={award.icon as BadgeIcon}
                       key={award.id}
-                      textLines={award.notes || ""}
-                      color="#eab308"
-                      border="3px solid #eab308"
+                      title={award.name}
+                      role="worker"
+                      type={award.type}
                     />
                   ))}
                 </div>
@@ -301,20 +277,23 @@ const WorkerProfile = ({
           </div>
         )}
 
-        {/* Qualifications Section (Benji Image Style) */}
-          <Qualifications
-            initialQualifications={workerProfile.qualifications as Qualification[] ?? []}
-            workerId={workerProfile.id}
-             isSelfView={isSelfView}
-          />
-            
+        {/* Qualifications Section (User Image Style) */}
+        <Qualifications
+          qualifications={
+            (workerProfile.qualifications as Qualification[]) ?? []
+          }
+          workerId={workerProfile.id}
+          isSelfView={isSelfView}
+          fetchUserProfile={fetchUserProfile}
+        />
 
         {/* Equipment Section (User Image Style) */}
         {
           <Equipments
             workerProfileId={workerProfile.id}
-            initialEquipments={workerProfile.equipments || []}
+            equipments={(workerProfile.equipment as Equipment[]) ?? []}
             isSelfView={isSelfView}
+            fetchUserProfile={fetchUserProfile}
           />
         }
       </div>
@@ -352,6 +331,15 @@ const WorkerProfile = ({
             <CancelButton handleCancel={() => setShowRtwPopup(false)} />
           </div>
         </div>
+      )}
+      {/* Edit Name Modal */}
+      {isOpen && (
+        <UserNameModal
+          workerId={workerProfile.id || ""}
+          initialValue={workerProfile.user?.fullName ?? ""}
+          fetchUserProfile={fetchUserProfile}
+          onClose={() => setIsOpen(false)}
+        />
       )}
     </div>
   );

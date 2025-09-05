@@ -1,9 +1,22 @@
+import { BadgeIcon } from "../components/profile/GetBadgeIcon";
+
 // Types
 interface Badge {
   id: string;
   name: string;
   icon: React.ElementType;
 }
+
+export interface Award {
+  id: string;
+  type: "COMMON" | "EARLY_JOINER" | "OTHER";
+  name: string;
+  icon: BadgeIcon;
+  description?: string | null;
+  awardedAt: Date;
+  awardedBySystem?: boolean | null;
+}
+
 interface Review {
   id: string;
   name: string;
@@ -42,16 +55,17 @@ export default interface DashboardData {
   barChartData?: Array<{ name: string; hires: number; spend?: number }>;
   badgesEarnedByTheirWorkers: Badge[];
   reviews: Review[];
-  badges: {
-    id: string | number;
-    icon?: React.ElementType | null;
-    notes: string;
-    badge: {
-      id: string | number;
-      icon?: React.ElementType | null;
-      description?: string | null;
-    };
-  }[];
+  badges: Award[];
+  // badges: {
+  //   id: string | number;
+  //   icon?: React.ElementType | null;
+  //   notes: string;
+  //   badge: {
+  //     id: string | number;
+  //     icon?: React.ElementType | null;
+  //     description?: string | null;
+  //   };
+  // }[];
   skillCounts?: { name: string; value: number }[];
   totalPayments?: { name: string; a: number }[];
 }

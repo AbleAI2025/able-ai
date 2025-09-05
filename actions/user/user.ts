@@ -4,8 +4,9 @@ import { NotificationPreferencesTable, UsersTable } from "@/lib/drizzle/schema";
 import { DiscountCodesTable } from "@/lib/drizzle/schema/payments";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import admin from "@/lib/firebase/firebase-server";
 
 /**
  * Retrieves the complete profile of an authenticated user, including their notification preferences.
@@ -32,13 +33,14 @@ export const getProfileInfoUserAction = async (token?: string) => {
 };
 
 /**
- * Updates the full name and phone number of the authenticated user.
+ * Updates the full name and phone number of the authenticated user
+ * both in your DB and in Firebase Auth.
  * @param updateData Object containing `fullName` and `phone`.
  * @param token Firebase ID token of the authenticated user.
  * @returns { success: true, data } or { success: false, error }
  */
 export const updateUserProfileAction = async (
-  updateData: { fullName: string; phone: string },
+  updateData: { fullName: string; phone?: string },
   token?: string,
 ) => {
   try {
@@ -52,6 +54,11 @@ export const updateUserProfileAction = async (
       .set(updateData)
       .where(eq(UsersTable.firebaseUid, uid))
       .returning();
+
+    await admin.auth().updateUser(uid, {
+      displayName: updateData.fullName,
+      phoneNumber: updateData.phone || undefined,
+    });
 
     return { success: true, data: updatedUsers[0] || null };
   } catch (error) {

@@ -17,13 +17,14 @@ interface ChatBotLayoutProps {
   onSendMessage?: (message: string) => void;
   role?: 'BUYER' | 'GIG_WORKER';
   showChatInput?: boolean;
+  disableChatInput?: boolean;
   showOnboardingOptions?: boolean;
   onSwitchToManual?: () => void;
   onChangeSetupMethod?: () => void;
 }
 
 const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
-  ({ children, onScroll, className, onHomeClick, onSendMessage, role = 'GIG_WORKER', showChatInput = false, showOnboardingOptions = false, onSwitchToManual, onChangeSetupMethod }, ref) => {
+  ({ children, onScroll, className, onHomeClick, onSendMessage, role = 'GIG_WORKER', showChatInput = false, disableChatInput = false, showOnboardingOptions = false, onSwitchToManual, onChangeSetupMethod }, ref) => {
 
     const router = useRouter();
     const { user } = useAuth();
@@ -57,6 +58,7 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
               onSend={handleSendMessage}
               role={role}
               placeholder="Type your message..."
+              disabled={disableChatInput}
             />
           )}
         </div>

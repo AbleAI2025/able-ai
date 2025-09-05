@@ -38,7 +38,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={disabled ? "Input disabled - use options above" : placeholder}
           disabled={disabled}
           className={styles.input}
         />

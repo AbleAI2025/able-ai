@@ -1,8 +1,9 @@
-import DashboardData from "@/app/types/BuyerProfileTypes";
+import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
+import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
+import DashboardData, { Award } from "@/app/types/BuyerProfileTypes";
 import {
   Star,
   Briefcase,
-  Award,
   ThumbsUp,
   Users,
 } from "lucide-react";
@@ -56,7 +57,7 @@ const dashboardMockData: DashboardData = {
   ],
 
   badgesEarnedByTheirWorkers: [
-    { id: "1", name: "Top Bartender", icon: Award },
+    { id: "1", name: "Top Bartender", icon: Star },
     { id: "2", name: "Best Waitstaff", icon: Users },
     { id: "3", name: "Culinary Expert", icon: Star },
   ],
@@ -82,23 +83,54 @@ const dashboardMockData: DashboardData = {
     },
   ],
 
-  badges: [
-    {
-      id: "b1",
-      notes: "Awarded for excellent bartending services",
-      badge: { id: "badge1", icon: Star, description: "Star Bartender" },
-    },
-    {
-      id: "b2",
-      notes: "Recognized for top-quality waiting service",
-      badge: { id: "badge2", icon: Users, description: "Top Waiter" },
-    },
-    {
-      id: "b3",
-      notes: "Exceptional culinary expertise",
-      badge: { id: "badge3", icon: Award, description: "Culinary Expert" },
-    },
-  ],
+badges: [
+  {
+    id: "a1",
+    icon: "firstHire" as BadgeIcon,
+    name: "First Hire",
+    description: "Hired first worker successfully",
+    awardedAt: new Date("2025-01-05T10:00:00Z"),
+    awardedByUserId: "admin-201",
+    type: "OTHER",
+  },
+  {
+    id: "a2",
+    icon: "shiftLeader" as BadgeIcon,
+    name: "Shift Leader",
+    description: "Led multiple shifts with excellence",
+    awardedAt: new Date("2025-02-12T14:30:00Z"),
+    awardedByUserId: "admin-202",
+    type: "OTHER",
+  },
+  {
+    id: "a3",
+    icon: "bossLevel++" as BadgeIcon,
+    name: "Boss Level++",
+    description: "Achieved top management performance",
+    awardedAt: new Date("2025-03-01T09:15:00Z"),
+    awardedByUserId: "admin-203",
+    type: "OTHER",
+  },
+  {
+    id: "a4",
+    icon: "safeShiftHost" as BadgeIcon,
+    name: "Safe Shift Host",
+    description: "Ensured all shifts were safe and compliant",
+    awardedAt: new Date("2025-03-20T16:45:00Z"),
+    awardedByUserId: "admin-204",
+    type: "OTHER",
+  },
+  {
+    id: "a5",
+    icon: "goldenVibes" as BadgeIcon,
+    name: "Golden Vibes",
+    description: "Consistently created a positive environment",
+    awardedAt: new Date("2025-04-10T12:00:00Z"),
+    awardedBySystem: true,
+    type: "COMMON",
+  },
+] as Award[],
+
 
   skillCounts: [
     { name: "Bartender", value: 40 },

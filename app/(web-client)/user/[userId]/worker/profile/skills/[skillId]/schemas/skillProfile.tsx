@@ -1,3 +1,4 @@
+import {BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import { Qualification } from "@/app/types";
 
 export type SkillProfile = {
@@ -21,15 +22,14 @@ export type SkillProfile = {
   };
   supportingImages: string[];
   badges: {
-    id: string | number;
-    icon?: React.ElementType | null;
-    notes: string;
-    badge: {
-      id: string | number;
-      icon?: React.ElementType | null;
-      description?: string | null
-    }
-  }[];
+    id: string;
+    type: "COMMON" | "EARLY_JOINER" | "OTHER";
+    name: string;
+    icon?: BadgeIcon;
+    description?: string | null;
+    awardedAt: Date;
+    awardedBySystem?: boolean | null;
+  }[] | undefined;
   qualifications: Qualification[];
   buyerReviews: {
     name: string;

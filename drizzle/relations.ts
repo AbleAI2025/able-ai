@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, adminLogs, aiPrompts, buyerProfiles, gigs, chatMessages, gigWorkerProfiles, equipment, escalatedIssues, gigSkillsRequired, skills, mockPayments, notificationPreferences, passwordRecoveryRequests, payments, qualifications, recommendations, reviews, teamMembers, userAiUsage, userBadgesLink, badgeDefinitions } from "./schema";
+import { users, adminLogs, aiPrompts, buyerProfiles, gigs, chatMessages, discountCodes, gigWorkerProfiles, equipment, escalatedIssues, gigSkillsRequired, skills, mockPayments, notificationPreferences, passwordRecoveryRequests, payments, qualifications, recommendations, reviews, teamMembers, userAiUsage, userBadgesLink, badgeDefinitions, gigWorkerSkills } from "./schema";
 
 export const adminLogsRelations = relations(adminLogs, ({one}) => ({
 	user: one(users, {
@@ -13,6 +13,7 @@ export const usersRelations = relations(users, ({many}) => ({
 	aiPrompts: many(aiPrompts),
 	buyerProfiles: many(buyerProfiles),
 	chatMessages: many(chatMessages),
+	discountCodes: many(discountCodes),
 	escalatedIssues_adminUserId: many(escalatedIssues, {
 		relationName: "escalatedIssues_adminUserId_users_id"
 	}),
@@ -101,6 +102,13 @@ export const gigsRelations = relations(gigs, ({one, many}) => ({
 	userBadgesLinks: many(userBadgesLink),
 }));
 
+export const discountCodesRelations = relations(discountCodes, ({one}) => ({
+	user: one(users, {
+		fields: [discountCodes.userId],
+		references: [users.id]
+	}),
+}));
+
 export const equipmentRelations = relations(equipment, ({one}) => ({
 	gigWorkerProfile: one(gigWorkerProfiles, {
 		fields: [equipment.workerProfileId],
@@ -116,6 +124,7 @@ export const gigWorkerProfilesRelations = relations(gigWorkerProfiles, ({one, ma
 	}),
 	qualifications: many(qualifications),
 	skills: many(skills),
+	workerSkills: many(gigWorkerSkills),
 }));
 
 export const escalatedIssuesRelations = relations(escalatedIssues, ({one}) => ({
@@ -144,6 +153,7 @@ export const gigSkillsRequiredRelations = relations(gigSkillsRequired, ({one}) =
 
 export const skillsRelations = relations(skills, ({one, many}) => ({
 	gigSkillsRequireds: many(gigSkillsRequired),
+	reviews: many(reviews),
 	gigWorkerProfile: one(gigWorkerProfiles, {
 		fields: [skills.workerProfileId],
 		references: [gigWorkerProfiles.id]
@@ -218,6 +228,10 @@ export const reviewsRelations = relations(reviews, ({one}) => ({
 		fields: [reviews.gigId],
 		references: [gigs.id]
 	}),
+	skill: one(skills, {
+		fields: [reviews.skillId],
+		references: [skills.id]
+	}),
 	user_targetUserId: one(users, {
 		fields: [reviews.targetUserId],
 		references: [users.id],
@@ -266,4 +280,11 @@ export const userBadgesLinkRelations = relations(userBadgesLink, ({one}) => ({
 
 export const badgeDefinitionsRelations = relations(badgeDefinitions, ({many}) => ({
 	userBadgesLinks: many(userBadgesLink),
+}));
+
+export const gigWorkerSkillsRelations = relations(gigWorkerSkills, ({one}) => ({
+	workerProfile: one(gigWorkerProfiles, {
+		fields: [gigWorkerSkills.userId],
+		references: [gigWorkerProfiles.id]
+	}),
 }));

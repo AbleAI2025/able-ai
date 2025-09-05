@@ -1,0 +1,304 @@
+/* WorkerMatchCard.module.css */
+
+.card {
+  background-color: #1f1f1f;
+  border: 1px solid #2b2b2b;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+  width: 100%;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  animation: slideInUp 0.5s ease-out;
+  color: #e0e0e0;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary-color);
+}
+
+.card:active {
+  transform: translateY(-2px);
+}
+
+.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(65, 161, 232, 0.2);
+  transform: scale(1.02);
+}
+
+
+
+.workerInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background-color: #2b2b2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid #3b82f6;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-darker-color));
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.25rem;
+  font-family: var(--font-family);
+}
+
+.workerDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.workerName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  font-family: var(--font-family);
+  line-height: 1.4;
+}
+
+.primarySkill {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  font-family: var(--font-family);
+}
+
+.location {
+  color: #a0a0a0;
+  font-size: 0.8rem;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-family);
+}
+
+.workerStats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  font-family: var(--font-family);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.bio {
+  margin-bottom: 1rem;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  font-family: var(--font-family);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.section {
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  font-family: var(--font-family);
+}
+
+.matchReasons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.matchReason {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #e0e0e0;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-family);
+  line-height: 1.4;
+}
+
+.checkIcon {
+  color: #10b981;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.skillsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skillTag {
+  padding: 0.25rem 0.5rem;
+  background: rgba(65, 161, 232, 0.1);
+  border: 1px solid rgba(65, 161, 232, 0.3);
+  border-radius: 0.75rem;
+  color: var(--primary-color);
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-family: var(--font-family);
+}
+
+.skillTagMore {
+  background: rgba(160, 160, 160, 0.1);
+  border: 1px solid rgba(160, 160, 160, 0.3);
+  color: #a0a0a0;
+}
+
+.availability {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  font-family: var(--font-family);
+  line-height: 1.4;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.viewProfileButton {
+  background: transparent;
+  border: 1px solid #444444;
+  color: #e0e0e0;
+}
+
+.viewProfileButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #666666;
+}
+
+.selectButton {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-darker-color));
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(65, 161, 232, 0.3);
+}
+
+.selectButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(65, 161, 232, 0.4);
+}
+
+.selectButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.selectedButton {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.selectedButton:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animation for multiple cards */
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
+.card:nth-child(5) { animation-delay: 0.5s; }
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .card {
+    padding: 1rem;
+  }
+  
+  .workerInfo {
+    gap: 0.75rem;
+  }
+  
+  .avatar {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  .workerName {
+    font-size: 1.1rem;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .button {
+    padding: 0.875rem 1rem;
+  }
+}

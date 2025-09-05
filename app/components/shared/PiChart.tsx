@@ -113,7 +113,7 @@ export default function PieChartComponent({
   const chartRef = useRef<HTMLDivElement>(null);
   const outerRadius = useMemo(() => {
     if (typeof window !== "undefined") {
-      if (window.innerWidth < 400) return 50;
+      // if (window.innerWidth < 400) return 70;
       if (window.innerWidth < 500) return 70;
       if (window.innerWidth < 768) return 90;
     }

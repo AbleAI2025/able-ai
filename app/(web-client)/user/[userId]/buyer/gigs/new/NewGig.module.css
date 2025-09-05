@@ -1,0 +1,464 @@
+.confirmationContainer {
+  margin-bottom: 8px;
+  color: var(--secondary-color);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.displayValue {
+  margin-bottom: 16px;
+  font-style: italic;
+  color: #e5e5e5;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+}
+
+.confirmButton {
+  background: var(--secondary-color);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirmButton:hover {
+  background: var(--secondary-darker-color);
+  color: #000;
+}
+
+.confirmButton.completed {
+  background: #555;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.reformulateButton {
+  background: transparent;
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reformulateButton:hover {
+  background: var(--secondary-color);
+  color: #fff;
+}
+
+.reformulateButton.completed {
+  background: #555;
+  color: #999;
+  border-color: var(--secondary-color);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ===== Job Title Confirmation Step ===== */
+
+.jobTitleConfirmWrapper {
+  margin-bottom: 8px;
+  color: var(--secondary-color);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.jobTitleConfirmNote {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #ccc;
+}
+
+.jobTitleConfirmAISuggested {
+  color: #4ade80;
+}
+
+.jobTitleConfirmButtonGroup {
+  display: flex;
+  gap: 12px;
+}
+
+/* Common button base */
+.jobTitleConfirmButton {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+/* Yes button */
+.jobTitleConfirmYes {
+  background: var(--secondary-color);
+  color: #000;
+}
+
+.jobTitleConfirmYesCompleted {
+  background: #555;
+  color: #fff;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Skip button */
+.jobTitleConfirmSkip {
+  background: transparent;
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
+}
+
+.jobTitleConfirmSkipCompleted {
+  background: #555;
+  color: #999;
+  border: 1px solid var(--secondary-color);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ===== Gig Summary Step ===== */
+
+.gigSummaryContainer {
+  background: #222;
+  color: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px #0002;
+}
+
+.gigSummaryTitle {
+  margin-top: 0;
+}
+
+.gigSummaryList {
+  list-style: none;
+  padding: 0;
+}
+
+.gigSummaryListItem {
+  margin-bottom: 8px;
+}
+
+.gigSummaryField {
+  text-transform: capitalize;
+}
+
+.gigSummaryExpandable {
+  cursor: pointer;
+  word-break: break-all;
+  display: inline-block;
+  vertical-align: bottom;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.gigSummaryExpanded {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: 100%;
+}
+
+.gigSummaryButton {
+  margin-top: 16px;
+  background: var(--secondary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  transform: scale(1);
+  animation: pulse 2s infinite;
+  cursor: pointer;
+}
+
+/* Hover effects */
+.gigSummaryButton:hover {
+  transform: scale(1.05);
+  background: var(--secondary-darker-color);
+}
+
+/* Disabled state */
+.gigSummaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(34, 211, 238, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+  }
+}
+
+/* ===== Typing Step ===== */
+
+.typingStepContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+
+
+.typingStepIndicator {
+  flex: 1;
+  margin-top: 0.25rem;
+}
+
+/* ===== Input Step ===== */
+
+.inputStepContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+
+
+/* Content wrapper */
+.inputStepContent {
+  flex: 1;
+  margin-top: 0.25rem;
+}
+
+/* Go to Dashboard card */
+.inputStepDashboardCard {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+}
+
+.inputStepDashboardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.inputStepDashboardIcon {
+  width: 24px;
+  height: 24px;
+  background: #0ea5e9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.inputStepDashboardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.inputStepDashboardText {
+  font-size: 12px;
+  color: #0369a1;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+/* Go to Dashboard button */
+.inputStepDashboardButton {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.inputStepDashboardButton:hover {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(14, 165, 233, 0.4);
+}
+
+/* Default button */
+.inputStepDefaultButton {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Calendar Step */
+.calendarStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+
+
+/* Calendar */
+.calendarStepCalendar {
+  flex: 1;
+}
+
+/* Confirm container */
+.calendarStepConfirmContainer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Confirm button */
+.calendarStepConfirmBtn {
+  background: var(--secondary-color);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.calendarStepConfirmBtn:hover:not(.confirming) {
+  background: var(--secondary-darker-color);
+}
+
+/* Confirmed status */
+.calendarStepConfirmed {
+  background: var(--secondary-color);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==== Shared Avatar Styles (reused across steps) ==== */
+.aiAvatar {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.aiAvatarOuter {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--secondary-color),
+    var(--secondary-darker-color)
+  );
+  box-shadow: 0 2px 8px rgba(126, 238, 249, 0.3);
+}
+
+.aiAvatarInner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.aiAvatarImg {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ==== Location Step ==== */
+.locationStep {
+  margin-bottom: 0.5rem;
+}
+
+.locationStepPicker {
+  flex: 1;
+}
+
+/* Confirm button container */
+.locationStepConfirmContainer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Confirm button */
+.locationStepConfirmBtn {
+  background: var(--secondary-color);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.locationStepConfirmBtn:hover:not(.confirming) {
+  background: var(--secondary-darker-color);
+}
+
+.confirming {
+  background: #555;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Confirmed status */
+.locationStepConfirmed {
+  background: var(--secondary-color);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

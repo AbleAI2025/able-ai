@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SkillSplashScreen from "@/app/components/profile/SkillSplashScreen";
 import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
-import { Star as DefaultBadgeIcon } from "lucide-react";
 import { SkillProfile } from "./schemas/skillProfile";
 import { mockSkillProfile } from "./mockSkillProfile";
 import Loader from "@/app/components/shared/Loader";
@@ -29,7 +28,7 @@ export default function WorkerSkillDetailPage() {
           // Fallback icon if not present
           const updatedBadges = (data.badges ?? []).map((badge: any) => ({
             ...badge,
-            icon: badge.icon || DefaultBadgeIcon,
+            icon: badge.icon,
           }));
 
           const updatedRecommendations = (data.recommendations ?? []).map(

@@ -26,25 +26,53 @@ export const mockSkillProfile: SkillProfile = {
   ],
   badges: [
     {
-      id: 1,
-      icon: null,
-      notes: "Top Rated Freelancer of 2024",
-      badge: {
-        id: "b1",
-        icon: null,
-        description: "Awarded for consistent 5-star reviews and reliability.",
-      },
+      id: "a1",
+      icon: "goldenVibes",
+      name: "Golden Vibes",
+      description: "Outstanding service during July events",
+      awardedAt: new Date("2024-07-01T19:00:00Z"),
+      type: 'COMMON'
     },
     {
-      id: 2,
-      icon: null,
-      notes: "React Expert",
-      badge: {
-        id: "b2",
-        icon: null,
-        description: "Specialist in React and Next.js applications.",
-      },
+      id: "a2",
+      icon: "alphaGigee",
+      name: "Alpha Gigee",
+      description: "Recognized for creating great vibes at summer festival",
+      awardedAt: new Date("2024-08-10T20:00:00Z"),
+      type: 'EARLY_JOINER'
     },
+    {
+      id: "a3",
+      icon: "hostWithTheMost",
+      name: "Host With The Most",
+      description: "Exemplary conduct and fairness in all gigs",
+      awardedAt: new Date("2024-09-01T10:00:00Z"),
+      type: 'OTHER'
+    },
+    {
+      id: "a4",
+      icon: "foamArtPhenom",
+      name: "Foam Art Phenom",
+      description: "Mastered coffee art with consistent quality",
+      awardedAt: new Date("2024-09-15T14:30:00Z"),
+      type: 'OTHER'
+    },
+    {
+      id: "a5",
+      icon: "squadRecruiter",
+      name: "Squad Recruiter",
+      description: "Successfully onboarded 3 new team members",
+      awardedAt: new Date("2024-09-20T09:00:00Z"),
+      type: 'OTHER'
+    },
+    {
+      id: "a6",
+      icon: "firstGigComplete",
+      name: "First gig complete",
+      description: "Hired first worker through platform",
+      awardedAt: new Date("2024-07-05T12:00:00Z"),
+      type: 'OTHER'
+    }
   ],
   qualifications: [
     {

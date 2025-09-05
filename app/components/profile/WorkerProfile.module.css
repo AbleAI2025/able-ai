@@ -109,6 +109,49 @@
   color: #ffffff;
   font-size: 14px;
   line-height: 16px;
+  display: inline-block;
+  max-width: 200px; /* adjust based on your layout */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0; /* top, right, bottom, left: 0 */
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  position: relative;
+  background: #232323;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 95%;
+  max-height: 90%;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.closeLocationPicker {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #fff;
+  cursor: pointer;
+}
+
+
+.editLocationButton {
+  border: none;
+  background: none;
+  align-self: flex-start;
 }
 
 .shareProfileButton {

@@ -1,14 +1,26 @@
 import React from "react";
-import { ThumbsUp, ThumbsDown, Trophy, Star, Send, Paperclip } from "lucide-react";
+import {
+  ThumbsUp,
+  ThumbsDown,
+  Trophy,
+  Star,
+  Send,
+  Paperclip,
+} from "lucide-react";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
-import { GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
+import {
+  GigDetails,
+  WorkerFeedbackFormData,
+} from "@/app/types/GigFeedbackTypes";
 import styles from "@/app/(web-client)/user/[userId]/buyer/gigs/[gigId]/feedback/FeedbackPage.module.css";
 import stylesFeed from "@/app/components/gigs/Feedback.module.css";
 
 type WorkerFeedbackFieldsProps = {
   gigDetails: GigDetails;
   formData: WorkerFeedbackFormData;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
   onThumbsUp: () => void;
   onThumbsDown: () => void;
   onToggleTopCommunicator: () => void;
@@ -27,10 +39,11 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
   submitting,
 }) => (
   <div className={stylesFeed.workerFeedbackContainer}>
-
     {/* Step 1 */}
     <div className={styles.stepItem}>
-      <div className={styles.stepIndicator}><span className={styles.stepNumber}>1</span></div>
+      <div className={styles.stepIndicator}>
+        <span className={styles.stepNumber}>1</span>
+      </div>
       <div className={`${styles.stepContent} ${stylesFeed.textareaContainer}`}>
         <textarea
           id="feedbackText"
@@ -46,7 +59,9 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
 
     {/* Step 2 */}
     <div className={styles.stepItem}>
-      <div className={styles.stepIndicator}><span className={styles.stepNumber}>2</span></div>
+      <div className={styles.stepIndicator}>
+        <span className={styles.stepNumber}>2</span>
+      </div>
       <div className={`${styles.stepContent} ${stylesFeed.workAgainContainer}`}>
         <h3 className={stylesFeed.workAgainText}>
           Would you work with {gigDetails.workerName.split(" ")[0]} again?
@@ -74,10 +89,16 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
 
     {/* Step 3 */}
     <div className={styles.stepItem}>
-      <div className={styles.stepIndicator}><span className={styles.stepNumber}>3</span></div>
+      <div className={styles.stepIndicator}>
+        <span className={styles.stepNumber}>3</span>
+      </div>
       <div className={`${styles.stepContent} ${stylesFeed.awardContainer}`}>
         <h3 className={stylesFeed.awardTitle}>
-          Would you like to award <span className={stylesFeed.workerName}>{gigDetails.workerName.split(" ")[0]}</span>?
+          Would you like to award{" "}
+          <span className={stylesFeed.workerName}>
+            {gigDetails.workerName.split(" ")[0]}
+          </span>
+          ?
         </h3>
         <div className={stylesFeed.badgeContainer}>
           <button
@@ -86,7 +107,12 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
             onClick={onToggleTopCommunicator}
             aria-label="Top communicator award"
           >
-            <AwardDisplayBadge icon={Trophy} textLines="Top communicator" />
+            <AwardDisplayBadge
+              icon="topChef"
+              title="Top communicator"
+              role="buyer"
+              type="COMMON"
+            />
           </button>
           <button
             type="button"
@@ -94,7 +120,12 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
             onClick={onToggleTeamBuilder}
             aria-label="Team builder award"
           >
-            <AwardDisplayBadge icon={Star} textLines="Team builder" />
+            <AwardDisplayBadge
+              icon="topChef"
+              title="Top communicator"
+              role="buyer"
+              type="COMMON"
+            />
           </button>
         </div>
       </div>
@@ -102,7 +133,9 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
 
     {/* Step 4 */}
     <div className={styles.stepItem}>
-      <div className={styles.stepIndicator}><span className={styles.stepNumber}>4</span></div>
+      <div className={styles.stepIndicator}>
+        <span className={styles.stepNumber}>4</span>
+      </div>
       <div className={`${styles.stepContent} ${stylesFeed.expensesContainer}`}>
         <h3 className={stylesFeed.expensesTitle}>
           Log any expenses you incurred here
@@ -139,7 +172,9 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
 
     {/* Step 5 */}
     <div className={styles.stepItem}>
-      <div className={styles.stepIndicator}><span className={styles.stepNumber}>5</span></div>
+      <div className={styles.stepIndicator}>
+        <span className={styles.stepNumber}>5</span>
+      </div>
       <div className={`${styles.stepContent} ${stylesFeed.submitContainer}`}>
         <button
           type="submit"
@@ -151,7 +186,6 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
         </button>
       </div>
     </div>
-
   </div>
 );
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -21,37 +21,32 @@ const TypingIndicator: React.FC = () => (
   <div style={{ 
     display: 'flex', 
     alignItems: 'center', 
-    padding: '12px 16px', 
+    padding: '8px 12px', 
     color: 'var(--primary-color)', 
     fontWeight: 600,
     animation: 'slideIn 0.3s ease-out',
     opacity: 0,
-    animationFillMode: 'forwards'
+    animationFillMode: 'forwards',
+    background: 'rgba(37, 99, 235, 0.1)',
+    borderRadius: '20px',
+    border: '1px solid rgba(37, 99, 235, 0.2)',
+    marginLeft: '8px'
   }}>
-    <div style={{ 
-      display: 'flex', 
-      gap: '4px',
-      background: 'rgba(37, 99, 235, 0.1)',
-      padding: '8px 12px',
-      borderRadius: '20px',
-      border: '1px solid rgba(37, 99, 235, 0.2)'
-    }}>
-      <span className="typing-dot" style={{ 
-        animation: 'typingBounce 1.4s infinite ease-in-out',
-        fontSize: '18px',
-        lineHeight: '1'
-      }}>●</span>
-      <span className="typing-dot" style={{ 
-        animation: 'typingBounce 1.4s infinite ease-in-out 0.2s',
-        fontSize: '18px',
-        lineHeight: '1'
-      }}>●</span>
-      <span className="typing-dot" style={{ 
-        animation: 'typingBounce 1.4s infinite ease-in-out 0.4s',
-        fontSize: '18px',
-        lineHeight: '1'
-      }}>●</span>
-    </div>
+    <span className="typing-dot" style={{ 
+      animation: 'typingBounce 1.4s infinite ease-in-out',
+      fontSize: '16px',
+      lineHeight: '1'
+    }}>●</span>
+    <span className="typing-dot" style={{ 
+      animation: 'typingBounce 1.4s infinite ease-in-out 0.2s',
+      fontSize: '16px',
+      lineHeight: '1'
+    }}>●</span>
+    <span className="typing-dot" style={{ 
+      animation: 'typingBounce 1.4s infinite ease-in-out 0.4s',
+      fontSize: '16px',
+      lineHeight: '1'
+    }}>●</span>
     <style>{`
       @keyframes slideIn {
         from {
@@ -124,7 +119,7 @@ import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
   { name: "about", type: "text", placeholder: "Tell us about yourself and your background...", defaultPrompt: "Tell me about yourself and what kind of work you can offer!", rows: 3 },
-  { name: "experience", type: "text", placeholder: "Tell us about your experience...", defaultPrompt: "What experience do you have in your field?", rows: 3 },
+  { name: "experience", type: "text", placeholder: "How many years of experience do you have?", defaultPrompt: "How many years of experience do you have in your field?", rows: 1 },
   { name: "skills", type: "text", placeholder: "List your skills and certifications...", defaultPrompt: "What skills and certifications do you have?", rows: 3 },
   { name: "equipment", type: "text", placeholder: "List any equipment you have...", defaultPrompt: "What equipment do you have that you can use for your work?", rows: 3 },
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "What's your preferred hourly rate?" },
@@ -193,6 +188,7 @@ interface FormData {
   matchedTerms?: string[]; // New: Terms that matched for job title
   isAISuggested?: boolean; // New: Whether the job title was AI-suggested
   summaryData?: FormData; // New: Data for profile summary display
+  confirmedChoice?: 'title' | 'original'; // New: Track which button was clicked
 };
 
 
@@ -357,14 +353,14 @@ function isUnrelatedResponse(userInput: string, currentPrompt: string): boolean 
   const unrelatedPhrases = [
     'problem', 'broken', 'not working', 'error',
    'speak to someone', 'talk to human', 'real person',
-    // Curse words and inappropriate language
-    'fuck', 'shit', 'damn', 'bitch', 'ass', 'asshole', 'bastard', 'crap',
-    'piss', 'dick', 'pussy', 'cunt', 'whore', 'slut', 'fucker',
-    'motherfucker', 'fucking', 'shitty', 'damned', 'bloody', 'bugger',
-    'wanker', 'twat', 'bellend', 'knob', 'prick', 'tosser', 'arse',
-    'bollocks', 'wank', 'fanny', 'minge', 'gash', 'snatch', 'cooch',
-    'pussy', 'vagina', 'penis', 'dick', 'willy', 'johnson'
-  ];
+                  // Curse words and inappropriate language
+              'fuck', 'shit', 'damn', 'bitch', 'ass', 'asshole', 'bastard', 'crap',
+              'piss', 'dick', 'pussy', 'cunt', 'whore', 'slut', 'fucker',
+              'motherfucker', 'fucking', 'shitty', 'damned', 'bloody', 'bugger',
+              'wanker', 'twat', 'bellend', 'knob', 'prick', 'tosser', 'arse',
+              'bollocks', 'wank', 'fanny', 'minge', 'gash', 'snatch', 'cooch',
+              'vagina', 'penis', 'willy', 'johnson'
+            ];
   
   const userLower = userInput.toLowerCase().trim();
   const promptLower = currentPrompt.toLowerCase();
@@ -628,6 +624,32 @@ function formatSummaryValue(value: unknown, field?: string): string {
       return isNaN(numValue as number) ? String(value) : `£${numValue}`;
     }
     
+    if (field === 'experience') {
+      // Try to parse the experience data if it's in JSON format
+      if (typeof value === 'string' && value.startsWith('{')) {
+        try {
+          const expData = JSON.parse(value);
+          if (expData.years !== undefined) {
+            let display = '';
+            if (expData.years > 0) {
+              display = `${expData.years} year${expData.years !== 1 ? 's' : ''}`;
+            }
+            if (expData.months > 0) {
+              if (display) display += ' and ';
+              display += `${expData.months} month${expData.months !== 1 ? 's' : ''}`;
+            }
+            if (!display) {
+              display = 'Less than 1 year';
+            }
+            return display;
+          }
+        } catch (e) {
+          // If parsing fails, return the original value
+        }
+      }
+      return String(value);
+    }
+    
     if (field === 'equipment') {
       if (typeof value === 'string') {
         return value;
@@ -671,9 +693,9 @@ async function generateContextAwarePrompt(fieldName: string, aboutInfo: string, 
 Next field to ask about: "${fieldName}"
 
 Field-specific guidance for WORKERS:
-- experience: Ask about their work history, relevant experience, or professional background as a worker
+- experience: Ask about their years of experience in their field (e.g., "How many years have you been working as a [job title]?" or "How long have you been in this line of work?")
 - skills: Ask about their specific skills, certifications, or qualifications they can offer to clients
-- hourlyRate: Ask about their preferred hourly rate for their services in British Pounds (£)
+- hourlyRate: Ask about their preferred hourly rate for their services in British Pounds (£). Note: London minimum wage is £12.21 per hour.
 - location: Ask about their location with context about finding nearby gig opportunities
 - availability: Ask about when they are available to work for clients
 - videoIntro: Ask about recording a video introduction to help clients get to know them
@@ -825,6 +847,14 @@ export default function OnboardWorkerPage() {
   const [setupMode, setSetupMode] = useState<'ai' | 'manual' | null>(null);
   const [manualFormData, setManualFormData] = useState<any>({});
   
+  // Check if a special component is currently active (location, calendar, video recording, etc.)
+  const isSpecialComponentActive = useMemo(() => {
+    const currentStep = chatSteps.find(step => 
+      (step.type === "calendar" || step.type === "location" || step.type === "video") && !step.isComplete
+    );
+    return !!currentStep;
+  }, [chatSteps]);
+  
   // Worker profile ID for recommendation URL
   const [workerProfileId, setWorkerProfileId] = useState<string | null>(null);
 
@@ -908,9 +938,14 @@ export default function OnboardWorkerPage() {
           jobTitle: formData.jobTitle || ''
         };
       
-      // Save the profile data to database
+      // Save the profile data to database - THIRD OCCURRENCE
       const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
       if (result.success) {
+        // Set the worker profile ID for references link generation
+        if (result.workerProfileId) {
+          setWorkerProfileId(result.workerProfileId);
+        }
+        
         // Navigate to worker dashboard
         router.push(`/user/${user?.uid}/worker`);
       } else {
@@ -982,10 +1017,12 @@ ENHANCED VALIDATION & SANITIZATION REQUIREMENTS:
    - extractedData: Extract and structure key information as JSON string
 
 3. **Field-Specific Intelligence:**
-   - **experience**: Infer job title from context, extract duration, format naturally
+   - **experience**: Extract years of experience and validate reasonableness
      Example: "25 years of experience" → "Ah, so you have 25 years of experience as a cashier, right?"
-   - **hourlyRate**: Convert to pounds (£), format properly
+     Validation: Check if years are reasonable (0-50), extract numeric value, format naturally
+   - **hourlyRate**: Convert to pounds (£), format properly, ensure minimum £12.21 (London minimum wage)
      Example: "15" → "Got it, you're charging £15 per hour, correct?"
+     Validation: Must be at least £12.21 per hour. If below, mark as insufficient and ask to increase.
    - **location**: Extract coordinates, format address naturally
    - **availability**: Extract days, times, format as natural schedule
    - **skills**: Extract skill names, categorize, format naturally
@@ -1020,6 +1057,7 @@ If validation fails, respond with:
 - isWorkerRelated: boolean
 - isSufficient: boolean
 - clarificationPrompt: string (friendly guidance)
+  - For hourlyRate below £12.21: "I understand you want to be competitive, but we need to ensure all workers meet the London minimum wage of £12.21 per hour. This protects you and ensures fair compensation. Could you please set your rate to at least £12.21?"
 - sanitizedValue: string
 - naturalSummary: string
 - extractedData: string
@@ -1056,6 +1094,80 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
             sufficient: true,
             sanitized: value, // Keep the original coordinate object
           };
+        }
+        
+        // For experience field, validate years of experience
+        if (field === 'experience') {
+          try {
+            const experienceText = String(value).toLowerCase();
+            // Extract years from common patterns
+            const yearPatterns = [
+              /(\d+)\s*years?/i,
+              /(\d+)\s*\+?\s*years?/i,
+              /(\d+)\s*yr/i,
+              /(\d+)\s*\+?\s*yr/i,
+              /(\d+)\s*months?/i,
+              /(\d+)\s*\+?\s*months?/i,
+              /(\d+)\s*mo/i,
+              /(\d+)\s*\+?\s*mo/i
+            ];
+            
+            let years = 0;
+            let months = 0;
+            
+            for (const pattern of yearPatterns) {
+              const match = experienceText.match(pattern);
+              if (match) {
+                const num = parseInt(match[1]);
+                if (pattern.source.includes('month') || pattern.source.includes('mo')) {
+                  months += num;
+                } else {
+                  years += num;
+                }
+              }
+            }
+            
+            // Convert months to years
+            years += Math.floor(months / 12);
+            months = months % 12;
+            
+            // Validate reasonableness (0-50 years)
+            if (years > 50) {
+              return {
+                sufficient: false,
+                clarificationPrompt: 'That seems like a very long time. Could you please confirm how many years of experience you have? Most people have between 0-30 years of experience.',
+              };
+            }
+            
+            if (years < 0) {
+              return {
+                sufficient: false,
+                clarificationPrompt: 'Please provide a valid number of years of experience (0 or more).',
+              };
+            }
+            
+            // Format the experience nicely
+            let formattedExperience = '';
+            if (years > 0) {
+              formattedExperience = `${years} year${years !== 1 ? 's' : ''}`;
+            }
+            if (months > 0) {
+              if (formattedExperience) formattedExperience += ' and ';
+              formattedExperience += `${months} month${months !== 1 ? 's' : ''}`;
+            }
+            if (!formattedExperience) {
+              formattedExperience = 'Less than 1 year';
+            }
+            
+            return {
+              sufficient: true,
+              sanitized: formattedExperience,
+              naturalSummary: `Got it! You have ${formattedExperience} of experience, correct?`,
+              extractedData: JSON.stringify({ years: years, months: months, totalMonths: years * 12 + months })
+            };
+          } catch (error) {
+            console.error('Experience validation error:', error);
+          }
         }
         
         // For date fields, ensure proper date format
@@ -1481,29 +1593,47 @@ Share this link to get your reference\n\nSend this link to get your reference: $
           ]);
         }
       } else {
-              // Check if this is an experience-related field that should trigger job title interpretation
-      if (inputName === 'experience' || inputName === 'about') {
-        // Try to interpret job title from user input
-        const jobTitleResult = await interpretJobTitle(valueToUse, ai);
-        
-        if (jobTitleResult && jobTitleResult.confidence >= 50) {
-          // Show job title confirmation step
-          setChatSteps((prev) => [
-            ...prev,
-            { 
-              id: Date.now() + 3, 
-              type: "jobTitleConfirmation",
-              fieldName: inputName,
-              originalValue: valueToUse,
-              suggestedJobTitle: jobTitleResult.jobTitle,
-              confidence: jobTitleResult.confidence,
-              matchedTerms: jobTitleResult.matchedTerms,
-              isAISuggested: jobTitleResult.isAISuggested,
-              isNew: true,
-            },
-          ]);
+        // Check if this is the about field that should trigger job title interpretation
+        // Only trigger job title interpretation if job title hasn't been collected yet
+        if (inputName === 'about' && !formData.jobTitle) {
+          // Try to interpret job title from user input
+          const jobTitleResult = await interpretJobTitle(valueToUse, ai);
+          
+          if (jobTitleResult && jobTitleResult.confidence >= 50) {
+            // Show job title confirmation step
+            setChatSteps((prev) => [
+              ...prev,
+              { 
+                id: Date.now() + 3, 
+                type: "jobTitleConfirmation",
+                fieldName: inputName,
+                originalValue: valueToUse,
+                suggestedJobTitle: jobTitleResult.jobTitle,
+                confidence: jobTitleResult.confidence,
+                matchedTerms: jobTitleResult.matchedTerms,
+                isAISuggested: jobTitleResult.isAISuggested,
+                isNew: true,
+              },
+            ]);
+          } else {
+            // Show regular sanitized confirmation step
+            setChatSteps((prev) => [
+              ...prev,
+              { 
+                id: Date.now() + 3, 
+                type: "sanitized",
+                fieldName: inputName,
+                sanitizedValue: aiResult.sanitized!,
+                originalValue: valueToUse,
+                naturalSummary: aiResult.naturalSummary,
+                extractedData: aiResult.extractedData,
+                isNew: true,
+              },
+            ]);
+          }
         } else {
-          // Show regular sanitized confirmation step
+          // Show sanitized confirmation step for regular inputs (not reformulations)
+          // This includes cases where job title is already collected for experience/about fields
           setChatSteps((prev) => [
             ...prev,
             { 
@@ -1518,22 +1648,6 @@ Share this link to get your reference\n\nSend this link to get your reference: $
             },
           ]);
         }
-      } else {
-        // Show sanitized confirmation step for regular inputs (not reformulations)
-        setChatSteps((prev) => [
-          ...prev,
-          { 
-            id: Date.now() + 3, 
-            type: "sanitized",
-            fieldName: inputName,
-            sanitizedValue: aiResult.sanitized!,
-            originalValue: valueToUse,
-            naturalSummary: aiResult.naturalSummary,
-            extractedData: aiResult.extractedData,
-            isNew: true,
-          },
-        ]);
-      }
       }
     } catch (error) {
       console.error("Error processing input:", error);
@@ -1550,13 +1664,14 @@ Share this link to get your reference\n\nSend this link to get your reference: $
   // Handle job title confirmation
   const handleJobTitleConfirm = useCallback(async (fieldName: string, suggestedJobTitle: string, originalValue: string) => {
     try {
-      // Update formData with the standardized job title
-      const updatedFormData = { ...formData, [fieldName]: suggestedJobTitle };
+      // Update formData with the standardized job title only
+      // Clear the original field value since it's being replaced by the standardized job title
+      const updatedFormData = { ...formData, jobTitle: suggestedJobTitle, [fieldName]: undefined };
       setFormData(updatedFormData);
       
-      // Mark job title confirmation step as complete (like sanitization)
+      // Mark job title confirmation step as complete and set the confirmed choice
       setChatSteps((prev) => prev.map((step) =>
-        step.type === "jobTitleConfirmation" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
+        step.type === "jobTitleConfirmation" && step.fieldName === fieldName ? { ...step, isComplete: true, confirmedChoice: 'title' } : step
       ));
       
       // Find next required field using updated formData
@@ -1619,13 +1734,14 @@ Share this link to get your reference\n\nSend this link to get your reference: $
   // Handle job title rejection
   const handleJobTitleReject = useCallback(async (fieldName: string, originalValue: string) => {
     try {
-      // Keep the original value
+      // Keep the original value in the original field
+      // Don't update the jobTitle field since user rejected the suggestion
       const updatedFormData = { ...formData, [fieldName]: originalValue };
       setFormData(updatedFormData);
       
-      // Mark job title confirmation step as complete (like sanitization)
+      // Mark job title confirmation step as complete and set the confirmed choice
       setChatSteps((prev) => prev.map((step) =>
-        step.type === "jobTitleConfirmation" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
+        step.type === "jobTitleConfirmation" && step.fieldName === fieldName ? { ...step, isComplete: true, confirmedChoice: 'original' } : step
       ));
       
       // Find next required field using updated formData
@@ -1697,6 +1813,8 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       
       // Update formData first
       const updatedFormData = { ...formData, [fieldName]: sanitized };
+      console.log(`🔍 [handleSanitizedConfirm] Storing ${fieldName}:`, sanitized);
+      console.log(`🔍 [handleSanitizedConfirm] Updated formData:`, updatedFormData);
       setFormData(updatedFormData);
       
       // Mark sanitized step as complete
@@ -1717,7 +1835,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
         }
         
         const recommendationLink = buildRecommendationLink(workerProfileId);
-          const afterRefFormData = { ...formData, [fieldName]: sanitized, references: recommendationLink };
+          const afterRefFormData = { ...updatedFormData, references: recommendationLink };
           setFormData(afterRefFormData);
 
           // Add combined reference message with embedded link and gigfolio info
@@ -1913,8 +2031,19 @@ Share this link to get your reference\n\nSend this link to get your reference: $
 
   const handleSanitizedReformulate = (fieldName: string) => {
     if (isReformulating) return; // Prevent multiple clicks
-    setReformulateField(fieldName);
-    setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-reformulate`]));
+    
+    console.log('Starting reformulate for field:', fieldName);
+    
+    // Clear any existing reformulate state to prevent conflicts
+    setIsReformulating(false);
+    setReformulateField(null);
+    
+    // Small delay to ensure state is cleared before setting new state
+    setTimeout(() => {
+      console.log('Setting reformulate field:', fieldName);
+      setReformulateField(fieldName);
+      setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-reformulate`]));
+    }, 100);
   };
 
   const handlePickerConfirm = useCallback(async (stepId: number, inputName: string) => {
@@ -2171,6 +2300,75 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                 isNew: true,
               }
             ]);
+
+                        // If this was a reformulation, continue to the next field after a short delay
+            if (reformulateField === name) {
+              console.log('Video upload was a reformulation, proceeding to next field...');
+              setTimeout(async () => {
+                // Double-check that we're still in reformulate state before proceeding
+                if (reformulateField === name && isReformulating) {
+                  console.log('Reformulate state confirmed, continuing to next field...');
+                  // Clear reformulating state
+                  setIsReformulating(false);
+                  setReformulateField(null);
+                  
+                  // Find next required field
+                  const nextField = getNextRequiredField(formData);
+                  
+                  if (nextField) {
+                    // Continue with next field
+                    const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, nextField.defaultPrompt, ai);
+                    const newInputConfig = {
+                      type: nextField.type,
+                      name: nextField.name,
+                      placeholder: nextField.placeholder,
+                      ...(nextField.rows && { rows: nextField.rows }),
+                    };
+                    
+                    // Determine the step type based on the field
+                    let stepType: "input" | "calendar" | "location" | "video" | "availability" = "input";
+                    if (nextField.name === "availability") {
+                      stepType = "availability";
+                    } else if (nextField.name === "location") {
+                      stepType = "location";
+                    } else if (nextField.name === "videoIntro") {
+                      stepType = "video";
+                    }
+                    
+                    setChatSteps((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now() + 2,
+                        type: "bot",
+                        content: contextAwarePrompt,
+                        isNew: true,
+                      },
+                      {
+                        id: Date.now() + 3,
+                        type: stepType,
+                        inputConfig: newInputConfig,
+                        isComplete: false,
+                        isNew: true,
+                      },
+                    ]);
+                  } else {
+                    // All fields collected, show final confirmation button
+                    setChatSteps((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now() + 4,
+                        type: "summary",
+                        summaryData: formData,
+                        isNew: true,
+                      },
+                    ]);
+                  }
+                } else {
+                  // Reformulate state was cleared, just show the confirmation step
+                  console.log('Reformulate state was cleared, showing confirmation only');
+                }
+              }, 1000); // 1 second delay to show the confirmation
+            }
           }).catch((error) => {
             console.error('Failed to get download URL:', error);
             setError('Failed to get video URL. Please try again.');
@@ -2181,7 +2379,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       console.error('Video upload error:', error);
       setError('Failed to upload video. Please try again.');
     }
-  }, [user, handleInputChange, handleInputSubmit]);
+  }, [user, handleInputChange, handleInputSubmit, reformulateField, formData, ai, getNextRequiredField]);
 
   // Auto-scroll to the bottom whenever chatSteps or isTyping changes
   useEffect(() => {
@@ -2194,20 +2392,21 @@ Share this link to get your reference\n\nSend this link to get your reference: $
   useEffect(() => {
     if (user?.uid) {
       setFormData({});
-             setChatSteps([{
-         id: 1,
-         type: "bot",
-         content: ROLE_SPECIFIC_PROMPTS.gigfolioCoach.welcome + " 🎉 I'm here to help you create the perfect worker profile so you can find gig opportunities! You're creating a profile to showcase your skills and availability to potential clients. Tell me about yourself and what kind of work you can offer. What's your background?",
-       }, {
-         id: 2,
-         type: "input",
-         inputConfig: {
-           type: "text",
-           name: "about",
-           placeholder: "Tell us about yourself and your background...",
-         },
-         isComplete: false,
-       }]);
+      setChatSteps([{
+        id: 1,
+        type: "bot",
+        content: ROLE_SPECIFIC_PROMPTS.gigfolioCoach.welcome + " 🎉 I'm here to help you create the perfect worker profile so you can find gig opportunities! You're creating a profile to showcase your skills and availability to potential clients. Tell me about yourself and what kind of work you can offer. What's your background?",
+      }, {
+        id: 2,
+        type: "input",
+        inputConfig: {
+          type: requiredFields[0].type,
+          name: requiredFields[0].name,
+          placeholder: requiredFields[0].placeholder,
+          rows: requiredFields[0].rows,
+        },
+        isComplete: false,
+      }]);
       setError(null);
     }
   }, [user?.uid]);
@@ -2220,9 +2419,24 @@ Share this link to get your reference\n\nSend this link to get your reference: $
     }
   }, [error]);
 
+  // Safety timeout to prevent reformulate state from getting stuck
+  useEffect(() => {
+    if (reformulateField && isReformulating) {
+      const safetyTimer = setTimeout(() => {
+        console.warn('Reformulate state stuck for too long, resetting...');
+        setIsReformulating(false);
+        setReformulateField(null);
+      }, 30000); // 30 seconds timeout
+
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [reformulateField, isReformulating]);
+
   // Reformulate logic: when reformulateField is set, clear the field and add a new prompt/input step
   useEffect(() => {
     if (reformulateField) {
+      console.log('Reformulate effect triggered for field:', reformulateField);
+      
       // Set reformulating state to prevent multiple clicks
       setIsReformulating(true);
       
@@ -2248,16 +2462,20 @@ Share this link to get your reference\n\nSend this link to get your reference: $
         ];
       });
 
-             // Generate a reformulation question using ChatAI system
-       const reformulationPrompt = buildSpecializedPrompt('profileCreation', 'Reformulation', 'Could you provide your reformulated message?');
+      // Generate a reformulation question using ChatAI system
+      const reformulationPrompt = buildSpecializedPrompt('profileCreation', 'Reformulation', 'Could you provide your reformulated message?');
       
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
+        console.log('Adding reformulate input step for field:', reformulateField);
         setChatSteps(prev => {
           const filtered = prev.filter(s => s.type !== "typing");
           const fieldConfig = requiredFields.find(f => f.name === reformulateField);
           
           if (!fieldConfig) {
             console.error('Field config not found for:', reformulateField);
+            // Clear reformulate state if field config not found
+            setIsReformulating(false);
+            setReformulateField(null);
             return filtered;
           }
 
@@ -2286,8 +2504,13 @@ Share this link to get your reference\n\nSend this link to get your reference: $
           ];
         });
       }, 700);
+
+      // Cleanup function to clear timeout if component unmounts or reformulateField changes
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
-  }, [reformulateField]);
+  }, [reformulateField, requiredFields]);
 
   if (loadingAuth) {
     return (
@@ -2406,6 +2629,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       className={pageStyles.container} 
       role="GIG_WORKER"
       showChatInput={true}
+      disableChatInput={isSpecialComponentActive}
       onSendMessage={onSendMessage}
       showOnboardingOptions={true}
       onSwitchToManual={() => {
@@ -2540,7 +2764,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                       
                       try {
                         setIsSubmitting(true);
-                        // Ensure all required fields are present from summary data
+                        // Ensure all required fields are present from summary data - FIRST OCCURRENCE
                         const requiredData = {
                           about: step.summaryData?.about || '',
                           experience: step.summaryData?.experience || '',
@@ -2556,9 +2780,14 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                           jobTitle: step.summaryData?.jobTitle || ''
                         };
                         
-                        // Save the profile data to database
+                        // Save the profile data to database - FIRST OCCURRENCE
                         const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
                         if (result.success) {
+                          // Set the worker profile ID for references link generation
+                          if (result.workerProfileId) {
+                            setWorkerProfileId(result.workerProfileId);
+                          }
+                          
                           // Navigate to worker dashboard
                           router.push(`/user/${user?.uid}/worker`);
                         } else {
@@ -2758,53 +2987,49 @@ Share this link to get your reference\n\nSend this link to get your reference: $
         
         if (step.type === "typing") {
           return (
-            <div key={key}>
-              {/* AI Avatar - Separated */}
-              <div key={`${key}-avatar`} style={{ 
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.5rem',
-                marginBottom: '0.5rem'
-              }}>
-                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+            <div key={key} style={{ 
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem',
+              marginBottom: '0.5rem'
+            }}>
+              {/* AI Avatar */}
+              <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, var(--primary-color), var(--primary-darker-color))',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)'
+                }}>
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '28px',
+                    height: '28px',
                     borderRadius: '50%',
+                    background: '#000000',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'linear-gradient(135deg, var(--primary-color), var(--primary-darker-color))',
-                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)'
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
                   }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: '#000000',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
-                    }}>
-                      <Image 
-                        src="/images/ableai.png" 
-                        alt="Able AI" 
-                        width={24} 
-                        height={24} 
-                        style={{
-                          borderRadius: '50%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                    </div>
+                    <Image 
+                      src="/images/ableai.png" 
+                      alt="Able AI" 
+                      width={24} 
+                      height={24} 
+                      style={{
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
-              {/* Typing Indicator - Separated */}
-              <div key={`${key}-typing`}>
-                <TypingIndicator />
-              </div>
+              {/* Typing Indicator - Now positioned next to avatar */}
+              <TypingIndicator />
             </div>
           );
         }
@@ -3017,7 +3242,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                                  return;
                                }
                                
-                               // Ensure all required fields are present from summary data
+                               // Ensure all required fields are present from summary data - SECOND OCCURRENCE
                                const requiredData = {
                                  about: summaryData.about || '',
                                  experience: summaryData.experience || '',
@@ -3031,9 +3256,14 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                                  jobTitle: summaryData.jobTitle || ''
                                };
                                
-                               // Save the profile data to database
+                               // Save the profile data to database - SECOND OCCURRENCE
                                const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
                                if (result.success) {
+                                 // Set the worker profile ID for references link generation
+                                 if (result.workerProfileId) {
+                                   setWorkerProfileId(result.workerProfileId);
+                                 }
+                                 
                                  // Navigate to worker dashboard
                                  router.push(`/user/${user?.uid}/worker`);
                                } else {
@@ -3806,44 +4036,58 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                   <button
                     onClick={() => handleJobTitleConfirm(step.fieldName!, step.suggestedJobTitle!, step.originalValue!)}
                     style={{
-                      background: 'var(--primary-color)',
+                      background: step.confirmedChoice === 'title' ? '#555' : 'var(--primary-color)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '10px 20px',
                       fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: '14px'
+                      cursor: step.confirmedChoice ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      opacity: step.confirmedChoice ? 0.7 : 1,
+                      transition: 'all 0.2s ease'
                     }}
+                    disabled={!!step.confirmedChoice}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'var(--primary-darker-color)';
+                      if (!step.confirmedChoice) {
+                        e.currentTarget.style.background = 'var(--primary-darker-color)';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'var(--primary-color)';
+                      if (!step.confirmedChoice) {
+                        e.currentTarget.style.background = 'var(--primary-color)';
+                      }
                     }}
                   >
-                    Use This Title
+                    {step.confirmedChoice === 'title' ? 'Title Confirmed' : 'Use This Title'}
                   </button>
                   <button
                     onClick={() => handleJobTitleReject(step.fieldName!, step.originalValue!)}
                     style={{
-                      background: '#444',
+                      background: step.confirmedChoice === 'original' ? '#555' : '#444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '10px 20px',
                       fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: '14px'
+                      cursor: step.confirmedChoice ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      opacity: step.confirmedChoice ? 0.7 : 1,
+                      transition: 'all 0.2s ease'
                     }}
+                    disabled={!!step.confirmedChoice}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = '#555';
+                      if (!step.confirmedChoice) {
+                        e.currentTarget.style.background = '#555';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = '#444';
+                      if (!step.confirmedChoice) {
+                        e.currentTarget.style.background = '#444';
+                      }
                     }}
                   >
-                    Keep Original
+                    {step.confirmedChoice === 'original' ? 'Original Kept' : 'Keep Original'}
                   </button>
                 </div>
               </div>
