@@ -7,7 +7,6 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background-color: var(--foreground);
   color: #ffffff;
   padding: 1rem;
   height: auto;

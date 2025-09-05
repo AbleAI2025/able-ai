@@ -62,7 +62,7 @@ export const getPrivateWorkerProfileAction = async (token: string) => {
 export const getGigWorkerProfile = async (
   workerProfile:
     | (typeof GigWorkerProfilesTable.$inferSelect & {
-        user?: { fullName: string, rtwStatus: string | null};
+        user?: { fullName: string; rtwStatus: string | null };
       })
     | undefined
 ): Promise<{ success: true; data: PublicWorkerProfile }> => {
@@ -207,7 +207,10 @@ export const getSkillDetailsWorker = async (id: string) => {
     }));
 
     const qualifications = await db.query.QualificationsTable.findMany({
-      where: eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
+      where: and(
+        eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
+        eq(QualificationsTable.skillId, skill.id || "")
+      ),
     });
 
     const reviews = await db.query.ReviewsTable.findMany({
@@ -258,7 +261,7 @@ export const getSkillDetailsWorker = async (id: string) => {
     );
 
     const skillProfile = {
-      workerProfileId: workerProfile?.id ?? '',
+      workerProfileId: workerProfile?.id ?? "",
       name: user?.fullName,
       title: skill?.name,
       hashtags: Array.isArray(workerProfile?.hashtags)
@@ -566,7 +569,6 @@ export const saveWorkerProfileFromOnboardingAction = async (
       throw new Error("Token is required");
     }
 
-
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
@@ -582,9 +584,11 @@ export const saveWorkerProfileFromOnboardingAction = async (
     });
 
     // Validate hourly rate minimum
-    const validatedHourlyRate = parseFloat(profileData.hourlyRate || '0');
+    const validatedHourlyRate = parseFloat(profileData.hourlyRate || "0");
     if (validatedHourlyRate < VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE) {
-      throw new Error(`Hourly rate must be at least £${VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE}`);
+      throw new Error(
+        `Hourly rate must be at least £${VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE}`
+      );
     }
 
     // Prepare profile data
@@ -681,10 +685,10 @@ export const saveWorkerProfileFromOnboardingAction = async (
     }
 
     // Save worker skills data to gig_worker_skills table
-    let skillName = '';
+    let skillName = "";
     let yearsOfExperience: number | undefined;
     let extractedHourlyRate: number | undefined;
-    
+
     // Add unique call identifier for debugging
     const callId = Math.random().toString(36).substr(2, 9);
     console.log(`🚀 [${callId}] Starting worker skills save process...`);
@@ -696,25 +700,31 @@ export const saveWorkerProfileFromOnboardingAction = async (
       jobTitle: profileData.jobTitle,
       about: profileData.about,
       experience: profileData.experience,
-      hourlyRate: profileData.hourlyRate
+      hourlyRate: profileData.hourlyRate,
     });
-    
+
     // Log call stack to see where this is being called from
-    console.log(`🚀 [${callId}] Call stack:`, new Error().stack?.split('\n').slice(1, 4).join('\n'));
-    
+    console.log(
+      `🚀 [${callId}] Call stack:`,
+      new Error().stack?.split("\n").slice(1, 4).join("\n")
+    );
+
     try {
       // Extract skill name from skills field first, then job title, then about
-      skillName = profileData.skills || profileData.jobTitle || profileData.about || '';
-      
+      skillName =
+        profileData.skills || profileData.jobTitle || profileData.about || "";
+
       // Extract years of experience from experience field
-      const experienceText = profileData.experience || '';
+      const experienceText = profileData.experience || "";
       const yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
       yearsOfExperience = yearsMatch ? parseFloat(yearsMatch[1]) : undefined;
-      
+
       // Extract hourly rate
-      extractedHourlyRate = profileData.hourlyRate ? parseFloat(profileData.hourlyRate) : undefined;
-      
-      console.log('🔍 Worker Skills Debug:', {
+      extractedHourlyRate = profileData.hourlyRate
+        ? parseFloat(profileData.hourlyRate)
+        : undefined;
+
+      console.log("🔍 Worker Skills Debug:", {
         skillName,
         yearsOfExperience,
         hourlyRate: extractedHourlyRate,
@@ -728,29 +738,30 @@ export const saveWorkerProfileFromOnboardingAction = async (
         jobTitle_field: profileData.jobTitle,
         about_field: profileData.about,
         experience_field: profileData.experience,
-        hourlyRate_field: profileData.hourlyRate
+        hourlyRate_field: profileData.hourlyRate,
       });
-      
+
       if (skillName) {
-        console.log('💾 Attempting to save worker skills...');
-        console.log('📝 Insert data:', {
+        console.log("💾 Attempting to save worker skills...");
+        console.log("📝 Insert data:", {
           userId: user.id,
           name: skillName,
           experience: yearsOfExperience ? String(yearsOfExperience) : null,
           eph: extractedHourlyRate ? String(extractedHourlyRate) : null,
         });
-        
+
         // Check if this specific skill already exists for this worker profile to prevent exact duplicates
         const existingSkills = await db.query.SkillsTable.findMany({
           where: eq(SkillsTable.workerProfileId, workerProfileId),
         });
-        console.log('🔍 Existing skills for worker profile:', existingSkills);
-        
+        console.log("🔍 Existing skills for worker profile:", existingSkills);
+
         // Check if this exact skill name already exists
-        const skillExists = existingSkills.some(skill => 
-          skill.name.toLowerCase().trim() === skillName.toLowerCase().trim()
+        const skillExists = existingSkills.some(
+          (skill) =>
+            skill.name.toLowerCase().trim() === skillName.toLowerCase().trim()
         );
-        
+
         if (!skillExists) {
           // Skill doesn't exist, safe to insert
           try {
@@ -759,7 +770,10 @@ export const saveWorkerProfileFromOnboardingAction = async (
               name: skillName,
               experienceMonths: 0,
               experienceYears: yearsOfExperience || 0,
-              agreedRate: String(extractedHourlyRate || VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE),
+              agreedRate: String(
+                extractedHourlyRate ||
+                  VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE
+              ),
               skillVideoUrl: null,
               adminTags: null,
               ableGigs: null,
@@ -767,46 +781,61 @@ export const saveWorkerProfileFromOnboardingAction = async (
               createdAt: new Date(),
               updatedAt: new Date(),
             });
-            console.log('✅ New worker skill saved successfully:', skillResult);
+            console.log("✅ New worker skill saved successfully:", skillResult);
           } catch (insertError) {
-            console.error('❌ Error inserting skill into SkillsTable:', insertError);
-            console.error('❌ Insert data that failed:', {
+            console.error(
+              "❌ Error inserting skill into SkillsTable:",
+              insertError
+            );
+            console.error("❌ Insert data that failed:", {
               workerProfileId,
               name: skillName,
               experienceMonths: 0,
               experienceYears: yearsOfExperience || 0,
-              agreedRate: String(extractedHourlyRate || VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE),
+              agreedRate: String(
+                extractedHourlyRate ||
+                  VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE
+              ),
             });
             throw insertError;
           }
         } else {
-          console.log('⚠️ Skill already exists for this worker profile, skipping insert to prevent exact duplicates');
-          console.log('📋 Existing skills:', existingSkills.map(s => ({ name: s.name, experienceYears: s.experienceYears, agreedRate: s.agreedRate })));
-          console.log('🔍 Attempted to add skill:', skillName);
+          console.log(
+            "⚠️ Skill already exists for this worker profile, skipping insert to prevent exact duplicates"
+          );
+          console.log(
+            "📋 Existing skills:",
+            existingSkills.map((s) => ({
+              name: s.name,
+              experienceYears: s.experienceYears,
+              agreedRate: s.agreedRate,
+            }))
+          );
+          console.log("🔍 Attempted to add skill:", skillName);
         }
       } else {
-        console.log('⚠️ No skill name found, skipping worker skills save');
-        console.log('🔍 Available data:', {
+        console.log("⚠️ No skill name found, skipping worker skills save");
+        console.log("🔍 Available data:", {
           jobTitle: profileData.jobTitle,
           about: profileData.about,
           experience: profileData.experience,
-          hourlyRate: profileData.hourlyRate
+          hourlyRate: profileData.hourlyRate,
         });
       }
     } catch (skillError) {
-      console.error('❌ Error saving worker skills:', skillError);
-      console.error('❌ Error details:', {
-        message: skillError instanceof Error ? skillError.message : 'Unknown error',
-        stack: skillError instanceof Error ? skillError.stack : 'No stack trace',
-        skillName: skillName || 'undefined',
-        userId: user.id
+      console.error("❌ Error saving worker skills:", skillError);
+      console.error("❌ Error details:", {
+        message:
+          skillError instanceof Error ? skillError.message : "Unknown error",
+        stack:
+          skillError instanceof Error ? skillError.stack : "No stack trace",
+        skillName: skillName || "undefined",
+        userId: user.id,
       });
       // Don't fail the entire profile save if skills saving fails
     }
 
     // Debug: Log the equipment data received
-
-    
 
     // Save equipment data if provided
     if (profileData.equipment && profileData.equipment.length > 0) {
@@ -836,7 +865,6 @@ export const saveWorkerProfileFromOnboardingAction = async (
         throw dbError;
       }
     } else {
-
       // No equipment provided
     }
 
@@ -846,11 +874,13 @@ export const saveWorkerProfileFromOnboardingAction = async (
       const existingJobTitleSkills = await db.query.SkillsTable.findMany({
         where: eq(SkillsTable.workerProfileId, workerProfileId),
       });
-      
-      const jobTitleExists = existingJobTitleSkills.some(skill => 
-        skill.name.toLowerCase().trim() === (profileData.jobTitle || '').toLowerCase().trim()
+
+      const jobTitleExists = existingJobTitleSkills.some(
+        (skill) =>
+          skill.name.toLowerCase().trim() ===
+          (profileData.jobTitle || "").toLowerCase().trim()
       );
-      
+
       if (!jobTitleExists) {
         try {
           await db.insert(SkillsTable).values({
@@ -858,7 +888,10 @@ export const saveWorkerProfileFromOnboardingAction = async (
             name: profileData.jobTitle,
             experienceMonths: 0,
             experienceYears: 0,
-            agreedRate: String(parseFloat(profileData.hourlyRate) || VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE),
+            agreedRate: String(
+              parseFloat(profileData.hourlyRate) ||
+                VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE
+            ),
             skillVideoUrl: null,
             adminTags: null,
             ableGigs: null,
@@ -866,20 +899,25 @@ export const saveWorkerProfileFromOnboardingAction = async (
             createdAt: new Date(),
             updatedAt: new Date(),
           });
-          console.log('✅ Job title saved as new skill:', profileData.jobTitle);
+          console.log("✅ Job title saved as new skill:", profileData.jobTitle);
         } catch (insertError) {
-          console.error('❌ Error inserting job title as skill:', insertError);
-          console.error('❌ Job title insert data that failed:', {
+          console.error("❌ Error inserting job title as skill:", insertError);
+          console.error("❌ Job title insert data that failed:", {
             workerProfileId,
             name: profileData.jobTitle,
-            agreedRate: String(parseFloat(profileData.hourlyRate) || VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE),
+            agreedRate: String(
+              parseFloat(profileData.hourlyRate) ||
+                VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE
+            ),
           });
           throw insertError;
         }
       } else {
-        console.log('⚠️ Job title already exists as skill, skipping insert:', profileData.jobTitle);
+        console.log(
+          "⚠️ Job title already exists as skill, skipping insert:",
+          profileData.jobTitle
+        );
       }
-
     }
 
     // Update user table to mark as gig worker

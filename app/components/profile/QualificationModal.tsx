@@ -1,6 +1,6 @@
 "use client";
 // QualificationModal.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import styles from "./QualificationModal.module.css";
 import { Qualification } from "@/app/types";
@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   addQualificationAction,
   editQualificationAction,
+  getAllSkillsAction,
 } from "@/actions/user/edit-worker-profile";
 import { toast } from "sonner";
 export type QualificationInput = Pick<
@@ -21,6 +22,8 @@ interface QualificationModalProps {
   onSave: () => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
+  workerId: string;
+  skillId?: string;
 }
 
 const QualificationModal = ({
@@ -29,21 +32,49 @@ const QualificationModal = ({
   onSave,
   onDelete,
   onClose,
+  workerId,
+  skillId: currentSkillId,
 }: QualificationModalProps) => {
+  const { user } = useAuth();
   const [title, setTitle] = useState(initialValue?.title || "");
   const [description, setDescription] = useState(
     initialValue?.description || ""
   );
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const [skillId, setSkillId] = useState<string | null>(null);
+  const [allSkills, setAllSkills] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+
+  const fetchAllSkills = async () => {
+    // Fetch skills from the database or API
+    try {
+      if (!workerId) return;
+      const { success, data } = await getAllSkillsAction(workerId);
+
+      if (success && data) {
+        setAllSkills(data);
+      }
+    } catch (error) {
+      console.log("Error fetching skills", error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentSkillId) {
+      setSkillId(currentSkillId);
+    }
+    fetchAllSkills();
+  }, []);
 
   const handleSave = async () => {
     try {
-      if (!title.trim() || !description.trim() || !user?.token)
+      if (!title.trim() || !description.trim() || !user?.token || !skillId)
         throw "Error adding qualification";
       const { success, error } = await addQualificationAction(
         title,
         user?.token,
+        skillId,
         description
       );
 
@@ -99,6 +130,25 @@ const QualificationModal = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          {!currentSkillId ? (
+            <>
+              <select
+                className={styles.select}
+                value={skillId || ""}
+                onChange={(e) => setSkillId(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select a skill
+                </option>
+                {allSkills.map((skill) => (
+                  <option key={skill.id} value={skill.id}>
+                    {skill.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
+
           {error && <p className={styles.errorText}>{error}</p>}
         </div>
         <div className={styles.footer}>
