@@ -373,6 +373,6 @@ export async function getGigDetails({
 
   } catch (error: unknown) {
     console.error("Error fetching gig:", error);
-    return { error: (error as Error).message, gig: {} as GigDetails, status: 500 };
+    return { error: error instanceof Error ? error.message : 'Unknown error fetching gig', gig: {} as GigDetails, status: 500 };
   }
 }

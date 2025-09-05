@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull, ne } from "drizzle-orm";
 import {
   GigsTable,
   UsersTable,
@@ -33,7 +33,7 @@ const mapEventStatus = (status: string): EventStatusEnumType => {
 };
 
 // --- Worker Events Helper ---
-async function getWorkerCalendarEvents(user: any): Promise<CalendarEvent[]> {
+async function getWorkerCalendarEvents(user: typeof UsersTable.$inferSelect): Promise<CalendarEvent[]> {
   // 1. Accepted/assigned gigs
   const acceptedGigs = await db.query.GigsTable.findMany({
     where: eq(GigsTable.workerUserId, user.id),
@@ -43,8 +43,12 @@ async function getWorkerCalendarEvents(user: any): Promise<CalendarEvent[]> {
     },
   });
 
-  // 2. Available gig offers
-  const allGigsForOffers = await db.query.GigsTable.findMany({
+  const availableOffers = await db.query.GigsTable.findMany({
+    where: and(
+      eq(GigsTable.statusInternal, "PENDING_WORKER_ACCEPTANCE"),
+      isNull(GigsTable.workerUserId),
+      ne(GigsTable.buyerUserId, user.id)
+    ),
     columns: {
       id: true,
       titleInternal: true,
@@ -60,12 +64,6 @@ async function getWorkerCalendarEvents(user: any): Promise<CalendarEvent[]> {
       exactLocation: true,
     },
   });
-  const availableOffers = allGigsForOffers.filter(
-    (gig) =>
-      gig.statusInternal === "PENDING_WORKER_ACCEPTANCE" &&
-      !gig.workerUserId &&
-      gig.buyerUserId !== user.id
-  );
 
   // 3. Worker availability
   const workerAvailability = await db.query.WorkerAvailabilityTable.findMany({
@@ -125,7 +123,7 @@ async function getWorkerCalendarEvents(user: any): Promise<CalendarEvent[]> {
       buyerId: gig.buyerUserId,
       workerId: null,
       agreedRate: gig.agreedRate,
-      totalAgreedPrice: gig.agreedRate,
+      totalAgreedPrice: ((new Date(gig.endTime).getTime() - new Date(gig.startTime).getTime()) / 3600000) * Number(gig.agreedRate),
       moderationStatus: "PENDING",
       isOffer: true,
       notesForWorker: gig.notesForWorker,
@@ -161,7 +159,7 @@ async function getWorkerCalendarEvents(user: any): Promise<CalendarEvent[]> {
 }
 
 // --- Buyer Events Helper ---
-async function getBuyerCalendarEvents(user: any): Promise<CalendarEvent[]> {
+async function getBuyerCalendarEvents(user: typeof UsersTable.$inferSelect): Promise<CalendarEvent[]> {
   const gigs = await db.query.GigsTable.findMany({
     where: eq(GigsTable.buyerUserId, user.id),
     with: {

@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle/db";
 import { eq } from "drizzle-orm";
-import { gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
+import { gigStatusEnum, UsersTable, GigsTable } from "@/lib/drizzle/schema";
 
 // Gig statuses for offers (pending worker acceptance)
 const PENDING_WORKER_ACCEPTANCE = gigStatusEnum.enumValues[0];
@@ -39,9 +39,34 @@ export interface WorkerGigOffer {
   gigDescription?: string;
   notesForWorker?: string;
 }
+interface AddressJson {
+  formatted_address?: string;
+  street_address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+}
+// Define a type with only the fields you need
+type MinimalGig = Pick<
+  typeof GigsTable.$inferSelect,
+  | "id"
+  | "buyerUserId"
+  | "workerUserId"
+  | "titleInternal"
+  | "fullDescription"
+  | "exactLocation"
+  | "addressJson"
+  | "startTime"
+  | "endTime"
+  | "agreedRate"
+  | "statusInternal"
+  | "notesForWorker"
+>;
 
+// Use MinimalGig in your function
 function transformGigToWorkerOffer(
-  gig: any,
+  gig: MinimalGig,
   userId: string,
   statusOverride?: string
 ): WorkerGigOffer {
@@ -71,11 +96,11 @@ function transformGigToWorkerOffer(
 
   let locationSnippet = "Location not specified";
   if (gig.addressJson && typeof gig.addressJson === "object") {
-    const address = gig.addressJson as any;
+    const address = gig.addressJson as AddressJson;
     if (address.formatted_address) {
       locationSnippet = address.formatted_address;
-    } else if (address.address) {
-      locationSnippet = address.address;
+    } else if (address.street_address) {
+      locationSnippet = address.street_address;
     } else if (address.city && address.country) {
       locationSnippet = `${address.city}, ${address.country}`;
     }
@@ -185,7 +210,7 @@ export async function getWorkerOffers(userId: string) {
   } catch (error: unknown) {
     console.error("Error fetching worker offers:", error);
     return {
-      error: (error as Error).message || "Failed to fetch worker offers",
+       error: error instanceof Error ? error.message : "Failed to fetch worker offers",
       status: 500,
     };
   }

@@ -3,13 +3,14 @@ import PublicWorkerProfile, { SemanticProfile } from "@/app/types/workerProfileT
 import { calculateAverageRating } from "../utils/get-gig-worker-profile";
 import { GigWorkerProfileService } from "../services/get-gig-worker-profile";
 import type { ActionResult, OnboardingProfileData } from "../types/get-gig-worker-profile";
+import { GigWorkerProfilesTable } from "@/lib/drizzle/schema";
 
 export class ProfileDataHandler {
   /**
    * Builds complete worker profile data
    */
   static async buildWorkerProfile(
-    workerProfile: any
+    workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined,
   ): Promise<ActionResult<PublicWorkerProfile>> {
     try {
       if (!workerProfile) {

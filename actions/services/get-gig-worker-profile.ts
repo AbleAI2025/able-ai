@@ -1,4 +1,3 @@
-
 import { db } from "@/lib/drizzle/db";
 import {
   BadgeDefinitionsTable,
@@ -12,33 +11,49 @@ import {
   WorkerAvailabilityTable,
 } from "@/lib/drizzle/schema";
 import { and, eq } from "drizzle-orm";
-import type { AvailabilityData, EquipmentData } from "../types/get-gig-worker-profile";
+import type {
+  AvailabilityData,
+  EquipmentData,
+} from "../types/get-gig-worker-profile";
 import { createTimestamp } from "../utils/get-gig-worker-profile";
 
 export class GigWorkerProfileService {
   /**
    * Fetches all worker profile related data in parallel
    */
-  static async fetchWorkerProfileData(workerProfile: any) {
-    const [skills, equipment, qualifications, awards, reviews, recommendations] =
-      await Promise.all([
-        db.query.SkillsTable.findMany({
-          where: eq(SkillsTable.workerProfileId, workerProfile.id),
-        }),
-        db.query.EquipmentTable.findMany({
-          where: eq(EquipmentTable.workerProfileId, workerProfile.id),
-        }),
-        db.query.QualificationsTable.findMany({
-          where: eq(QualificationsTable.workerProfileId, workerProfile.id),
-        }),
-        db.query.UserBadgesLinkTable.findMany({
-          where: eq(UserBadgesLinkTable.userId, workerProfile.userId),
-        }),
-        this.fetchInternalReviews(workerProfile.userId),
-        this.fetchExternalRecommendations(workerProfile.userId),
-      ]);
+  static async fetchWorkerProfileData(workerProfile: typeof GigWorkerProfilesTable.$inferSelect) {
+    const [
+      skills,
+      equipment,
+      qualifications,
+      awards,
+      reviews,
+      recommendations,
+    ] = await Promise.all([
+      db.query.SkillsTable.findMany({
+        where: eq(SkillsTable.workerProfileId, workerProfile.id),
+      }),
+      db.query.EquipmentTable.findMany({
+        where: eq(EquipmentTable.workerProfileId, workerProfile.id),
+      }),
+      db.query.QualificationsTable.findMany({
+        where: eq(QualificationsTable.workerProfileId, workerProfile.id),
+      }),
+      db.query.UserBadgesLinkTable.findMany({
+        where: eq(UserBadgesLinkTable.userId, workerProfile.userId),
+      }),
+      this.fetchInternalReviews(workerProfile.userId),
+      this.fetchExternalRecommendations(workerProfile.userId),
+    ]);
 
-    return { skills, equipment, qualifications, awards, reviews, recommendations };
+    return {
+      skills,
+      equipment,
+      qualifications,
+      awards,
+      reviews,
+      recommendations,
+    };
   }
 
   /**
@@ -101,27 +116,46 @@ export class GigWorkerProfileService {
    * Processes reviews data with author information
    */
   static async processReviewsData(reviews: any[]) {
-    return await Promise.all(
-      reviews.map(async (review) => {
-        if (!review.authorUserId) {
-          return {
-            name: "Unknown",
-            date: review.createdAt,
-            text: review.comment,
-          };
-        }
+    // 1. Obtener todos los IDs únicos de autores
+    const authorIds = [
+      ...new Set(reviews.map((review) => review.authorUserId).filter(Boolean)),
+    ];
 
-        const author = await db.query.UsersTable.findFirst({
-          where: eq(UsersTable.id, review.authorUserId),
-        });
+    // 2. Si no hay IDs, procesar directamente
+    if (authorIds.length === 0) {
+      return reviews.map((review) => ({
+        name: "Unknown",
+        date: review.createdAt,
+        text: review.comment,
+      }));
+    }
 
-        return {
-          name: author?.fullName || "Unknown",
-          date: review.createdAt,
-          text: review.comment,
-        };
-      })
+    // 3. Hacer múltiples consultas en paralelo (mejor que secuencial)
+    const authors = await Promise.all(
+      authorIds.map((id) =>
+        db.query.UsersTable.findFirst({
+          where: eq(UsersTable.id, id),
+        })
+      )
     );
+
+    // 4. Crear mapa para acceso rápido
+    const authorsMap = new Map();
+    authors.forEach((author, index) => {
+      if (author) {
+        authorsMap.set(authorIds[index], author);
+      }
+    });
+
+    // 5. Procesar reviews
+    return reviews.map((review) => {
+      const author = authorsMap.get(review.authorUserId);
+      return {
+        name: author?.fullName || "Unknown",
+        date: review.createdAt,
+        text: review.comment,
+      };
+    });
   }
 
   /**

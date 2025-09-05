@@ -1,3 +1,4 @@
+
 export interface CreateSkillData {
   name: string;
   experienceYears: number;
@@ -38,7 +39,7 @@ export interface OnboardingProfileData {
 export interface ActionResult<T = any> {
   success: boolean;
   data: T | null;
-  error?: string | Error;
+  error?: string;
   workerProfileId?: string;
 }
 

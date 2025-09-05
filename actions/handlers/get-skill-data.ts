@@ -2,6 +2,7 @@ import { db } from "@/lib/drizzle/db";
 import {
   GigWorkerProfilesTable,
   QualificationsTable,
+  SkillsTable,
   UsersTable,
 } from "@/lib/drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -16,7 +17,7 @@ export class SkillDataHandler {
    * Builds complete skill profile data
    */
   static async buildSkillProfile(
-    skill: any
+    skill:  typeof SkillsTable.$inferSelect,
   ): Promise<ActionResult<SkillProfile>> {
     try {
       const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
@@ -67,10 +68,10 @@ export class SkillDataHandler {
         Eph: skill?.agreedRate,
         location: workerProfile?.location || "",
         address: workerProfile?.address || "",
-        latitude: workerProfile?.latitude !== undefined && workerProfile?.latitude !== null
+        latitude: workerProfile?.latitude != null
           ? Number(workerProfile.latitude)
           : null,
-        longitude: workerProfile?.longitude !== undefined && workerProfile?.longitude !== null
+        longitude: workerProfile?.longitude != null
           ? Number(workerProfile.longitude)
           : null,
         videoUrl: workerProfile?.videoUrl || "",

@@ -48,6 +48,6 @@ export async function updateGigOfferStatus({ gigId, userId, role, action }: { gi
 
   } catch (error: unknown) {
     console.error("Error updating gig:", error);
-    return { error: (error as Error).message, status: 500 };
+        return { error: error instanceof Error ? error.message : 'Unknown error updating gig', status: 500 };
   }
 }
