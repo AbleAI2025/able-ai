@@ -1,5 +1,3 @@
-"use server";
-
 import PublicWorkerProfile from "@/app/types/workerProfileTypes";
 import { db } from "@/lib/drizzle/db";
 import { GigWorkerProfilesTable, SkillsTable } from "@/lib/drizzle/schema";
