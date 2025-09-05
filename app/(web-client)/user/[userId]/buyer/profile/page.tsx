@@ -4,7 +4,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { ThumbsUp, Loader2, MessageSquare } from "lucide-react";
-import { Star as DefaultBadgeIcon } from "lucide-react";
 import styles from "./BuyerProfilePage.module.css";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";

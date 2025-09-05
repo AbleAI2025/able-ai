@@ -13,6 +13,7 @@ import {
   BadgeCheck,
   ThumbsUp,
   MessageSquare,
+  Edit2,
 } from "lucide-react";
 import {
   getPrivateWorkerProfileAction,
@@ -26,7 +27,10 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 
-import PublicWorkerProfile, { Qualification, Review } from "@/app/types/workerProfileTypes";
+import PublicWorkerProfile, {
+  Qualification,
+  Review,
+} from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -35,6 +39,7 @@ import CancelButton from "../shared/CancelButton";
 import { BadgeIcon } from "./GetBadgeIcon";
 import Qualifications from "./Qualifications";
 import Equipments from "./Equipments";
+import UserNameModal from "./UserNameModal";
 
 const WorkerProfile = ({
   workerProfile,
@@ -46,7 +51,7 @@ const WorkerProfile = ({
   workerProfile: PublicWorkerProfile;
   handleAddSkill?: () => void;
   handleSkillDetails: (id: string) => void; // Now optional
-  fetchUserProfile: (token: string) => void;
+  fetchUserProfile: (id: string) => void;
   userId?: string;
   isSelfView: boolean;
 }) => {
@@ -54,7 +59,6 @@ const WorkerProfile = ({
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
-  const [name, setName] = useState<string | null>(user?.displayName || null);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -124,10 +128,7 @@ const WorkerProfile = ({
     }
   }, [workerProfile]);
 
-  const handleNameChange = (name: string) => {
-    setName(name);
-    // Update the worker's display name
-  };
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className={styles.profilePageContainer}>
@@ -144,15 +145,28 @@ const WorkerProfile = ({
           {!isSelfView ? (
             <h1 className={styles.workerName}>{user?.displayName}</h1>
           ) : (
-            <input
-              type="text"
-              className={styles.workerName}
-              value={name ?? ""}
-              onChange={(e) => handleNameChange(e.target.value)}
-            />
+            <>
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "24px",
+                  fontWeight: 600,
+                }}
+              >
+                {workerProfile.user?.fullName ?? ""}{" "}
+                <Edit2
+                  size={20}
+                  className={styles.icon}
+                  onClick={() => setIsOpen(true)}
+                  style={{ cursor: "pointer" }}
+                />
+              </span>
+            </>
           )}
-          
-          { workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
+
+          {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
               <span className={styles.verifiedText}>
@@ -216,7 +230,7 @@ const WorkerProfile = ({
           </div>
         </div>
 
-        {/* Skills Section (Benji Image Style - Blue Card) */}
+        {/* Skills Section (User Image Style - Blue Card) */}
         {
           <SkillsDisplayTable
             skills={workerProfile?.skills}
@@ -228,11 +242,10 @@ const WorkerProfile = ({
           />
         }
 
-        {/* Awards & Feedback Section (Benji Image Style) */}
+        {/* Awards & Feedback Section (User Image Style) */}
         {workerProfile.awards && ( // Only show section if there are awards or feedback
           <div className={styles.awardsFeedbackGrid}>
             {workerProfile.awards && workerProfile.awards.length > 0 && (
-              // <ContentCard title="Awards:" className={styles.awardsCard}>
               <div>
                 <h3 className={styles.contentTitle}>Awards:</h3>
                 <div className={styles.awardsContainer}>
@@ -263,20 +276,31 @@ const WorkerProfile = ({
           </div>
         )}
 
-        {/* Qualifications Section (Benji Image Style) */}
-          <Qualifications
-            initialQualifications={workerProfile.qualifications as Qualification[] ?? []}
-            workerId={workerProfile.id}
-             isSelfView={isSelfView}
-          />
-            
+        {/* Qualifications Section (User Image Style) */}
+        <Qualifications
+          qualifications={
+            (workerProfile.qualifications as Qualification[]) ?? []
+          }
+          workerId={workerProfile.id}
+          isSelfView={isSelfView}
+          fetchUserProfile={fetchUserProfile}
+        />
 
         {/* Equipment Section (User Image Style) */}
         {
           <Equipments
             workerProfileId={workerProfile.id}
-            initialEquipments={workerProfile.equipments || []}
+            equipments={
+              (workerProfile.equipment as {
+                id: string;
+                workerProfileId: string;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+              }[]) ?? []
+            }
             isSelfView={isSelfView}
+            fetchUserProfile={fetchUserProfile}
           />
         }
       </div>
@@ -314,6 +338,15 @@ const WorkerProfile = ({
             <CancelButton handleCancel={() => setShowRtwPopup(false)} />
           </div>
         </div>
+      )}
+      {/* Edit Name Modal */}
+      {isOpen && (
+        <UserNameModal
+          workerId={workerProfile.id || ""}
+          initialValue={workerProfile.user?.fullName ?? ""}
+          fetchUserProfile={fetchUserProfile}
+          onClose={() => setIsOpen(false)}
+        />
       )}
     </div>
   );

@@ -98,7 +98,7 @@ export default interface PublicWorkerProfile {
   updatedAt?: Date | undefined;
 
   awards?: Award[];
-  equipments?: Equipment[];
+  equipment?: Equipment[];
   skills?: Skill[];
   reviews?: Review[];
   qualifications?: Qualification[];

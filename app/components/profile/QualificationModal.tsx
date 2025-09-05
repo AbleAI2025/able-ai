@@ -1,17 +1,25 @@
+"use client";
 // QualificationModal.tsx
 import React, { useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import styles from "./QualificationModal.module.css";
 import { Qualification } from "@/app/types";
-
-export type QualificationInput = Pick<Qualification, "title" | "description">;
-
+import { useAuth } from "@/context/AuthContext";
+import {
+  addQualificationAction,
+  editQualificationAction,
+} from "@/actions/user/edit-worker-profile";
+import { toast } from "sonner";
+export type QualificationInput = Pick<
+  Qualification,
+  "id" | "title" | "description"
+>;
 
 interface QualificationModalProps {
   mode: "add" | "edit";
   initialValue: QualificationInput | null;
-  onSave: (data: QualificationInput) => void;
-  onDelete?: () => void;
+  onSave: () => void;
+  onDelete?: (id: string) => void;
   onClose: () => void;
 }
 
@@ -23,15 +31,50 @@ const QualificationModal = ({
   onClose,
 }: QualificationModalProps) => {
   const [title, setTitle] = useState(initialValue?.title || "");
-  const [description, setDescription] = useState(initialValue?.description || "");
+  const [description, setDescription] = useState(
+    initialValue?.description || ""
+  );
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const handleSave = () => {
-    if (!title.trim() || !description.trim()) {
-      setError("Title and description are required.");
-      return;
+  const handleSave = async () => {
+    try {
+      if (!title.trim() || !description.trim() || !user?.token)
+        throw "Error adding qualification";
+      const { success, error } = await addQualificationAction(
+        title,
+        user?.token,
+        description
+      );
+
+      if (!success) throw error;
+
+      toast.success("Qualification added successfully");
+      onSave();
+    } catch (error) {
+      toast.error("Error adding qualification");
+      console.error("Error adding qualification:", error);
     }
-    onSave({ title, description });
+  };
+  const handleChange = async () => {
+    try {
+      if (!title.trim() || !description.trim())
+        throw "Both title and description are required";
+
+      const { success, error } = await editQualificationAction(
+        initialValue?.id || "",
+        title,
+        user?.token,
+        description
+      );
+      if (!success) throw error;
+
+      toast.success("Qualification updated successfully");
+      onSave();
+    } catch (error) {
+      toast.error("Error editing qualification");
+      console.error("Error editing qualification:", error);
+    }
   };
 
   return (
@@ -60,11 +103,17 @@ const QualificationModal = ({
         </div>
         <div className={styles.footer}>
           {mode === "edit" && onDelete && (
-            <button onClick={onDelete} className={styles.deleteBtn}>
+            <button
+              onClick={() => onDelete(initialValue?.id || "")}
+              className={styles.deleteBtn}
+            >
               <Trash2 size={16} /> Delete
             </button>
           )}
-          <button onClick={handleSave} className={styles.saveBtn}>
+          <button
+            onClick={mode === "add" ? handleSave : handleChange}
+            className={styles.saveBtn}
+          >
             Save
           </button>
         </div>

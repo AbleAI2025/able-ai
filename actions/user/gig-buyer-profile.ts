@@ -159,7 +159,7 @@ export const getGigBuyerProfileAction = async (
 
         return {
           id: review.id,
-          name: author?.fullName || "Unknown",
+          name: review.recommenderName || author?.fullName,
           date: review.createdAt,
           text: review.comment,
         };

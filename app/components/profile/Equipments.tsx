@@ -4,31 +4,30 @@ import CheckboxDisplayItem from "./CheckboxDisplayItem";
 import styles from "./Equipments.module.css";
 import { Equipment } from "@/app/types";
 import AddEquipmentModal from "./EquipmentModal";
+import { useAuth } from "@/context/AuthContext";
+import { deleteEquipmentAction } from "@/actions/user/edit-worker-profile";
+import { toast } from "sonner";
 
 interface EquipmentProps {
   workerProfileId: string;
-  initialEquipments: Equipment[];
+  equipments: Equipment[];
   isSelfView?: boolean;
+  fetchUserProfile: (id: string) => void;
 }
 
-export default function Equipments({ workerProfileId, initialEquipments, isSelfView }: EquipmentProps) {
+export default function Equipments({ workerProfileId, equipments, isSelfView, fetchUserProfile }: EquipmentProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [equipments, setEquipments] = useState(initialEquipments || []);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user } = useAuth();
 
-  const handleAdd = (name: string) => {
-    const newEquipment: Equipment = {
-      id: `id-${Math.random().toString(36).substr(2, 9)}`,
-      workerProfileId,
-      name: name.trim(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setEquipments([...equipments, newEquipment]);
+  const handleAdd = () => {
+    fetchUserProfile(user?.token || workerProfileId);
   };
 
-  const handleRemove = (index: number) => {
-    setEquipments(equipments.filter((_, i) => i !== index));
+  const handleRemove = async (id: string) => {
+    await deleteEquipmentAction(id, user?.token);
+    toast.success("Equipment removed successfully");
+    fetchUserProfile(user?.token || workerProfileId);
     setIsEditing(false);
   };
 
@@ -69,7 +68,7 @@ export default function Equipments({ workerProfileId, initialEquipments, isSelfV
               {isEditing && (
                 <button
                   className={styles.removeButton}
-                  onClick={() => handleRemove(index)}
+                  onClick={() => handleRemove(item.id)}
                 >
                   <Trash2 size={16} color="#ff0000" className={styles.icon} />
                 </button>

@@ -1,33 +1,66 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import styles from "./EquipmentModal.module.css";
+import { toast } from "sonner";
+import {
+  addEquipmentAction,
+  editEquipmentAction,
+} from "@/actions/user/edit-worker-profile";
+import { useAuth } from "@/context/AuthContext";
 
 interface AddEquipmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (name: string) => void;
+  onSave: () => void;
 }
 
-export default function AddEquipmentModal({ isOpen, onClose, onSave }: AddEquipmentModalProps) {
+export default function AddEquipmentModal({
+  isOpen,
+  onClose,
+  onSave,
+}: AddEquipmentModalProps) {
   const [equipmentName, setEquipmentName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    if (!equipmentName.trim()) {
-      setError("Equipment name is required");
-      return;
+  const handleSave = async () => {
+    try {
+      if (!equipmentName.trim()) throw "Equipment name is required";
+      const { success, error } = await addEquipmentAction(
+        equipmentName,
+        user?.token
+      );
+      if (!success) throw error;
+
+      onSave();
+      setEquipmentName("");
+      toast.success("Equipment added successfully");
+      onClose();
+    } catch (error) {
+      toast.error("Error adding equipment");
+      console.error("Error adding equipment:", error);
     }
-    onSave(equipmentName.trim());
-    setEquipmentName("");
-    onClose();
   };
 
-  const handleChange = (value: string) => {
-    setEquipmentName(value.trim());
-    if (error) {
-      setError(null);
+  const handleChange = async () => {
+    try {
+      if (equipmentName.length > 50)
+        throw "Equipment name cannot exceed 50 characters";
+      const { success, error } = await editEquipmentAction(
+        equipmentName,
+        equipmentName,
+        user?.token
+      );
+
+      if (!success) throw error;
+
+      toast.success("Equipment updated successfully");
+      onSave();
+    } catch (error) {
+      toast.error("Error editing equipment");
+      console.error("Error editing equipment:", error);
     }
   };
 
@@ -36,11 +69,11 @@ export default function AddEquipmentModal({ isOpen, onClose, onSave }: AddEquipm
       <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
           <h3>Add Equipment</h3>
-          <button 
+          <button
             onClick={() => {
               onClose();
               setError(null);
-            }} 
+            }}
             className={styles.closeButton}
           >
             <X size={20} />
@@ -50,7 +83,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onSave }: AddEquipm
           <input
             type="text"
             value={equipmentName}
-            onChange={(e) => handleChange(e.target.value)}
+            onChange={(e) => setEquipmentName(e.target.value)}
             placeholder="Equipment name"
             className={styles.input}
           />
@@ -61,7 +94,6 @@ export default function AddEquipmentModal({ isOpen, onClose, onSave }: AddEquipm
             Save
           </button>
         </div>
-        
       </div>
     </div>
   );

@@ -400,9 +400,10 @@ const SkillSplashScreen = ({
           </div>
         )} */}
         <Qualifications
-          initialQualifications={profile.qualifications}
+          qualifications={profile?.qualifications || []}
           isSelfView={isSelfView}
           workerId={profile.workerProfileId}
+          fetchUserProfile={() => fetchSkillData()}
         />
         {/* Buyer Reviews */}
         {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (
