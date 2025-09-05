@@ -43,15 +43,15 @@ async function fetchBuyerPayments(userId: string, filters: FilterState): Promise
 
   if (!allPayments) return [];
 
-  return allPayments.sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime());
+  return allPayments;
 }
 
 // Mock chart data (aggregate by month for example)
 const getChartData = (payments: BuyerPayment[]) => {
   const monthlyTotals: { [key: string]: number } = {};
   payments.forEach(p => {
-    if (p.status === 'PAID') {
-      const month = new Date(p.date || '').toLocaleString('default', { month: 'short', year: '2-digit' });
+    if (p.status === 'PAID' && p.date) {
+      const month = new Date(p.date).toLocaleString('default', { month: 'short', year: '2-digit' });
       monthlyTotals[month] = (monthlyTotals[month] || 0) + Number(p.amount);
     }
   });
@@ -70,7 +70,6 @@ export default function BuyerPaymentsPage() {
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [filterGigType, setFilterGigType] = useState<'All' | string>('All');
   const [filters, setFilters] = useState<FilterState>({
     staffType: 'All',
     dateFrom: '',
@@ -172,8 +171,8 @@ export default function BuyerPaymentsPage() {
                           type="radio"
                           name="gigTypeModalFilter"
                           value={type}
-                          checked={filterGigType === type}
-                          onChange={() => { setFilterGigType(type); setShowFilterModal(false); }}
+                          checked={filters.staffType === type}
+                          onChange={() => handleFilterChange('staffType', type)}
                         />
                         {type}
                       </label>
@@ -258,7 +257,7 @@ export default function BuyerPaymentsPage() {
         ) : error ? (
           <div className={styles.emptyState}>{error}</div>
         ) : payments.length === 0 ? (
-          <div className={styles.emptyState}>No payment history found {filterGigType !== 'All' ? `for ${filterGigType}s` : ''}.</div>
+          <div className={styles.emptyState}>No payment history found {filters.staffType !== 'All' ? `for ${filters.staffType}s` : ''}.</div>
         ) : (
           <div className={styles.paymentList}>
             {payments.map(payment => (

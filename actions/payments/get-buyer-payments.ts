@@ -3,7 +3,7 @@
 import { db } from "@/lib/drizzle/db";
 import { UsersTable, PaymentsTable, GigsTable } from "@/lib/drizzle/schema";
 import { InternalGigStatusEnumType } from "@/app/types";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 export interface BuyerPayment {
   id: string;
@@ -59,10 +59,10 @@ export async function getBuyerPayments(buyerId: string, filters: FilterState): P
     }
 
     if (priceFrom) {
-      conditions.push(gte(PaymentsTable.amountGross, String(priceFrom)));
+      conditions.push(gte(sql`CAST(${PaymentsTable.amountGross} AS numeric)`, Number(priceFrom)));
     }
     if (priceTo) {
-      conditions.push(lte(PaymentsTable.amountGross, String(priceTo)));
+      conditions.push(lte(sql`CAST(${PaymentsTable.amountGross} AS numeric)`, Number(priceTo)));
     }
 
     // Get buyer user details
@@ -76,12 +76,13 @@ export async function getBuyerPayments(buyerId: string, filters: FilterState): P
         status: GigsTable.statusInternal,
         invoiceUrl: PaymentsTable.invoiceUrl,
         amount: PaymentsTable.amountGross,
+        createdAt: PaymentsTable.createdAt,
       })
       .from(PaymentsTable)
       .leftJoin(GigsTable, eq(PaymentsTable.gigId, GigsTable.id))
       .leftJoin(UsersTable, eq(PaymentsTable.receiverUserId, UsersTable.id))
-      .where(and(eq(PaymentsTable.payerUserId, user.id), conditions.length > 0 ? and(...conditions) : undefined));
-
+      .where(and(eq(PaymentsTable.payerUserId, user.id), conditions.length > 0 ? and(...conditions) : undefined))
+      .orderBy(desc(PaymentsTable.createdAt));
 
     if (!userPayments) {
       return {
