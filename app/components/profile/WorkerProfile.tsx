@@ -144,7 +144,7 @@ const WorkerProfile = ({
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
           {!isSelfView ? (
-            <h1 className={styles.workerName}>{user?.displayName}</h1>
+            <h1 className={styles.workerName}>{workerProfile.user?.fullName}</h1>
           ) : (
             <>
               <span

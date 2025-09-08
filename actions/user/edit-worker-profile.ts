@@ -25,7 +25,7 @@ export const addQualificationAction = async (
     }
 
     if (!skillId) {
-      throw new Error("Skill id is required")
+      throw new Error("Skill id is required");
     }
 
     const { uid } = await isUserAuthenticated(token);
@@ -366,12 +366,15 @@ export const editEquipmentAction = async (
 
 export const getAllSkillsAction = async (workerId: string) => {
   try {
-    const skills = await db.query.SkillsTable.findMany({where: eq(
-      SkillsTable.workerProfileId, workerId
-    )});
+    const skills = await db.query.SkillsTable.findMany({
+      where: eq(SkillsTable.workerProfileId, workerId),
+    });
     return { success: true, data: skills };
   } catch (error) {
-    console.log("Error fetching skills", error);
-    return { success: false, error: error };
+    console.error("Error fetching skills:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred while fetching skills.",
+    };
   }
-}
+};

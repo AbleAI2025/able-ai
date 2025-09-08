@@ -1,6 +1,6 @@
 "use client";
 // QualificationModal.tsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import styles from "./QualificationModal.module.css";
 import { Qualification } from "@/app/types";
@@ -46,31 +46,32 @@ const QualificationModal = ({
     Array<{ id: string; name: string }>
   >([]);
 
-  const fetchAllSkills = async () => {
+  const fetchAllSkills = useCallback(async () => {
     // Fetch skills from the database or API
     try {
       if (!workerId) return;
       const { success, data } = await getAllSkillsAction(workerId);
-
       if (success && data) {
         setAllSkills(data);
       }
     } catch (error) {
       console.log("Error fetching skills", error);
     }
-  };
-
+  }, [workerId]);
   useEffect(() => {
     if (currentSkillId) {
       setSkillId(currentSkillId);
     }
     fetchAllSkills();
-  }, []);
+  }, [currentSkillId, fetchAllSkills]);
 
   const handleSave = async () => {
     try {
-      if (!title.trim() || !description.trim() || !user?.token || !skillId)
-        throw "Error adding qualification";
+      if (!title.trim() || !description.trim() || !user?.token || !skillId) {
+        throw new Error(
+          "Title, description, and skill are required to add a qualification."
+        );
+      }
       const { success, error } = await addQualificationAction(
         title,
         user?.token,
