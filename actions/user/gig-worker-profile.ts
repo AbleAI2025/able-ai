@@ -8,6 +8,7 @@ import {
   BadgeDefinitionsTable,
   EquipmentTable,
   GigWorkerProfilesTable,
+  PaymentsTable,
   QualificationsTable,
   ReviewsTable,
   SkillsTable,
@@ -20,9 +21,9 @@ import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { and, eq, sql } from "drizzle-orm";
 import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
-import { geminiAIAgent } from '@/lib/firebase/ai';
-import { getAI } from '@firebase/ai';
-import { Schema } from '@firebase/ai';
+import { geminiAIAgent } from "@/lib/firebase/ai";
+import { getAI } from "@firebase/ai";
+import { Schema } from "@firebase/ai";
 import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 // AI Hashtag Generation Schema
@@ -31,11 +32,11 @@ const hashtagGenerationSchema = Schema.object({
     hashtags: Schema.array({
       items: Schema.string(),
       maxItems: 3,
-      minItems: 1
-    })
+      minItems: 1,
+    }),
   },
   required: ["hashtags"],
-  additionalProperties: false
+  additionalProperties: false,
 });
 
 // AI function to generate hashtags from onboarding data
@@ -49,7 +50,7 @@ async function generateHashtagsFromOnboarding(profileData: {
   try {
     const ai = getAI();
     if (!ai) {
-      console.log('⚠️ AI not available, returning empty hashtags');
+      console.log("⚠️ AI not available, returning empty hashtags");
       return [];
     }
 
@@ -58,11 +59,17 @@ async function generateHashtagsFromOnboarding(profileData: {
 Based on the following worker profile data, generate exactly 3 relevant, professional hashtags that would help with job matching and discoverability.
 
 Profile Data:
-- About: ${profileData.about || 'Not provided'}
-- Experience: ${profileData.experience || 'Not provided'}
-- Skills: ${profileData.skills || 'Not provided'}
-- Equipment: ${profileData.equipment?.map(e => e.name).join(', ') || 'Not provided'}
-- Location: ${typeof profileData.location === 'string' ? profileData.location : 'Not provided'}
+- About: ${profileData.about || "Not provided"}
+- Experience: ${profileData.experience || "Not provided"}
+- Skills: ${profileData.skills || "Not provided"}
+- Equipment: ${
+      profileData.equipment?.map((e) => e.name).join(", ") || "Not provided"
+    }
+- Location: ${
+      typeof profileData.location === "string"
+        ? profileData.location
+        : "Not provided"
+    }
 
 Rules:
 1. Generate exactly 3 hashtags (no more, no less)
@@ -92,14 +99,14 @@ Generate 3 relevant hashtags for this worker:`;
 
     if (result.ok) {
       const hashtags = (result.data as { hashtags: string[] }).hashtags;
-      console.log('✅ Generated hashtags:', hashtags);
+      console.log("✅ Generated hashtags:", hashtags);
       return hashtags;
     } else {
-      console.error('❌ Failed to generate hashtags:', result.error);
+      console.error("❌ Failed to generate hashtags:", result.error);
       return [];
     }
   } catch (error) {
-    console.error('❌ Error generating hashtags:', error);
+    console.error("❌ Error generating hashtags:", error);
     return [];
   }
 }
@@ -343,6 +350,18 @@ export const getSkillDetailsWorker = async (id: string) => {
       })
     );
 
+    const payments = await db.query.PaymentsTable.findMany({
+      where: and(
+        //eq(PaymentsTable.receiverUserId, user?.id || ""),
+        eq(PaymentsTable.status, "COMPLETED")
+      ),
+    });
+
+    const paymentsCollected = payments.reduce(
+      (total, payment) => total + Number(payment.amountNetToWorker || 0),
+      0
+    );
+
     const skillProfile = {
       workerProfileId: workerProfile?.id ?? "",
       name: user?.fullName,
@@ -361,8 +380,8 @@ export const getSkillDetailsWorker = async (id: string) => {
       videoUrl: workerProfile?.videoUrl || "",
       statistics: {
         reviews: reviews?.length,
-        paymentsCollected: "£4899",
-        tipsReceived: "£767",
+        paymentsCollected: `£${paymentsCollected}`,
+        tipsReceived: "£0",
       },
       supportingImages: skill.images ?? [],
       badges: badgeDetails,
@@ -675,7 +694,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
     }
 
     // Generate AI hashtags from onboarding data
-    console.log('🤖 Generating AI hashtags from onboarding data...');
+    console.log("🤖 Generating AI hashtags from onboarding data...");
     const generatedHashtags = await generateHashtagsFromOnboarding({
       about: profileData.about,
       experience: profileData.experience,
@@ -683,12 +702,12 @@ export const saveWorkerProfileFromOnboardingAction = async (
       equipment: profileData.equipment,
       location: profileData.location,
     });
-    
-    console.log('🔍 Generated hashtags result:', {
+
+    console.log("🔍 Generated hashtags result:", {
       hashtags: generatedHashtags,
       length: generatedHashtags.length,
       type: typeof generatedHashtags,
-      isArray: Array.isArray(generatedHashtags)
+      isArray: Array.isArray(generatedHashtags),
     });
 
     // Prepare profile data
@@ -723,18 +742,20 @@ export const saveWorkerProfileFromOnboardingAction = async (
       privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
       updatedAt: new Date(),
     };
-    
-    console.log('💾 Profile update data with hashtags:', {
+
+    console.log("💾 Profile update data with hashtags:", {
       hashTags: profileUpdateData.hashTags,
       hashTagsType: typeof profileUpdateData.hashTags,
-      hashTagsLength: Array.isArray(profileUpdateData.hashTags) ? profileUpdateData.hashTags.length : 'not array'
+      hashTagsLength: Array.isArray(profileUpdateData.hashTags)
+        ? profileUpdateData.hashTags.length
+        : "not array",
     });
 
     let workerProfileId: string;
 
     if (workerProfile) {
       // Update existing profile
-      console.log('🔄 Updating existing worker profile with hashtags...');
+      console.log("🔄 Updating existing worker profile with hashtags...");
       await db
         .update(GigWorkerProfilesTable)
         .set(profileUpdateData)
@@ -742,7 +763,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
       workerProfileId = workerProfile.id;
     } else {
       // Create new profile
-      console.log('➕ Creating new worker profile with hashtags...');
+      console.log("➕ Creating new worker profile with hashtags...");
       const newProfile = await db
         .insert(GigWorkerProfilesTable)
         .values({
@@ -753,13 +774,16 @@ export const saveWorkerProfileFromOnboardingAction = async (
         .returning();
       workerProfileId = newProfile[0].id;
     }
-    
+
     // Verify hashtags were saved
     const savedProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.userId, user.id),
-      columns: { hashtags: true }
+      columns: { hashtags: true },
     });
-    console.log('✅ Verified saved hashtags in database:', savedProfile?.hashtags);
+    console.log(
+      "✅ Verified saved hashtags in database:",
+      savedProfile?.hashtags
+    );
 
     // Save availability data to worker_availability table
     if (
@@ -820,21 +844,26 @@ export const saveWorkerProfileFromOnboardingAction = async (
     });
 
     // Log call stack to see where this is being called from
-    console.log(`🚀 [${callId}] Call stack:`, new Error().stack?.split('\n').slice(1, 4).join('\n'));
-    
-          try {
-        // Only use about field as job title for skills database entry to avoid duplicates
-        skillName = profileData.about || '';
-        
-        // Extract years of experience from experience field
-      const experienceText = profileData.experience || '';
+    console.log(
+      `🚀 [${callId}] Call stack:`,
+      new Error().stack?.split("\n").slice(1, 4).join("\n")
+    );
+
+    try {
+      // Only use about field as job title for skills database entry to avoid duplicates
+      skillName = profileData.about || "";
+
+      // Extract years of experience from experience field
+      const experienceText = profileData.experience || "";
       const yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
       yearsOfExperience = yearsMatch ? parseFloat(yearsMatch[1]) : undefined;
-      
+
       // Extract hourly rate from form data
-      extractedHourlyRate = profileData.hourlyRate ? parseFloat(profileData.hourlyRate) : validatedHourlyRate;
-      
-      console.log('🔍 Worker Skills Debug:', {
+      extractedHourlyRate = profileData.hourlyRate
+        ? parseFloat(profileData.hourlyRate)
+        : validatedHourlyRate;
+
+      console.log("🔍 Worker Skills Debug:", {
         skillName,
         yearsOfExperience,
         hourlyRate: extractedHourlyRate,
@@ -848,7 +877,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
         about_field: profileData.about,
         experience_field: profileData.experience,
         hourlyRate_field: profileData.hourlyRate,
-        note: 'Using about field as job title for skills database entry to avoid duplicates'
+        note: "Using about field as job title for skills database entry to avoid duplicates",
       });
 
       if (skillName) {
@@ -918,12 +947,12 @@ export const saveWorkerProfileFromOnboardingAction = async (
           console.log("🔍 Attempted to add skill:", skillName);
         }
       } else {
-        console.log('⚠️ No about field found, skipping worker skills save');
-        console.log('🔍 Available data:', {
+        console.log("⚠️ No about field found, skipping worker skills save");
+        console.log("🔍 Available data:", {
           about: profileData.about,
           experience: profileData.experience,
           hourlyRate: profileData.hourlyRate,
-          note: 'Using about field as job title for skills database entry to avoid duplicates'
+          note: "Using about field as job title for skills database entry to avoid duplicates",
         });
       }
     } catch (skillError) {
