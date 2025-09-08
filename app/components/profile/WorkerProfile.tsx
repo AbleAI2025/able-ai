@@ -50,7 +50,7 @@ const WorkerProfile = ({
   fetchUserProfile,
 }: {
   workerProfile: PublicWorkerProfile;
-  handleAddSkill?: () => void;
+  handleAddSkill?: (id: string) => void;
   handleSkillDetails: (id: string) => void; // Now optional
   fetchUserProfile: (id: string) => void;
   userId?: string;
@@ -232,7 +232,6 @@ const WorkerProfile = ({
           <SkillsDisplayTable
             skills={workerProfile?.skills}
             isSelfView={isSelfView}
-            handleAddSkill={handleAddSkill}
             handleSkillDetails={handleSkillDetails}
             fetchUserProfile={fetchUserProfile}
             token={user?.token || ""}

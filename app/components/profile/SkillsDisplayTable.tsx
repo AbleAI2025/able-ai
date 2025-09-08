@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PillBadge from "../shared/PillBadge";
-import styles from "./SkillsDisplayTable.module.css";
+import styles from "./deleteSkillModal.module.css";
 import { Skill } from "@/app/types/workerProfileTypes";
 import AddSkillModal from "./createSkillModal";
 import { Trash2 } from "lucide-react";
@@ -114,14 +114,14 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
                 )}
                 {hasEph && <td>{skill.agreedRate}</td>}
                 {isSelfView && (
-                  <td>
+                  <th aria-label="Actions">
                     <button
-                      style={{ fontSize: "14px" }}
+                      className={styles.deleteButton}
                       onClick={() => openDeleteSkillModal(skill)}
                     >
                       <Trash2 />
                     </button>
-                  </td>
+                  </th>
                 )}
               </tr>
             ))
