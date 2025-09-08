@@ -922,7 +922,21 @@ export default function OnboardWorkerPage() {
     
     setIsSubmitting(true);
     try {
-              // Ensure all required fields are present
+      // Extract job title from about field if not already provided
+      let extractedJobTitle = formData.jobTitle || '';
+      if (!extractedJobTitle && formData.about && ai) {
+        try {
+          const jobTitleResult = await interpretJobTitle(formData.about, ai);
+          if (jobTitleResult && jobTitleResult.confidence >= 50) {
+            extractedJobTitle = jobTitleResult.jobTitle;
+            console.log('Extracted job title from about field:', extractedJobTitle);
+          }
+        } catch (error) {
+          console.error('Job title extraction failed in manual form:', error);
+        }
+      }
+
+      // Ensure all required fields are present
         const requiredData = {
           about: formData.about || '',
           experience: formData.experience || '',
@@ -935,7 +949,7 @@ export default function OnboardWorkerPage() {
           availability: formData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
           videoIntro: formData.videoIntro || '',
           time: formData.time || '',
-          jobTitle: formData.jobTitle || ''
+          jobTitle: extractedJobTitle
         };
       
       // Save the profile data to database - THIRD OCCURRENCE

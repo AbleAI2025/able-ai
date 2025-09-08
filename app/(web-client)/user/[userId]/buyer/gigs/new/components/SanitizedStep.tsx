@@ -11,8 +11,7 @@ interface SanitizedStepProps {
 export function SanitizedStep({ value, fieldName, onConfirm, onReformulate }: SanitizedStepProps) {
   return (
     <div style={styles.sanitizedStep}>
-      <div style={styles.sanitizedPrompt}>This is what you wanted?</div>
-      <div style={styles.sanitizedContent}>{value}</div>
+      <div style={{...styles.sanitizedContent, color: 'var(--secondary-color)', fontWeight: 600}}>{value}</div>
       <div style={styles.buttonContainer}>
         <button
           style={styles.primaryButton}

@@ -18,7 +18,7 @@
 }
 
 .input:focus {
-  border: 1px solid var(--primary-color); /* Add border back on focus for visibility */
+  border: 1px solid var(--secondary-color); /* Add border back on focus for visibility */
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
   /* The padding might need to be adjusted slightly if border makes it jump,
        e.g., by reducing padding by 1px when border is active, or by

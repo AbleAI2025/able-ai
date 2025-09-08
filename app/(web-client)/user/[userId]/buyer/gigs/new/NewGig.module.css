@@ -8,9 +8,10 @@
 .displayValue {
   margin-bottom: 16px;
   font-style: italic;
-  color: #e5e5e5;
+  color: var(--secondary-color);
   font-size: 15px;
   line-height: 1.4;
+  font-weight: 600;
 }
 
 .buttonGroup {
@@ -313,8 +314,8 @@
 
 /* Default button */
 .inputStepDefaultButton {
-  background: var(--primary-color);
-  color: #fff;
+  background: var(--secondary-color);
+  color: black;
   border: none;
   border-radius: 8px;
   padding: 12px 24px;

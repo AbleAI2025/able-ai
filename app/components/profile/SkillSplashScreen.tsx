@@ -395,19 +395,9 @@ const SkillSplashScreen = ({
             </div>
           </div>
         )}
+
         {/* Qualifications */}
-        {/* {profile.qualifications && profile.qualifications.length > 0 && (
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
-            <ul className={styles.list}>
-              {profile?.qualifications?.map((q, index) => (
-                <li key={index}>
-                  {q.title}: {q.description}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )} */}
+        
         <Qualifications
           skillId={skillId}
           qualifications={profile?.qualifications || []}
@@ -415,6 +405,7 @@ const SkillSplashScreen = ({
           workerId={profile.workerProfileId}
           fetchUserProfile={() => fetchSkillData()}
         />
+
         {/* Buyer Reviews */}
         {profile.buyerReviews && profile.buyerReviews.length > 0 && (
           <div className={styles.section}>

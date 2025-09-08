@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-// Assuming sub-components are created and imported
+import { useAuth } from '@/context/AuthContext';
 import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
 import SearchInput from '@/app/components/forms/SearchInput';
 import WorkerDelegateItemCard from '@/app/components/gigs/WorkerDelegateItemCard';
 import MinimalFooterNav from '@/app/components/layout/MinimalFooterNav';
+import { toast } from 'sonner';
 
 import styles from './DelegateGigPage.module.css';
 import { Loader2 } from 'lucide-react';
@@ -16,55 +17,87 @@ interface Worker {
   name: string;
   username: string;
   avatarUrl: string;
+  primarySkill: string;
+  experienceYears: number;
+  hourlyRate: number;
+  bio: string;
+  location: string;
 }
 
-// Mock API functions
-async function fetchPotentialDelegates(searchTerm: string): Promise<Worker[]> {
-  console.log("Fetching delegates for term:", searchTerm);
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-  const allWorkers: Worker[] = [
-    { id: '1', name: 'Alex Johnson', username: 'alexjohnson', avatarUrl: '/images/avatar-alex.jpg' },
-    { id: '2', name: 'Jamie Lee', username: 'jamielee', avatarUrl: '/images/avatar-jamie.jpg' },
-    { id: '3', name: 'Samantha Brown', username: 'samanthabrown', avatarUrl: '/images/avatar-samantha.jpg' },
-    { id: '4', name: 'Chris Davis', username: 'chrisdavis', avatarUrl: '/images/avatar-chris.jpg' },
-    { id: '5', name: 'Patricia Miller', username: 'patriciamiller', avatarUrl: '/images/avatar-patricia.jpg' },
-  ];
-  if (!searchTerm.trim()) return allWorkers.slice(0, 3); // Show initial few if no search
-  return allWorkers.filter(
-    w => w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         w.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// Real API functions
+async function fetchPotentialDelegates(gigId: string, searchTerm: string, token: string): Promise<Worker[]> {
+  try {
+    const response = await fetch(`/api/gigs/${gigId}/potential-delegates?search=${encodeURIComponent(searchTerm)}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch workers');
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching potential delegates:', error);
+    throw error;
+  }
 }
 
-async function delegateGigToWorkerAPI(gigId: string, workerId: string): Promise<{success: boolean}> {
-    console.log(`API: Delegating gig ${gigId} to worker ${workerId}`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // For demo, always succeed after a delay
-    // if (Math.random() > 0.8) return { success: false }; // Simulate occasional failure
-    return { success: true };
+async function delegateGigToWorkerAPI(gigId: string, workerId: string, token: string): Promise<{success: boolean, message?: string}> {
+  try {
+    const response = await fetch(`/api/gigs/${gigId}/delegate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        newWorkerId: workerId,
+        reason: 'Gig delegation request'
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delegate gig');
+    }
+
+    const data = await response.json();
+    return { success: true, message: data.message };
+  } catch (error) {
+    console.error('Error delegating gig:', error);
+    throw error;
+  }
 }
 
 
 export default function DelegateGigPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const gigId = params.gigId as string;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [delegatingWorkerId, setDelegatingWorkerId] = useState<string | null>(null); // To show loading on specific button
+  const [delegatingWorkerId, setDelegatingWorkerId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadWorkers = async () => {
+      if (!user?.token) return;
+      
       setIsLoading(true);
       setError(null);
       try {
-        const fetchedWorkers = await fetchPotentialDelegates(searchTerm);
+        const fetchedWorkers = await fetchPotentialDelegates(gigId, searchTerm, user.token);
         setWorkers(fetchedWorkers);
-      } catch (err) {
-        setError("Failed to load workers. Please try again.");
+      } catch (err: any) {
+        setError(err.message || "Failed to load workers. Please try again.");
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -74,35 +107,33 @@ export default function DelegateGigPage() {
     // Debounce search or load on initial mount
     const debounceTimeout = setTimeout(() => {
         loadWorkers();
-    }, searchTerm ? 300 : 0); // Instant load for initial, debounce for search
+    }, searchTerm ? 300 : 0);
 
     return () => clearTimeout(debounceTimeout);
-  }, [searchTerm]);
+  }, [searchTerm, gigId, user?.token]);
 
   const handleDelegate = async (workerId: string) => {
-    if (!gigId) {
-        alert("Gig ID is missing.");
+    if (!gigId || !user?.token) {
+        toast.error("Missing required information.");
         return;
     }
+    
     setDelegatingWorkerId(workerId);
     setError(null);
+    
     try {
-        const result = await delegateGigToWorkerAPI(gigId, workerId);
+        const result = await delegateGigToWorkerAPI(gigId, workerId, user.token);
         if (result.success) {
-            alert(`Gig successfully delegated to worker ${workerId}!`);
-            // Potentially navigate away or show success message
-            router.push('/dashboard'); // Example redirect
+            toast.success(result.message || "Gig successfully delegated!");
+            // Navigate back to gig details or dashboard
+            router.push(`/gigs/${gigId}`);
         } else {
             throw new Error("Failed to delegate gig.");
         }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message || "An error occurred while delegating.");
-          alert(err.message || "An error occurred while delegating.");
-        } else {
-          setError("An unknown error occurred.");
-          alert("An unknown error occurred.");
-        }
+    } catch (err: any) {
+        const errorMessage = err.message || "An error occurred while delegating.";
+        setError(errorMessage);
+        toast.error(errorMessage);
     } finally {
         setDelegatingWorkerId(null);
     }

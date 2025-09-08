@@ -182,19 +182,12 @@ const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = 
           }
         `}</style>
         <div style={{ 
-          marginBottom: 8, 
-          color: '#ffffff', 
-          fontWeight: 600, 
-          fontSize: '14px'
-        }}>
-          This is what you wanted?
-        </div>
-        <div style={{ 
           marginBottom: 16, 
           fontStyle: 'italic',
-          color: '#e5e5e5', 
+          color: '#ffffff', 
           fontSize: '15px', 
-          lineHeight: 1.4
+          lineHeight: 1.4,
+          fontWeight: 600
         }}>
           {formatSanitizedValue(sanitizedValue)}
         </div>

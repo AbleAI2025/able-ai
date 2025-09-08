@@ -1,21 +1,29 @@
 .card {
   background-color: #2B2B2B; /* User card background */
-  padding: 0.75rem 1rem; /* Adjust padding */
+  padding: 1rem; /* Increased padding */
   border-radius: 16px; /* Rounded corners */
   display: flex;
-  align-items: center;
-  gap: 0.75rem; /* Space between avatar, info, button */
+  align-items: flex-start;
+  gap: 1rem; /* Space between avatar, info, button */
+  margin-bottom: 0.75rem;
 }
 .avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 .userInfo {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
+}
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .name {
   font-size: 1rem;
@@ -25,6 +33,44 @@
 .username {
   font-size: 0.85rem;
   color: #a0a0a0;
+}
+.skillRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.skill {
+  font-size: 0.9rem;
+  color: #7AF0F5;
+  font-weight: 500;
+}
+.experience {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+}
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.rate {
+  font-size: 0.9rem;
+  color: #4ade80;
+  font-weight: 600;
+}
+.location {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+}
+.bio {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .delegateButton {
   background-color: #7AF0F5; /* Bright cyan/light blue */

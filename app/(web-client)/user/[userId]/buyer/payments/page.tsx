@@ -13,11 +13,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 
 import styles from './PaymentsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import Image from 'next/image';
+import { BuyerPayment, getBuyerPayments } from '@/actions/payments/get-buyer-payments';
 
 // Define interfaces for payment data
 interface Payment {
   id: string;
-  gigType: 'Bartender' | 'Waiter' | 'Chef' | 'Event Staff' | string; // Allow other types
+  // gigType: 'Bartender' | 'Waiter' | 'Chef' | 'Event Staff' | string; // Allow other types
   workerName: string;
   date: string; // ISO date string
   amount: number;
@@ -26,32 +27,32 @@ interface Payment {
   gigId?: string; // To link to gig for rehire
 }
 
-// Mock function to fetch payments - replace with actual API call
-async function fetchBuyerPayments(userId: string, filterType?: string): Promise<Payment[]> {
-  console.log("Fetching payments for buyerId:", userId, "with filter:", filterType);
-  // In a real app, fetch from: `/api/payments/buyer?userId=${userId}&type=${filterType}`
-  await new Promise(resolve => setTimeout(resolve, 700)); // Simulate delay
+interface FilterState {
+  staffType: 'All' | string;
+  dateFrom?: string;
+  dateTo?: string;
+  priceFrom?: string;
+  priceTo?: string;
+}
 
-  const allPayments: Payment[] = [
-    { id: '1', gigType: 'Bartender', workerName: 'Jerimaiah Jones', date: '2023-12-12T10:00:00Z', amount: 165.00, status: 'Paid', invoiceUrl: 'invoices/inv-001.pdf', gigId: 'gig1' },
-    { id: '2', gigType: 'Waiter', workerName: 'Gavin Trysdale, B. Button', date: '2023-12-10T14:30:00Z', amount: 420.00, status: 'Paid', gigId: 'gig2' },
-    { id: '3', gigType: 'Bartender', workerName: 'Megan House', date: '2023-12-08T18:00:00Z', amount: 180.00, status: 'Paid', gigId: 'gig3' },
-    { id: '4', gigType: 'Chef', workerName: 'Gordon Ramsay Jr.', date: '2023-11-20T12:00:00Z', amount: 250.00, status: 'Paid', invoiceUrl: 'invoices/inv-004.pdf', gigId: 'gig4'},
-    { id: '5', gigType: 'Bartender', workerName: 'Jerimaiah Jones', date: '2023-11-05T19:00:00Z', amount: 150.00, status: 'Paid', gigId: 'gig5' },
-  ];
-  if (filterType && filterType !== "All") {
-    return allPayments.filter(p => p.gigType === filterType);
-  }
-  return allPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+// Mock function to fetch payments - replace with actual API call
+async function fetchBuyerPayments(userId: string, filters: FilterState): Promise<BuyerPayment[]> {
+  console.log("Fetching payments for buyerId:", userId, "with filter:", filters);
+
+  const { data: allPayments } = await getBuyerPayments(userId, filters);
+
+  if (!allPayments) return [];
+
+  return allPayments;
 }
 
 // Mock chart data (aggregate by month for example)
-const getChartData = (payments: Payment[]) => {
+const getChartData = (payments: BuyerPayment[]) => {
   const monthlyTotals: { [key: string]: number } = {};
   payments.forEach(p => {
-    if (p.status === 'Paid') {
+    if (p.status === 'PAID' && p.date) {
       const month = new Date(p.date).toLocaleString('default', { month: 'short', year: '2-digit' });
-      monthlyTotals[month] = (monthlyTotals[month] || 0) + p.amount;
+      monthlyTotals[month] = (monthlyTotals[month] || 0) + Number(p.amount);
     }
   });
   return Object.entries(monthlyTotals).map(([name, total]) => ({ name, total })).reverse(); // Newest first
@@ -65,32 +66,40 @@ export default function BuyerPaymentsPage() {
   const { user, loading: isLoading } = useAuth();
   const authUserId = user?.uid;
 
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<BuyerPayment[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [filterGigType, setFilterGigType] = useState<'All' | string>('All');
+
+  const [filters, setFilters] = useState<FilterState>({
+    staffType: 'All',
+    dateFrom: '',
+    dateTo: '',
+    priceFrom: '',
+    priceTo: '',
+  })
   const [showFilterModal, setShowFilterModal] = useState(false); // For a potential filter modal
 
   // Available gig types for filtering (could be fetched or predefined)
   const gigTypes = ['All', 'Bartender', 'Waiter', 'Chef', 'Event Staff'];
 
+  const retrieveBuyerPayments = async () => {
+    setIsLoadingPayments(true);
+    fetchBuyerPayments(authUserId || "", filters)
+      .then(data => {
+        setPayments(data);
+        setError(null);
+      })
+      .catch(err => {
+        console.error("Failed to fetch payments:", err);
+        setError("Could not load payment history. Please try again.");
+      })
+      .finally(() => setIsLoadingPayments(false));
+  }
 
   // Auth check and data load
   useEffect(() => {
-
-      setIsLoadingPayments(true);
-      fetchBuyerPayments(authUserId || "", filterGigType)
-        .then(data => {
-          setPayments(data);
-          setError(null);
-        })
-        .catch(err => {
-          console.error("Failed to fetch payments:", err);
-          setError("Could not load payment history. Please try again.");
-        })
-        .finally(() => setIsLoadingPayments(false));
-  }, [isLoading, user, authUserId, pageUserId, filterGigType, router]);
+    retrieveBuyerPayments();
+  }, [isLoading, user, authUserId, pageUserId]);
 
   const handleGenerateInvoice = (paymentId: string) => {
     console.log("Generate invoice for payment ID:", paymentId);
@@ -99,15 +108,26 @@ export default function BuyerPaymentsPage() {
     alert(`Invoice generation for ${paymentId} would be triggered here.`);
   };
 
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [field]: value
+    }));
+  };
+
+  const submitFilters = async () => {
+    await retrieveBuyerPayments();
+  };
+
   const handleRepeatGig = (gigId?: string) => {
     if (!gigId) {
-        alert("Gig ID not available for rehire.");
-        return;
+      alert("Gig ID not available for rehire.");
+      return;
     }
     console.log("Repeat gig ID:", gigId);
     router.push(`gigs/${gigId}/rehire`);
   };
-  
+
   const chartData = useMemo(() => getChartData(payments), [payments]);
 
   const getGigIcon = (gigType: string) => {
@@ -118,7 +138,7 @@ export default function BuyerPaymentsPage() {
   }
 
 
-  if (isLoading || (!user && !isLoading) || (authUserId && authUserId !== pageUserId) ) {
+  if (isLoading || (!user && !isLoading) || (authUserId && authUserId !== pageUserId)) {
     return <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={32} /> Loading...</div>;
   }
 
@@ -127,7 +147,7 @@ export default function BuyerPaymentsPage() {
       <div className={styles.pageWrapper}>
         <header className={styles.header}>
           <button onClick={() => router.back()} className={styles.backButton}>
-              <ArrowLeft size={16} />
+            <ArrowLeft size={16} />
           </button>
           <h1 className={styles.pageTitle}>Payments</h1>
           <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
@@ -137,68 +157,142 @@ export default function BuyerPaymentsPage() {
         <p className={styles.totalsNote}>Totals include Able AI & payment provider fees.</p>
         {/* Example of how a filter modal might be structured */}
         {showFilterModal && (
-              <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
-                <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                    <h3 className={styles.modalHeader}>Filter Payments</h3>
-                    <div className={styles.filterOptions} style={{flexDirection: 'column'}}>
-                        {gigTypes.map(type => (
-                            <label key={type} className={styles.filterOptionLabel} style={{padding: '0.5rem 0'}}>
-                            <input
-                                type="radio"
-                                name="gigTypeModalFilter"
-                                value={type}
-                                checked={filterGigType === type}
-                                onChange={() => { setFilterGigType(type); setShowFilterModal(false);}}
-                            />
-                            {type}
-                            </label>
-                        ))}
-                    </div>
-                    <div className={styles.modalActions}>
-                        <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
-                    </div>
+          <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <h3 className={styles.modalHeader}>Filter Payments</h3>
+
+              <div className={styles.modalFilterForm}>
+                <div>
+                  <p className={styles.modalHeader}>Gig Type</p>
+                  <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                    {gigTypes.map(type => (
+                      <label key={type} className={styles.filterOptionLabel} style={{ padding: '0.5rem 0' }}>
+                        <input
+                          type="radio"
+                          name="gigTypeModalFilter"
+                          value={type}
+                          checked={filters.staffType === type}
+                          onChange={() => handleFilterChange('staffType', type)}
+                        />
+                        {type}
+                      </label>
+                    ))}
+                  </div>
                 </div>
+
+                <div>
+                  <p className={styles.modalHeader}>Date</p>
+                  <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                    <div className={styles.filterItem}>
+                      <label htmlFor="dateFrom">
+                        From
+                      </label>
+                      <input
+                        id="dateFrom"
+                        type="date"
+                        value={filters.dateFrom}
+                        onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.filterItem}>
+                      <label htmlFor="dateTo">
+                        To
+                      </label>
+                      <input
+                        id="dateTo"
+                        type="date"
+                        value={filters.dateTo}
+                        onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className={styles.modalHeader}>Price</p>
+                  <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                    <div className={styles.filterItem}>
+                      <label htmlFor="priceFrom">
+                        Minimum price
+                      </label>
+                      <input
+                        id="priceFrom"
+                        type="number"
+                        placeholder="0.00"
+                        value={filters.priceFrom}
+                        onChange={(e) => handleFilterChange('priceFrom', e.target.value)}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div className={styles.filterItem}>
+                      <label htmlFor="priceTo">
+                        Maximum price
+                      </label>
+                      <input
+                        id="priceTo"
+                        type="number"
+                        placeholder="1000.00"
+                        value={filters.priceTo}
+                        onChange={(e) => handleFilterChange('priceTo', e.target.value)}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
+                <button onClick={submitFilters} className={`${styles.actionButton} ${styles.secondary}`}>Apply filters</button>
+              </div>
             </div>
+          </div>
         )}
 
 
         {isLoadingPayments ? (
-          <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28}/> Loading payments...</div>
+          <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28} /> Loading payments...</div>
         ) : error ? (
           <div className={styles.emptyState}>{error}</div>
         ) : payments.length === 0 ? (
-          <div className={styles.emptyState}>No payment history found {filterGigType !== 'All' ? `for ${filterGigType}s` : ''}.</div>
+          <div className={styles.emptyState}>No payment history found {filters.staffType !== 'All' ? `for ${filters.staffType}s` : ''}.</div>
         ) : (
           <div className={styles.paymentList}>
             {payments.map(payment => (
               <div key={payment.id} className={styles.paymentItem}>
                 <div className={styles.paymentCard}>
                   <div className={styles.paymentDetails}>
-                    {getGigIcon(payment.gigType)}
-                    <div className={styles.paymentHeader}> 
+                    {getGigIcon(payment.gigType || '')}
+                    <div className={styles.paymentHeader}>
                       <span className={styles.paymentGigInfo}>{payment.gigType}, {payment.workerName}</span>
-                      <span className={styles.paymentDate}>{new Date(payment.date).toLocaleDateString()}</span>
+                      {
+                        payment.date ?
+                          <span className={styles.paymentDate}>{new Date(payment.date || '').toLocaleDateString()}</span> :
+                          <>Has not been paid yet</>
+                      }
                     </div>
                   </div>
-                  
-                  {payment.status === 'Paid' && (
-                      <Link 
-                        href={`/user/${params.userId}/buyer/payments/invoice?id=${payment.id}`}
-                        className={styles.generateInvoice}
-                      >
-                        <FileText size={20} /> Generate Invoice
-                      </Link>
-                    )}
+
+                  {payment.status === 'PAID' && (
+                    <Link
+                      href={payment.invoiceUrl || '/'}
+                      className={styles.generateInvoice}
+                    >
+                      <FileText size={20} /> Invoice
+                    </Link>
+                  )}
                 </div>
-                
-                
+
+
                 <div className={styles.paymentRight}>
-                  <span className={styles.amount}>£{payment.amount.toFixed(2)}</span>
+                  <span className={styles.amount}>£{(Number(payment.amount)).toFixed(2)}</span>
                   <div className={styles.actions}>
-                      <button onClick={() => handleRepeatGig(payment.gigId)} className={styles.actionButton}>
-                          Repeat Gig
-                      </button>
-                  
+                    <button onClick={() => handleRepeatGig(payment.gigId || '')} className={styles.actionButton}>
+                      Repeat Gig
+                    </button>
+
                   </div>
                 </div>
               </div>
@@ -250,4 +344,4 @@ export default function BuyerPaymentsPage() {
       </div>
     </div>
   );
-} 
+}

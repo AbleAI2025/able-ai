@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import WorkerMatchCard, { WorkerMatch } from './WorkerMatchCard';
+import WorkerCard, { WorkerData } from '../onboarding/WorkerCard';
+import { WorkerMatch } from './WorkerMatchCard';
 import Loader from '../shared/Loader';
+import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
 
 interface WorkerMatchmakingResultsProps {
   matches: WorkerMatch[];
@@ -26,6 +28,27 @@ export default function WorkerMatchmakingResults({
   totalWorkersAnalyzed = 0,
 }: WorkerMatchmakingResultsProps) {
   const [sortBy, setSortBy] = useState<'score' | 'rate' | 'experience'>('score');
+
+  // Function to convert WorkerMatch to WorkerData format
+  const convertToWorkerData = (worker: WorkerMatch): WorkerData => {
+    // Calculate total hours and price using constants
+    const totalHours = VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS;
+    const totalPrice = worker.hourlyRate * totalHours;
+    
+    return {
+      name: worker.workerName,
+      title: worker.primarySkill,
+      gigs: 0, // No gig count data available yet
+      experience: `${worker.experienceYears} years experience`,
+      keywords: worker.bio || "professional, reliable, skilled", // Use bio as keywords
+      hourlyRate: worker.hourlyRate,
+      totalHours: totalHours,
+      totalPrice: totalPrice,
+      ableFees: VALIDATION_CONSTANTS.GIG_DEFAULTS.ABLE_FEES,
+      stripeFees: VALIDATION_CONSTANTS.GIG_DEFAULTS.STRIPE_FEES,
+      imageSrc: VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_IMAGE
+    };
+  };
 
   const sortedMatches = [...matches].sort((a, b) => {
     switch (sortBy) {
@@ -102,50 +125,33 @@ export default function WorkerMatchmakingResults({
    }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-gray-900 rounded-lg border border-gray-700">
 
       {/* Worker Cards */}
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedMatches.map((worker) => (
-            <WorkerMatchCard
+            <WorkerCard
               key={worker.workerId}
-              worker={worker}
-              onSelect={onSelectWorker}
-              isSelected={selectedWorkerId === worker.workerId}
-              isSelecting={isSelecting}
+              worker={convertToWorkerData(worker)}
+              onBook={(name, price) => onSelectWorker(worker.workerId)}
             />
           ))}
         </div>
       </div>
 
              {/* Footer */}
-       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+       <div className="px-6 py-4 bg-gray-800 border-t border-gray-700 rounded-b-lg">
          
                   {/* Skip Selection Button */}
          <div className="text-center">
-           <div style={{ 
-             
-             border: '2px solid #7eeef9',
-             borderRadius: 12,
-             padding: '16px 20px',
-             marginBottom: '8px'
-           }}>
+          
              <div style={{ 
                display: 'flex', 
                alignItems: 'center', 
                marginBottom: '8px' 
              }}>
-               <div style={{
-                 width: '24px',
-                 height: '24px',
-                 background: '#7eeef9',
-                 borderRadius: '50%',
-                 display: 'flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 marginRight: '8px'
-               }}>
+               
                  
                </div>
                <span style={{ 
@@ -153,17 +159,10 @@ export default function WorkerMatchmakingResults({
                  fontWeight: 600, 
                  color: 'White' 
                }}>
-                 No Perfect Match?
+                
                </span>
              </div>
-             <p style={{ 
-               fontSize: '12px', 
-               color: 'White', 
-               margin: '0 0 12px 0',
-               lineHeight: '1.4'
-             }}>
-               Don't worry! Your gig will be posted and workers can apply directly. You'll get notifications when they're interested.
-             </p>
+             
              <button
                onClick={onSkipSelection}
                disabled={isSkipping || isSelecting}
@@ -208,16 +207,13 @@ export default function WorkerMatchmakingResults({
                  </>
                ) : (
                  <>
-                   <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style={{ marginRight: '8px' }}>
-                     <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
-                   </svg>
+
                    Skip Selection & Go to Dashboard
                  </>
                )}
              </button>
            </div>
          </div>
-       </div>
-    </div>
+    
   );
 }
