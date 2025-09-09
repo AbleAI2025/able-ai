@@ -2,7 +2,7 @@ import {BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import { Qualification } from "@/app/types";
 
 export type SkillProfile = {
-  workerProfileId: string;
+  workerProfileId?: string;
   name?: string;
   title?: string;
   hashtags?: string;
@@ -16,7 +16,7 @@ export type SkillProfile = {
   longitude?: number | string | null;
   videoUrl?: string | null;
   statistics: {
-    reviews: number;
+    reviews?: number;
     paymentsCollected: string;
     tipsReceived: string;
   };

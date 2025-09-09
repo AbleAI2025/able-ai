@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "npx tsx seed.ts"
+    "seed": "npx tsx seed.ts",
+    "lint-cache": "eslint . --cache",
+    "typecheck": "npx tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@auth/firebase-adapter": "^2.9.1",

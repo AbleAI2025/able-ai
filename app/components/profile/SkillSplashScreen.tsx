@@ -19,7 +19,11 @@ import {
 } from "firebase/storage";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { getPrivateWorkerProfileAction, updateProfileImageAction, updateVideoUrlProfileAction } from "@/actions/user/gig-worker-profile";
+import {
+  getPrivateWorkerProfileAction,
+  updateProfileImageAction,
+  updateVideoUrlProfileAction,
+} from "@/actions/user/gig-worker-profile";
 import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
 import ProfileVideo from "./WorkerProfileVideo";
@@ -74,7 +78,7 @@ const SkillSplashScreen = ({
   skillId,
   fetchSkillData,
   isSelfView,
-  onBackClick
+  onBackClick,
 }: {
   profile: SkillProfile | null;
   skillId: string;
@@ -94,65 +98,65 @@ const SkillSplashScreen = ({
     () => () => {}
   );
 
-    const handleVideoUpload = useCallback(
-      async (file: Blob) => {
-        if (!user) {
-          console.error("Missing required parameters for video upload");
-          setError("Failed to upload video. Please try again.");
-          return;
-        }
-  
-        if (!file || file.size === 0) {
-          console.error("Invalid file for video upload");
-          setError("Invalid video file. Please try again.");
-          return;
-        }
-  
-        // Check file size (limit to 50MB)
-        const maxSize = 50 * 1024 * 1024; // 50MB
-        if (file.size > maxSize) {
-          setError("Video file too large. Please use a file smaller than 50MB.");
-          return;
-        }
-  
-        try {
-          const filePath = `workers/${
-            user.uid
-          }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
-          const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
-          const uploadTask = uploadBytesResumable(fileStorageRef, file);
-  
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const progress =
-                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              // Progress handling if needed
-            },
-            (error) => {
-              console.error("Upload failed:", error);
-              setError("Video upload failed. Please try again.");
-            },
-            () => {
-              getDownloadURL(uploadTask.snapshot.ref)
-                .then((downloadURL) => {
-                  updateVideoUrlProfileAction(downloadURL, user.token);
-                  toast.success("Video upload successfully");
-                  getPrivateWorkerProfileAction(user.token);
-                })
-                .catch((error) => {
-                  console.error("Failed to get download URL:", error);
-                  setError("Failed to get video URL. Please try again.");
-                });
-            }
-          );
-        } catch (error) {
-          console.error("Video upload error:", error);
-          setError("Failed to upload video. Please try again.");
-        }
-      },
-      [user]
-    );
+  const handleVideoUpload = useCallback(
+    async (file: Blob) => {
+      if (!user) {
+        console.error("Missing required parameters for video upload");
+        setError("Failed to upload video. Please try again.");
+        return;
+      }
+
+      if (!file || file.size === 0) {
+        console.error("Invalid file for video upload");
+        setError("Invalid video file. Please try again.");
+        return;
+      }
+
+      // Check file size (limit to 50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        setError("Video file too large. Please use a file smaller than 50MB.");
+        return;
+      }
+
+      try {
+        const filePath = `workers/${
+          user.uid
+        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+        const uploadTask = uploadBytesResumable(fileStorageRef, file);
+
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            // Progress handling if needed
+          },
+          (error) => {
+            console.error("Upload failed:", error);
+            setError("Video upload failed. Please try again.");
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then((downloadURL) => {
+                updateVideoUrlProfileAction(downloadURL, user.token);
+                toast.success("Video upload successfully");
+                getPrivateWorkerProfileAction(user.token);
+              })
+              .catch((error) => {
+                console.error("Failed to get download URL:", error);
+                setError("Failed to get video URL. Please try again.");
+              });
+          }
+        );
+      } catch (error) {
+        console.error("Video upload error:", error);
+        setError("Failed to upload video. Please try again.");
+      }
+    },
+    [user]
+  );
 
   const handleCopy = async () => {
     if (disabled || !linkUrl || !navigator.clipboard) return;
@@ -230,7 +234,7 @@ const SkillSplashScreen = ({
               onVideoUpload={handleVideoUpload}
             />
           </div>
-          
+
           <h2 className={styles.name}>
             {profile.name?.split(" ")[0]}: {profile.title}
           </h2>
@@ -310,15 +314,20 @@ const SkillSplashScreen = ({
             <div className={styles.supportingImages}>
               <div className={styles.images}>
                 {profile.supportingImages?.length ? (
-                profile.supportingImages.map((img, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setSelectedImage(img)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <Image src={img} alt={`Img ${i}`} width={109} height={68} />
-                  </div>
-                ))
+                  profile.supportingImages.map((img, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedImage(img)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <Image
+                        src={img}
+                        alt={`Img ${i}`}
+                        width={109}
+                        height={68}
+                      />
+                    </div>
+                  ))
                 ) : (
                   <p>No images available</p>
                 )}
@@ -399,14 +408,16 @@ const SkillSplashScreen = ({
             </ul>
           </div>
         )} */}
-        <Qualifications
-          qualifications={profile?.qualifications || []}
-          isSelfView={isSelfView}
-          workerId={profile.workerProfileId}
-          fetchUserProfile={() => fetchSkillData()}
-        />
+        {profile.workerProfileId && (
+          <Qualifications
+            qualifications={profile?.qualifications || []}
+            isSelfView={isSelfView}
+            workerId={profile.workerProfileId}
+            fetchUserProfile={() => fetchSkillData()}
+          />
+        )}
         {/* Buyer Reviews */}
-        {profile.buyerReviews && profile.buyerReviews.length > 0 &&  (
+        {profile.buyerReviews && profile.buyerReviews.length > 0 && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
             {profile?.buyerReviews?.map((review, index) => (
@@ -420,7 +431,7 @@ const SkillSplashScreen = ({
           </div>
         )}
         {/* Recommendations */}
-        {profile.recommendations && profile.recommendations.length > 0 &&  (
+        {profile.recommendations && profile.recommendations.length > 0 && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Recommendations</h3>
             {profile?.recommendations?.map((recommendation, index) => (
@@ -446,13 +457,12 @@ const SkillSplashScreen = ({
               ) : (
                 <Copy size={16} className={styles.copiedIcon} />
               )}
-                <span>Generate link to ask for a recommendation</span>
+              <span>Generate link to ask for a recommendation</span>
             </button>
           </div>
         )}
       </div>
-   </div>
-    
+    </div>
   );
 };
 

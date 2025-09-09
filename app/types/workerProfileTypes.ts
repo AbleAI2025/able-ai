@@ -1,4 +1,4 @@
-import { BadgeIcon } from "../components/profile/GetBadgeIcon";
+import type { BadgeIcon } from "../components/profile/GetBadgeIcon";
 
 export interface Skill {
   id: string;

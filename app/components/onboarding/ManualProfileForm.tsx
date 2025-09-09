@@ -119,7 +119,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
             // User already has a worker profile, build the recommendation link
             setFormData(prev => ({
               ...prev,
-              references: buildRecommendationLink(result.data.id as string)
+              references: buildRecommendationLink(result.data?.id as string ?? "")
             }));
           }
         } catch (error) {

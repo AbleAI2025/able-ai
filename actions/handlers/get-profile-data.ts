@@ -1,9 +1,10 @@
-
 import PublicWorkerProfile, { SemanticProfile } from "@/app/types/workerProfileTypes";
 import { calculateAverageRating } from "../utils/get-gig-worker-profile";
 import { GigWorkerProfileService } from "../services/get-gig-worker-profile";
 import type { ActionResult, OnboardingProfileData } from "../types/get-gig-worker-profile";
 import { GigWorkerProfilesTable } from "@/lib/drizzle/schema";
+import type { Award } from "@/app/types/workerProfileTypes";
+import type { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 export class ProfileDataHandler {
   /**
@@ -20,6 +21,18 @@ export class ProfileDataHandler {
       const profileData = await GigWorkerProfileService.fetchWorkerProfileData(workerProfile);
       const averageRating = calculateAverageRating(profileData.reviews);
 
+      const { awards: _rawAwards, ...profileDataRest } = profileData;
+
+      const awards: Award[] = (_rawAwards || []).map((award: any) => ({
+        id: award.id,
+        type: award.type ?? "OTHER",
+        name: award.name ?? "Unknown Award",
+        icon: (getBadgeIcon(award.badgeId) as BadgeIcon) ?? "/icons/badges/default.svg" as BadgeIcon,
+        description: award.notes ?? null,
+        awardedAt: award.awardedAt,
+        awardedBySystem: award.awardedBySystem ?? null,
+      }));
+
       const data: PublicWorkerProfile = {
         ...workerProfile,
         fullBio: workerProfile?.fullBio ?? undefined,
@@ -30,7 +43,8 @@ export class ProfileDataHandler {
         availabilityJson: undefined,
         semanticProfileJson: workerProfile?.semanticProfileJson as SemanticProfile,
         averageRating,
-        ...profileData,
+        awards, // <-- mapped awards
+        ...profileDataRest, // <-- rest of profileData, awards excluded
       };
 
       return { success: true, data };
@@ -76,4 +90,17 @@ export class ProfileDataHandler {
       privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
     };
   }
+}
+
+function getBadgeIcon(badgeId: any): BadgeIcon | null {
+  if (!badgeId) return null;
+
+  const badgeIcons: Record<string, BadgeIcon> = {
+    "star": "goldenVibes",
+    "medal": "fairPlay",
+    "trophy": "heartMode",
+    // etc: aquí mapeas IDs a tus BadgeIcon strings válidos
+  };
+
+  return badgeIcons[String(badgeId)] ?? null;
 }
