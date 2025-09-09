@@ -16,6 +16,7 @@ import { deleteGig } from '@/actions/gigs/delete-gig';
 import { toast } from 'sonner';
 import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
 import GigStatusIndicator from '../shared/GigStatusIndicator';
+import { findExistingGigAmendment } from '@/actions/gigs/manage-amendment';
 
 
 const formatGigDate = (isoDate: string) => new Date(isoDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -74,7 +75,6 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 	const [isDelegating, setIsDelegating] = useState(false);
 	const [isLoadingTerms, setIsLoadingTerms] = useState(false);
 	const [isWaitingHoldPayment, setIsWaitingHoldPayment] = useState(false);
-	console.log(gig, "gig details component");
 
 	// Get worker name from gig data if available, otherwise use a placeholder
 	const getWorkerName = () => {
@@ -105,7 +105,34 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 
 	const gigDuration = calculateDuration(gig.startTime, gig.endTime);
 	const buyer = gig.buyerName.split(" ")[0];
-	const amendId = "123";
+
+  const handleNegotiateGig = async () => {
+    if (!user?.uid || !gig.id) return;
+
+    setIsNegotiating(true);
+    try {
+      // Call the server action to check for an existing amendment
+      const result = await findExistingGigAmendment({ gigId: gig.id, userId: user.uid });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (result.amendId) {
+        toast.info("You have a pending amendment request for this gig.");
+        router.push(`/user/${user.uid}/worker/gigs/${gig.id}/amend/${result.amendId}`);
+      } else {
+        toast.info("No amendment exists, please create a new one")
+        router.push(`/user/${user.uid}/worker/gigs/${gig.id}/amend/new`);
+      }
+    } catch (error) {
+      console.error("Failed to handle negotiation:", error);
+      toast.error("Could not start negotiation. Please try again.");
+    } finally {
+      setIsNegotiating(false);
+    }
+  };
 
 	const getButtonLabel = (action: string) => {
 		const status = gig.status;
@@ -167,7 +194,6 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 		'accept' | 
 		'start' | 
 		'complete' | 
-		'requestAmendment' | 
 		'reportIssue' | 
 		'delegate' |
 		'awaiting' | 
@@ -175,7 +201,8 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 		'requested' | 
 		'delete' | 
 		'decline' | 
-		'paid'
+		'paid' |
+    'requestAmendment'
 	) => {
         if (!gig) return;
         setIsActionLoading(true);
@@ -263,13 +290,13 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
     };
 
 	// Handler for negotiating gig details
-	const handleNegotiateGig = () => {
-		if (!user?.uid || !gig.id) return;
-
-		// Navigate to the amend page - need to get the current user's profile ID
-		const currentUserId = userId; // This should be the worker's profile ID from props
-		router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/amend`);
-	};
+	// const handleNegotiateGig = () => {
+	// 	if (!user?.uid || !gig.id) return;
+	//
+	// 	// Navigate to the amend page - need to get the current user's profile ID
+	// 	const currentUserId = userId; // This should be the worker's profile ID from props
+	// 	router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/amend`);
+	// };
 
 	// Handler for reporting an issue
 	const handleReportIssue = () => {
@@ -366,7 +393,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 				{/* Negotiation Button - Kept from new structure */}
 				{/* Added a check to only show if gig is accepted */}
 				{(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
-					<button className={styles.negotiationButton} onClick={() => handleGigAction('requestAmendment')}>
+					<button className={styles.negotiationButton} onClick={handleNegotiateGig}>
 						Negotiate, cancel or change gig details
 					</button>
 				)}

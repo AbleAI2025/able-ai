@@ -1,6 +1,6 @@
 .card {
-    background-color: #2b2b2b; /* Slightly lighter dark grey for cards */
-    border-radius: 1.5rem; /* Consistent rounded corners */
+    background-color: #2b2b2b;
+    border-radius: 1.5rem; 
     margin-bottom: 20px;
     padding: 1rem 0.75rem;
     font-family: var(--font-family);
@@ -8,35 +8,36 @@
 
 .textareaInput {
   width: 100%;
-  background-color: #3A3A3C; /* Slightly different shade for input background if desired, or same as card */
-  border: 1px solid #4A4A4A; /* Subtle border */
+  background-color: #3A3A3C;
+  border: 1px solid #4A4A4A;
   border-radius: 8px;
   padding: 12px;
   color: #F0F0F0;
-  font-size: 0.9rem; /* Approx 14px */
+  font-size: 0.9rem;
   resize: vertical;
 }
 
 .textareaInput::placeholder {
-  color: #8E8E93; /* Medium grey placeholder */
+  color: #8E8E93;
 }
 
-/* Updated Gig Details Block */
 .detailsHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
+  padding: 0 0.4rem
 }
 
 .detailsTitle {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     line-height: 19px;
 }
 
-.editIcon {
-  color: #FFFFFF;
+.editPencilIcon {
+  stroke: #000000;
+  fill: #FFFFFF;
   width: 40px;
   height: 33px;
   cursor: pointer;
@@ -52,24 +53,38 @@
 .detailItem {
   display: flex;
   justify-content: space-between;
-  font-size: 0.87rem; /* Approx 14px */
+  font-size: 0.87rem;
   margin-bottom: 10px;
   line-height: 1.4;
 }
 
 .detailItemLabel {
-  color: #A0A0A0; /* Lighter grey for labels if distinct style desired */
-  margin-right: 8px; /* Spacing between label and value */
+  color: #A0A0A0;
+  margin-right: 8px;
   font-size: 0.87rem;
 }
 
 .detailItemValue {
   text-align: right;
-  font-weight: 500; /* Slightly bolder value */
+  font-weight: 500;
 }
 
 .detailsSummaryText {
   margin-top: 0.5rem;
-  font-size: 1rem; /* Approx 14px */
+  font-size: 0.9rem;
   line-height: 1.2;
+  padding: 0.2rem 0.5rem 0 0.5rem; 
 }
+
+.textareaInput[type="date"],
+.textareaInput[type="time"] {
+  position: relative;
+  color-scheme: dark;
+}
+
+.textareaInput[type="date"]::-webkit-calendar-picker-indicator,
+.textareaInput[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+

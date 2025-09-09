@@ -104,4 +104,5 @@ export default interface PublicWorkerProfile {
   skills?: Skill[];
   reviews?: Review[];
   qualifications?: Qualification[];
+  recommendations?: Review[];
 }

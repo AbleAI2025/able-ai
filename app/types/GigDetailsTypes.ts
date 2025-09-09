@@ -53,6 +53,7 @@ export default interface GigDetails {
   isWorkerSubmittedFeedback?: boolean; // Indicates if worker has submitted feedback
   isBuyerSubmittedFeedback?: boolean; // Indicates if buyer has submitted feedback
   // Worker-related properties
+  workerId?: string;
   workerName?: string; // Name of the assigned worker
   workerAvatarUrl?: string; // Avatar URL of the assigned worker
   workerGigs?: number; // Number of gigs the worker has completed
