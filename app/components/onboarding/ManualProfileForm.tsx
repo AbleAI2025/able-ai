@@ -6,6 +6,11 @@ import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
 import styles from './ManualProfileForm.module.css';
 import LocationPickerBubble from './LocationPickerBubble';
 import VideoRecorderOnboarding from './VideoRecorderOnboarding';
+import { ref, uploadBytesResumable, getDownloadURL, getStorage } from "firebase/storage";
+import { firebaseApp } from "@/lib/firebase/clientApp";
+import { geminiAIAgent } from '@/lib/firebase/ai';
+import { getAI } from '@firebase/ai';
+import { Schema } from '@firebase/ai';
 
 // Helper: generate a compact random code and build a recommendation URL
 function generateRandomCode(length = 8): string {
@@ -48,8 +53,9 @@ interface FormData {
     startTime: string;
     endTime: string;
   };
-  videoIntro: File | null;
+  videoIntro: string | null;
   references: string;
+  jobTitle?: string; // AI extracted job title
 }
 
 interface ManualProfileFormProps {
@@ -153,7 +159,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
         return value && Array.isArray(value.days) && value.days.length > 0;
       }
       if (field === 'videoIntro') {
-        return value && value instanceof File;
+        return value && typeof value === 'string' && value.trim().length > 0;
       }
       return value && (typeof value === 'string' ? value.trim() !== '' : value > 0);
     });
@@ -181,7 +187,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
       case 'availability':
         return !value.days || value.days.length === 0 ? 'Please select at least one day of availability' : '';
       case 'videoIntro':
-        return !value || !(value instanceof File) ? 'Please record a video introduction' : '';
+        return !value || typeof value !== 'string' || value.trim().length === 0 ? 'Please record a video introduction' : '';
       default:
         return '';
     }
@@ -210,9 +216,51 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     }
   };
 
-  const handleVideoRecorded = (blob: Blob) => {
-    const file = new File([blob], 'video-intro.webm', { type: 'video/webm' });
-    setFormData(prev => ({ ...prev, videoIntro: file }));
+  const handleVideoRecorded = async (blob: Blob) => {
+    if (!user) {
+      console.error('User not authenticated for video upload');
+      return;
+    }
+
+    try {
+      // Upload video to Firebase Storage
+      const file = new File([blob], 'video-intro.webm', { type: 'video/webm' });
+      const filePath = `workers/${user.uid}/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+      const fileStorageRef = ref(getStorage(firebaseApp), filePath);
+      const uploadTask = uploadBytesResumable(fileStorageRef, file);
+
+      // Wait for upload to complete and get download URL
+      const downloadURL = await new Promise<string>((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log("Video upload progress:", progress + "%");
+          },
+          (error) => {
+            console.error("Video upload failed:", error);
+            reject(error);
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then((url) => {
+                console.log("Video uploaded successfully:", url);
+                resolve(url);
+              })
+              .catch(reject);
+          }
+        );
+      });
+
+      // Store the Firebase download URL instead of the File object
+      setFormData(prev => ({ ...prev, videoIntro: downloadURL }));
+      
+      // Clear any existing video validation errors
+      setErrors(prev => ({ ...prev, videoIntro: '' }));
+    } catch (error) {
+      console.error("Video upload error:", error);
+      setErrors(prev => ({ ...prev, videoIntro: 'Video upload failed. Please try again.' }));
+    }
   };
 
   const handleDayToggle = (day: string) => {
@@ -225,6 +273,85 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
           : [...prev.availability.days, day]
       }
     }));
+  };
+
+  // AI Sanitization function for specific fields
+  const sanitizeWithAI = async (field: string, value: string): Promise<{ sanitized: string; jobTitle?: string; yearsOfExperience?: number }> => {
+    if (!value || value.trim().length === 0) {
+      return { sanitized: value };
+    }
+
+    try {
+      const ai = getAI();
+      if (!ai) {
+        console.log('AI not available, returning original value');
+        return { sanitized: value };
+      }
+
+      let prompt = '';
+      let schema: any;
+
+      if (field === 'about') {
+        prompt = `Extract the job title from this worker's self-description. Return only the most relevant job title (e.g., "Bartender", "Chef", "Event Coordinator"). If no clear job title, return "General Worker".
+
+Description: "${value}"`;
+        
+        schema = Schema.object({
+          properties: {
+            jobTitle: Schema.string(),
+            sanitized: Schema.string()
+          },
+          required: ["jobTitle", "sanitized"]
+        });
+      } else if (field === 'skills') {
+        prompt = `Clean and format this skills list. Remove duplicates, fix typos, and organize into a clean comma-separated list. Keep only relevant professional skills.
+
+Skills: "${value}"`;
+        
+        schema = Schema.object({
+          properties: {
+            sanitized: Schema.string()
+          },
+          required: ["sanitized"]
+        });
+      } else if (field === 'experience') {
+        prompt = `Extract the years of experience from this text. Look for numbers followed by "years", "yrs", or similar. Return the number of years as an integer.
+
+Experience description: "${value}"`;
+        
+        schema = Schema.object({
+          properties: {
+            yearsOfExperience: Schema.number(),
+            sanitized: Schema.string()
+          },
+          required: ["yearsOfExperience", "sanitized"]
+        });
+      } else {
+        return { sanitized: value };
+      }
+
+      const result = await geminiAIAgent(
+        VALIDATION_CONSTANTS.AI_MODELS.GEMINI_2_0_FLASH,
+        { prompt, responseSchema: schema },
+        ai,
+        VALIDATION_CONSTANTS.AI_MODELS.GEMINI_2_5_FLASH_PREVIEW
+      );
+
+      if (result.ok) {
+        const data = result.data as any;
+        return {
+          sanitized: data.sanitized || value,
+          jobTitle: data.jobTitle,
+          yearsOfExperience: data.yearsOfExperience
+        };
+      } else {
+        console.error('AI sanitization failed:', result.error);
+        return { sanitized: value };
+      }
+    } catch (error) {
+      console.error('AI sanitization error:', error);
+      return { sanitized: value };
+    }
   };
 
   const validateForm = (): boolean => {
@@ -266,8 +393,48 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     }
 
     setIsSubmitting(true);
+    
     try {
-      await onSubmit(formData);
+      // AI Sanitization for specific fields (silent)
+      const sanitizedData = { ...formData };
+      let extractedJobTitle = '';
+
+      // Sanitize About field (extract job title)
+      if (formData.about) {
+        const aboutResult = await sanitizeWithAI('about', formData.about);
+        sanitizedData.about = aboutResult.sanitized;
+        if (aboutResult.jobTitle) {
+          extractedJobTitle = aboutResult.jobTitle;
+        }
+      }
+
+      // Sanitize Skills field
+      if (formData.skills) {
+        const skillsResult = await sanitizeWithAI('skills', formData.skills);
+        sanitizedData.skills = skillsResult.sanitized;
+      }
+
+      // Sanitize Experience field (extract years)
+      if (formData.experience) {
+        const experienceResult = await sanitizeWithAI('experience', formData.experience);
+        sanitizedData.experience = experienceResult.sanitized;
+        
+        // If we extracted years of experience, we could use this for other purposes
+        if (experienceResult.yearsOfExperience) {
+          console.log('Extracted years of experience:', experienceResult.yearsOfExperience);
+        }
+      }
+
+      // Add extracted job title to the data
+      if (extractedJobTitle) {
+        sanitizedData.jobTitle = extractedJobTitle;
+      }
+
+      // Update form data with sanitized values
+      setFormData(sanitizedData);
+      
+      // Submit the sanitized data
+      await onSubmit(sanitizedData);
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {
@@ -395,7 +562,6 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
               Hourly Rate (£) *
             </label>
             <div className={styles.inputWrapper}>
-              <span className={styles.currencySymbol}>£</span>
               <input
                 type="number"
                 className={`${styles.input} ${styles.rateInput} ${errors.hourlyRate ? styles.error : ''}`}
@@ -500,7 +666,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
               prompt="Record a 30-second introduction video to help clients get to know you"
             />
             {formData.videoIntro && (
-              <p className={styles.helpText}>Video recorded: {formData.videoIntro.name}</p>
+              <p className={styles.helpText}>Video uploaded successfully ✓</p>
             )}
             {errors.videoIntro && <span className={styles.errorText}>{errors.videoIntro}</span>}
           </div>

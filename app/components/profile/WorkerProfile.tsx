@@ -50,7 +50,7 @@ const WorkerProfile = ({
   fetchUserProfile,
 }: {
   workerProfile: PublicWorkerProfile;
-  handleAddSkill?: () => void;
+  handleAddSkill?: (id: string) => void;
   handleSkillDetails: (id: string) => void; // Now optional
   fetchUserProfile: (id: string) => void;
   userId?: string;
@@ -187,7 +187,7 @@ const WorkerProfile = ({
         <div className={styles.workerInfo}>
           {true && (
             <Link
-              href={isSelfView ? "calendar" : "/user/" + workerProfile.userId + "/worker/calendar"}
+              href={isSelfView ? "calendar" : `/user/${workerProfile.userId}/worker/${workerProfile.id}/availability`}
               className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
               aria-label="View calendar"
             >
@@ -232,7 +232,6 @@ const WorkerProfile = ({
           <SkillsDisplayTable
             skills={workerProfile?.skills}
             isSelfView={isSelfView}
-            handleAddSkill={handleAddSkill}
             handleSkillDetails={handleSkillDetails}
             fetchUserProfile={fetchUserProfile}
             token={user?.token || ""}

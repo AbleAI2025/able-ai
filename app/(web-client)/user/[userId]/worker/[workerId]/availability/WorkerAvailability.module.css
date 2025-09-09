@@ -1,0 +1,28 @@
+/* BuyerAvailabilityPage.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #000000;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 1rem;
+  background-color: #161616;
+  border-top: 1px solid #eaeaea;
+  overflow-y: auto;
+}
+
+/* Optional: buyer-specific styling */
+.mainContent :global(.rbc-event) {
+  background-color: #e0f7fa;
+  color: #006064;
+  border: none;
+  border-radius: 6px;
+}
+
+.mainContent :global(.rbc-today) {
+  background-color: #f1f8e9 !important;
+}

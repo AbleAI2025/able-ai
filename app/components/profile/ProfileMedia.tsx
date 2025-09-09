@@ -124,7 +124,7 @@ export default function ProfileMedia({
               }
             }}
           >
-            <Share2 size={25} color="#ffffff" />
+            <Share2 size={24} color="#ffffff" />
           </button>
         </div>
       </div>

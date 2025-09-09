@@ -7,7 +7,40 @@ import { eq } from "drizzle-orm";
 import { AvailabilitySlot, AvailabilityFormData } from "@/app/types/AvailabilityTypes";
 import { revalidatePath } from "next/cache";
 
-export async function getWorkerAvailability(userId: string) {
+export async function getWorkerAvailability(userId: string, isViewQA: boolean = false): Promise<{ availability: AvailabilitySlot[]; error?: string }> {
+  if (isViewQA) {
+    return { availability: [
+        {
+          id: "mock-1",
+          startTime: "09:00",
+          endTime: "12:00",
+          days: ["Monday", "Wednesday"],
+          frequency: "weekly",
+          ends: "never",
+          startDate: "2025-09-01",
+          endDate: undefined,
+          occurrences: undefined,
+          notes: "Morning slots",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "mock-2",
+          startTime: "14:00",
+          endTime: "18:00",
+          days: ["Friday"],
+          frequency: "weekly",
+          ends: "never",
+          startDate: "2025-09-01",
+          endDate: undefined,
+          occurrences: undefined,
+          notes: "Afternoon slots",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    }
+  }
   try {
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),

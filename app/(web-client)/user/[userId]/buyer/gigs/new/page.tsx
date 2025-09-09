@@ -2696,11 +2696,7 @@ Make the conversation feel natural and build on what they've already told you, b
                   I think you're looking for a <strong>{suggestedJobTitle}</strong>?
                 </div>
 
-                <div className={styles.jobTitleConfirmNote}>
-                  {isAISuggested && (
-                    <span className={styles.jobTitleConfirmAISuggested}>AI Suggested</span>
-                  )}
-                </div>
+                
 
                 <div className={styles.jobTitleConfirmButtonGroup}>
                   <button
