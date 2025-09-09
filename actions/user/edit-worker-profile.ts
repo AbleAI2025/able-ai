@@ -397,24 +397,24 @@ export const deleteSkillWorker = async (skillId: string, token?: string) => {
       throw new Error("User not found");
     }
 
-    const skill = await db.query.SkillsTable.findFirst({
-      where: and(
-        eq(SkillsTable.id, skillId),
-        eq(SkillsTable.workerProfileId, user.gigWorkerProfile.id)
-      ),
-    });
-
-    if (!skill) {
-      throw new Error("Skill not found");
+    if (!user.gigWorkerProfile) {
+      throw new Error("Worker profile not found");
     }
 
     const result = await db
       .delete(SkillsTable)
-      .where(eq(SkillsTable.id, skillId))
+      .where(
+        and(
+          eq(SkillsTable.id, skillId),
+          eq(SkillsTable.workerProfileId, user.gigWorkerProfile.id)
+        )
+      )
       .returning();
 
     if (result.length === 0) {
-      throw new Error("Failed to delete skill");
+      throw new Error(
+        "Failed to delete skill. It may not exist or you don't have permission."
+      );
     }
 
     return { success: true, data: "Skill deleted successfully" };
