@@ -165,7 +165,7 @@ export default function PublicRecommendationPage() {
         <div className={styles.recommendationCard}>
           <div className={styles.prompt}>
             <p>{firstName} is available for hire on Able! <br />
-            Please provide a reference for {firstName}&apos;s skills as a{" "}</p>
+            Please provide a reference for {firstName}&apos;s skill as a{" "}</p>
             <select
               className={styles.select}
               value={selectedSkill?.id || ""}

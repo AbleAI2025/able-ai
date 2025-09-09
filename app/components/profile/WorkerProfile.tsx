@@ -187,7 +187,7 @@ const WorkerProfile = ({
         <div className={styles.workerInfo}>
           {true && (
             <Link
-              href={isSelfView ? "calendar" : "/user/" + workerProfile.userId + "/worker/calendar"}
+              href={isSelfView ? "calendar" : "/user/" + workerProfile.userId + "/worker/" + workerProfile.id + "/availability"}
               className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
               aria-label="View calendar"
             >

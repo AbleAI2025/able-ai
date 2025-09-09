@@ -31,7 +31,7 @@ const UserNameModal = ({ initialValue, onClose, fetchUserProfile, userId }: User
   
         if (!updateSuccess) throw updateError;
   
-        fetchUserProfile(userId);
+        fetchUserProfile(user?.token || userId);
         onClose();
   
         toast.success("Profile updated successfully");
