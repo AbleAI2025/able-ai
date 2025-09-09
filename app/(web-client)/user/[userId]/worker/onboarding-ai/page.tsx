@@ -936,20 +936,20 @@ export default function OnboardWorkerPage() {
         }
       }
 
-      // Ensure all required fields are present
+      // Ensure all required fields are present - use sanitized data from form
         const requiredData = {
-          about: formData.about || '',
-          experience: formData.experience || '',
-          skills: formData.skills || '',
+          about: formData.about || '', // This is now the sanitized version from the form
+          experience: formData.experience || '', // This is now the sanitized version from the form
+          skills: formData.skills || '', // This is now the sanitized version from the form
           equipment: typeof formData.equipment === 'string' && formData.equipment.trim().length > 0
             ? formData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined }))
             : [],
           hourlyRate: String(formData.hourlyRate || ''),
           location: formData.location || '',
           availability: formData.availability || { days: [], startTime: '09:00', endTime: '17:00' },
-          videoIntro: formData.videoIntro || '',
+          videoIntro: typeof formData.videoIntro === 'string' ? formData.videoIntro : '',
           time: formData.time || '',
-          jobTitle: extractedJobTitle
+          jobTitle: formData.jobTitle || extractedJobTitle // Use sanitized jobTitle from form first
         };
       
       // Save the profile data to database - THIRD OCCURRENCE
@@ -1011,6 +1011,7 @@ export default function OnboardWorkerPage() {
 
       // Build validation prompt using ChatAI system
       const basePrompt = buildRolePrompt('gigfolioCoach', 'Profile Validation', `Validate and intelligently sanitize the following input for field: ${field}`);
+      
       
       const validationContext = `Previous context from this conversation:
 ${Object.entries(formData).filter(([key, value]) => value && key !== field).map(([key, value]) => `${key}: ${value}`).join(', ')}
@@ -1091,6 +1092,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
         },
         ai
       );
+      
 
       if (result.ok && result.data) {
         const validation = result.data as AIValidationResponse;
@@ -1110,78 +1112,15 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
           };
         }
         
-        // For experience field, validate years of experience
+        // Experience field - let AI handle it completely
         if (field === 'experience') {
-          try {
-            const experienceText = String(value).toLowerCase();
-            // Extract years from common patterns
-            const yearPatterns = [
-              /(\d+)\s*years?/i,
-              /(\d+)\s*\+?\s*years?/i,
-              /(\d+)\s*yr/i,
-              /(\d+)\s*\+?\s*yr/i,
-              /(\d+)\s*months?/i,
-              /(\d+)\s*\+?\s*months?/i,
-              /(\d+)\s*mo/i,
-              /(\d+)\s*\+?\s*mo/i
-            ];
-            
-            let years = 0;
-            let months = 0;
-            
-            for (const pattern of yearPatterns) {
-              const match = experienceText.match(pattern);
-              if (match) {
-                const num = parseInt(match[1]);
-                if (pattern.source.includes('month') || pattern.source.includes('mo')) {
-                  months += num;
-                } else {
-                  years += num;
-                }
-              }
-            }
-            
-            // Convert months to years
-            years += Math.floor(months / 12);
-            months = months % 12;
-            
-            // Validate reasonableness (0-50 years)
-            if (years > 50) {
-              return {
-                sufficient: false,
-                clarificationPrompt: 'That seems like a very long time. Could you please confirm how many years of experience you have? Most people have between 0-30 years of experience.',
-              };
-            }
-            
-            if (years < 0) {
-              return {
-                sufficient: false,
-                clarificationPrompt: 'Please provide a valid number of years of experience (0 or more).',
-              };
-            }
-            
-            // Format the experience nicely
-            let formattedExperience = '';
-            if (years > 0) {
-              formattedExperience = `${years} year${years !== 1 ? 's' : ''}`;
-            }
-            if (months > 0) {
-              if (formattedExperience) formattedExperience += ' and ';
-              formattedExperience += `${months} month${months !== 1 ? 's' : ''}`;
-            }
-            if (!formattedExperience) {
-              formattedExperience = 'Less than 1 year';
-            }
-            
-            return {
-              sufficient: true,
-              sanitized: formattedExperience,
-              naturalSummary: `Got it! You have ${formattedExperience} of experience, correct?`,
-              extractedData: JSON.stringify({ years: years, months: months, totalMonths: years * 12 + months })
-            };
-          } catch (error) {
-            console.error('Experience validation error:', error);
-          }
+          // Skip local validation, let AI handle it
+          return {
+            sufficient: true,
+            sanitized: trimmedValue,
+            naturalSummary: `Got it! You have ${trimmedValue}, correct?`,
+            extractedData: JSON.stringify({ experience: trimmedValue })
+          };
         }
         
         // For date fields, ensure proper date format
@@ -1631,18 +1570,21 @@ Share this link to get your reference\n\nSend this link to get your reference: $
             ]);
           } else {
             // Show regular sanitized confirmation step
+            const sanitizedStep: ChatStep = { 
+              id: Date.now() + 3, 
+              type: "sanitized",
+              fieldName: inputName,
+              sanitizedValue: aiResult.sanitized!,
+              originalValue: valueToUse,
+              naturalSummary: aiResult.naturalSummary,
+              extractedData: aiResult.extractedData,
+              isNew: true,
+            };
+            
+            
             setChatSteps((prev) => [
               ...prev,
-              { 
-                id: Date.now() + 3, 
-                type: "sanitized",
-                fieldName: inputName,
-                sanitizedValue: aiResult.sanitized!,
-                originalValue: valueToUse,
-                naturalSummary: aiResult.naturalSummary,
-                extractedData: aiResult.extractedData,
-                isNew: true,
-              },
+              sanitizedStep
             ]);
           }
         } else {
@@ -1827,8 +1769,6 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       
       // Update formData first
       const updatedFormData = { ...formData, [fieldName]: sanitized };
-      console.log(`🔍 [handleSanitizedConfirm] Storing ${fieldName}:`, sanitized);
-      console.log(`🔍 [handleSanitizedConfirm] Updated formData:`, updatedFormData);
       setFormData(updatedFormData);
       
       // Mark sanitized step as complete
@@ -2297,7 +2237,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            updateVideoUrlProfileAction(user.token, downloadURL);
+            updateVideoUrlProfileAction(downloadURL, user.token);
             handleInputChange(name, downloadURL);
             
             // Show sanitized confirmation step for video (with confirm/reformulate buttons)
@@ -2307,7 +2247,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                 id: Date.now() + 1,
                 type: "sanitized",
                 fieldName: name,
-                sanitizedValue: "Video introduction recorded successfully! 🎥",
+                sanitizedValue: downloadURL,
                 originalValue: "Video uploaded",
                 naturalSummary: "I saved the video introduction! 🎥",
                 extractedData: JSON.stringify({ videoIntro: downloadURL }),
