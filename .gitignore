@@ -49,3 +49,6 @@ ableai-mvp-firebase-adminsdk-fbsvc-b84d672846.json
 
 # editor settings
 settings.json
+
+# eslint cache
+.eslintcache
