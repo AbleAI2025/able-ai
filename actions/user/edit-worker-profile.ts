@@ -9,7 +9,7 @@ import {
 } from "@/lib/drizzle/schema";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const addQualificationAction = async (
   title: string,
@@ -375,6 +375,54 @@ export const getAllSkillsAction = async (workerId: string) => {
     return {
       success: false,
       error: "An unexpected error occurred while fetching skills.",
+    };
+  }
+};
+
+export const deleteSkillWorker = async (skillId: string, token?: string) => {
+  try {
+    if (!token) {
+      throw new Error("Authentication token is required");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+      with: { gigWorkerProfile: { columns: { id: true } } },
+    });
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const skill = await db.query.SkillsTable.findFirst({
+      where: and(
+        eq(SkillsTable.id, skillId),
+        eq(SkillsTable.workerProfileId, user.gigWorkerProfile.id)
+      ),
+    });
+
+    if (!skill) {
+      throw new Error("Skill not found");
+    }
+
+    const result = await db
+      .delete(SkillsTable)
+      .where(eq(SkillsTable.id, skillId))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("Failed to delete skill");
+    }
+
+    return { success: true, data: "Skill deleted successfully" };
+  } catch (error: any) {
+    console.error("Error deleting skill:", error);
+    return {
+      success: false,
+      error: error.message || "Unexpected error while deleting skill",
     };
   }
 };
