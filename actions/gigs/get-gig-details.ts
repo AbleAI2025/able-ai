@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { and, eq, or, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { GigsTable, UsersTable } from "@/lib/drizzle/schema";
 import moment from "moment";
 import GigDetails from "@/app/types/GigDetailsTypes";
@@ -395,6 +395,7 @@ export async function getGigDetails({
     const roleDisplay = gig.titleInternal || 'Gig Worker';
 
     const gigDetails: GigDetails = {
+      id: gig.id,
       role: roleDisplay,
       gigTitle: gig.titleInternal || 'Untitled Gig',
       buyerName: gig.buyer?.fullName || 'Unknown',

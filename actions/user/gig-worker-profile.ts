@@ -1,11 +1,9 @@
 "use server";
 
-import PublicWorkerProfile from "@/app/types/workerProfileTypes";
+import PublicWorkerProfile, {
+  SemanticProfile,
+} from "@/app/types/workerProfileTypes";
 import { db } from "@/lib/drizzle/db";
-import { GigWorkerProfilesTable, SkillsTable } from "@/lib/drizzle/schema";
-import { eq, sql } from "drizzle-orm";
-
-// Internal imports
 import {
   BadgeDefinitionsTable,
   EquipmentTable,
@@ -122,42 +120,44 @@ Generate 3 relevant hashtags for this worker:`;
   }
 }
 
-export const getPublicWorkerProfileAction = async (
-  workerId: string
-): Promise<ActionResult<PublicWorkerProfile>> => {
-  try {
-    if (!workerId) {
-      throw new Error("Worker ID is required");
-    }
+export const getPublicWorkerProfileAction = async (workerId: string) => {
+  if (!workerId) throw "Worker ID is required";
 
   const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
     where: eq(GigWorkerProfilesTable.id, workerId),
     with: { user: { columns: { fullName: true, rtwStatus: true } } },
   });
 
-    return await ProfileDataHandler.buildWorkerProfile(workerProfile);
-  } catch (error) {
-    return handleActionError(error);
-  }
+  const data = await getGigWorkerProfile(workerProfile);
+
+  return data;
 };
 
-export const getPrivateWorkerProfileAction = async (
-  token: string
-): Promise<ActionResult<PublicWorkerProfile>> => {
-  try {
-    const { user } = await validateUserAuthentication(token);
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    return await ProfileDataHandler.buildWorkerProfile(workerProfile);
-  } catch (error) {
-    return handleActionError(error);
+export const getPrivateWorkerProfileAction = async (token: string) => {
+  if (!token) {
+    throw new Error("User ID is required to fetch buyer profile");
   }
-};
 
-// Legacy function - kept for compatibility
+  const { uid } = await isUserAuthenticated(token);
+  if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+  const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firebaseUid, uid),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.userId, user.id),
+    with: { user: { columns: { fullName: true, rtwStatus: true } } },
+  });
+
+  const data = await getGigWorkerProfile(workerProfile);
+
+  return data;
+};
 export const getGigWorkerProfile = async (
   workerProfile:
     | (typeof GigWorkerProfilesTable.$inferSelect & {
@@ -176,92 +176,90 @@ export const getGigWorkerProfile = async (
       where: eq(EquipmentTable.workerProfileId, workerProfile.id),
     });
 
-    const { user } = await validateUserAuthentication(token);
+    const qualifications = await db.query.QualificationsTable.findMany({
+      where: eq(QualificationsTable.workerProfileId, workerProfile.id),
+    });
 
-    const workerProfileId = await GigWorkerProfileService.upsertWorkerProfile(
-      user.id
-    );
-    await GigWorkerProfileService.markUserAsGigWorker(user.id);
+    const badges = await db
+      .select({
+        id: UserBadgesLinkTable.id,
+        awardedAt: UserBadgesLinkTable.awardedAt,
+        awardedBySystem: UserBadgesLinkTable.awardedBySystem,
+        notes: UserBadgesLinkTable.notes,
+        badge: {
+          id: BadgeDefinitionsTable.id,
+          name: BadgeDefinitionsTable.name,
+          description: BadgeDefinitionsTable.description,
+          icon: BadgeDefinitionsTable.iconUrlOrLucideName,
+          type: BadgeDefinitionsTable.type,
+        },
+      })
+      .from(UserBadgesLinkTable)
+      .innerJoin(
+        BadgeDefinitionsTable,
+        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+      )
+      .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
 
-    return {
-      success: true,
-      data: "Worker profile created successfully",
-      workerProfileId,
+    const badgeDetails = badges?.map((badge) => ({
+      id: badge.id,
+      name: badge.badge.name,
+      description: badge.badge.description,
+      icon: (badge.badge.icon ?? "goldenVibes") as BadgeIcon,
+      type: badge.badge.type,
+      awardedAt: badge.awardedAt,
+      awardedBySystem: badge.awardedBySystem,
+    }));
+
+    const reviews = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile.userId),
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+      ),
+    });
+
+    const recommendations = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile.userId),
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
+      ),
+    });
+
+    const totalReviews = reviews?.length;
+
+    const positiveReviews = reviews?.filter((item) => item.rating === 1).length;
+
+    const averageRating =
+      totalReviews > 0 ? (positiveReviews / totalReviews) * 100 : 0;
+
+    const data = {
+      ...workerProfile,
+      fullBio: workerProfile?.fullBio ?? undefined,
+      location: workerProfile?.location ?? undefined,
+      privateNotes: workerProfile?.privateNotes ?? undefined,
+      responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
+      videoUrl: workerProfile?.videoUrl ?? undefined,
+      availabilityJson: undefined, // Set to undefined since we now use worker_availability table
+      semanticProfileJson:
+        workerProfile?.semanticProfileJson as SemanticProfile,
+      averageRating,
+      awards: badgeDetails,
+      equipment,
+      skills,
+      reviews,
+      recommendations,
+      qualifications,
+      user: { fullName: workerProfile?.user?.fullName || "" },
     };
+
+    return { success: true, data };
   } catch (error) {
-    return handleActionError(error);
+    throw error;
   }
 };
 
-export const saveWorkerProfileFromOnboardingAction = async (
-  profileData: OnboardingProfileData,
-  token: string
-): Promise<ActionResult<string>> => {
+export const getSkillDetailsWorker = async (id: string) => {
   try {
-    const { user } = await validateUserAuthentication(token);
-    validateHourlyRate(profileData.hourlyRate);
-
-    const profileUpdateData =
-      ProfileDataHandler.prepareProfileUpdateData(profileData);
-    const workerProfileId = await GigWorkerProfileService.upsertWorkerProfile(
-      user.id,
-      profileUpdateData
-    );
-
-    // Save related data in parallel
-    await Promise.all([
-      // Save availability
-      profileData.availability && typeof profileData.availability === "object"
-        ? GigWorkerProfileService.saveAvailabilityData(
-            profileData.availability,
-            user.id,
-            profileData.hourlyRate
-          )
-        : Promise.resolve(),
-
-      // Save job title as skill
-      profileData.jobTitle
-        ? GigWorkerProfileService.saveJobTitleAsSkill(
-            profileData.jobTitle,
-            workerProfileId,
-            profileData.hourlyRate
-          )
-        : Promise.resolve(),
-
-      // Save equipment
-      profileData.equipment?.length
-        ? GigWorkerProfileService.saveEquipmentData(
-            profileData.equipment,
-            workerProfileId
-          )
-        : Promise.resolve(),
-
-      // Update user as gig worker
-      GigWorkerProfileService.markUserAsGigWorker(user.id),
-    ]);
-
-    return {
-      success: true,
-      data: "Worker profile saved successfully",
-      workerProfileId,
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-};
-
-// ========================================
-// SKILL MANAGEMENT ACTIONS
-// ========================================
-
-export const getSkillDetailsWorker = async (
-  id: string
-): Promise<ActionResult<SkillProfile>> => {
-  try {
-    if (!id) {
-      throw new Error("Skill ID is required");
-    }
-
     const skill = await db.query.SkillsTable.findFirst({
       where: eq(SkillsTable.id, id),
     });
@@ -391,17 +389,48 @@ export const getSkillDetailsWorker = async (
 
     return { success: true, data: skillProfile };
   } catch (error) {
-    return handleActionError(error);
+    return { success: false, data: null, error };
   }
 };
 
 export const createSkillWorker = async (
   token: string,
-  skillData: CreateSkillData
-): Promise<ActionResult> => {
+  {
+    name,
+    experienceYears,
+    agreedRate,
+    skillVideoUrl,
+    adminTags = [],
+    images = [],
+  }: {
+    name: string;
+    experienceYears: number;
+    agreedRate: number | string;
+    skillVideoUrl?: string;
+    adminTags?: string[];
+    images?: string[];
+  }
+) => {
   try {
-    const { user } = await validateUserAuthentication(token);
-    const validatedRate = validateHourlyRate(skillData.agreedRate);
+    if (!token) throw new Error("Token is required");
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw new Error("Unauthorized");
+
+    // Validate hourly rate minimum
+    const hourlyRate = parseFloat(String(agreedRate));
+    if (hourlyRate < VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE) {
+      throw new Error(
+        `Hourly rate must be at least £${VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE}`
+      );
+    }
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
 
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.userId, user.id),
@@ -415,14 +444,14 @@ export const createSkillWorker = async (
       .insert(SkillsTable)
       .values({
         workerProfileId: workerProfile.id,
-        name: skillData.name,
+        name,
         experienceMonths: 0,
-        experienceYears: skillData.experienceYears,
-        agreedRate: String(validatedRate),
-        skillVideoUrl: skillData.skillVideoUrl || null,
-        adminTags: skillData.adminTags?.length ? skillData.adminTags : null,
+        experienceYears,
+        agreedRate: String(agreedRate),
+        skillVideoUrl: skillVideoUrl || null,
+        adminTags: adminTags.length > 0 ? adminTags : null,
         ableGigs: null,
-        images: skillData.images || [],
+        images,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -430,13 +459,9 @@ export const createSkillWorker = async (
 
     return { success: true, data: newSkill };
   } catch (error) {
-    return handleActionError(error);
+    return { success: false, data: null, error };
   }
 };
-
-// ========================================
-// MEDIA MANAGEMENT ACTIONS
-// ========================================
 
 export const updateVideoUrlProfileAction = async (
   videoUrl: string,
@@ -471,7 +496,7 @@ export const updateVideoUrlProfileAction = async (
 
     console.log('🎥 Video URL update result:', result);
 
-    return { success: true, data: "Video URL updated successfully" };
+    return { success: true, data: "Url video updated successfully" };
   } catch (error) {
     console.error('🎥 Video URL update error:', error);
     return { success: false, data: "Url video updated successfully", error };
@@ -480,22 +505,21 @@ export const updateVideoUrlProfileAction = async (
 
 export const updateProfileImageAction = async (
   token: string,
-  skillId: string,
+  id: string,
   newImage: string
-): Promise<ActionResult<string[]>> => {
+) => {
   try {
-    await validateUserAuthentication(token);
+    if (!token) throw new Error("User ID is required");
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
     const skill = await db.query.SkillsTable.findFirst({
-      where: eq(SkillsTable.id, skillId),
+      where: eq(SkillsTable.id, id),
       columns: { images: true },
     });
 
-    if (!skill) {
-      throw new Error("Skill not found");
-    }
-
-    const updatedImages = [...(skill.images ?? []), newImage];
+    const updatedImages = [...(skill?.images ?? []), newImage];
 
     await db
       .update(SkillsTable)
@@ -503,11 +527,11 @@ export const updateProfileImageAction = async (
         images: updatedImages,
         updatedAt: new Date(),
       })
-      .where(eq(SkillsTable.id, skillId));
+      .where(eq(SkillsTable.id, id));
 
     return { success: true, data: updatedImages };
   } catch (error) {
-    return handleActionError(error);
+    return { success: false, data: null, error };
   }
 };
 
@@ -515,20 +539,21 @@ export const deleteImageAction = async (
   token: string,
   skillId: string,
   imageUrl: string
-): Promise<ActionResult<string[]>> => {
+) => {
   try {
-    await validateUserAuthentication(token);
+    if (!token) throw new Error("User ID is required");
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
     const skill = await db.query.SkillsTable.findFirst({
       where: eq(SkillsTable.id, skillId),
       columns: { images: true },
     });
 
-    if (!skill) {
-      throw new Error("Skill not found");
-    }
+    if (!skill) throw "Skill not found";
 
-    const updatedImages = skill.images?.filter((img) => img !== imageUrl) || [];
+    const updatedImages = skill?.images?.filter((img) => img !== imageUrl);
 
     await db
       .update(SkillsTable)
