@@ -8,26 +8,99 @@ interface GigDetailsProps {
 	editedGigDetails: GigReviewDetailsData;
 	handleEditDetails: () => void;
 	setEditedGigDetails: React.Dispatch<React.SetStateAction<GigReviewDetailsData>>;
-	isEditingDetails?: boolean; // Optional prop to control edit mode
-	gigDetailsData: GigReviewDetailsData; // Assuming this is passed for read-only view
+	isEditingDetails?: boolean;
 	isOnConfirm?: boolean;
 	title: string;
 }
 
-const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
+const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
 	const lastRoleUsed = getLastRoleUsed()
+
+	const convertTo12Hour = (time24: string): string => {
+		const [hours, minutes] = time24.split(':');
+		const hour = parseInt(hours, 10);
+		const ampm = hour >= 12 ? 'PM' : 'AM';
+		const hour12 = hour % 12 || 12;
+		return `${hour12}:${minutes} ${ampm}`;
+	};
+
+	const parseTimeRange = (timeRange: string) => {
+		const match = timeRange.match(/(\d{1,2}:\d{2}\s?(AM|PM))\s?-\s?(\d{1,2}:\d{2}\s?(AM|PM))/i);
+		if (match) {
+			return {
+				startTime: match[1],
+				endTime: match[3]
+			};
+		}
+		return { startTime: '', endTime: '' };
+	};
+
+	const convertTo24Hour = (time12: string): string => {
+		const match = time12.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/i);
+		if (!match) return '';
+		
+		let [, hours, minutes, ampm] = match;
+		let hour = parseInt(hours, 10);
+		
+		if (ampm.toUpperCase() === 'PM' && hour !== 12) {
+			hour += 12;
+		} else if (ampm.toUpperCase() === 'AM' && hour === 12) {
+			hour = 0;
+		}
+		
+		return `${hour.toString().padStart(2, '0')}:${minutes}`;
+	};
+
+	const updateSummary = (totalPay: string) => {
+		const fees = (parseFloat(totalPay) * 0.1).toFixed(2);
+		return `Total gig value is now £${totalPay}, with Able and payment provider fees of £${fees}.`;
+	};
+
+	const { startTime, endTime } = parseTimeRange(editedGigDetails.time || '');
 
 	const handleInputChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
 		const { name, value } = e.target;
 
-		setEditedGigDetails((prevState) => ({
-			...prevState,
-			[name]: value,
-			...('payPerHour' === name ? { totalPay: (calculateHoursInRange(editedGigDetails.time) * Number(value)).toString() } : {}),
-			...('time' === name ? { totalPay: (calculateHoursInRange(value) * Number(editedGigDetails.payPerHour)).toString() } : {})
-		}));
+		setEditedGigDetails((prevState) => {
+			const newTotalPay = name === 'payPerHour' 
+				? (calculateHoursInRange(editedGigDetails.time) * Number(value)).toString()
+				: prevState.totalPay;
+
+			return {
+				...prevState,
+				[name]: value,
+				...(name === 'payPerHour' ? { 
+					totalPay: newTotalPay,
+					summary: updateSummary(newTotalPay)
+				} : {})
+			};
+		});
+	};
+
+	const handleTimeChange = (type: 'start' | 'end', value: string) => {
+		const currentRange = parseTimeRange(editedGigDetails.time || '');
+		let newStartTime = currentRange.startTime;
+		let newEndTime = currentRange.endTime;
+
+		if (type === 'start') {
+			newStartTime = convertTo12Hour(value);
+		} else {
+			newEndTime = convertTo12Hour(value);
+		}
+
+		if (newStartTime && newEndTime) {
+			const newTimeRange = `${newStartTime} - ${newEndTime}`;
+			const newTotalPay = (calculateHoursInRange(newTimeRange) * Number(editedGigDetails.payPerHour)).toString();
+			
+			setEditedGigDetails((prevState) => ({
+				...prevState,
+				time: newTimeRange,
+				totalPay: newTotalPay,
+				summary: updateSummary(newTotalPay)
+			}));
+		}
 	};
 
 	return (
@@ -35,11 +108,9 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 			<div className={styles.detailsHeader}>
 				<h2 className={styles.detailsTitle}>
 					{title}
-					{/* Uncomment if you want to show status */}
-					{/* {gigDetailsData.status === 'CANCELLED' ? 'Cancelled' : 'Updated'} gig details: */}
 				</h2>
 				{!isEditingDetails ? (
-					<Pencil className={styles.editIcon} onClick={handleEditDetails} />
+					<Pencil className={styles.editPencilIcon} onClick={handleEditDetails} />
 				) : (
 					<X className={styles.editIcon} onClick={handleEditDetails} />
 				)}
@@ -54,8 +125,8 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 							name="location"
 							value={editedGigDetails.location}
 							onChange={handleInputChange}
-							className={styles.textareaInput} // Reuse input style
-							disabled={lastRoleUsed === "GIG_WORKER"} // Disable for workers
+							className={styles.textareaInput}
+							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
@@ -65,18 +136,26 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 							name="date"
 							value={editedGigDetails.date}
 							onChange={handleInputChange}
-							className={styles.textareaInput} // Reuse input style
-							disabled={lastRoleUsed === "GIG_WORKER"} // Disable for workers
+							className={styles.textareaInput}
+							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
-						<span className={styles.detailItemLabel}>Time:</span>
+						<span className={styles.detailItemLabel}>Start Time:</span>
 						<input
-							type="text"
-							name="time"
-							value={editedGigDetails.time}
-							onChange={handleInputChange}
-							className={styles.textareaInput} // Reuse input style
+							type="time"
+							value={convertTo24Hour(startTime)}
+							onChange={(e) => handleTimeChange('start', e.target.value)}
+							className={styles.textareaInput}
+						/>
+					</div>
+					<div className={styles.detailItem}>
+						<span className={styles.detailItemLabel}>End Time:</span>
+						<input
+							type="time"
+							value={convertTo24Hour(endTime)}
+							onChange={(e) => handleTimeChange('end', e.target.value)}
+							className={styles.textareaInput}
 						/>
 					</div>
 					<div className={styles.detailItem}>
@@ -86,8 +165,8 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 							name="payPerHour"
 							value={editedGigDetails.payPerHour}
 							onChange={handleInputChange}
-							className={styles.textareaInput} // Reuse input style
-							disabled={lastRoleUsed === "GIG_WORKER"} // Disable for workers
+							className={styles.textareaInput}
+							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
@@ -97,52 +176,49 @@ const AmendGig = ({ gigDetailsData, editedGigDetails, handleEditDetails, isEditi
 							name="totalPay"
 							value={editedGigDetails.totalPay}
 							onChange={handleInputChange}
-							className={styles.textareaInput} // Reuse input style
-							disabled={true} // Total pay likely calculated
+							className={styles.textareaInput}
+							disabled={true}
 						/>
 					</div>
-					{/* Summary might be recalculated or hidden in edit mode */}
-					{/* <p className={styles.detailsSummaryText}>{editedGigDetails.summary}</p> */}
 				</div>
 			) : (
-				/* Read-only View */
+				/* Read-only View - NOW USING editedGigDetails */
 				<div className={styles.detailsList}>
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Location:</span>
 						<span className={styles.detailItemValue}>
-							{gigDetailsData.location}
+							{editedGigDetails.location}
 						</span>
 					</div>
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Date:</span>
 						<span className={styles.detailItemValue}>
-							{gigDetailsData.date}
+							{editedGigDetails.date}
 						</span>
 					</div>
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Time:</span>
 						<span className={styles.detailItemValue}>
-							{gigDetailsData.time}
+							{editedGigDetails.time}
 						</span>
 					</div>
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Pay per hour:</span>
 						<span className={styles.detailItemValue}>
-							£{gigDetailsData.payPerHour}
+							£{editedGigDetails.payPerHour}
 						</span>
 					</div>
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>{lastRoleUsed === "BUYER" ? "Total Cost:" : "Total Pay:"}</span>
 						<span className={styles.detailItemValue}>
-							&#8364;{gigDetailsData.totalPay}
+							€{editedGigDetails.totalPay}
 						</span>
 					</div>
 				</div>
 			)}
-			{/* Always show summary in read-only mode, maybe hide in edit mode */}
 			{!isEditingDetails && !isOnConfirm && (
 				<p className={styles.detailsSummaryText}>
-					{gigDetailsData.summary}
+					{editedGigDetails.summary}
 				</p>
 			)}
 		</div>

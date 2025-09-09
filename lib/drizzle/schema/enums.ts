@@ -103,3 +103,10 @@ export const discountTypeEnum = pgEnum("discount_type_enum", [
   "PLATFORM_DISCOUNT",
   "ONE_TIME_DISCOUNT",
 ]);
+
+export const gigAmendmentStatusEnum = pgEnum("gig_amendment_status_enum", [
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+  "WITHDRAWN",
+]);

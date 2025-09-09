@@ -19,6 +19,7 @@ import {
   gigStatusEnum,
   moderationStatusEnum,
   cancellationPartyEnum,
+  gigAmendmentStatusEnum,
 } from "./enums"; // Assuming enums.ts is in the same directory
 
 // Import related tables for foreign keys
@@ -183,6 +184,34 @@ export const GigSkillsRequiredTable = pgTable(
     ), // Ensures a gig doesn't list the same skill name twice
   ]
 );
+
+export const GigAmendmentRequestsTable = pgTable("gig_amendment_requests", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  gigId: uuid("gig_id")
+    .notNull()
+    .references(() => GigsTable.id, { onDelete: "cascade" }),
+  requesterId: uuid("requester_id")
+    .notNull()
+    .references(() => UsersTable.id, { onDelete: "cascade" }),
+  // e.g. "TIME_CHANGE", "RATE_CHANGE", "LOCATION_CHANGE", "GENERAL"
+  requestType: varchar("request_type", { length: 50 }).notNull(),
+  oldValues: jsonb("old_values").$type<Record<string, any>>(),
+  newValues: jsonb("new_values").$type<Record<string, any>>().notNull(),
+  status: gigAmendmentStatusEnum("status")
+    .default("PENDING")
+    .notNull(),
+  reason: text("reason"),
+  responderNotes: text("responder_notes"), 
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
 
 // Note: Changed primaryKey strategy for GigSkillsRequiredTable to a composite unique key
 // based on gigId and skillName, assuming a skill name is unique per gig. If you need multiple

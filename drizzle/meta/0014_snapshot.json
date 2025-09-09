@@ -1,5 +1,5 @@
 {
-  "id": "03c1b642-6736-4a09-98de-e239bc71ce06",
+  "id": "207718e7-80eb-40a8-b700-8cdcec9e1680",
   "prevId": "24e05e1f-16a5-4946-9dd7-77dac4a7e2a3",
   "version": "7",
   "dialect": "postgresql",
@@ -679,6 +679,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.gig_amendment_requests": {
+      "name": "gig_amendment_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "gig_id": {
+          "name": "gig_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requester_id": {
+          "name": "requester_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_type": {
+          "name": "request_type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "old_values": {
+          "name": "old_values",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_values": {
+          "name": "new_values",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "gig_amendment_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responder_notes": {
+          "name": "responder_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "gig_amendment_requests_gig_id_gigs_id_fk": {
+          "name": "gig_amendment_requests_gig_id_gigs_id_fk",
+          "tableFrom": "gig_amendment_requests",
+          "tableTo": "gigs",
+          "columnsFrom": [
+            "gig_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "gig_amendment_requests_requester_id_users_id_fk": {
+          "name": "gig_amendment_requests_requester_id_users_id_fk",
+          "tableFrom": "gig_amendment_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requester_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.gig_skills_required": {
       "name": "gig_skills_required",
       "schema": "",
@@ -1074,12 +1185,6 @@
           "notNull": false,
           "default": false
         },
-        "skill_id": {
-          "name": "skill_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1108,19 +1213,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "qualifications_skill_id_skills_id_fk": {
-          "name": "qualifications_skill_id_skills_id_fk",
-          "tableFrom": "qualifications",
-          "tableTo": "skills",
-          "columnsFrom": [
-            "skill_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -3068,6 +3160,16 @@
         "USER_REFERRAL",
         "PLATFORM_DISCOUNT",
         "ONE_TIME_DISCOUNT"
+      ]
+    },
+    "public.gig_amendment_status_enum": {
+      "name": "gig_amendment_status_enum",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "ACCEPTED",
+        "REJECTED",
+        "WITHDRAWN"
       ]
     },
     "public.gig_status_enum": {
