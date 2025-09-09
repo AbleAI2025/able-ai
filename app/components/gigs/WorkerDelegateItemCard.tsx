@@ -9,6 +9,11 @@ interface WorkerDelegateItemProps {
     name: string;
     username: string;
     avatarUrl: string;
+    primarySkill: string;
+    experienceYears: number;
+    hourlyRate: number;
+    bio: string;
+    location: string;
   };
   onDelegate: (workerId: string) => void;
   isDelegating?: boolean; // For loading state on button
@@ -21,7 +26,6 @@ const WorkerDelegateItemCard: React.FC<WorkerDelegateItemProps> = ({
 }) => {
   return (
     <div className={styles.card}>
-      {/* <Avatar src={worker.avatarUrl} alt={worker.name} size="medium" /> */}
       <Image
         src={worker.avatarUrl}
         alt={worker.name}
@@ -30,15 +34,28 @@ const WorkerDelegateItemCard: React.FC<WorkerDelegateItemProps> = ({
         className={styles.avatar}
       />
       <div className={styles.userInfo}>
-        <span className={styles.name}>{worker.name}</span>
-        <span className={styles.username}>@{worker.username}</span>
+        <div className={styles.nameRow}>
+          <span className={styles.name}>{worker.name}</span>
+          <span className={styles.username}>@{worker.username}</span>
+        </div>
+        <div className={styles.skillRow}>
+          <span className={styles.skill}>{worker.primarySkill}</span>
+          <span className={styles.experience}>{worker.experienceYears} years exp</span>
+        </div>
+        <div className={styles.rateRow}>
+          <span className={styles.rate}>£{worker.hourlyRate}/hour</span>
+          <span className={styles.location}>{worker.location}</span>
+        </div>
+        {worker.bio && (
+          <p className={styles.bio}>{worker.bio}</p>
+        )}
       </div>
       <button
         onClick={() => onDelegate(worker.id)}
         className={styles.delegateButton}
         disabled={isDelegating}
       >
-        {isDelegating ? '...' : 'Delegate'}
+        {isDelegating ? 'Delegating...' : 'Delegate'}
       </button>
     </div>
   );

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or, isNull } from "drizzle-orm";
 import { GigsTable, UsersTable } from "@/lib/drizzle/schema";
 import moment from "moment";
 import GigDetails from "@/app/types/GigDetailsTypes";
@@ -91,7 +91,6 @@ function getMappedStatus(internalStatus: string): GigDetails['status'] {
     case 'CANCELLED_BY_ADMIN':
       return 'CANCELLED';
     default:
-      console.warn(`Unhandled gig statusInternal: ${internalStatus}`);
       return 'PENDING';
   }
 
@@ -226,6 +225,43 @@ function parseGigLocation(gig: any): string {
     }
   }
 
+    // If still no location, try one more aggressive pass
+    if (locationDisplay === 'Location not specified') {
+      // Try addressJson again with more aggressive parsing
+      if (gig.addressJson && typeof gig.addressJson === 'object') {
+        const obj = gig.addressJson as any;
+        
+        if (obj.lat && obj.lng) {
+          locationDisplay = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
+        } else if (obj.formatted_address) {
+          locationDisplay = obj.formatted_address;
+        } else if (obj.address) {
+          locationDisplay = obj.address;
+        } else if (obj.street && obj.city) {
+          locationDisplay = `${obj.street}, ${obj.city}`;
+        } else {
+          // Show any available string data
+          for (const [key, value] of Object.entries(obj)) {
+            if (typeof value === 'string' && value.trim() && 
+                value !== 'null' && value !== 'undefined' && value !== '[object Object]' && !value.includes('[object Object]')) {
+              locationDisplay = value.trim();
+              break;
+            }
+          }
+        }
+      }
+      
+      // Try exactLocation one more time
+      if (locationDisplay === 'Location not specified' && gig.exactLocation && typeof gig.exactLocation === 'object') {
+        const obj = gig.exactLocation as any;
+        
+        if (obj.lat && obj.lng) {
+          locationDisplay = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
+        } else if (obj.formatted_address) {
+          locationDisplay = obj.formatted_address;
+        }
+      }
+    }
   // Final aggressive extraction attempt
   if (locationDisplay === 'Location not specified') {
     console.log('Location debug - attempting final aggressive extraction');
@@ -267,12 +303,22 @@ function parseGigLocation(gig: any): string {
     }
   }
 
+    // Final validation: ensure we never return problematic values
+    if (locationDisplay === '[object Object]' || locationDisplay.includes('[object Object]')) {
+      locationDisplay = 'Location not specified';
+    }
   // Final validation and fallback
   if (locationDisplay === '[object Object]' || locationDisplay.includes('[object Object]')) {
     console.warn('Location debug - caught problematic location value, clearing it');
     locationDisplay = 'Location not specified';
   }
 
+    // Additional safety check - ensure we always have a meaningful location
+    if (locationDisplay === 'Location not specified') {
+      locationDisplay = 'Location details available';
+    }
+
+    // Use the full titleInternal as the role (no truncation)
   if (locationDisplay === 'Location not specified') {
     console.log('Location debug - no location found, using fallback');
     locationDisplay = 'Location details available';
@@ -349,7 +395,6 @@ export async function getGigDetails({
     const roleDisplay = gig.titleInternal || 'Gig Worker';
 
     const gigDetails: GigDetails = {
-      id: gig.id,
       role: roleDisplay,
       gigTitle: gig.titleInternal || 'Untitled Gig',
       buyerName: gig.buyer?.fullName || 'Unknown',

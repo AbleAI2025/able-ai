@@ -7,23 +7,120 @@ import { eq, sql } from "drizzle-orm";
 
 // Internal imports
 import {
-  validateUserAuthentication,
-  validateHourlyRate,
-  handleActionError,
-} from "../utils/get-gig-worker-profile";
-import { GigWorkerProfileService } from "../services/get-gig-worker-profile";
-import { ProfileDataHandler } from "../handlers/get-profile-data";
-import { SkillDataHandler } from "../handlers/get-skill-data";
-import type {
-  ActionResult,
-  CreateSkillData,
-  OnboardingProfileData,
-  SkillProfile,
-} from "../types/get-gig-worker-profile";
+  BadgeDefinitionsTable,
+  EquipmentTable,
+  GigWorkerProfilesTable,
+  QualificationsTable,
+  ReviewsTable,
+  SkillsTable,
+  UserBadgesLinkTable,
+  UsersTable,
+  WorkerAvailabilityTable,
+} from "@/lib/drizzle/schema";
 
-// ========================================
-// PUBLIC PROFILE ACTIONS
-// ========================================
+import { ERROR_CODES } from "@/lib/responses/errors";
+import { isUserAuthenticated } from "@/lib/user.server";
+import { and, eq, sql } from "drizzle-orm";
+import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
+import { geminiAIAgent } from '@/lib/firebase/ai';
+import { getAI } from '@firebase/ai';
+import { Schema } from '@firebase/ai';
+import admin from '@/lib/firebase/firebase-server';
+import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
+
+// AI Hashtag Generation Schema
+const hashtagGenerationSchema = Schema.object({
+  properties: {
+    hashtags: Schema.array({
+      items: Schema.string(),
+      maxItems: 3,
+      minItems: 1
+    })
+  },
+  required: ["hashtags"],
+  additionalProperties: false
+});
+
+// AI function to generate hashtags from onboarding data
+async function generateHashtagsFromOnboarding(profileData: {
+  about: string;
+  experience: string;
+  skills: string;
+  equipment?: { name: string; description?: string }[];
+  location?: any;
+}): Promise<string[]> {
+  console.log('🚀 Starting hashtag generation with data:', profileData);
+  try {
+    // Try to get AI instance, fallback to null if not available
+    let ai = null;
+    try {
+      ai = getAI();
+      console.log('✅ AI is available, proceeding with generation...');
+    } catch (error) {
+      console.log('⚠️ AI not available, using fallback hashtags');
+      return [
+        `#${profileData.skills?.split(',')[0]?.trim().toLowerCase().replace(/\s+/g, '-') || 'worker'}`,
+        `#${profileData.about?.split(' ')[0]?.toLowerCase() || 'professional'}`,
+        '#gig-worker'
+      ];
+    }
+
+    const prompt = `You are an AI assistant that generates professional hashtags for gig workers based on their profile information.
+
+Based on the following worker profile data, generate exactly 3 relevant, professional hashtags that would help with job matching and discoverability.
+
+Profile Data:
+- About: ${profileData.about || 'Not provided'}
+- Experience: ${profileData.experience || 'Not provided'}
+- Skills: ${profileData.skills || 'Not provided'}
+- Equipment: ${profileData.equipment?.map(e => e.name).join(', ') || 'Not provided'}
+- Location: ${typeof profileData.location === 'string' ? profileData.location : 'Not provided'}
+
+Rules:
+1. Generate exactly 3 hashtags (no more, no less)
+2. Use professional, industry-standard terms
+3. Focus on skills, experience level, and specializations
+4. Use hashtag format (e.g., "#bartender", "#mixology", "#events")
+5. Make them relevant to hospitality, events, and gig work
+6. Avoid generic terms like "#work" or "#job"
+7. Consider the worker's experience level and equipment
+
+Examples of good hashtags:
+- For bartenders: "#bartender", "#mixology", "#cocktails"
+- For chefs: "#chef", "#cooking", "#catering"
+- For event staff: "#events", "#hospitality", "#customer-service"
+
+Generate 3 relevant hashtags for this worker:`;
+
+    const result = await geminiAIAgent(
+      VALIDATION_CONSTANTS.AI_MODELS.GEMINI_2_0_FLASH,
+      {
+        prompt,
+        responseSchema: hashtagGenerationSchema,
+      },
+      ai, // This will be null if AI is not available
+      VALIDATION_CONSTANTS.AI_MODELS.GEMINI_2_5_FLASH_PREVIEW
+    );
+
+    if (result.ok) {
+      const hashtags = (result.data as { hashtags: string[] }).hashtags;
+      console.log('✅ Generated hashtags:', hashtags);
+      console.log('🔍 Hashtags details:', {
+        type: typeof hashtags,
+        isArray: Array.isArray(hashtags),
+        length: hashtags?.length,
+        content: hashtags
+      });
+      return hashtags;
+    } else {
+      console.error('❌ Failed to generate hashtags:', result.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('❌ Error generating hashtags:', error);
+    return [];
+  }
+}
 
 export const getPublicWorkerProfileAction = async (
   workerId: string
@@ -33,9 +130,10 @@ export const getPublicWorkerProfileAction = async (
       throw new Error("Worker ID is required");
     }
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.id, workerId),
-    });
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.id, workerId),
+    with: { user: { columns: { fullName: true, rtwStatus: true } } },
+  });
 
     return await ProfileDataHandler.buildWorkerProfile(workerProfile);
   } catch (error) {
@@ -61,21 +159,22 @@ export const getPrivateWorkerProfileAction = async (
 
 // Legacy function - kept for compatibility
 export const getGigWorkerProfile = async (
-  workerProfile: typeof GigWorkerProfilesTable.$inferSelect | undefined
-): Promise<ActionResult<PublicWorkerProfile>> => {
-  return await ProfileDataHandler.buildWorkerProfile(workerProfile);
-};
-
-// ========================================
-// PROFILE MANAGEMENT ACTIONS
-// ========================================
-
-export const createWorkerProfileAction = async (
-  token: string
-): Promise<ActionResult<string>> => {
+  workerProfile:
+    | (typeof GigWorkerProfilesTable.$inferSelect & {
+        user?: { fullName: string; rtwStatus: string | null };
+      })
+    | undefined
+): Promise<{ success: true; data: PublicWorkerProfile }> => {
   try {
-    // Test database connection
-    await db.execute(sql`SELECT 1 as test`);
+    if (!workerProfile) throw "Getting worker profile error";
+
+    const skills = await db.query.SkillsTable.findMany({
+      where: eq(SkillsTable.workerProfileId, workerProfile.id),
+    });
+
+    const equipment = await db.query.EquipmentTable.findMany({
+      where: eq(EquipmentTable.workerProfileId, workerProfile.id),
+    });
 
     const { user } = await validateUserAuthentication(token);
 
@@ -167,11 +266,130 @@ export const getSkillDetailsWorker = async (
       where: eq(SkillsTable.id, id),
     });
 
-    if (!skill) {
-      throw new Error("Skill not found");
-    }
+    if (!skill) throw "Skill not found";
 
-    return await SkillDataHandler.buildSkillProfile(skill);
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.id, skill?.workerProfileId),
+    });
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.id, workerProfile?.userId || ""),
+    });
+
+    const badges = await db
+      .select({
+        id: UserBadgesLinkTable.id,
+        awardedAt: UserBadgesLinkTable.awardedAt,
+        awardedBySystem: UserBadgesLinkTable.awardedBySystem,
+        notes: UserBadgesLinkTable.notes,
+        badge: {
+          id: BadgeDefinitionsTable.id,
+          name: BadgeDefinitionsTable.name,
+          description: BadgeDefinitionsTable.description,
+          icon: BadgeDefinitionsTable.iconUrlOrLucideName,
+          type: BadgeDefinitionsTable.type,
+        },
+      })
+      .from(UserBadgesLinkTable)
+      .innerJoin(
+        BadgeDefinitionsTable,
+        eq(UserBadgesLinkTable.badgeId, BadgeDefinitionsTable.id)
+      )
+      .where(eq(UserBadgesLinkTable.userId, workerProfile?.userId || ""));
+
+    const badgeDetails = badges?.map((badge) => ({
+      id: badge.id,
+      name: badge.badge.name,
+      description: badge.badge.description,
+      icon: badge.badge.icon,
+      type: badge.badge.type,
+      awardedAt: badge.awardedAt,
+      awardedBySystem: badge.awardedBySystem,
+    }));
+
+    const qualifications = await db.query.QualificationsTable.findMany({
+      where: and(
+        eq(QualificationsTable.workerProfileId, workerProfile?.id || ""),
+        eq(QualificationsTable.skillId, skill.id || "")
+      ),
+    });
+
+    const reviews = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
+      ),
+    });
+
+    const recommendations = await db.query.ReviewsTable.findMany({
+      where: and(
+        eq(ReviewsTable.targetUserId, workerProfile?.userId || ""),
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
+        eq(ReviewsTable.skillId, skill.id)
+      ),
+    });
+
+    const reviewsData = await Promise.all(
+      reviews.map(async (review) => {
+        if (!review.authorUserId) {
+          return {
+            name: "Unknown",
+            date: review.createdAt,
+            text: review.comment,
+          };
+        }
+
+        const author = await db.query.UsersTable.findFirst({
+          where: eq(UsersTable.id, review.authorUserId),
+        });
+
+        return {
+          name: author?.fullName || "Unknown",
+          date: review.createdAt,
+          text: review.comment,
+        };
+      })
+    );
+
+    const recommendationsData = await Promise.all(
+      recommendations.map(async (recommendation) => {
+        return {
+          name: recommendation.recommenderName,
+          date: recommendation.createdAt,
+          text: recommendation.comment,
+        };
+      })
+    );
+
+    const skillProfile = {
+      workerProfileId: workerProfile?.id ?? "",
+      name: user?.fullName,
+      title: skill?.name,
+      hashtags: Array.isArray(workerProfile?.hashtags)
+        ? workerProfile.hashtags.join(" ")
+        : "",
+      customerReviewsText: workerProfile?.fullBio,
+      ableGigs: skill?.ableGigs,
+      experienceYears: skill?.experienceYears,
+      Eph: skill?.agreedRate,
+      location: workerProfile?.location || "",
+      address: workerProfile?.address || "",
+      latitude: workerProfile?.latitude ?? 0,
+      longitude: workerProfile?.longitude ?? 0,
+      videoUrl: workerProfile?.videoUrl || "",
+      statistics: {
+        reviews: reviews?.length,
+        paymentsCollected: "£4899",
+        tipsReceived: "£767",
+      },
+      supportingImages: skill.images ?? [],
+      badges: badgeDetails,
+      qualifications,
+      buyerReviews: reviewsData,
+      recommendations: recommendationsData,
+    };
+
+    return { success: true, data: skillProfile };
   } catch (error) {
     return handleActionError(error);
   }
@@ -222,22 +440,41 @@ export const createSkillWorker = async (
 
 export const updateVideoUrlProfileAction = async (
   videoUrl: string,
-  token?: string
-): Promise<ActionResult<string>> => {
+  token?: string | undefined
+) => {
   try {
-    const { user } = await validateUserAuthentication(token || "");
+    console.log('🎥 Updating video URL:', videoUrl);
+    
+    if (!token) {
+      throw new Error("User ID is required to fetch buyer profile");
+    }
 
-    await db
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) throw "User not found";
+
+    console.log('🎥 Updating video URL for user:', user.id, 'with URL:', videoUrl);
+
+    const result = await db
       .update(GigWorkerProfilesTable)
       .set({
         videoUrl: videoUrl,
         updatedAt: new Date(),
       })
-      .where(eq(GigWorkerProfilesTable.userId, user.id));
+      .where(eq(GigWorkerProfilesTable.userId, user?.id))
+      .returning();
+
+    console.log('🎥 Video URL update result:', result);
 
     return { success: true, data: "Video URL updated successfully" };
   } catch (error) {
-    return handleActionError(error);
+    console.error('🎥 Video URL update error:', error);
+    return { success: false, data: "Url video updated successfully", error };
   }
 };
 
@@ -303,20 +540,562 @@ export const deleteImageAction = async (
 
     return { success: true, data: updatedImages };
   } catch (error) {
-    return handleActionError(error);
+    return { success: false, data: null, error };
   }
 };
 
-// ========================================
-// EXPORTS - Everything centralized here
-// ========================================
+export const createWorkerProfileAction = async (token: string) => {
+  try {
+    // Test database connection
 
-// Re-export types for external use
-export type {
-  CreateSkillData,
-  AvailabilityData,
-  EquipmentData,
-  OnboardingProfileData,
-  ActionResult,
-  SkillProfile,
-} from "../types/get-gig-worker-profile";
+    try {
+      const testQuery = await db.execute(sql`SELECT 1 as test`);
+    } catch (dbError) {
+      throw new Error(`Database connection failed: ${dbError}`);
+    }
+
+    if (!token) {
+      throw new Error("Token is required");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) throw "User not found";
+
+    // Check if worker profile already exists
+
+    const existingWorkerProfile =
+      await db.query.GigWorkerProfilesTable.findFirst({
+        where: eq(GigWorkerProfilesTable.userId, user.id),
+      });
+
+    if (existingWorkerProfile) {
+      return {
+        success: true,
+        data: "Worker profile already exists",
+        workerProfileId: existingWorkerProfile.id,
+      };
+    }
+
+    // Create new worker profile
+
+    const newProfile = await db
+      .insert(GigWorkerProfilesTable)
+      .values({
+        userId: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const workerProfileId = newProfile[0].id;
+
+    // Update user table to mark as gig worker
+
+    await db
+      .update(UsersTable)
+      .set({
+        isGigWorker: true,
+        lastRoleUsed: "GIG_WORKER",
+        updatedAt: new Date(),
+      })
+      .where(eq(UsersTable.id, user.id));
+
+    return {
+      success: true,
+      data: "Worker profile created successfully",
+      workerProfileId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
+
+export const saveWorkerProfileFromOnboardingAction = async (
+  profileData: {
+    about: string;
+    experience: string;
+    skills: string;
+    hourlyRate: string;
+    location: any;
+    availability:
+      | {
+          days: string[];
+          startTime: string;
+          endTime: string;
+          frequency?: string;
+          ends?: string;
+          startDate?: string; // Add this field
+          endDate?: string;
+          occurrences?: number;
+        }
+      | string;
+    videoIntro: File | string;
+    jobTitle?: string; // Add job title field
+    equipment?: { name: string; description?: string }[]; // Add equipment field
+  },
+  token: string
+) => {
+  try {
+    if (!token) {
+      throw new Error("Token is required");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) throw "User not found";
+
+    // Check if worker profile already exists
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+
+    // Validate hourly rate minimum
+    const validatedHourlyRate = parseFloat(profileData.hourlyRate || "0");
+    if (validatedHourlyRate < VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE) {
+      throw new Error(
+        `Hourly rate must be at least £${VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE}`
+      );
+    }
+
+    // Generate AI hashtags from onboarding data
+    console.log('🤖 Generating AI hashtags from onboarding data...');
+    console.log('📊 Profile data for hashtag generation:', {
+      about: profileData.about,
+      experience: profileData.experience,
+      skills: profileData.skills,
+      equipment: profileData.equipment,
+      location: profileData.location
+    });
+    
+    const generatedHashtags = await generateHashtagsFromOnboarding({
+      about: profileData.about,
+      experience: profileData.experience,
+      skills: profileData.skills,
+      equipment: profileData.equipment,
+      location: profileData.location,
+    });
+    
+    console.log('🔍 Generated hashtags result:', {
+      hashtags: generatedHashtags,
+      length: generatedHashtags.length,
+      type: typeof generatedHashtags,
+      isArray: Array.isArray(generatedHashtags),
+      isEmpty: generatedHashtags.length === 0,
+      willUseFallback: generatedHashtags.length === 0
+    });
+
+    // Prepare profile data
+    console.log('🎥 Video intro data in save function:', {
+      videoIntro: profileData.videoIntro,
+      type: typeof profileData.videoIntro,
+      isString: typeof profileData.videoIntro === 'string'
+    });
+    
+    const profileUpdateData = {
+      fullBio: `${profileData.about}\n\n${profileData.experience}`,
+      location:
+        typeof profileData.location === "string"
+          ? profileData.location
+          : profileData.location?.formatted_address ||
+            profileData.location?.name ||
+            "",
+      latitude:
+        typeof profileData.location === "object" && profileData.location?.lat
+          ? profileData.location.lat
+          : null,
+      longitude:
+        typeof profileData.location === "object" && profileData.location?.lng
+          ? profileData.location.lng
+          : null,
+      // Remove availabilityJson - we'll save to worker_availability table instead
+      videoUrl: (() => {
+        if (typeof profileData.videoIntro === "string") {
+          return profileData.videoIntro;
+        }
+        return null;
+      })(),
+      hashTags: generatedHashtags.length > 0 ? generatedHashtags : [
+        `#${profileData.skills?.split(',')[0]?.trim().toLowerCase().replace(/\s+/g, '-') || 'worker'}`,
+        `#${profileData.about?.split(' ')[0]?.toLowerCase() || 'professional'}`,
+        '#gig-worker'
+      ],
+      semanticProfileJson: {
+        tags: profileData.skills
+          .split(",")
+          .map((skill) => skill.trim())
+          .filter(Boolean),
+      },
+      privateNotes: `Hourly Rate: ${profileData.hourlyRate}\n`,
+      updatedAt: new Date(),
+    };
+    
+    console.log('💾 Profile update data with hashtags:', {
+      hashTags: profileUpdateData.hashTags,
+      hashTagsType: typeof profileUpdateData.hashTags,
+      hashTagsLength: Array.isArray(profileUpdateData.hashTags) ? profileUpdateData.hashTags.length : 'not array',
+      hashTagsStringified: JSON.stringify(profileUpdateData.hashTags),
+      isUsingFallback: generatedHashtags.length === 0
+    });
+
+    let workerProfileId: string;
+
+    if (workerProfile) {
+      // Update existing profile
+      console.log('🔄 Updating existing worker profile with hashtags...');
+      console.log('📝 Data being sent to database update:', {
+        hashTags: profileUpdateData.hashTags,
+        hashTagsType: typeof profileUpdateData.hashTags,
+        isArray: Array.isArray(profileUpdateData.hashTags)
+      });
+      const updateResult = await db
+        .update(GigWorkerProfilesTable)
+        .set(profileUpdateData)
+        .where(eq(GigWorkerProfilesTable.userId, user.id))
+        .returning();
+      console.log('🔄 Database update result:', updateResult);
+      workerProfileId = workerProfile.id;
+    } else {
+      // Create new profile
+      console.log('➕ Creating new worker profile with hashtags...');
+      console.log('📝 Data being sent to database insert:', {
+        hashTags: profileUpdateData.hashTags,
+        hashTagsType: typeof profileUpdateData.hashTags,
+        isArray: Array.isArray(profileUpdateData.hashTags)
+      });
+      const newProfile = await db
+        .insert(GigWorkerProfilesTable)
+        .values({
+          userId: user.id,
+          ...profileUpdateData,
+          createdAt: new Date(),
+        })
+        .returning();
+      console.log('➕ Database insert result:', newProfile);
+      workerProfileId = newProfile[0].id;
+    }
+    
+    // Verify hashtags were saved
+    const savedProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id)
+    });
+    console.log('✅ Verified saved hashtags in database:', {
+      hashtags: savedProfile?.hashtags,
+      hashtagsType: typeof savedProfile?.hashtags,
+      isArray: Array.isArray(savedProfile?.hashtags),
+      length: Array.isArray(savedProfile?.hashtags) ? savedProfile.hashtags.length : 'not array',
+      fullProfile: savedProfile
+    });
+
+    // Also try a direct SQL query to see what's in the database
+    try {
+      const directQuery = await db.execute(sql`
+        SELECT hash_tags FROM gig_worker_profiles 
+        WHERE user_id = ${user.id}
+      `);
+      console.log('🔍 Direct SQL query result:', directQuery);
+    } catch (error) {
+      console.error('❌ Direct SQL query failed:', error);
+    }
+
+    // Save availability data to worker_availability table
+    if (
+      profileData.availability &&
+      typeof profileData.availability === "object"
+    ) {
+      // Create proper timestamps for the required fields
+      const createTimestamp = (timeStr: string) => {
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+      };
+
+      await db.insert(WorkerAvailabilityTable).values({
+        userId: user.id,
+        days: profileData.availability.days || [],
+        frequency: (profileData.availability.frequency || "never") as
+          | "never"
+          | "weekly"
+          | "biweekly"
+          | "monthly",
+        startDate: profileData.availability.startDate,
+        startTimeStr: profileData.availability.startTime,
+        endTimeStr: profileData.availability.endTime,
+        // Convert time strings to timestamp for the required fields
+        startTime: createTimestamp(profileData.availability.startTime),
+        endTime: createTimestamp(profileData.availability.endTime),
+        ends: (profileData.availability.ends || "never") as
+          | "never"
+          | "on_date"
+          | "after_occurrences",
+        occurrences: profileData.availability.occurrences,
+        endDate: profileData.availability.endDate || null,
+        notes: `Onboarding availability - Hourly Rate: ${profileData.hourlyRate}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    // Save worker skills data to gig_worker_skills table
+    let skillName = "";
+    let yearsOfExperience: number | undefined;
+    let extractedHourlyRate: number | undefined;
+
+    // Add unique call identifier for debugging
+    const callId = Math.random().toString(36).substr(2, 9);
+    console.log(`🚀 [${callId}] Starting worker skills save process...`);
+    console.log(`🚀 [${callId}] Profile data received:`, {
+      hasJobTitle: !!profileData.jobTitle,
+      hasAbout: !!profileData.about,
+      hasExperience: !!profileData.experience,
+      hasHourlyRate: !!profileData.hourlyRate,
+      jobTitle: profileData.jobTitle,
+      about: profileData.about,
+      experience: profileData.experience,
+      hourlyRate: profileData.hourlyRate,
+    });
+
+    // Log call stack to see where this is being called from
+    console.log(`🚀 [${callId}] Call stack:`, new Error().stack?.split('\n').slice(1, 4).join('\n'));
+    
+          try {
+        // Only use about field as job title for skills database entry to avoid duplicates
+        skillName = profileData.about || '';
+        
+        // Extract years of experience from experience field
+      const experienceText = profileData.experience || '';
+      const yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
+      yearsOfExperience = yearsMatch ? parseFloat(yearsMatch[1]) : undefined;
+      
+      // Extract hourly rate from form data
+      extractedHourlyRate = profileData.hourlyRate ? parseFloat(profileData.hourlyRate) : validatedHourlyRate;
+      
+      console.log('🔍 Worker Skills Debug:', {
+        skillName,
+        yearsOfExperience,
+        hourlyRate: extractedHourlyRate,
+        validatedHourlyRate,
+        workerProfileId,
+        user_id: user.id,
+        worker_profile_id: workerProfileId,
+        profileData_keys: Object.keys(profileData),
+        profileData_values: Object.values(profileData),
+        hasSkillName: !!skillName,
+        about_field: profileData.about,
+        experience_field: profileData.experience,
+        hourlyRate_field: profileData.hourlyRate,
+        note: 'Using about field as job title for skills database entry to avoid duplicates'
+      });
+
+      if (skillName) {
+        console.log("💾 Attempting to save worker skills...");
+        console.log("📝 Insert data:", {
+          userId: user.id,
+          name: skillName,
+          experience: yearsOfExperience ? String(yearsOfExperience) : null,
+          eph: extractedHourlyRate ? String(extractedHourlyRate) : null,
+        });
+
+        // Check if this specific skill already exists for this worker profile to prevent exact duplicates
+        const existingSkills = await db.query.SkillsTable.findMany({
+          where: eq(SkillsTable.workerProfileId, workerProfileId),
+        });
+        console.log("🔍 Existing skills for worker profile:", existingSkills);
+
+        // Check if this exact skill name already exists
+        const skillExists = existingSkills.some(
+          (skill) =>
+            skill.name.toLowerCase().trim() === skillName.toLowerCase().trim()
+        );
+
+        if (!skillExists) {
+          // Skill doesn't exist, safe to insert
+          try {
+            const skillResult = await db.insert(SkillsTable).values({
+              workerProfileId: workerProfileId,
+              name: skillName,
+              experienceMonths: 0,
+              experienceYears: yearsOfExperience || 0,
+              agreedRate: String(extractedHourlyRate || validatedHourlyRate),
+              skillVideoUrl: null,
+              adminTags: null,
+              ableGigs: null,
+              images: [],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+            console.log("✅ New worker skill saved successfully:", skillResult);
+          } catch (insertError) {
+            console.error(
+              "❌ Error inserting skill into SkillsTable:",
+              insertError
+            );
+            console.error("❌ Insert data that failed:", {
+              workerProfileId,
+              name: skillName,
+              experienceMonths: 0,
+              experienceYears: yearsOfExperience || 0,
+              agreedRate: String(extractedHourlyRate || validatedHourlyRate),
+            });
+            throw insertError;
+          }
+        } else {
+          console.log(
+            "⚠️ Skill already exists for this worker profile, skipping insert to prevent exact duplicates"
+          );
+          console.log(
+            "📋 Existing skills:",
+            existingSkills.map((s) => ({
+              name: s.name,
+              experienceYears: s.experienceYears,
+              agreedRate: s.agreedRate,
+            }))
+          );
+          console.log("🔍 Attempted to add skill:", skillName);
+        }
+      } else {
+        console.log('⚠️ No about field found, skipping worker skills save');
+        console.log('🔍 Available data:', {
+          about: profileData.about,
+          experience: profileData.experience,
+          hourlyRate: profileData.hourlyRate,
+          note: 'Using about field as job title for skills database entry to avoid duplicates'
+        });
+      }
+    } catch (skillError) {
+      console.error("❌ Error saving worker skills:", skillError);
+      console.error("❌ Error details:", {
+        message:
+          skillError instanceof Error ? skillError.message : "Unknown error",
+        stack:
+          skillError instanceof Error ? skillError.stack : "No stack trace",
+        skillName: skillName || "undefined",
+        userId: user.id,
+      });
+      // Don't fail the entire profile save if skills saving fails
+    }
+
+    // Debug: Log the equipment data received
+
+    // Save equipment data if provided
+    if (profileData.equipment && profileData.equipment.length > 0) {
+      try {
+        // Wrap delete and insert operations in a transaction for data integrity
+        await db.transaction(async (tx) => {
+          // Delete existing equipment for this worker
+          await tx
+            .delete(EquipmentTable)
+            .where(eq(EquipmentTable.workerProfileId, workerProfileId));
+
+          // Insert new equipment
+          const insertResult = await tx.insert(EquipmentTable).values(
+            (
+              profileData.equipment as NonNullable<typeof profileData.equipment>
+            ).map((equipment) => ({
+              workerProfileId: workerProfileId,
+              name: equipment.name,
+              description: equipment.description || null,
+              isVerifiedByAdmin: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }))
+          );
+        });
+      } catch (dbError) {
+        throw dbError;
+      }
+    } else {
+      // No equipment provided
+    }
+
+    // Save job title as a skill if provided (check for duplicates first)
+    if (profileData.jobTitle) {
+      // Check if this job title already exists as a skill for this worker profile
+      const existingJobTitleSkills = await db.query.SkillsTable.findMany({
+        where: eq(SkillsTable.workerProfileId, workerProfileId),
+      });
+
+      const jobTitleExists = existingJobTitleSkills.some(
+        (skill) =>
+          skill.name.toLowerCase().trim() ===
+          (profileData.jobTitle || "").toLowerCase().trim()
+      );
+
+      if (!jobTitleExists) {
+        try {
+          await db.insert(SkillsTable).values({
+            workerProfileId: workerProfileId,
+            name: profileData.jobTitle,
+            experienceMonths: 0,
+            experienceYears: 0,
+            agreedRate: String(
+              parseFloat(profileData.hourlyRate) ||
+                VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE
+            ),
+            skillVideoUrl: null,
+            adminTags: null,
+            ableGigs: null,
+            images: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          console.log("✅ Job title saved as new skill:", profileData.jobTitle);
+        } catch (insertError) {
+          console.error("❌ Error inserting job title as skill:", insertError);
+          console.error("❌ Job title insert data that failed:", {
+            workerProfileId,
+            name: profileData.jobTitle,
+            agreedRate: String(
+              parseFloat(profileData.hourlyRate) ||
+                VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE
+            ),
+          });
+          throw insertError;
+        }
+      } else {
+        console.log(
+          "⚠️ Job title already exists as skill, skipping insert:",
+          profileData.jobTitle
+        );
+      }
+    }
+
+    // Update user table to mark as gig worker
+    await db
+      .update(UsersTable)
+      .set({
+        isGigWorker: true,
+        lastRoleUsed: "GIG_WORKER",
+        updatedAt: new Date(),
+      })
+      .where(eq(UsersTable.id, user.id));
+
+    return {
+      success: true,
+      data: "Worker profile saved successfully",
+      workerProfileId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};

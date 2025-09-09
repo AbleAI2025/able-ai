@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth, User } from '@/context/AuthContext';
+import { WorkerUser } from '@/actions/user/get-worker-user';
 import { Loader2 } from 'lucide-react';
 import styles from './GigDetailsPage.module.css';
 import GigDetailsComponent from '@/app/components/gigs/GigDetails';
@@ -10,7 +11,7 @@ import type GigDetails from '@/app/types/GigDetailsTypes'; // Adjust import path
 import { getGigDetails } from '@/actions/gigs/get-gig-details';
 import { getWorkerOffers } from '@/actions/gigs/get-worker-offers';
 
-async function fetchWorkerGigDetails(user: User, gigId: string): Promise<GigDetails | null> {
+async function fetchWorkerGigDetails(user: User | WorkerUser, gigId: string): Promise<GigDetails | null> {
   console.log("Fetching gig details for worker:", user?.uid, "gig:", gigId);
 
   const isViewQA = false;
@@ -21,7 +22,7 @@ async function fetchWorkerGigDetails(user: User, gigId: string): Promise<GigDeta
   return gig;
 }
 
-async function checkIfGigIsAvailableOffer(user: User, gigId: string): Promise<boolean> {
+async function checkIfGigIsAvailableOffer(user: User | WorkerUser, gigId: string): Promise<boolean> {
   try {
     const result = await getWorkerOffers(user.uid);
     if (result.success && result.data?.offers) {
@@ -36,7 +37,7 @@ async function checkIfGigIsAvailableOffer(user: User, gigId: string): Promise<bo
 
 export default function WorkerGigDetailsPage() {
   const params = useParams();
-  const pageUserId = params.userId as string; // This is the worker's ID from the URL
+  const workerProfileId = params.userId as string; // This is the worker profile ID from the URL
   const gigId = params.gigId as string;
 
   const { user, loading: loadingAuth } = useAuth();
@@ -47,26 +48,53 @@ export default function WorkerGigDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isAvailableOffer, setIsAvailableOffer] = useState(false);
   const [isCheckingOffer, setIsCheckingOffer] = useState(false);
+  const [workerUser, setWorkerUser] = useState<WorkerUser | null>(null);
+
+  // Fetch worker user from worker profile ID
+  useEffect(() => {
+    const fetchWorkerUser = async () => {
+      if (!workerProfileId) return;
+      
+      try {
+        // Import the function to get worker user from profile ID
+        const { getWorkerUserFromProfileId } = await import('@/actions/user/get-worker-user');
+        const result = await getWorkerUserFromProfileId(workerProfileId);
+        
+        if (result.success && result.data) {
+          setWorkerUser(result.data);
+        } else {
+          setError("Worker not found");
+          setIsLoadingGig(false);
+        }
+      } catch (err) {
+        console.error("Error fetching worker user:", err);
+        setError("Could not load worker information");
+        setIsLoadingGig(false);
+      }
+    };
+
+    fetchWorkerUser();
+  }, [workerProfileId]);
 
   // Fetch Gig Details
   useEffect(() => {
-    if (loadingAuth) return; // Wait for auth state to be clear
+    if (loadingAuth || !workerUser) return; // Wait for auth state and worker user to be clear
 
-    const shouldFetch = (user?.claims.role === "QA" && pageUserId && gigId) ||
-      (user && authUserId === pageUserId && gigId);
+    const shouldFetch = (user?.claims.role === "QA" && workerProfileId && gigId) ||
+      (user && authUserId === workerUser.uid && gigId);
 
     if (shouldFetch) {
       setIsLoadingGig(true);
       
-      // First fetch gig details
-      fetchWorkerGigDetails(user, gigId)
+      // First fetch gig details using the worker user
+      fetchWorkerGigDetails(workerUser, gigId)
         .then(data => {
           if (data) {
             setGig(data);
             
             // Then check if this is an available offer
             setIsCheckingOffer(true);
-            return checkIfGigIsAvailableOffer(user, gigId);
+            return checkIfGigIsAvailableOffer(workerUser, gigId);
           } else {
             setError("Gig not found or access denied.");
             return false;
@@ -84,7 +112,7 @@ export default function WorkerGigDetailsPage() {
           setIsCheckingOffer(false);
         });
     }
-  }, [loadingAuth, user, authUserId, pageUserId, gigId]);
+  }, [loadingAuth, user, authUserId, workerProfileId, gigId, workerUser]);
 
 
   /*
@@ -139,7 +167,7 @@ export default function WorkerGigDetailsPage() {
 
   return (
     <GigDetailsComponent 
-      userId={pageUserId} 
+      userId={workerProfileId} 
       role="worker" 
       gig={gig} 
       setGig={setGig}

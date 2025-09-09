@@ -395,6 +395,7 @@ const SkillSplashScreen = ({
             </div>
           </div>
         )}
+
         {/* Qualifications */}
         {/* {profile.qualifications && profile.qualifications.length > 0 && (
           <div className={styles.section}>

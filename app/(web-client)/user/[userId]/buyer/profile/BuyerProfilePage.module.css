@@ -33,12 +33,23 @@
 .profileHeader {
   padding: 1rem; 
 }
+
 .profileHeaderName {
   font-size: 1.25rem;
   font-weight: 600;
   color: #ffffff;
-  margin: 0;  
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; 
 }
+
+.editButton {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
 .profileHeaderUsername {
   font-size: 1.25rem;
   color: #a0a0a0;
@@ -100,6 +111,7 @@
   width: 50%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .businessInfoCard p {
@@ -262,4 +274,27 @@
   .statisticsItemsContainer > * { /* Each StatisticItemDisplay */
     flex-basis: 48%;
   }
+}
+
+.editInfoBtn {
+  color: #fff;
+  cursor: pointer;
+  background-color: #0009;
+  border: none;
+  border-radius: 50%;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  transition: background .2s;
+  display: flex;
+
+  position: absolute;
+  top: -0.7rem;
+  right: -0.7rem;
+}
+
+.location {
+  color: #ffffff;
+  margin-bottom: 1rem;
 }

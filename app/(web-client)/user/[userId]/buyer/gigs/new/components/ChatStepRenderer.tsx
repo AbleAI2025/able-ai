@@ -161,8 +161,7 @@ export function ChatStepRenderer({
         key={key}
         text={
           <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 16, margin: '16px 0', boxShadow: '0 2px 8px #0001' }}>
-            <div style={{ marginBottom: 8, color: 'var(--secondary-color)', fontWeight: 600 }}>This is what you wanted?</div>
-            <div style={{ marginBottom: 12, fontStyle: 'italic' }}>{step.sanitizedValue}</div>
+            <div style={{ marginBottom: 12, fontStyle: 'italic', color: 'var(--secondary-color)', fontWeight: 600 }}>{step.sanitizedValue}</div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button
                 style={{ background: 'var(--secondary-color)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600 }}

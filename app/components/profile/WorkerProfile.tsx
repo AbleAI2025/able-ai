@@ -143,30 +143,26 @@ const WorkerProfile = ({
       {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
-          {!isSelfView ? (
-            <h1 className={styles.workerName}>{user?.displayName}</h1>
-          ) : (
-            <>
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "24px",
-                  fontWeight: 600,
-                }}
+          <h1 className={styles.workerName}>
+            <span>
+              {workerProfile.user?.fullName ?? ""}
+            </span>
+            {isSelfView && (
+              <button 
+                className={styles.editButton} 
+                type="button" 
+                aria-label="Edit name"
+                onClick={() => setIsOpen(true)}
               >
-                {workerProfile.user?.fullName ?? ""}{" "}
                 <Edit2
-                  size={20}
+                  size={16}
+                  color="#ffffff"
                   className={styles.icon}
-                  onClick={() => setIsOpen(true)}
-                  style={{ cursor: "pointer" }}
                 />
-              </span>
-            </>
-          )}
-
+              </button>
+            )}
+          </h1>
+          
           {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
@@ -191,12 +187,12 @@ const WorkerProfile = ({
         <div className={styles.workerInfo}>
           {true && (
             <Link
-              href={"calendar"}
-              className={styles.viewCalendarLink}
+              href={isSelfView ? "calendar" : "/user/" + workerProfile.userId + "/worker/calendar"}
+              className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
               aria-label="View calendar"
             >
               <CalendarDays size={28} className={styles.calendarIcon} />
-              <span>View calendar</span>
+              <span>{isSelfView ? "View calendar" : "Availability calendar"}</span>
             </Link>
           )}
         </div>
@@ -335,7 +331,7 @@ const WorkerProfile = ({
       {/* Edit Name Modal */}
       {isOpen && (
         <UserNameModal
-          workerId={workerProfile.id || ""}
+          userId={workerProfile.id || ""}
           initialValue={workerProfile.user?.fullName ?? ""}
           fetchUserProfile={fetchUserProfile}
           onClose={() => setIsOpen(false)}

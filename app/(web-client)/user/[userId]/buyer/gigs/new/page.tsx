@@ -10,6 +10,7 @@ import WorkerCard, { WorkerData } from "@/app/components/onboarding/WorkerCard";
 import LocationPickerBubble from "@/app/components/onboarding/LocationPickerBubble";
 import CalendarPickerBubble from "@/app/components/onboarding/CalendarPickerBubble";
 import DiscountCodeBubble from "@/app/components/onboarding/DiscountCodeBubble";
+import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
 
 import Loader from "@/app/components/shared/Loader";
 
@@ -18,6 +19,7 @@ import styles from "./NewGig.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { createGig } from "@/actions/gigs/create-gig";
 import { findMatchingWorkers } from "@/actions/gigs/ai-matchmaking";
+import { sendWorkerBookingNotificationAction } from "@/actions/notifications/worker-booking-notifications";
 import { StepInputConfig, FormInputType } from "@/app/types/form";
 import WorkerMatchmakingResults from "@/app/components/gigs/WorkerMatchmakingResults";
 import { WorkerMatch } from "@/app/components/gigs/WorkerMatchCard";
@@ -181,7 +183,7 @@ const baseInitialSteps: OnboardingStep[] = [
       experience: "3 years experience",
       keywords: "lively, professional and hardworking",
       hourlyRate: 15,
-      totalHours: 6,
+      totalHours: VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS,
       totalPrice: 98.68,
       ableFees: "6.5% +VAT",
       stripeFees: "1.5% + 20p",
@@ -199,7 +201,7 @@ const baseInitialSteps: OnboardingStep[] = [
       experience: "2 years experience",
       keywords: "reliable, friendly and experienced",
       hourlyRate: 15,
-      totalHours: 6,
+      totalHours: VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS,
       totalPrice: 85.55,
       ableFees: "6.5% +VAT",
       stripeFees: "1.5% + 20p",
@@ -215,7 +217,7 @@ const requiredFields: RequiredField[] = [
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "How much would you like to pay per hour? 💷\n\n💡 Rate guidance by role:\n• Bartending: £12.21-£20/hour\n• Food Service: £12.21-£18/hour\n• Cooking/Chef: £12.21-£25/hour\n• Baking: £12.21-£22/hour\n• Cleaning: £12.21-£16/hour\n• Retail: £12.21-£15/hour\n• Delivery: £12.21-£18/hour\n\n⚠️ Minimum: £12.21/hour (London minimum wage)" },
   { name: "gigLocation", type: "location", defaultPrompt: "Where is the gig located?" },
   { name: "gigDate", type: "date", defaultPrompt: "What date is the gig?" },
-  { name: "gigTime", type: "time", defaultPrompt: "What time does the gig start?" },
+  { name: "gigTime", type: "time", defaultPrompt: "What time do you need them to start and finish? This helps potential workers know if the gig fits their schedule. ⏰" },
   { name: "discountCode", type: "text", placeholder: "e.g., ABLE20", defaultPrompt: "Great! Just one last thing. Do you have a discount code to apply? 🎟️ If not, no worries!" },
 ];
 
@@ -250,20 +252,22 @@ Gig Description: "${gigDescription}"
 Next field to ask about: "${fieldName}"
 
 Generate a friendly, contextual prompt for the next question. The prompt should:
-1. Be conversational and natural - avoid repetitive phrases like "Awesome, a [gig type] gig!"
+1. Be conversational and natural - avoid repetitive phrases like "Awesome, a [gig type] gig!" or "Okay, you need a [role]!"
 2. Reference what they've already shared about their gig in a fresh way
 3. Be specific to the field being asked about
 4. Include relevant emojis to make it engaging
 5. Provide helpful context or examples when appropriate
 6. Vary your language - don't start every message the same way
 7. ALWAYS stay focused on gig creation - this is for creating a job posting
+8. AVOID REDUNDANCY: Don't repeat the same opening phrases. Instead of "Okay, you need a [role]!" every time, vary your approach - ask the question directly, provide context, or use different engaging openings
+9. Be concise and direct - get to the point without unnecessary repetition of what they've already told you
 
 Field-specific guidance:
-- additionalInstructions: Ask about specific skills, requirements, or preferences for the job
-- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone in British Pounds (£). Provide rate guidance by role and mention London minimum wage of £12.21/hour
-- gigLocation: Ask about location with context about finding nearby workers
-- gigDate: Ask about timing with context about availability
-- gigTime: Ask about the specific start time of the gig
+- additionalInstructions: Ask about specific skills, requirements, or preferences for the job. Avoid "Okay, you need a [role]!" - instead try "What specific skills or requirements do you have in mind?" or "Any particular preferences for this role?"
+- hourlyRate: Ask about budget with relevant pricing guidance for hiring someone in British Pounds (£). Provide rate guidance by role and mention London minimum wage of £12.21/hour. Avoid "Okay, you need a [role]!" - instead try "What's your budget for this role?" or "What hourly rate are you thinking?"
+- gigLocation: Ask about location with context about finding nearby workers. Avoid "Okay, you need a [role]!" - instead try "Where will this gig take place?" or "What's the location for this work?"
+- gigDate: Ask about timing with context about availability. Avoid "Okay, you need a [role]!" - instead try "When do you need them?" or "What date works for you?"
+- gigTime: Ask about both the start time and end time of the gig (e.g., "What time do you need them to start and finish? This helps potential workers know if the gig fits their schedule."). Avoid "Okay, you need a [role]!" - instead try "What hours do you need them?" or "What time should they start and finish?"
 
 GIG CREATION CONTEXT: Remember, this user is creating a job posting to hire someone. They are the employer/buyer. Keep responses focused on gig creation only.
 
@@ -1127,12 +1131,15 @@ If validation fails, respond with:
 
 GIG CREATION CONTEXT: Remember, this user is creating a job posting to hire someone. They are the employer/buyer. Keep responses focused on gig creation only.
 
-Be conversational and reference their previous inputs when possible. For example:
-- If they mentioned "web developer" earlier: "Great! I see you need a web developer. Could you tell me more about what kind of web development skills you're looking for?"
-- If they mentioned "wedding": "Perfect! A wedding is such a special occasion. What specific help do you need for your wedding day?"
-- If they mentioned "restaurant": "Excellent! Restaurant work can be fast-paced and exciting. What role are you looking to fill?"
+Be conversational and reference their previous inputs when possible, but AVOID REDUNDANCY. Don't repeat the same opening phrases. For example:
+- Instead of: "Great! I see you need a web developer. Could you tell me more about what kind of web development skills you're looking for?"
+- Try: "What kind of web development skills are you looking for?"
+- Instead of: "Perfect! A wedding is such a special occasion. What specific help do you need for your wedding day?"
+- Try: "What specific help do you need for your wedding day?"
+- Instead of: "Excellent! Restaurant work can be fast-paced and exciting. What role are you looking to fill?"
+- Try: "What role are you looking to fill in the restaurant?"
 
-Make the conversation feel natural and build on what they've already told you.`;
+Make the conversation feel natural and build on what they've already told you, but be direct and avoid unnecessary repetition.`;
 
       const result = await geminiAIAgent(
         "gemini-2.0-flash",
@@ -2073,12 +2080,77 @@ Make the conversation feel natural and build on what they've already told you.`;
     setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-reformulate`]));
   };
 
+  // Helper function to get gig data from form
+  const getGigDataFromForm = () => {
+    const gigData: any = {};
+    
+    // Extract data from chat steps
+    chatSteps.forEach(step => {
+      if (step.type === 'summary' && step.summaryData) {
+        Object.assign(gigData, step.summaryData);
+      }
+    });
+    
+    return gigData;
+  };
+
   // Handle worker selection
   const handleSelectWorker = async (workerId: string) => {
     setIsSelectingWorker(true);
     try {
-      // Here you would typically update the gig with the selected worker
-      // For now, we'll just update the UI state
+      // Find the selected worker data from the current step
+      const currentStep = chatSteps.find(step => step.type === 'matchmaking' && step.matches);
+      const selectedWorker = currentStep?.matches?.find(worker => worker.workerId === workerId);
+      if (!selectedWorker) {
+        throw new Error('Selected worker not found');
+      }
+
+      // Get gig data from form
+      const gigData = getGigDataFromForm();
+      
+      // Create the gig first
+      console.log('Creating gig for selected worker...');
+      const gigPayload = {
+        userId: user?.uid || '',
+        gigDescription: gigData.title || 'Gig Request',
+        additionalInstructions: gigData.description || '',
+        hourlyRate: selectedWorker.hourlyRate,
+        gigLocation: gigData.location,
+        gigDate: gigData.date || new Date().toISOString().split('T')[0],
+        gigTime: gigData.time || '09:00-17:00',
+      };
+      
+      const gigResult = await createGig(gigPayload);
+      
+      if (gigResult.status !== 200 || !gigResult.gigId) {
+        throw new Error(`Failed to create gig: ${gigResult.error}`);
+      }
+      
+      console.log('Gig created successfully:', gigResult.gigId);
+      
+      // Send notification to the worker with the real gigId
+      const notificationResult = await sendWorkerBookingNotificationAction(
+        {
+          workerId: selectedWorker.workerId,
+          workerName: selectedWorker.workerName,
+          buyerName: user?.displayName || 'A buyer',
+          gigTitle: gigData.title || 'Your gig',
+          gigId: gigResult.gigId, // Use the real gigId
+          hourlyRate: selectedWorker.hourlyRate,
+          totalHours: VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS, // Default hours as shown in the UI
+          totalAmount: selectedWorker.hourlyRate * VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS,
+          gigDate: gigData.date || 'TBD',
+          gigLocation: gigData.location || 'TBD',
+        },
+        user?.token || ''
+      );
+
+      if (!notificationResult.success) {
+        console.error('Failed to send notification:', notificationResult.error);
+        // Continue anyway, don't block the booking
+      }
+
+      // Update the UI state
       setSelectedWorkerId(workerId);
       
       // Show success message
@@ -2087,7 +2159,7 @@ Make the conversation feel natural and build on what they've already told you.`;
         {
           id: Date.now() + 1,
           type: "bot",
-          content: `Great choice! You've selected a worker for your gig. They'll be notified and can accept or decline the offer.`,
+          content: `Great choice! You've selected ${selectedWorker.workerName} for your gig. They've been notified and can accept or decline the offer.`,
           isNew: true,
         },
       ]);
@@ -2095,7 +2167,7 @@ Make the conversation feel natural and build on what they've already told you.`;
       // Navigate to buyer dashboard after a delay
       setTimeout(() => {
         router.push(`/user/${user?.uid}/buyer`);
-      }, 2000);
+      }, 1000);
       
     } catch (error) {
       console.error('Error selecting worker:', error);
@@ -2125,7 +2197,7 @@ Make the conversation feel natural and build on what they've already told you.`;
       // Navigate to buyer dashboard after a delay
       setTimeout(() => {
         router.push(`/user/${user?.uid}/buyer`);
-      }, 2000);
+      }, 1000);
       
     } catch (error) {
       console.error('Error skipping selection:', error);
@@ -2241,7 +2313,7 @@ Make the conversation feel natural and build on what they've already told you.`;
 
       const payload = {
         userId: user.uid,
-        gigDescription: String(formData.gigDescription || "").trim(),
+        gigDescription: formData.jobTitle ? String(formData.jobTitle).trim() : String(formData.gigDescription || "").trim(),
         additionalInstructions: formData.additionalInstructions ? String(formData.additionalInstructions) : undefined,
         hourlyRate: formData.hourlyRate ?? 0,
         gigLocation: formData.gigLocation, // Send the original location object to preserve coordinates
@@ -2560,8 +2632,6 @@ Make the conversation feel natural and build on what they've already told you.`;
               key={key}
               text={
                 <div>
-                  <div className={styles.confirmationContainer}>This is what you wanted?</div>
-
                   {typeof displayValue === "string" ? (
                     <div className={styles.displayValue}>{displayValue}</div>
                   ) : (
@@ -2626,11 +2696,7 @@ Make the conversation feel natural and build on what they've already told you.`;
                   I think you're looking for a <strong>{suggestedJobTitle}</strong>?
                 </div>
 
-                <div className={styles.jobTitleConfirmNote}>
-                  {isAISuggested && (
-                    <span className={styles.jobTitleConfirmAISuggested}>AI Suggested</span>
-                  )}
-                </div>
+                
 
                 <div className={styles.jobTitleConfirmButtonGroup}>
                   <button

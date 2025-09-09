@@ -4,6 +4,9 @@ export type NotificationType =
   | "offer"
   | "payment"
   | "gigUpdate"
+  | "gigAssignment"
+  | "gigDelegation"
+  | "gigAmendment"
   | "badge"
   | "referral"
   | "actionRequired"
@@ -13,6 +16,9 @@ export const VALID_NOTIFICATION_TYPES: NotificationType[] = [
   "offer",
   "payment",
   "gigUpdate",
+  "gigAssignment",
+  "gigDelegation",
+  "gigAmendment",
   "badge",
   "referral",
   "actionRequired",

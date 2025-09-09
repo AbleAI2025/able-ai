@@ -8,13 +8,13 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 interface UserNameModalProps {
-    workerId: string;
+  userId: string;
   initialValue: string;
   onClose: () => void;
   fetchUserProfile: (id: string) => void;
 }
 
-const UserNameModal = ({ initialValue, onClose, fetchUserProfile, workerId }: UserNameModalProps) => {
+const UserNameModal = ({ initialValue, onClose, fetchUserProfile, userId }: UserNameModalProps) => {
   const [name, setName] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth()
@@ -31,7 +31,7 @@ const UserNameModal = ({ initialValue, onClose, fetchUserProfile, workerId }: Us
   
         if (!updateSuccess) throw updateError;
   
-        fetchUserProfile(user?.token || workerId);
+        fetchUserProfile(userId);
         onClose();
   
         toast.success("Profile updated successfully");

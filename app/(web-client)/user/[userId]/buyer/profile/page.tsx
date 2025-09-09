@@ -3,7 +3,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import { ThumbsUp, Loader2, MessageSquare } from "lucide-react";
+import { ThumbsUp, Loader2, MessageSquare, Edit2, Pencil } from "lucide-react";
 import styles from "./BuyerProfilePage.module.css";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
@@ -28,6 +28,14 @@ import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
 import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
+import UserNameModal from "@/app/components/profile/UserNameModal";
+import EditBusinessModal from "@/app/components/profile/EditBusinessModal";
+
+interface BusinessInfo {
+  fullCompanyName: string;
+  location: string;
+  companyRole: string;
+}
 
 export default function BuyerProfilePage() {
   const router = useRouter();
@@ -45,6 +53,17 @@ export default function BuyerProfilePage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setError,
   ] = useState<string | null>(null);
+  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const isSelfView = authUserId === pageUserId;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  // default empty state
+  const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
+    fullCompanyName: "",
+    location: "",
+    companyRole: "",
+  });
 
   const isViewQA = false;
 
@@ -86,8 +105,16 @@ export default function BuyerProfilePage() {
     }
   }, [loadingAuth, user, authUserId, pageUserId, , pathname, router]);
 
-  const [isEditingVideo, setIsEditingVideo] = useState(false);
-  const isSelfView = authUserId === pageUserId;
+  // update when dashboardData is available
+  useEffect(() => {
+    if (dashboardData) {
+      setBusinessInfo({
+        fullCompanyName: dashboardData.fullCompanyName || "",
+        location: dashboardData.billingAddressJson?.formatted_address || "",
+        companyRole: dashboardData.companyRole || "",
+      });
+    }
+  }, [dashboardData]);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -149,6 +176,13 @@ export default function BuyerProfilePage() {
     [user]
   );
 
+  const handleSave = (updatedData: typeof businessInfo) => {
+    // 🔹 TODO: call API to save updates
+    setBusinessInfo(updatedData);
+    setIsModalOpen(false);
+  };
+
+
   if (!user || isLoadingData) {
     return (
       <div className={styles.loadingContainer}>
@@ -181,7 +215,21 @@ export default function BuyerProfilePage() {
       <div className={styles.pageWrapper}>
         {/* Profile Header */}
         <header className={styles.profileHeader}>
-          <h3 className={styles.profileHeaderName}>{dashboardData.fullName}</h3>
+          <h3 className={styles.profileHeaderName}>
+            {dashboardData.fullName}
+            <button 
+                className={styles.editButton} 
+                type="button" 
+                aria-label="Edit name"
+                onClick={() => setIsOpen(true)}
+              >
+                <Edit2
+                  size={16}
+                  color="#ffffff"
+                  className={styles.icon}
+                />
+              </button>
+          </h3>
           <p className={styles.profileHeaderUsername}>
             {dashboardData.username}
           </p>
@@ -196,19 +244,26 @@ export default function BuyerProfilePage() {
             setIsEditingVideo={setIsEditingVideo}
             handleVideoUpload={handleVideoUpload}
           />
+      
           <div className={styles.businessInfoCard}>
+            <div className={styles.headerRow}>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className={styles.editInfoBtn}
+              >
+                <Pencil size={20}/>
+              </button>
+            </div>
+
             <h4>Business:</h4>
-            <p>
-              {dashboardData.fullCompanyName}
-              <br />
-              {dashboardData?.billingAddressJson?.city},{" "}
-              {dashboardData?.billingAddressJson?.country}
-              <br />
-              {dashboardData?.billingAddressJson?.addressLine1 ||
-                dashboardData?.billingAddressJson?.addressLine2}
-            </p>
+            <p>{businessInfo.fullCompanyName}</p>
+
+            <span className={styles.location}>
+              {businessInfo.location}
+            </span>
+
             <h4>Role:</h4>
-            <p>{dashboardData?.companyRole}</p>
+            <p>{businessInfo.companyRole}</p>
           </div>
         </section>
 
@@ -308,6 +363,22 @@ export default function BuyerProfilePage() {
           )}
         </section>
       </div>
+      {/* Edit Name Modal */}
+      {isOpen && (
+        <UserNameModal
+          userId={user.uid}
+          initialValue={dashboardData.fullName}
+          fetchUserProfile={(_id) => fetchUserProfile()}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
+      {isModalOpen && (
+        <EditBusinessModal
+          initialData={businessInfo}
+          onSave={handleSave}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

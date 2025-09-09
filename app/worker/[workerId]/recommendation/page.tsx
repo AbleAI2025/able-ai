@@ -12,6 +12,7 @@ import {
   getWorkerForRecommendationAction,
   submitExternalRecommendationAction,
 } from "@/actions/user/recommendation";
+import Loader from "@/app/components/shared/Loader";
 
 interface RecommendationFormData {
   recommendationText: string;
@@ -55,7 +56,8 @@ export default function PublicRecommendationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const firstName = workerDetails?.name.split(" ")[0];
+  
+   const firstName = React.useMemo(() => workerDetails?.name.split(" ")[0], [workerDetails]);
   
   // Fetch worker details
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function PublicRecommendationPage() {
             setError("Could not load worker details to recommend.");
           }
         })
-        .catch(() => setError("Error fetching worker details."))
+        .catch((err: Error) => setError(err.message || "Error fetching worker details."))
         .finally(() => setIsLoadingWorker(false));
     }
   }, [workerToRecommendId]);
@@ -136,8 +138,7 @@ export default function PublicRecommendationPage() {
   if (isLoadingWorker) {
     return (
       <div className={styles.loadingContainer}>
-        <Loader2 size={32} className="animate-spin" /> Loading Recommendation
-        Form...
+        <Loader />
       </div>
     );
   }
@@ -151,20 +152,20 @@ export default function PublicRecommendationPage() {
   }
 
   if (workerDetails?.skills.length === 0)
-    return <p>{workerDetails.name} don't have skills yet to showcase</p>;
+    return <p>{workerDetails.name} doesn't have skills yet to showcase</p>;
 
   return (
     <div className={styles.container}>
       <div className={styles.pageWrapper}>
         <header className={styles.title}>
-          <Star color="#ffffff" fill="#ffffff" />
+          <Star color="#7eeef9" fill=" #7eeef9" />
           <span>Recommendation for {workerDetails.name}</span>
         </header>
 
         <div className={styles.recommendationCard}>
-          <p className={styles.prompt}>
-            {firstName} is available for hire on Able! <br />
-            Please provide a reference for {firstName}&apos;s skills as a{" "}
+          <div className={styles.prompt}>
+            <p>{firstName} is available for hire on Able! <br />
+            Please provide a reference for {firstName}&apos;s skills as a{" "}</p>
             <select
               className={styles.select}
               value={selectedSkill?.id || ""}
@@ -184,7 +185,7 @@ export default function PublicRecommendationPage() {
                 </option>
               ))}
             </select>
-          </p>
+          </div>
 
           <p className={styles.note}>
             Your feedback will be added to their public profile.
@@ -207,13 +208,16 @@ export default function PublicRecommendationPage() {
                 value={formData.recommendationText}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder={`Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${selectedSkill?.name || ""}`}
+                placeholder={selectedSkill?.name ? 
+                  `Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${selectedSkill?.name}` : 
+                  "Enter your recommendation here..."
+                }
                 required
               />
             </div>
 
             <div className={styles.inputGroup}>
-              {/* <label htmlFor="relationship" className={styles.label}>How do you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label> */}
+              <label htmlFor="relationship" className={styles.label}>How do you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label>
               <textarea
                 id="relationship"
                 name="relationship"
@@ -226,10 +230,10 @@ export default function PublicRecommendationPage() {
             </div>
 
             <div className={styles.inputGroup}>
-              <label className={styles.label}>
+              <span className={styles.label}>
                 Your Details (won&apos;t be public on their profile){" "}
                 <span style={{ color: "var(--error-color)" }}>*</span>
-              </label>
+              </span>
               <div className={styles.nameEmailGroup}>
                 <InputField
                   id="recommenderName"
