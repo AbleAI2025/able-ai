@@ -114,14 +114,14 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
                 )}
                 {hasEph && <td>{skill.agreedRate}</td>}
                 {isSelfView && (
-                  <th aria-label="Actions">
+                  <td aria-label="Actions">
                     <button
                       className={styles.deleteButton}
                       onClick={() => openDeleteSkillModal(skill)}
                     >
-                      <Trash2 />
+                      <Trash2 size={16} />
                     </button>
-                  </th>
+                  </td>
                 )}
               </tr>
             ))
