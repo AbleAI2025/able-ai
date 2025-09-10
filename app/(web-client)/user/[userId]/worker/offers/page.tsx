@@ -241,7 +241,6 @@ export default function WorkerOffersPage() {
   // Search in offers first, then in acceptedGigs
   const gig = offers.find(o => o.id === gigId) || acceptedGigs.find(g => g.id === gigId);
   if (gig) {
-    console.log("selected gig to detail view", gig)
     setSelectedGig(gig);
     router.push(`/user/${pageUserId}/worker/gigs/${gigId}`);
     // setIsModalOpen(true);
