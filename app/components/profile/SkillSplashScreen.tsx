@@ -251,8 +251,11 @@ const SkillSplashScreen = ({
 
         {/* Customer reviews */}
         {profile.customerReviewsText && (
-          <p className={styles.review}>
-            Customer reviews: {profile.customerReviewsText}
+          <p>
+            <span>Customer reviews:</span>
+            <span className={styles.review}>
+              {profile.customerReviewsText}
+            </span>
           </p>
         )}
 

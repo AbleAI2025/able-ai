@@ -60,9 +60,9 @@
 }
 
 .review {
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 0.875rem;
   line-height: 23px;
+  margin-left: 0.5rem;
 }
 
 .skillDisplayTable {
