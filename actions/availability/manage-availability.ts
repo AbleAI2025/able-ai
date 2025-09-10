@@ -104,7 +104,7 @@ const createTimestamp = (timeStr: string) => {
   return date;
 };
 
-export async function createAvailabilitySlot(userId: string, data: any) {
+export async function createAvailabilitySlot(userId: string, data: AvailabilityFormData) {
   try {
     // Validate required fields
     if (
