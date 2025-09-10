@@ -9,7 +9,6 @@ import FormCard from '@/app/components/forms/FormCard';
 import LabelledSelectInput from '@/app/components/forms/LabelledSelectInput';
 import LabelledTextareaInput from '@/app/components/forms/LabelledTextareaInput';
 import LabelledFileUploadButton from '@/app/components/forms/LabelledFileUploadButton';
-import Logo from '@/app/components/brand/Logo';
 
 const issueTypes = [
   { value: 'payment_issue', label: 'Payment Issue' },

@@ -5,7 +5,7 @@ import { isUserAuthenticated } from "@/lib/user.server";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { db } from "@/lib/drizzle/db";
 import { eq } from "drizzle-orm";
-import { UsersTable, GigWorkerProfilesTable } from "@/lib/drizzle/schema";
+import { GigWorkerProfilesTable } from "@/lib/drizzle/schema";
 import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
 
 /**

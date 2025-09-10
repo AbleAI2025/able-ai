@@ -4,11 +4,9 @@ import React, { useState } from "react";
 import styles from "./CancelOrAmendGigDetailsPage.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
-import Logo from "@/app/components/brand/Logo";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
-import SubmitButton from "@/app/components/form/SubmitButton";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 // Mock data - replace with actual props or state

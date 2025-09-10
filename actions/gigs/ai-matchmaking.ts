@@ -1,14 +1,12 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { 
-  UsersTable, 
-  GigWorkerProfilesTable, 
-  SkillsTable, 
+import {
+  UsersTable,
   WorkerAvailabilityTable,
-  GigsTable 
+  GigsTable
 } from "@/lib/drizzle/schema";
-import { eq, and, gte, lte, isNull, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 
 // Helper function to calculate distance between two coordinates in kilometers

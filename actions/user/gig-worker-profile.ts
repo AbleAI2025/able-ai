@@ -24,7 +24,6 @@ import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { getAI } from '@firebase/ai';
 import { Schema } from '@firebase/ai';
-import admin from '@/lib/firebase/firebase-server';
 import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 // AI Hashtag Generation Schema

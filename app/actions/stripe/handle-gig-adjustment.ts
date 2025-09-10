@@ -2,7 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/drizzle/db';
-import { GigsTable, PaymentsTable, UsersTable } from '@/lib/drizzle/schema';
+import { GigsTable, UsersTable } from '@/lib/drizzle/schema';
 import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
 import { holdGigAmount } from '@/lib/stripe/hold-gig-amount';
 import { calculateAmountWithDiscount } from '@/lib/utils/calculate-amount-with-discount';

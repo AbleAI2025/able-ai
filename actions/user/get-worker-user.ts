@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle/db";
 import { eq } from "drizzle-orm";
-import { GigWorkerProfilesTable, UsersTable } from "@/lib/drizzle/schema";
+import { GigWorkerProfilesTable } from "@/lib/drizzle/schema";
 
 export interface WorkerUser {
   uid: string;

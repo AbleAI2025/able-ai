@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle/db";
 import { UsersTable, GigsTable } from "@/lib/drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { createNotificationAction } from "@/actions/notifications/notifications";
