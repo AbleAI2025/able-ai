@@ -237,17 +237,16 @@ export default function WorkerOffersPage() {
     }
   };
 
-  const handleViewDetails = (offerId: string) => {
-    const offer = offers.find(o => o.id === offerId);
-    if (offer) {
-      setSelectedGig(offer);
-      router.push(`/user/${pageUserId}/worker/gigs/${offerId}`);
-      // setIsModalOpen(true);
-    }
-  };
-  const handleGoToHome = () => {
-    router.push(`/user/${pageUserId}/worker`);
-  };
+ const handleViewDetails = (gigId: string) => {
+  // Search in offers first, then in acceptedGigs
+  const gig = offers.find(o => o.id === gigId) || acceptedGigs.find(g => g.id === gigId);
+  if (gig) {
+    console.log("selected gig to detail view", gig)
+    setSelectedGig(gig);
+    router.push(`/user/${pageUserId}/worker/gigs/${gigId}`);
+    // setIsModalOpen(true);
+  }
+};
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -383,23 +382,6 @@ export default function WorkerOffersPage() {
             )}
           </div>
         )}
-        <footer className={styles.footer}>
-          {" "}
-          {/* Use styles */}
-          <Link href={`/user/${pageUserId}/worker`} passHref>
-            {" "}
-            {/* Use user?.uid */}
-            <button
-              className={styles.homeButton}
-              aria-label="Go to Home"
-              onClick={handleGoToHome}
-            >
-              {" "}
-              {/* Use styles */}
-              <Image src="/images/home.svg" alt="Home" width={40} height={40} />
-            </button>
-          </Link>
-        </footer>
       </div>
 
       {/* Gig Details Modal */}

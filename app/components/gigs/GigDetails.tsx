@@ -435,9 +435,6 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 					<button onClick={() => handleGigAction('reportIssue')} className={styles.secondaryActionButton} disabled={isActionLoading}>
 						Report an Issue
 					</button>
-					<button onClick={() => handleGigAction('delegate')} className={styles.secondaryActionButton} disabled={isActionLoading}>
-						Delegate gig
-					</button>
 				</section>
 			</main>
 		</div>

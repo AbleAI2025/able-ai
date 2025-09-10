@@ -16,8 +16,7 @@
   flex-direction: column;
   flex-grow: 1;
   overflow-y: scroll;
-  margin-bottom: 3rem;
-   padding: 1rem 1rem 0;
+  padding: 1rem 1rem 0;
 }
 
 .header {
