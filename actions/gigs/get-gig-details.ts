@@ -12,6 +12,7 @@ function getMockedQAData(gigId: string) {
   if (gigId === "gig123-accepted") {
     return {
       id: "gig123-accepted",
+      workerId: "worker-abc-123",
       role: "Lead Bartender",
       gigTitle: "Corporate Mixer Event",
       buyerName: "Innovate Solutions Ltd.", buyerAvatarUrl: "/images/logo-placeholder.svg",
@@ -33,6 +34,7 @@ function getMockedQAData(gigId: string) {
   if (gigId === "gig456-inprogress") {
     return {
       id: "gig456-inprogress",
+      workerId: "worker-def-456",
       role: "Event Server",
       gigTitle: "Wedding Reception",
       buyerName: "Alice & Bob",
@@ -58,6 +60,7 @@ function getMockedQAData(gigId: string) {
   return {
     id: gigId,
     role: "Bartender",
+    workerId: undefined,
     gigTitle: "Pop-up Bar Night",
     buyerName: "John Doe",
     date: start.toISOString(),
@@ -100,18 +103,18 @@ function extractLocationFromObject(obj: any): string | null {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
   
   console.log('Location debug - extracting from object:', obj);
-  
-  // Handle coordinate objects with lat/lng
-  if (obj.lat && obj.lng && typeof obj.lat === 'number' && typeof obj.lng === 'number') {
-    const result = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-    console.log('Location debug - extracted coordinates:', result);
-    return result;
-  }
-  
+
   // Handle address objects
   if (obj.formatted_address) {
     const result = obj.formatted_address;
     console.log('Location debug - extracted formatted_address:', result);
+    return result;
+  } 
+
+  // Handle coordinate objects with lat/lng
+  if (obj.lat && obj.lng && typeof obj.lat === 'number' && typeof obj.lng === 'number') {
+    const result = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
+    console.log('Location debug - extracted coordinates:', result);
     return result;
   }
   
@@ -405,6 +408,7 @@ export async function getGigDetails({
 
     const gigDetails: GigDetails = {
       id: gig.id,
+      workerId: gig.workerUserId || undefined,
       role: roleDisplay,
       gigTitle: gig.titleInternal || 'Untitled Gig',
       buyerName: gig.buyer?.fullName || 'Unknown',

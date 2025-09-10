@@ -116,11 +116,17 @@ Generate 3 relevant hashtags for this worker:`;
   }
 }
 
-export const getPublicWorkerProfileAction = async (workerId: string) => {
+export const getPublicWorkerProfileAction = async (
+  workerId: string,
+  useUserId: boolean = false
+) => {
   if (!workerId) throw "Worker ID is required";
 
   const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-    where: eq(GigWorkerProfilesTable.id, workerId),
+    where: eq(
+      useUserId ? GigWorkerProfilesTable.userId : GigWorkerProfilesTable.id,
+      workerId
+    ),
     with: { user: { columns: { fullName: true, rtwStatus: true } } },
   });
 

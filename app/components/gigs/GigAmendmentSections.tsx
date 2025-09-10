@@ -66,7 +66,7 @@ export const AmendmentReasonSection = ({
     const getWorkerName = async () => {
       if (!workerId) return;
       try {
-        const { data } = await getPublicWorkerProfileAction(workerId);
+        const { data } = await getPublicWorkerProfileAction(workerId, true);
         setWorkerName(data.user?.fullName || 'Reason');
       } catch (err) {
         console.error("Failed to get worker name:", err);
