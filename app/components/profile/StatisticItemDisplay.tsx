@@ -27,7 +27,7 @@ const StatisticItemDisplay: React.FC<StatisticItemDisplayProps> = ({ stat }) => 
         />
       )}
       <div className={styles.statText}>
-        <span className={styles.statValue}>{stat.value}</span>
+        <span className={styles.statValue}>{stat.value !== 0 ? stat.value : "- %"}</span>
         <span className={styles.statLabel}>{stat.label}</span>
       </div>
     </div>
