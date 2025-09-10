@@ -1,4 +1,3 @@
-
 export enum InternalGigStatusEnum {
   PENDING_WORKER_ACCEPTANCE = "PENDING_WORKER_ACCEPTANCE",
   PAYMENT_HELD_PENDING_ACCEPTANCE = "PAYMENT_HELD_PENDING_ACCEPTANCE",
@@ -16,21 +15,32 @@ export enum InternalGigStatusEnum {
   DISPUTED = "DISPUTED",
 }
 
-export type InternalGigStatusEnumType = `${InternalGigStatusEnum}`
+export type InternalGigStatusEnumType = `${InternalGigStatusEnum}`;
 
 export enum GigStatusEnum {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  AWAITING_BUYER_CONFIRMATION = 'AWAITING_BUYER_CONFIRMATION',
-  COMPLETED = 'COMPLETED',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  REQUESTED = 'REQUESTED',
-  REQUESTED_AMENDMENT = 'REQUESTED_AMENDMENT'
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  IN_PROGRESS = "IN_PROGRESS",
+  AWAITING_BUYER_CONFIRMATION = "AWAITING_BUYER_CONFIRMATION",
+  COMPLETED = "COMPLETED",
+  CONFIRMED = "CONFIRMED",
+  CANCELLED = "CANCELLED",
+  REQUESTED = "REQUESTED",
+  REQUESTED_AMENDMENT = "REQUESTED_AMENDMENT",
 }
 
-export type GigStatusEnumType = `${GigStatusEnum}`
+export type GigStatusEnumType = `${GigStatusEnum}`;
+
+interface workerType {
+  id: string;
+  fullName: string;
+}
+
+type LocationType = {
+  lat?: number;
+  lng?: number;
+  formatted_address?: string;
+};
 
 export default interface GigDetails {
   id: string;
@@ -42,7 +52,7 @@ export default interface GigDetails {
   startTime: string; // ISO
   endTime: string; // ISO
   duration: string; // e.g., "5 hours" - can be calculated
-  location: string;
+  location?: LocationType;
   hourlyRate: number;
   estimatedEarnings: number;
   specialInstructions?: string;
@@ -53,20 +63,22 @@ export default interface GigDetails {
   isWorkerSubmittedFeedback?: boolean; // Indicates if worker has submitted feedback
   isBuyerSubmittedFeedback?: boolean; // Indicates if buyer has submitted feedback
   // Worker-related properties
-  workerId?: string;
+  worker?: workerType | null;
   workerName?: string; // Name of the assigned worker
   workerAvatarUrl?: string; // Avatar URL of the assigned worker
   workerGigs?: number; // Number of gigs the worker has completed
   workerExperience?: number; // Years of experience of the worker
   isWorkerStar?: boolean; // Whether the worker is a star worker
+  workerViderUrl?: string | null;
+  workerFullBio?: string | null;
 }
 
 export interface GigReviewDetailsData {
-	location: string;
-	date: string;
-	time: string;
-	payPerHour: string;
-	totalPay: string;
-	summary: string; // Optional summary field
-	status?: GigStatusEnumType; // Optional summary field
+  location: string;
+  date: string;
+  time: string;
+  payPerHour: string;
+  totalPay: string;
+  summary: string; // Optional summary field
+  status?: GigStatusEnumType; // Optional summary field
 }
