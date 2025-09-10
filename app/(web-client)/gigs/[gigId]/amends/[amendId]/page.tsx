@@ -105,13 +105,12 @@ export default function CancelOrAmendGigDetailsPage() {
         {/* Updated Gig Details Block */}
         <UpdateGig
           title="Gig Details"
-          gigDetailsData={gigDetailsData}
           editedGigDetails={editedGigDetails}
           handleEditDetails={handleEditDetails}
           setEditedGigDetails={setEditedGigDetails}
           isEditingDetails={isEditingDetails}
         />
-        {/* Action Button Area */}
+     {/* Action Button Area */}
       <div className={`${styles.actionBtnContainer}`}>
         <button
           type="button"

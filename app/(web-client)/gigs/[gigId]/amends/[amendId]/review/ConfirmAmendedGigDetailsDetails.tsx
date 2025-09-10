@@ -31,15 +31,13 @@ const ConfirmAmendedGigDetailsDetails: React.FC<Props> = ({ gigDetailsData, isLo
       )}
       {gigDetailsData && (
         <UpdateGig
-          gigDetailsData={gigDetailsData}
+          title="Gig Details"
           editedGigDetails={editedGigDetails}
-          setEditedGigDetails={setEditedGigDetails}
           handleEditDetails={handleEditDetails}
-          isOnConfirm={true}
-          title="Amended Gig Details"
+          setEditedGigDetails={setEditedGigDetails}
           isEditingDetails={isEditingDetails}
         />
-        
+
       )}
     </>
   );
