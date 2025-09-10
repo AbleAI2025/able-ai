@@ -39,7 +39,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 		const match = time12.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/i);
 		if (!match) return '';
 		
-		let [, hours, minutes, ampm] = match;
+		const [, hours, minutes, ampm] = match;
 		let hour = parseInt(hours, 10);
 		
 		if (ampm.toUpperCase() === 'PM' && hour !== 12) {
