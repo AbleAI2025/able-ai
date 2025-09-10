@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';
 import GigStatusIndicator from '../shared/GigStatusIndicator';
 import { findExistingGigAmendment } from '@/actions/gigs/manage-amendment';
+import { LoadingIndicator } from '@/app/(web-client)/user/[userId]/buyer/gigs/new/components/LoadingIndicator';
 
 
 const formatGigDate = (isoDate: string) => new Date(isoDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -382,12 +383,19 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 				)}
 
 				{/* Negotiation Button - Kept from new structure */}
-				{/* Added a check to only show if gig is accepted */}
-				{(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
-					<button className={styles.negotiationButton} onClick={handleNegotiateGig}>
-						Negotiate, cancel or change gig details
-					</button>
-				)}
+        {/* Added a check to only show if gig is accepted */}
+        {(gig.status === 'PENDING' || gig.status === 'IN_PROGRESS' || gig.status === 'ACCEPTED') && (
+          <button className={styles.negotiationButton} onClick={handleNegotiateGig} disabled={isNegotiating}>
+            {isNegotiating ? (
+              <span className={styles.awaitingText}>
+                <span className={styles.spinner}></span>
+                <span style={{ marginLeft: '8px' }}>Processing...</span>
+              </span>
+            ) : (
+              "Negotiate, cancel or change gig details"
+            )}
+          </button>
+        )}
 
 				{/* Special Instructions Section */}
 				{gig.specialInstructions && (
