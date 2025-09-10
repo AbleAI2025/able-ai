@@ -74,7 +74,7 @@ export default interface GigDetails {
 }
 
 export interface GigReviewDetailsData {
-  location: string;
+  location?: LocationType;
   date: string;
   time: string;
   payPerHour: string;

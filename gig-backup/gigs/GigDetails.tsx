@@ -306,7 +306,7 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 
 						<div className={styles.workerGigDetailsRow}>
 							<span className={styles.workerLabel}>Location:</span>
-							<span className={styles.workerDetailValue}>{gig.location}</span>
+							<span className={styles.workerDetailValue}>{gig.location?.formatted_address || ''}</span>
 						</div>
 						<div className={styles.workerGigDetailsRow}>
 							<span className={styles.workerLabel}>Date:</span>
@@ -441,8 +441,8 @@ const GigDetailsComponent = ({ userId, role, gig, setGig, isAvailableOffer = fal
 					<div className={styles.gigDetailsRow}>
 						<span className={styles.label}>Location:</span>
 						<span className={styles.detailValue}>
-							{gig.location}
-							<a href={`https://maps.google.com/?q=${encodeURIComponent(gig.location)}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>(View Map)</a>
+							{gig.location?.formatted_address || ''}
+							<a href={`https://maps.google.com/?q=${encodeURIComponent(gig.location?.formatted_address || '')}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>(View Map)</a>
 						</span>
 					</div>
 					<div className={styles.gigDetailsRow}>

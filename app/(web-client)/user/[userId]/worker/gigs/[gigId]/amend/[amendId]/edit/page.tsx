@@ -48,7 +48,7 @@ export default function EditGigPage() {
       <ScreenHeaderWithBack title="Edit Gig Details" onBackClick={() => router.back()} />
       <main className={styles.contentWrapper}>
         <AmendmentDummyChatbot />
-        <AmendmentReasonSection onReasonChange={setReason} reason={reason} workerId={gig.workerId} />
+        <AmendmentReasonSection onReasonChange={setReason} reason={reason} workerId={gig.worker?.id} />
         <UpdateGig
           title="Updated gig details:"
           editedGigDetails={editedGigDetails}

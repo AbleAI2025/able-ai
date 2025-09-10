@@ -123,7 +123,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 						<input
 							type="text"
 							name="location"
-							value={editedGigDetails.location}
+							value={editedGigDetails.location?.formatted_address || ''}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
 							disabled={lastRoleUsed === "GIG_WORKER"}
@@ -187,7 +187,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Location:</span>
 						<span className={styles.detailItemValue}>
-							{editedGigDetails.location}
+							{editedGigDetails.location?.formatted_address || ''}
 						</span>
 					</div>
 					<div className={styles.detailItem}>
