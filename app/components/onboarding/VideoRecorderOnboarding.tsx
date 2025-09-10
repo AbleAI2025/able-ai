@@ -58,7 +58,7 @@ const VideoRecorderOnboarding: React.FC<VideoRecorderOnboardingProps> = ({ onVid
     const stream = webcamRef.current?.stream;
     if (!stream) return;
 
-    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
     mediaRecorderRef.current = mediaRecorder;
 
     mediaRecorder.ondataavailable = (event) => {
@@ -103,7 +103,7 @@ const VideoRecorderOnboarding: React.FC<VideoRecorderOnboardingProps> = ({ onVid
 
   useEffect(() => {
     if (!isRecording && recordedChunks.length > 0) {
-      const newBlob = new Blob(recordedChunks, { type: "video/webm" });
+      const newBlob = new Blob(recordedChunks, { type: "video/webm;codecs=vp9" });
       setBlob(newBlob);
       const url = URL.createObjectURL(newBlob);
       setVideoURL(url);
@@ -149,7 +149,13 @@ const VideoRecorderOnboarding: React.FC<VideoRecorderOnboardingProps> = ({ onVid
                   audio={true}
                   mirrored={true}
                   screenshotFormat="image/jpeg"
-                  videoConstraints={true}
+                  videoConstraints={{
+                    autoGainControl: true,
+                    noiseSuppression: true,
+                    echoCancellation: true,
+                    channelCount: 1,
+                    frameRate: { exact: 50 },
+                  }}
                   className={styles.webcam}
                   onUserMedia={() => {
                     setPermissionError(null);

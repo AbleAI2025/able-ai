@@ -42,7 +42,7 @@ export default function WorkerSkillDetailPage() {
 
         const normalizedStatistics = {
           reviews: Number(data?.statistics?.reviews ?? 0), // siempre number
-          paymentsCollected: String(data?.statistics?.paymentsCollected ?? "0"), // si SkillProfile espera string
+          paymentsCollected: String(data?.statistics?.paymentsCollected ?? "0"),
           tipsReceived: String(data?.statistics?.tipsReceived ?? "0"),
         };
 

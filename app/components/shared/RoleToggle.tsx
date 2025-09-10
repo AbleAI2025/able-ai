@@ -13,7 +13,7 @@ const RoleToggle: React.FC<{ lastViewVisited?: string }> = ({
   const lastRoleUsed = getLastRoleUsed();
   const { user } = useAuth();
 
-  const userHasWorkerRole = user?.claims?.role === "GIG_WORKER" || user?.claims?.role === "QA";
+  const userHasWorkerRole = user?.claims?.haveWorkerProfile || user?.claims?.role === "GIG_WORKER" || user?.claims?.role === "QA";
 
   const currentActiveRole =
     lastRoleUsed === "BUYER"

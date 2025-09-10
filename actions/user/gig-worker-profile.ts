@@ -369,7 +369,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       hashtags: Array.isArray(workerProfile?.hashtags)
         ? workerProfile.hashtags
         : [],
-      customerReviewsText: workerProfile?.fullBio,
+      customerReviewsText: "",
       ableGigs: skill?.ableGigs,
       experienceYears: skill?.experienceYears,
       Eph: skill?.agreedRate,
@@ -380,8 +380,8 @@ export const getSkillDetailsWorker = async (id: string) => {
       videoUrl: workerProfile?.videoUrl || "",
       statistics: {
         reviews: reviews?.length,
-        paymentsCollected: "£4899",
-        tipsReceived: "£767",
+        paymentsCollected: "£0",
+        tipsReceived: "£0",
       },
       supportingImages: skill.images ?? [],
       badges: badgeDetails,
