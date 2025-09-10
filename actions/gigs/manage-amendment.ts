@@ -44,49 +44,38 @@ export async function createGigAmendment(data: {
       columns: { id: true },
     });
     if (!user) return { error: 'User not found' };
-    
-    let newAmendId:undefined | string | null;
+    const commonValues = {
+      gigId: data.gigId,
+      requestType: data.requestType,
+      newValues: data.newValues,
+      reason: data.reason,
+      status: "PENDING" as const,
+    };
 
+    let amendment;
     if (data.amendId === "new") {
-      const [newAmendment] = await db
+      [amendment] = await db
         .insert(GigAmendmentRequestsTable)
-        .values({
-          gigId: data.gigId,
-          requesterId: user.id,
-          requestType: data.requestType,
-          newValues: data.newValues,
-          reason: data.reason,
-          status: "PENDING",
-        })
+        .values({ ...commonValues, requesterId: user.id })
         .returning({ id: GigAmendmentRequestsTable.id });
-
-        newAmendId = newAmendment?.id
-
     } else {
-      const [updatedAmendment] = await db
+      [amendment] = await db
         .update(GigAmendmentRequestsTable)
-        .set({
-          gigId: data.gigId,
-          requesterId: user.id,
-          requestType: data.requestType,
-          newValues: data.newValues,
-          reason: data.reason,
-          status: "PENDING",
-          updatedAt: new Date(),
-        })
-        .where(eq(GigAmendmentRequestsTable.id, data.amendId))
+        .set({ ...commonValues, updatedAt: new Date() })
+        .where(
+          and(
+            eq(GigAmendmentRequestsTable.id, data.amendId),
+            eq(GigAmendmentRequestsTable.requesterId, user.id)
+          )
+        )
         .returning({ id: GigAmendmentRequestsTable.id });
-
-        newAmendId = updatedAmendment.id
     }
 
-      if (!newAmendId) {
-        return { error: "Failed to create amendment request." };
-      }
+    if (!amendment?.id) {
+      return { error: "Failed to create amendment request." };
+    }
 
-      return { success: true, amendmentId: newAmendId};
-
-
+    return { success: true, amendmentId: amendment.id };
   } catch (error) {
     console.error("Error creating gig amendment:", error);
     return { error: "An unexpected error occurred." };

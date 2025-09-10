@@ -112,7 +112,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 				{!isEditingDetails ? (
 					<Pencil className={styles.editPencilIcon} onClick={handleEditDetails} />
 				) : (
-					<X className={styles.editIcon} onClick={handleEditDetails} />
+					<X onClick={handleEditDetails} />
 				)}
 			</div>
 			{isEditingDetails ? (
