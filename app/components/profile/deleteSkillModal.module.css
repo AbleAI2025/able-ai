@@ -154,10 +154,8 @@
 }
 
 .deleteButton {
-  background: #fff;
-  font-size: small;
+  background: none;
   border: none;
-  border-radius: 50px;
   cursor: pointer;
   padding: 3px;
   color: red;
