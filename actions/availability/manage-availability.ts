@@ -121,19 +121,22 @@ export async function createAvailabilitySlot(userId: string, data: any) {
         frequency: !!data.frequency,
         ends: !!data.ends,
       });
-      return { error: "Missing required fields" };
+      throw new Error("Missing required fields");
     }
 
     // Validate data types
-    if (!Array.isArray(data.days)) throw "Days must be an array";
+    if (!Array.isArray(data.days)) throw new Error("Days must be an array");
 
-    if (data.frequency !== "never" && data.days.length === 0) throw "At least one day must be selected when frequency is recurring"
+    if (data.frequency !== "never" && data.days.length === 0)
+      throw new Error(
+        "At least one day must be selected when frequency is recurring"
+      );
 
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
     });
 
-    if (!user) throw "User not found";
+    if (!user) throw new Error("User not found");
 
     // Create proper timestamps for the required fields
     const newSlot = await db
@@ -179,41 +182,24 @@ export async function updateAvailabilitySlot(
   data: AvailabilityFormData
 ) {
   try {
-    console.log("updateAvailabilitySlot called with userId:", userId);
-    console.log("updateAvailabilitySlot called with slotId:", slotId);
-    console.log("updateAvailabilitySlot called with data:", data);
-
     // Validate required fields
-    if (!data.startTime || !data.endTime) {
-      console.error("updateAvailabilitySlot: Missing required time fields");
-      return { error: "Missing required time fields" };
-    }
+    if (!data.startTime || !data.endTime)
+      throw new Error("Missing required time fields");
 
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
     });
 
-    if (!user) {
-      console.log("updateAvailabilitySlot: User not found for userId:", userId);
-      return { error: "User not found" };
-    }
-
-    console.log("updateAvailabilitySlot: Found user:", user.id);
+    if (!user) throw new Error("User not found");
 
     // Validate that the slot exists and belongs to the user
     const existingSlot = await db.query.WorkerAvailabilityTable.findFirst({
       where: eq(WorkerAvailabilityTable.id, slotId),
     });
 
-    if (!existingSlot) {
-      console.log("updateAvailabilitySlot: Slot not found for slotId:", slotId);
-      return { error: "Availability slot not found" };
-    }
+    if (!existingSlot) throw new Error("Availability slot not found");
 
-    if (existingSlot.userId !== user.id) {
-      console.log("updateAvailabilitySlot: Slot does not belong to user");
-      return { error: "Access denied" };
-    }
+    if (existingSlot.userId !== user.id) throw new Error("Access denied");
 
     // Create proper timestamps for the required fields
     const createTimestamp = (timeStr: string) => {
@@ -240,11 +226,6 @@ export async function updateAvailabilitySlot(
       updatedAt: new Date(),
     };
 
-    console.log(
-      "updateAvailabilitySlot: About to update with data:",
-      updateData
-    );
-
     // Update the slot in WorkerAvailabilityTable
     const [updatedSlot] = await db
       .update(WorkerAvailabilityTable)
@@ -252,15 +233,7 @@ export async function updateAvailabilitySlot(
       .where(eq(WorkerAvailabilityTable.id, slotId))
       .returning();
 
-    if (!updatedSlot) {
-      console.log("updateAvailabilitySlot: Failed to update slot");
-      return { error: "Failed to update availability slot" };
-    }
-
-    console.log(
-      "updateAvailabilitySlot: Successfully updated slot:",
-      updatedSlot
-    );
+    if (!updatedSlot) throw new Error("Failed to update availability slot");
 
     revalidatePath(`/user/${userId}/worker/calendar`);
     return { success: true, slot: updatedSlot };
@@ -285,9 +258,7 @@ export async function deleteAvailabilitySlot(userId: string, slotId: string) {
       where: eq(UsersTable.firebaseUid, userId),
     });
 
-    if (!user) {
-      return { error: "User not found" };
-    }
+    if (!user) throw new Error("User not found");
 
     // Delete the slot from WorkerAvailabilityTable
     const deletedSlot = await db
@@ -313,9 +284,8 @@ export async function clearAllAvailability(userId: string) {
       where: eq(UsersTable.firebaseUid, userId),
     });
 
-    if (!user) {
-      return { error: "User not found" };
-    }
+    if (!user) throw new Error("User not found");
+
 
     // Delete all availability slots for this user from WorkerAvailabilityTable
     await db

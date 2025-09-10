@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { CalendarEvent } from "@/app/types/CalendarEventTypes";
 import { getCalendarEvents } from "@/actions/events/get-calendar-events";
 import {
+  clearAllAvailability,
   createAvailabilitySlot,
   deleteAvailabilitySlot,
   getWorkerAvailability,
@@ -62,13 +63,6 @@ async function fetchWorkerData(
   userId: string,
   filters?: string[]
 ): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
-  console.log(
-    "Fetching worker data for workerId:",
-    userId,
-    "with filters:",
-    filters
-  );
-
   const result = await getWorkerOffers(userId);
 
   if (result.error) {
@@ -295,9 +289,9 @@ const WorkerCalendarPage = () => {
   // Handle availability management
   const handleAvailabilitySave = async (data: any) => {
     try {
+      if (!user) throw new Error("No user found");
       if (selectedAvailabilitySlot) {
         if (isEditingSingleOccurrence) {
-          if (!user) throw "No user found";
 
           const { success, error } = await createAvailabilitySlot(
             user.uid,
@@ -306,14 +300,12 @@ const WorkerCalendarPage = () => {
 
           if (!success) {
             console.error("Create single occurrence failed:", error);
-            alert(`Failed to create single occurrence: ${error}`);
+            toast.error("Failed to create single occurrence");
             return;
           }
 
           toast.success("Successfully created single occurrence slot");
         } else {
-          // Update existing slot (recurring pattern)
-          if (!user) throw "No user found";
           const result = await updateAvailabilitySlot(
             user.uid,
             selectedAvailabilitySlot.id,
@@ -322,30 +314,17 @@ const WorkerCalendarPage = () => {
 
           if (result.error) {
             console.error("Update failed:", result.error);
-            alert(`Failed to update availability: ${result.error}`);
             toast.error("Failed to update availability");
             return;
           }
         }
       } else {
         // Create new slot
-        if (!user) throw "No user found";
-
-        const { success, error } = await createAvailabilitySlot(
-          user.uid,
-          data
-        );
-
-        if (!success) {
-          alert(`Failed to create availability: ${error}`);
-          return;
-        }
+        const { success } = await createAvailabilitySlot(user.uid, data);
+        if (!success) throw new Error("No user found");
       }
 
-      // Close the modal
       handleAvailabilityModalClose();
-
-      // Refresh events
       const fetchEvents = async () => {
         const calendarRes = await getCalendarEvents({
           userId: user.uid,
@@ -384,12 +363,7 @@ const WorkerCalendarPage = () => {
       fetchEvents();
     } catch (error) {
       console.error("Error saving availability:", error);
-      // You could add a toast notification here for user feedback
-      alert(
-        `Error saving availability: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      toast.error("Error saving availability");
     }
   };
 
@@ -399,10 +373,8 @@ const WorkerCalendarPage = () => {
     try {
       await deleteAvailabilitySlot(user.uid, selectedAvailabilitySlot.id);
 
-      // Close the modal
       handleAvailabilityModalClose();
 
-      // Refresh events
       const fetchEvents = async () => {
         const calendarRes = await getCalendarEvents({
           userId: user.uid,
@@ -473,31 +445,22 @@ const WorkerCalendarPage = () => {
     slotInfo: { start: Date; end: Date; slots: Date[] } | Date,
     selectedTime?: string
   ) => {
-    console.log("handleDateSelect called with:", { slotInfo, selectedTime });
-
     if (typeof slotInfo === "object" && "start" in slotInfo) {
       // Handle regular calendar date selection
-      console.log("Setting selected date from slotInfo.start:", slotInfo.start);
       setSelectedDate(slotInfo.start);
       setSelectedTime(selectedTime || null);
       setIsAvailabilityModalOpen(true);
     } else if (slotInfo instanceof Date) {
       // Handle availability view date selection
-      console.log("Setting selected date from Date:", slotInfo);
       setSelectedDate(slotInfo);
       setSelectedTime(selectedTime || null);
       setIsAvailabilityModalOpen(true);
     }
-
-    console.log("Modal should now be open");
   };
 
   const handleClearAllAvailability = async () => {
-    if (!user) return;
     try {
-      const { clearAllAvailability } = await import(
-        "@/actions/availability/manage-availability"
-      );
+      if (!user) throw new Error("User not found");
       await clearAllAvailability(user.uid);
 
       // Refresh events
