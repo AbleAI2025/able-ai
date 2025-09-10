@@ -29,7 +29,7 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
   const [formData, setFormData] = useState<AvailabilityFormData>({
     startTime: "09:00",
     endTime: "19:00",
-    days: [],
+    days: ["Mon"],
     frequency: "never",
     ends: "never",
   });
@@ -50,7 +50,7 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
         setFormData({
           startTime: slot.startTime,
           endTime: slot.endTime,
-          days: [], // Empty for single occurrence
+          days: ["Mon"], // Empty for single occurrence
           frequency: 'never', // Single occurrence
           ends: 'on_date',
           endDate: selectedDate.toISOString().split('T')[0], // The specific date

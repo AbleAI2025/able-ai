@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { Calendar, Check, Info, MessageSquare, Clock, XCircle, ChevronLeft } from 'lucide-react';
+import { Calendar, Check, Info } from 'lucide-react';
 import styles from './GigDetails.module.css';
 import { useRouter } from 'next/navigation';
 import GigActionButton from '../shared/GigActionButton';
@@ -10,8 +10,6 @@ import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { updateGigOfferStatus } from '@/actions/gigs/update-gig-offer-status';
-import { acceptGigOffer } from '@/actions/gigs/accept-gig-offer';
-import { declineGigOffer } from '@/actions/gigs/decline-gig-offer';
 import { deleteGig } from '@/actions/gigs/delete-gig';
 import { toast } from 'sonner';
 import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';

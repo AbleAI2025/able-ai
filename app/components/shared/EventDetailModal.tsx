@@ -1,14 +1,10 @@
 /* eslint-disable max-lines-per-function */
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter, useParams } from "next/navigation";
 import { X, Calendar, Clock, MapPin, User, Loader2 } from "lucide-react";
 import { CalendarEvent } from "@/app/types/CalendarEventTypes";
-import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
-import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
-import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import styles from "./EventDetailModal.module.css";
 
 interface EventDetailModalProps {
@@ -36,6 +32,8 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
   const params = useParams();
   const pageUserId = (params as Record<string, string | string[]>)?.userId;
   const resolvedUserId = Array.isArray(pageUserId) ? pageUserId[0] : pageUserId;
+  
+
 
   if (!isOpen || !event) return null;
 

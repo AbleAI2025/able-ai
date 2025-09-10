@@ -11,22 +11,30 @@ export interface WorkerUser {
   id: string;
 }
 
-export async function getWorkerUserFromProfileId(workerProfileId: string): Promise<{
+export async function getWorkerUserFromProfileId(uid: string): Promise<{
   success: boolean;
   data?: WorkerUser;
   error?: string;
 }> {
   try {
-    if (!workerProfileId) {
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    if (!uid) {
       return {
         success: false,
-        error: "Worker profile ID is required"
+        error: "User profile ID is required"
       };
     }
 
     // Get worker profile with associated user
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.id, workerProfileId),
+       where: eq(GigWorkerProfilesTable.userId, user.id),
       with: {
         user: {
           columns: {
