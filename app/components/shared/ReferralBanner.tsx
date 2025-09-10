@@ -61,7 +61,7 @@ const ReferralBanner: React.FC<ReferralBannerProps> = ({ role }) => {
       const result = await getUserReferralCodeAction({ firebaseUid: user.uid });
       if (!result || !result.code) throw new Error("Discount code not found");
 
-      const referralLink = `${window.location.origin}/signin?code=${result.code}`;
+      const referralLink = `${window.location.origin}/?code=${result.code}`;
       await copyToClipboard(referralLink);
 
       setTooltipText(`Referral link ready with discount code ${result.code}`);

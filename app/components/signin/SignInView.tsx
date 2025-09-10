@@ -3,12 +3,12 @@
 import { useState } from "react";
 import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
-import styles from "@/app/signin/SignInPage.module.css";
+import styles from "@/app/SignInPage.module.css";
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signInWithFirebaseAction } from "@/actions/auth/singin";
 import { useFirebase } from "@/context/FirebaseContext";
-import PasswordInputField from "../components/form/PasswodInputField";
+import PasswordInputField from "@/app/components/form/PasswodInputField";
 import Link from "next/link";
 
 interface SignInViewProps {

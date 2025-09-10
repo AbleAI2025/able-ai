@@ -7,6 +7,7 @@ import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
 import styles from "./ResetPasswordPage.module.css";
 import { useFirebase } from "@/context/FirebaseContext";
+import Link from "next/link";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -60,9 +61,9 @@ export default function ResetPasswordPage() {
         {success ? (
           <div className={styles.successMessage}>
             <p>Check your email for a link to reset your password.</p>
-            <a href="/signin" className={styles.backToSignIn}>
+            <Link href="/" className={styles.backToSignIn}>
               Back to Sign In
-            </a>
+            </Link>
           </div>
         ) : (
           <form className={styles.form} onSubmit={handleResetPassword}>
@@ -103,10 +104,10 @@ export default function ResetPasswordPage() {
           </form>
         )}
 
-        <a href="/signin" className={styles.toggleButton}>
+        <Link href="/" className={styles.toggleButton}>
           Remember your password?{" "}
           <span className={styles.linkText}>Sign In</span>
-        </a>
+        </Link>
       </div>
     </div>
   );

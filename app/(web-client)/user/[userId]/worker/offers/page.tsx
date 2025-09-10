@@ -135,7 +135,7 @@ export default function WorkerOffersPage() {
       setIsLoadingData(false);
       // Redirect to signin after a short delay
       setTimeout(() => {
-        router.push(`/signin?redirect=${pathname}`);
+        router.push(`/?redirect=${pathname}`);
       }, 2000);
     } else if (!loadingAuth && !user) {
       console.log("Debug - No user authenticated");
@@ -143,7 +143,7 @@ export default function WorkerOffersPage() {
       setIsLoadingData(false);
       // Redirect to signin after a short delay
       setTimeout(() => {
-        router.push(`/signin?redirect=${pathname}`);
+        router.push(`/?redirect=${pathname}`);
       }, 2000);
     }
   }, [user, loadingAuth, authUserId, pageUserId, lastRoleUsed]);

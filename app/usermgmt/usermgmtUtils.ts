@@ -211,7 +211,7 @@ export async function handleSignIn({
         setError("No email found. Please try signing in manually.");
         setUiState("error");
         setIsLoading(false);
-        router.push("/signin");
+        router.push("/");
         return;
       }
       signInWithEmailLink(authClient, email, window.location.href)

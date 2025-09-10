@@ -260,7 +260,7 @@ export default function SettingsPage() {
     try {
       if (authClient) {
         await firebaseSignOut(authClient);
-        router.push("/signin");
+        router.push("/");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -358,7 +358,7 @@ export default function SettingsPage() {
       // On success, logout and redirect
       if (authClient) {
         await firebaseSignOut(authClient);
-        router.push("/signin"); // Or home page
+        router.push("/"); // Or home page
       }
     } catch (err: unknown) {
       if (err instanceof Error) {

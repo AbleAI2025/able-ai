@@ -42,11 +42,11 @@ export default function AIChatContainer({ userId, searchParams }: AIChatContaine
     if (!loading) {
       if (user) {
         if (authUserId !== pageUserId) {
-          router.replace("/signin");
+          router.replace("/");
           return;
         }
       } else {
-        router.replace("/signin");
+        router.replace("/");
       }
     }
   }, [user, loading, authUserId, pageUserId, pathname, router]);

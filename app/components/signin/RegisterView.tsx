@@ -2,16 +2,16 @@
 
 import { useState, FormEvent } from "react";
 import { sendSignInLinkToEmail } from "firebase/auth";
-import { StepInputConfig } from "../types/form";
+import { StepInputConfig } from "@/app/types/form";
 import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
-import styles from "@/app/signin/SignInPage.module.css";
+import styles from "@/app/SignInPage.module.css";
 import { useRouter } from "next/navigation";
 import { registerUserAction } from "@/actions/auth/signup";
-import { isPasswordCommon } from "./actions";
+import { isPasswordCommon } from "@/app/actions/password-check";
 import { authClient } from "@/lib/firebase/clientApp";
 import { toast } from "sonner";
-import PasswordInputField from "../components/form/PasswodInputField";
+import PasswordInputField from "@/app/components/form/PasswodInputField";
 
 interface RegisterViewProps {
   onToggleRegister: () => void;

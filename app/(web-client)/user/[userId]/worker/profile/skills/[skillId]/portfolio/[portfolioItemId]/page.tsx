@@ -83,7 +83,7 @@ export default function EditablePortfolioItemPage() {
 
     if (!authUserId) {
       console.error("User is authenticated but UID is missing. Redirecting to signin.");
-      router.push(`/signin?redirect=${encodeURIComponent(pathname)}`);
+      router.push(`/?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -91,7 +91,7 @@ export default function EditablePortfolioItemPage() {
       // Set error and stop loading, as redirect will occur or user shouldn't see content
       setError("You are not authorized to edit this portfolio item.");
       setIsLoading(false); 
-      router.push('/signin?error=unauthorized');
+      router.push('/?error=unauthorized');
       return;
     }
     // If all auth checks pass, no explicit action needed here, data fetching useEffect will proceed

@@ -53,12 +53,12 @@ const BuyerCalendarPage = () => {
     }
 
     if (!user) {
-      router.push(`/signin?redirect=${pathname}`);
+      router.push(`/?redirect=${pathname}`);
       return;
     }
 
     if (authUserId !== pageUserId) {
-      router.push(`/signin?error=unauthorized`);
+      router.push(`/?error=unauthorized`);
       return;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

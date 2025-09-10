@@ -66,7 +66,7 @@ export async function getInvoiceData(userId: string, invoiceId: string): Promise
   const isViewQA = cookieStore.get('isViewQA')?.value === 'true';
 
 //   if (!token && !isViewQA) {
-//     redirect('/signin');
+//     redirect('/');
 //   }
 
   if (isViewQA) {

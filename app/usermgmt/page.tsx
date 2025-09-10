@@ -12,7 +12,7 @@ export default async function Page({
   const oobCode = typeof params.oobCode === "string" ? params.oobCode : undefined;
   const continueUrl = typeof params.continueUrl === "string" ? params.continueUrl : undefined;
   if (!mode || !oobCode) {
-    redirect("/signin");
+    redirect("/");
   }
   return (
     <Suspense fallback={<div>Loading...</div>}>
