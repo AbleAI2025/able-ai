@@ -18,13 +18,13 @@ interface MonthlyAvailabilityViewProps {
 }
 
 const MonthlyAvailabilityView: React.FC<MonthlyAvailabilityViewProps> = ({
-  events,
+  // events,
   availabilitySlots,
-  currentDate,
-  onEventClick,
+  // currentDate,
+  // onEventClick,
   onDateSelect,
-  onAvailabilityEdit,
-  onAvailabilityDelete,
+  // onAvailabilityEdit,
+  // onAvailabilityDelete,
   onClearAll,
   selectedDate,
 }) => {

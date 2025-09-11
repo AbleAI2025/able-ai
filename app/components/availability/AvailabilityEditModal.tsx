@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Trash2 } from "lucide-react";
+import { X } from "lucide-react";
 import { AvailabilitySlot, AvailabilityFormData } from "@/app/types/AvailabilityTypes";
 import styles from "./AvailabilityEditModal.module.css";
 

@@ -91,19 +91,6 @@ const NewAvailabilityModal: React.FC<NewAvailabilityModalProps> = ({
     onClose();
   };
 
-  const getDayName = (date: Date) => {
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return dayNames[date.getDay()];
-  };
-
-  const getFormattedDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
   const getRecurrenceText = () => {
     if (formData.frequency === 'never') {
       if (formData.endDate) {
