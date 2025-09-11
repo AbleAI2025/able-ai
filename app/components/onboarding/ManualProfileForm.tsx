@@ -122,7 +122,7 @@ export const validateContentWithAI = async (field: string, value: string): Promi
   try {
     const ai = getAI();
     if (!ai) {
-      console.log('AI not available, skipping content validation');
+  // AI not available; skipping content validation
       return { isValid: true, sanitized: value };
     }
 
@@ -397,7 +397,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
           "state_changed",
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log("Video upload progress:", progress + "%");
+            // Video upload progress: handled elsewhere
           },
           (error) => {
             console.error("Video upload failed:", error);
@@ -406,7 +406,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
               .then((url) => {
-                console.log("Video uploaded successfully:", url);
+                // Video uploaded successfully
                 resolve(url);
               })
               .catch(reject);
@@ -446,7 +446,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     try {
       const ai = getAI();
       if (!ai) {
-        console.log('AI not available, skipping content validation');
+  // AI not available; skipping content validation
         return { isValid: true, sanitized: value };
       }
 
@@ -566,7 +566,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     try {
       const ai = getAI();
       if (!ai) {
-        console.log('AI not available, returning original value');
+  // AI not available; returning original value
         return { sanitized: value };
       }
 
@@ -640,7 +640,7 @@ Experience description: "${value}"`;
     const newErrors: Record<string, string> = {};
     let isValid = true;
 
-    console.log('🔍 Starting form validation...');
+  // starting form validation
 
     // Only validate about, experience, skills, and equipment
     const fieldsToValidate = ['about', 'experience', 'skills', 'equipment'];
@@ -652,15 +652,15 @@ Experience description: "${value}"`;
       if (error) {
         newErrors[fieldName] = error;
         isValid = false;
-        console.log(`❌ Validation failed for ${fieldName}:`, error);
+  // validation failed for field
       } else {
-        console.log(`✅ Validation passed for ${fieldName}`);
+  // validation passed for field
       }
     });
 
-    console.log(`🔍 Form validation result: ${isValid ? 'PASSED' : 'FAILED'}`);
+  // form validation result
     if (!isValid) {
-      console.log('❌ Validation errors:', newErrors);
+  // validation errors present
     }
 
     setErrors(newErrors);
@@ -677,11 +677,11 @@ Experience description: "${value}"`;
 
     // Validate form before proceeding
     if (!validateForm()) {
-      console.log('❌ Form validation failed, not submitting');
+  // form validation failed, not submitting
       return;
     }
 
-    console.log('✅ Form validation passed, proceeding with AI content validation');
+  // form validation passed; proceeding with AI validation
     setIsSubmitting(true);
     
     try {
@@ -695,28 +695,28 @@ Experience description: "${value}"`;
       for (const field of fieldsToValidate) {
         const value = formData[field as keyof FormData];
         if (value && typeof value === 'string' && value.trim().length > 0) {
-          console.log(`🤖 Validating ${field} content with AI...`);
+          // validating field content with AI
           const validation = await validateContentWithAI(field, value);
           
           if (!validation.isValid) {
-            console.log(`❌ AI rejected ${field}:`, validation.error);
+            // AI rejected field
             validationErrors[field] = validation.error || 'Content is inappropriate for professional use';
             hasContentErrors = true;
           } else {
-            console.log(`✅ AI approved ${field}`);
+            // AI approved field
           }
         }
       }
 
       // If AI found inappropriate content, show errors and stop submission
       if (hasContentErrors) {
-        console.log('❌ AI content validation failed, blocking submission');
+  // AI content validation failed, blocking submission
         setErrors(prev => ({ ...prev, ...validationErrors }));
         setIsSubmitting(false);
         return;
       }
 
-      console.log('✅ AI content validation passed, proceeding with sanitization');
+  // AI content validation passed, proceeding with sanitization
       
       // AI Sanitization for specific fields (only if content is valid)
       const sanitizedData = { ...formData };
@@ -744,7 +744,7 @@ Experience description: "${value}"`;
         
         // If we extracted years of experience, we could use this for other purposes
         if (experienceResult.yearsOfExperience) {
-          console.log('Extracted years of experience:', experienceResult.yearsOfExperience);
+          // extracted years of experience
         }
       }
 
@@ -756,17 +756,7 @@ Experience description: "${value}"`;
       // Update form data with sanitized values
       setFormData(sanitizedData);
       
-      console.log('📤 Submitting validated and sanitized data to backend:', {
-        about: sanitizedData.about?.substring(0, 50) + '...',
-        experience: sanitizedData.experience?.substring(0, 50) + '...',
-        skills: sanitizedData.skills?.substring(0, 50) + '...',
-        equipment: sanitizedData.equipment?.substring(0, 50) + '...',
-        hourlyRate: sanitizedData.hourlyRate,
-        hasLocation: !!sanitizedData.location,
-        availabilityDays: sanitizedData.availability.days.length,
-        hasVideo: !!sanitizedData.videoIntro,
-        jobTitle: sanitizedData.jobTitle
-      });
+  // submitting validated and sanitized data to backend (metadata prepared)
       
       // Submit the validated and sanitized data
       await onSubmit(sanitizedData);
