@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useReactMediaRecorder } from "react-media-recorder";
 import styles from "./VideoRecorderBubble.module.css";
 import { MonitorPlay, Eye } from "lucide-react";
@@ -36,9 +36,7 @@ const VideoRecorderBubble: React.FC<VideoRecorderBubbleProps> = ({
     status,
     startRecording,
     stopRecording,
-    mediaBlobUrl,
     previewStream,
-    clearBlobUrl,
     error,
   } = useReactMediaRecorder({
     video: {
