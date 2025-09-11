@@ -182,8 +182,6 @@ const GigDetailsComponent = ({
     try {
       if (!gig) throw new Error("gig data is required");
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       switch (action) {
         case "accept":
           if (lastRoleUsed === "GIG_WORKER") {
@@ -231,7 +229,7 @@ const GigDetailsComponent = ({
           break;
 
         case "requestAmendment":
-          router.push(`/user/${userId}/worker/gigs/${gig.id}/amend`);
+          router.push(`/user/${userId}/worker/gigs/${gig.id}/amend/new`);
           break;
 
         case "reportIssue":
