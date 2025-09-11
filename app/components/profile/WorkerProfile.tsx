@@ -144,25 +144,22 @@ const WorkerProfile = ({
       <div className={styles.userInfoBar}>
         <div className={styles.userInfo}>
           <h1 className={styles.workerName}>
-            <span>
-              {workerProfile.user?.fullName ?? ""}
-            </span>
+            <span>{workerProfile.user?.fullName ?? ""}</span>
             {isSelfView && (
-              <button 
-                className={styles.editButton} 
-                type="button" 
+              <button
+                className={styles.editButton}
+                type="button"
                 aria-label="Edit name"
                 onClick={() => setIsOpen(true)}
               >
-                <Edit2
-                  size={16}
-                  color="#ffffff"
-                  className={styles.icon}
-                />
+                <Edit2 size={16} color="#ffffff" className={styles.icon} />
               </button>
             )}
           </h1>
-          
+          <h3>
+            <span>{workerProfile?.socialLink ?? ""}</span>
+          </h3>
+
           {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
@@ -187,12 +184,18 @@ const WorkerProfile = ({
         <div className={styles.workerInfo}>
           {true && (
             <Link
-              href={isSelfView ? "calendar" : `/user/${workerProfile.userId}/worker/${workerProfile.id}/availability`}
+              href={
+                isSelfView
+                  ? "calendar"
+                  : `/user/${workerProfile.userId}/worker/${workerProfile.id}/availability`
+              }
               className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
               aria-label="View calendar"
             >
               <CalendarDays size={28} className={styles.calendarIcon} />
-              <span>{isSelfView ? "View calendar" : "Availability calendar"}</span>
+              <span>
+                {isSelfView ? "View calendar" : "Availability calendar"}
+              </span>
             </Link>
           )}
         </div>

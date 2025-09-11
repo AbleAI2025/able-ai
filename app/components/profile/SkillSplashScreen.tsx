@@ -244,7 +244,9 @@ const SkillSplashScreen = ({
         {profile.hashtags && profile.hashtags.length > 0 && (
           <div className={styles.hashtags}>
             {profile.hashtags.map((tag, index) => (
-              <span key={index} className={styles.hashtag}>{tag}</span>
+              <span key={index} className={styles.hashtag}>
+                {tag}
+              </span>
             ))}
           </div>
         )}
@@ -253,9 +255,7 @@ const SkillSplashScreen = ({
         {profile.customerReviewsText && (
           <p>
             <span>Customer reviews:</span>
-            <span className={styles.review}>
-              {profile.customerReviewsText}
-            </span>
+            <span className={styles.review}>{profile.customerReviewsText}</span>
           </p>
         )}
 
@@ -416,42 +416,47 @@ const SkillSplashScreen = ({
             </ul>
           </div>
         )} */}
-        {profile.workerProfileId && (
-          <Qualifications
-            qualifications={profile?.qualifications || []}
-            isSelfView={isSelfView}
-            workerId={profile.workerProfileId}
-            fetchUserProfile={() => fetchSkillData()}
-          />
-        )}
+        <Qualifications
+          qualifications={profile?.qualifications || []}
+          isSelfView={isSelfView}
+          workerId={profile.workerProfileId || ""}
+          fetchUserProfile={() => fetchSkillData()}
+          skillId={skillId}
+        />
         {/* Buyer Reviews */}
-        {profile.buyerReviews && profile.buyerReviews.length > 0 && (
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
-            {profile?.buyerReviews?.map((review, index) => (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
+          {profile?.buyerReviews && profile.buyerReviews.length > 0 ? (
+            profile.buyerReviews.map((review, index) => (
               <ReviewCardItem
                 key={index}
                 reviewerName={review?.name}
-                date={review?.date.toString()}
+                date={review?.date?.toString()}
                 comment={review?.text}
               />
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <p className={styles.emptyMessage}>No buyer reviews yet.</p>
+          )}
+        </div>
+
         {/* Recommendations */}
-        {profile.recommendations && profile.recommendations.length > 0 && (
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Recommendations</h3>
-            {profile?.recommendations?.map((recommendation, index) => (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Recommendations</h3>
+          {profile?.recommendations && profile.recommendations.length > 0 ? (
+            profile.recommendations.map((recommendation, index) => (
               <RecommendationCardItem
                 key={index}
                 recommenderName={recommendation.name}
                 date={recommendation?.date?.toString()}
                 comment={recommendation?.text}
               />
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <p className={styles.emptyMessage}>No recommendations yet.</p>
+          )}
+        </div>
+
         {isSelfView && linkUrl && navigator.clipboard && (
           <div className={styles.footerAction}>
             <button

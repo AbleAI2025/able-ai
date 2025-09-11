@@ -426,3 +426,38 @@ export const deleteSkillWorker = async (skillId: string, token?: string) => {
     };
   }
 };
+
+export const updateWorkerLocationAction = async (
+  location: string,
+  latitude: string, 
+  longitude: string,
+  token?: string
+) => {
+  try {
+    if (!token) {
+      throw new Error("Auth token is required to update worker location");
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const updatedProfile = await db
+      .update(GigWorkerProfilesTable)
+      .set({ location, latitude, longitude })
+      .where(eq(GigWorkerProfilesTable.userId, user.id))
+      .returning();
+
+    return { success: true, data: updatedProfile[0] };
+  } catch (error) {
+    console.error("Error updating worker location:", error);
+    return { success: false, error };
+  }
+};
