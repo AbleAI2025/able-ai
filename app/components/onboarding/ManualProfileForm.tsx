@@ -925,20 +925,19 @@ Experience description: "${value}"`;
               value={formData.experience}
               onChange={(e) => handleInputChange('experience', e.target.value)}
               placeholder="How many years of experience do you have? (e.g., '25 years as a baker', '25 years and 3 months', '2.5 years', '18 months')"
-              rows={3}
+              rows={2}
             />
-            {formData.experienceYears && formData.experienceYears > 0 && (
+            {/* {formData.experienceYears && formData.experienceYears > 0 && (
               <div className={styles.helpText}>
                 Parsed: {formData.experienceYears} years {formData.experienceMonths && formData.experienceMonths > 0 ? `and ${formData.experienceMonths} months` : ''} 
                 (Total: {((formData.experienceYears || 0) + ((formData.experienceMonths || 0) / 12)).toFixed(1)} years)
               </div>
-            )}
+            )} */}
             {errors.experience && <span className={styles.errorText}>{errors.experience}</span>}
           </div>
 
                      <div className={styles.formGroup}>
              <label className={styles.label}>
-               Skills *
                Skills *
              </label>
              <textarea
@@ -949,20 +948,6 @@ Experience description: "${value}"`;
                rows={3}
              />
              {errors.skills && <span className={styles.errorText}>{errors.skills}</span>}
-           </div>
-
-           <div className={styles.formGroup}>
-             <label className={styles.label}>
-               Qualifications & Certifications
-             </label>
-             <textarea
-               className={`${styles.textarea} ${errors.qualifications ? styles.error : ''}`}
-               value={formData.qualifications}
-               onChange={(e) => handleInputChange('qualifications', e.target.value)}
-               placeholder="List your qualifications, certifications, degrees, licenses, etc..."
-               rows={3}
-             />
-             {errors.qualifications && <span className={styles.errorText}>{errors.qualifications}</span>}
            </div>
 
            <div className={styles.formGroup}>
@@ -1170,7 +1155,7 @@ Experience description: "${value}"`;
           <button
             type="submit"
             className={styles.submitButton}
-            disabled={isSubmitting || progress < 100}
+            disabled={isSubmitting || progress < 75}
           >
             {isSubmitting ? (
               <>
@@ -1182,9 +1167,8 @@ Experience description: "${value}"`;
             )}
           </button>
 
-          {progress < 100 && (
+          {progress < 75 && (
             <p className={styles.completionNote}>
-              Please fill in about, experience, skills, and equipment sections to complete your profile
               Please fill in about, experience, skills, and equipment sections to complete your profile
             </p>
           )}
