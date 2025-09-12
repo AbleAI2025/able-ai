@@ -31,7 +31,7 @@ import { createPortalSession } from "@/app/actions/stripe/create-portal-session"
 import { FirebaseError } from "firebase/app";
 import SwitchControl from "@/app/components/shared/SwitchControl";
 import { toast } from "sonner";
-import { getProfileInfoUserAction, updateNotificationEmailAction, updateNotificationSmsAction, updateProfileVisibilityAction, updateUserProfileAction } from "@/actions/user/user";
+import { deleteUserAccountAction, getProfileInfoUserAction, updateNotificationEmailAction, updateNotificationSmsAction, updateProfileVisibilityAction, updateUserProfileAction } from "@/actions/user/user";
 import StripeModal from "@/app/components/settings/stripeModal";
 import StripeElementsProvider from "@/lib/stripe/StripeElementsProvider";
 import { FlowStep, UserRole, UserSettingsData } from "@/app/types/SettingsTypes";
@@ -323,42 +323,25 @@ export default function SettingsPage() {
     }
   };
 
-  // Manage Stripe Account / Payment Settings
-  const handleManageStripeAccount = async () => {
-    if (!user) return
-
-    clearMessages();
-    // setIsConnectingStripe(true); // Use a different loading state if needed
-    try {
-      const response = await createPortalSession(user?.uid);
-
-      if (response.error && response.status === 500) throw new Error(response.error);
-
-      if (response.status === 200 && response.url) {
-        window.location.href = response.url;
-      }
-
-    } catch (err: any) {
-      setError(err.message || "Failed to open Stripe Portal.");
-    } finally {
-      // setIsConnectingStripe(false); // Reset loading state
-    }
-  };
-
-  // Delete Account Confirmation
+// Delete Account Confirmation
   const handleDeleteAccountConfirmed = async () => {
     clearMessages();
     setIsDeletingAccount(true);
     try {
-      // TODO: API call to DELETE /api/users/account
       console.log("Deleting account...");
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 2000));
+
+      const result = await deleteUserAccountAction(user?.token);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete account.");
+      }
+
       setSuccessMessage("Account deleted successfully. Redirecting...");
+
       // On success, logout and redirect
       if (authClient) {
         await firebaseSignOut(authClient);
-        router.push("/"); // Or home page
+        router.push("/");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -368,9 +351,10 @@ export default function SettingsPage() {
       }
     } finally {
       setIsDeletingAccount(false);
-      setShowDeleteAccountModal(false); // Close modal regardless of success/failure
+      setShowDeleteAccountModal(false);
     }
   };
+
 
   async function handleToggleEmailNotification() {
     try {
@@ -723,7 +707,7 @@ export default function SettingsPage() {
                   className={`${styles.button} ${styles.danger}`}
                   disabled={isDeletingAccount}
                 >
-                  {isDeletingAccount ? "Deleting..." : "Yes, Delete My Account"}
+                  {isDeletingAccount ? "Deleting..." : "Are you sure? This is irreversible"}
                 </button>
               </div>
             </div>
