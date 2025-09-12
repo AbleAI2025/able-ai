@@ -245,7 +245,7 @@ export const deleteUserAccountAction = async (token?: string) => {
     await db
       .update(UsersTable)
       .set({
-        email: "*********",
+        email: `${uid}@able.com`,
         fullName: "*********",
         phone: "*********",
         isDisabled: true,
