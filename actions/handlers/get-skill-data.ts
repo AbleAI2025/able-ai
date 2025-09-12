@@ -77,8 +77,8 @@ export class SkillDataHandler {
         videoUrl: workerProfile?.videoUrl || "",
         statistics: {
           reviews: reviews?.length,
-          paymentsCollected: "£4899",
-          tipsReceived: "£767",
+          paymentsCollected: 0,
+          tipsReceived: 0,
         },
         supportingImages: skill.images ?? [],
         badges,

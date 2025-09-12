@@ -114,7 +114,7 @@ export const getGigWorkerProfile = async (
       id: badge.id,
       name: badge.badge.name,
       description: badge.badge.description,
-      icon: (badge.badge.icon ?? "goldenVibes") as BadgeIcon,
+      icon: (badge.badge.icon ?? "") as BadgeIcon,
       type: badge.badge.type,
       awardedAt: badge.awardedAt,
       awardedBySystem: badge.awardedBySystem,
@@ -178,10 +178,7 @@ export const getSkillDetailsWorker = async (id: string) => {
 
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.id, skill?.workerProfileId),
-    });
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.id, workerProfile?.userId || ""),
+      with: {user: {columns: {fullName: true}}}
     });
 
     const badges = await db
@@ -236,44 +233,13 @@ export const getSkillDetailsWorker = async (id: string) => {
         eq(ReviewsTable.type, "EXTERNAL_REQUESTED"),
         eq(ReviewsTable.skillId, skill.id)
       ),
+      with: {author: {columns: {fullName: true}}}
     });
-
-    const reviewsData = await Promise.all(
-      reviews.map(async (review) => {
-        if (!review.authorUserId) {
-          return {
-            name: "Unknown",
-            date: review.createdAt,
-            text: review.comment,
-          };
-        }
-
-        const author = await db.query.UsersTable.findFirst({
-          where: eq(UsersTable.id, review.authorUserId),
-        });
-
-        return {
-          name: author?.fullName || "Unknown",
-          date: review.createdAt,
-          text: review.comment,
-        };
-      })
-    );
-
-    const recommendationsData = await Promise.all(
-      recommendations.map(async (recommendation) => {
-        return {
-          name: recommendation.recommenderName,
-          date: recommendation.createdAt,
-          text: recommendation.comment,
-        };
-      })
-    );
 
     const skillProfile = {
       workerProfileId: workerProfile?.id ?? "",
       socialLink: workerProfile?.socialLink,
-      name: user?.fullName,
+      name: workerProfile?.user?.fullName,
       title: skill?.name,
       hashtags: Array.isArray(workerProfile?.hashtags)
         ? workerProfile.hashtags
@@ -288,15 +254,16 @@ export const getSkillDetailsWorker = async (id: string) => {
       longitude: workerProfile?.longitude ?? 0,
       videoUrl: workerProfile?.videoUrl || "",
       statistics: {
-        reviews: reviews?.length,
-        paymentsCollected: "£0",
-        tipsReceived: "£0",
+        reviews: Number( reviews?.length ?? 0),
+        paymentsCollected: 0,
+        tipsReceived: 0,
       },
+      
       supportingImages: skill.images ?? [],
       badges: badgeDetails,
       qualifications,
-      buyerReviews: reviewsData,
-      recommendations: recommendationsData,
+      buyerReviews: reviews,
+      recommendations: recommendations,
     };
 
     return { success: true, data: skillProfile };

@@ -16,8 +16,8 @@ export const mockSkillProfile: SkillProfile = {
   videoUrl: "",
   statistics: {
     reviews: 18,
-    paymentsCollected: "£12,500",
-    tipsReceived: "£1,200",
+    paymentsCollected: 12.500,
+    tipsReceived: 1.200,
   },
   supportingImages: [
     "https://firebasestorage.googleapis.com/v0/b/demo-app.appspot.com/o/portfolio1.jpg?alt=media&token=abc123",
@@ -94,26 +94,30 @@ export const mockSkillProfile: SkillProfile = {
   ],
   buyerReviews: [
     {
-      name: "Michael Smith",
-      date: "2024-08-21",
-      text: "Fantastic work on my e-commerce website! Highly recommend Jane.",
+      id: "234567",
+      author: {fullName: "Michael Smith"},
+      createdAt: "2024-08-21",
+      comment: "Fantastic work on my e-commerce website! Highly recommend Jane.",
     },
     {
-      name: "Anna Johnson",
-      date: "2024-06-11",
-      text: "Very professional, quick turnaround, and great communication.",
+      id: "123456",
+      author: {fullName: "Anna Johnson"},
+      createdAt: "2024-06-11",
+      comment: "Very professional, quick turnaround, and great communication.",
     },
   ],
   recommendations: [
     {
-      name: "David Lee",
-      date: new Date("2024-05-01"),
-      text: "Jane is a great team player and a skilled developer. Would gladly work with her again.",
+      id: "345678",
+      author: {fullName: "David Lee"},
+      createdAt: new Date("2024-05-01"),
+      comment: "Jane is a great team player and a skilled developer. Would gladly work with her again.",
     },
     {
-      name: "Sophia Brown",
-      date: new Date("2024-02-15"),
-      text: "Her problem-solving skills are outstanding.",
+      id: "4567890",
+      author: {fullName: "Sophia Brown"},
+      createdAt: new Date("2024-02-15"),
+      comment: "Her problem-solving skills are outstanding.",
     },
   ],
 };

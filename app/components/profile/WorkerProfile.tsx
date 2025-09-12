@@ -156,10 +156,6 @@ const WorkerProfile = ({
               </button>
             )}
           </h1>
-          <h3>
-            <span>{workerProfile?.socialLink ?? ""}</span>
-          </h3>
-
           {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
             <div className={styles.verifiedBadgeContainer}>
               <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
@@ -181,6 +177,9 @@ const WorkerProfile = ({
             </span>
           )}
         </div>
+        <h3 className={styles.workerName}>
+          <span>{workerProfile?.socialLink ?? ""}</span>
+        </h3>
         <div className={styles.workerInfo}>
           {true && (
             <Link
