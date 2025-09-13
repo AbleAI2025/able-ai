@@ -96,7 +96,7 @@ export default function WorkerEarningsPage() {
   // Fetch earnings
   useEffect(() => {
     // Ensure user is authenticated, authorized for this page, and has necessary roles before fetching
-    if (!loadingAuth && user && authUserId === pageUserId && (user?.claims.role === "GIG_WORKER" || user?.claims.role === "QA")) {
+    if (!loadingAuth && user && authUserId === pageUserId && user?.claims.role === "QA") {
       setIsLoadingEarnings(true);
       fetchWorkerEarnings(pageUserId, filterGigType) // Fetch earnings for the pageUserId
         .then(data => {

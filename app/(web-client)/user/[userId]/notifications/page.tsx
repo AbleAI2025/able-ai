@@ -13,7 +13,6 @@ import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
 import styles from "./NotificationsPage.module.css";
 
-
 // Helper to get icon based on notification type
 const getNotificationIcon = (type: Notification["type"]) => {
   if (!type) return null;
@@ -123,8 +122,6 @@ export default function NotificationsPage() {
     await updateNotificationStatusAction(notification.id, "read")
   };
 
-  const handleGoBack = () => router.back();
-
   if (!user || (authUserId && authUserId !== pageUserId)) {
     return <Loader />;
   }
@@ -132,7 +129,7 @@ export default function NotificationsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <ScreenHeaderWithBack title="Notifications" onBackClick={handleGoBack} />
+        <ScreenHeaderWithBack title="Notifications" />
         <div className={styles.pageWrapper}>
           {isLoadingNotifications ? (
             <Loader />
