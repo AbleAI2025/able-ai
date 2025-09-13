@@ -12,7 +12,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   placeholder = "Type your message...",
   disabled = false,
-  role = 'GIG_WORKER'
+  // role = 'GIG_WORKER'
 }) => {
   const [message, setMessage] = useState('');
 

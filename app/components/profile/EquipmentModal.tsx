@@ -2,10 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import styles from "./EquipmentModal.module.css";
 import { toast } from "sonner";
-import {
-  addEquipmentAction,
-  editEquipmentAction,
-} from "@/actions/user/edit-worker-profile";
+import { addEquipmentAction } from "@/actions/user/edit-worker-profile";
 import { useAuth } from "@/context/AuthContext";
 
 interface AddEquipmentModalProps {

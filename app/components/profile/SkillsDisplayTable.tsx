@@ -37,7 +37,7 @@ const SkillsDisplayTable: React.FC<SkillsDisplayTableProps> = ({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const handleAddSkill = () => setIsModalOpen(true);
+  // const handleAddSkill = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
   const openDeleteSkillModal = (skill: Skill) => {

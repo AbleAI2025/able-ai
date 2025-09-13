@@ -14,7 +14,7 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = memo(({
   text,
   senderType = 'bot',
-  avatarSrc,
+  // avatarSrc,
   showAvatar = true,
   isNew = false,
   role = 'GIG_WORKER'

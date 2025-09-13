@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { saveWorkerProfileFromOnboardingAction, getPrivateWorkerProfileAction } from '@/actions/user/gig-worker-profile';
+import { getPrivateWorkerProfileAction } from '@/actions/user/gig-worker-profile';
 import { useAuth } from '@/context/AuthContext';
 import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
 import styles from './ManualProfileForm.module.css';
