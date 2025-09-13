@@ -127,20 +127,7 @@ export default function NotificationsPage() {
   };
 
   const handleGoBack = () => {
-    // Navigate to appropriate dashboard based on user.lastRoleUsed
-    if (user?.claims.role === "BUYER") {
-      router.push(`/user/${authUserId}/buyer`); // Assuming buyer dashboard path
-    } else if (user?.claims.role === "GIG_WORKER") {
-      router.push(`/user/${authUserId}/worker`); // Assuming worker dashboard path
-    } else {
-      // If lastRoleUsed is not set, or user is not available, fallback to previous page or a default
-      // For now, let's try to go to select-role if user exists but no role, else back.
-      if (user) {
-        router.push("/select-role");
-      } else {
-        router.back();
-      }
-    }
+    router.back();
   };
 
   if (!user || (authUserId && authUserId !== pageUserId)) {
@@ -192,30 +179,6 @@ export default function NotificationsPage() {
               ))}
             </div>
           )}
-
-          <footer className={styles.footer}>
-            <Link
-              href={
-                user?.claims.role === "BUYER"
-                  ? `/user/${authUserId}/buyer`
-                  : user?.claims.role === "GIG_WORKER"
-                  ? `/user/${authUserId}/worker`
-                  : `/select-role` // Fallback if role is unknown
-              }
-              passHref
-            >
-              <button className={styles.homeButton} aria-label="Go to Home">
-                {/* <Home size={24} /> */}
-                <Image
-                  src="/images/home.svg"
-                  width={24}
-                  height={24}
-                  className={styles.homeIcon}
-                  alt="Home icon"
-                />
-              </button>
-            </Link>
-          </footer>
         </div>
       </div>
     </div>

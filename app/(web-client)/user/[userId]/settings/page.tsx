@@ -411,7 +411,7 @@ export default function SettingsPage() {
       </div>
     );
   }
-  console.log(user.emailVerified);
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
