@@ -39,7 +39,7 @@ export default function AmendGigPage() {
   if (!gig) {
     return (
       <div className={styles.container}>
-        <ScreenHeaderWithBack title="Amend Gig" onBackClick={() => router.back()} />
+        <ScreenHeaderWithBack title="Amend Gig" />
         <div className={styles.error}>Gig not found</div>
       </div>
     );
@@ -47,7 +47,7 @@ export default function AmendGigPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Cancel or Amend" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Cancel or Amend" />
       <main className={styles.contentWrapper}>
         <AmendmentDummyChatbot />
         <AmendmentReasonSection onReasonChange={setReason} reason={reason} workerId={gig.worker?.id} />

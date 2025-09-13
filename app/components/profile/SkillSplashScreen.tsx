@@ -224,7 +224,7 @@ const SkillSplashScreen = ({
 
   return (
     <div className={styles.pageWrapper}>
-      <ScreenHeaderWithBack onBackClick={onBackClick} />
+      <ScreenHeaderWithBack />
       <div className={styles.skillSplashContainer}>
         <div className={styles.header}>
           <div className={styles.videoContainer}>

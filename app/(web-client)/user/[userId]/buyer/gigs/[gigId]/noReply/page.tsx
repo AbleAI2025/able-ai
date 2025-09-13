@@ -1,9 +1,9 @@
 'use client'
-import Logo from '@/app/components/brand/Logo'
+
 import styles from './NoReply.module.css'
 import RehireWorkerCard from '@/app/components/buyer/RehireWorkerCard';
 import { useParams, useRouter } from 'next/navigation';
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
@@ -138,7 +138,7 @@ useEffect(() => {
 
   return (
     <div className={styles.container}>
-        <ScreenHeaderWithBack onBackClick={() => router.back()} />
+        <ScreenHeaderWithBack />
         <main className={styles.mainContent}>
             <p className={styles.originalGigInfo}>
                 {data.originalGig.workerName.split(" ")[0]} didn&apos;t reply to your {data.originalGig.role.toLowerCase()} gig offer. 

@@ -273,7 +273,7 @@ export default function WorkerOffersPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Gig Offers" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Gig Offers" />
     
       <div className={styles.pageWrapper}>
         {offers.filter((o) => o.status !== "expired").length > 0 && (

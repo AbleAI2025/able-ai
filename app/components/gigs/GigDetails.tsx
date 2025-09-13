@@ -305,7 +305,6 @@ const GigDetailsComponent = ({
     <div className={styles.container}>
       <ScreenHeaderWithBack
         title={`${gig.role} Gig`}
-        onBackClick={() => router.back()}
       />
 
       {/* Core Gig Info Section - Adapted to new structure */}

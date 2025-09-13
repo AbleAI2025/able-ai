@@ -37,7 +37,7 @@ export default function EditGigPage() {
   if (!gig) {
     return (
       <div className={styles.container}>
-        <ScreenHeaderWithBack title="Error" onBackClick={() => router.back()} />
+        <ScreenHeaderWithBack title="Error" />
         <div className={styles.error}>Could not load gig details.</div>
       </div>
     );
@@ -45,7 +45,7 @@ export default function EditGigPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Edit Gig Details" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Edit Gig Details" />
       <main className={styles.contentWrapper}>
         <AmendmentDummyChatbot />
         <AmendmentReasonSection onReasonChange={setReason} reason={reason} workerId={gig.worker?.id} />

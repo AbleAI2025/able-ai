@@ -3,7 +3,13 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Users, CalendarDays, CreditCard, LayoutDashboard, MessageCircle } from "lucide-react";
+import {
+  Users,
+  CalendarDays,
+  CreditCard,
+  LayoutDashboard,
+  MessageCircle,
+} from "lucide-react";
 
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
 import IconGrid from "@/app/components/shared/IconGrid";
@@ -51,10 +57,9 @@ export default function BuyerDashboardPage() {
 
   useEffect(() => {
     if (user && authUserToken) {
-      fetchNotifications(authUserToken)
-        .catch((err) => {
-          console.error("Failed to fetch notifications:", err);
-        })
+      fetchNotifications(authUserToken).catch((err) => {
+        console.error("Failed to fetch notifications:", err);
+      });
     }
   }, [user, authUserToken]);
 
@@ -115,37 +120,34 @@ export default function BuyerDashboardPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-       <ScreenHeaderWithBack
+        <ScreenHeaderWithBack
           isHomePage
-          onBackClick={() => router.back()}
           handleClick={handleClick}
           unreadCount={unreadCount}
           unreadNotifications={unreadNotifications}
         />
         {uid && (
-            <AiSuggestionBanner
-              suggestions={aiSuggestions}
-              currentIndex={currentIndex}
-              isLoading={isLoadingSuggestions}
-              error={suggestionsError}
-              dismissed={suggestionsDismissed} // Pass the dismissed state
-              onDismiss={dismissSuggestions}
-              onRefresh={refreshSuggestions}
-              goToNext={goToNext}
-              goToPrev={goToPrev}
-              userId={uid}
-            />
-          )}
+          <AiSuggestionBanner
+            suggestions={aiSuggestions}
+            currentIndex={currentIndex}
+            isLoading={isLoadingSuggestions}
+            error={suggestionsError}
+            dismissed={suggestionsDismissed} // Pass the dismissed state
+            onDismiss={dismissSuggestions}
+            onRefresh={refreshSuggestions}
+            goToNext={goToNext}
+            goToPrev={goToPrev}
+            userId={uid}
+          />
+        )}
         <main className={styles.contentWrapper}>
           <IconGrid items={actionItems} color={"#7eeef9"} />
-          <ReferralBanner
-            role='BUYER'
-          />
-        </main> 
-         <footer className={styles.pageFooter}>
-            <RoleToggle />
-            <SettingsButton />
-          </footer>
+          <ReferralBanner role="BUYER" />
+        </main>
+        <footer className={styles.pageFooter}>
+          <RoleToggle />
+          <SettingsButton />
+        </footer>
       </div>
     </div>
   );

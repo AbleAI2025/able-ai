@@ -76,7 +76,7 @@ export default function CancelOrAmendGigDetailsPage() {
       {/* <header className={styles.header}>
         <h1 className={styles.headerTitle}>Cancel or Amend Gig Details</h1>
       </header> */}
-      <ScreenHeaderWithBack title="Cancel or Amend" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Cancel or Amend" />
 
       <main className={styles.contentWrapper}>
         {/* Instruction Block */}

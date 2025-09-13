@@ -198,7 +198,7 @@ export default function DelegateGigPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <ScreenHeaderWithBack title="Delegate Gig" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Delegate Gig" />
       
       <div className={styles.contentArea}>
         {/* Enhanced Search Bar */}

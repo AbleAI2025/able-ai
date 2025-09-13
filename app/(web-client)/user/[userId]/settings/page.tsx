@@ -415,7 +415,7 @@ export default function SettingsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <ScreenHeaderWithBack title="Settings" onBackClick={() => router.back()} />
+        <ScreenHeaderWithBack title="Settings" />
         <div className={styles.pageWrapper}>
           <p className={styles.pageDescription}>Manage your account preferences and settings</p>
           {/* Email Verification Section */}
