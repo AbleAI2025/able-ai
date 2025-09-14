@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import { Calendar, Check, Info } from "lucide-react";
 import styles from "./GigDetails.module.css";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import GigActionButton from "../shared/GigActionButton";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
 import GigStatusIndicator from "../shared/GigStatusIndicator";
 import ProfileVideo from "../profile/WorkerProfileVideo";
+import { findExistingGigAmendment } from "@/actions/gigs/manage-amendment";
 
 const formatGigDate = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString(undefined, {
@@ -75,6 +76,7 @@ const GigDetailsComponent = ({
   const [isActionLoading, setIsActionLoading] = useState(false);
   const { user } = useAuth();
   const lastRoleUsed = getLastRoleUsed();
+  const pathname = usePathname();
 
   // Get worker name from gig data if available, otherwise use a placeholder
   const getWorkerName = () => {
@@ -229,7 +231,24 @@ const GigDetailsComponent = ({
           break;
 
         case "requestAmendment":
-          router.push(`/user/${userId}/worker/gigs/${gig.id}/amend/new`);
+          if (!user?.uid || !gig.id) return;
+          try {
+            const result = await findExistingGigAmendment({ gigId: gig.id, userId: user.uid });
+
+            if (result.error) {
+              toast.error(result.error);
+              return;
+            }
+
+            if (result.amendId) {
+              router.push(`${pathname}/amend/${result.amendId}`);
+            } else {
+              router.push(`${pathname}/amend/new`);
+            }
+          } catch (error) {
+            console.error("Failed to handle negotiation:", error);
+            toast.error("Could not start negotiation. Please try again.");
+          }
           break;
 
         case "reportIssue":
