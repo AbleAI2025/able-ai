@@ -32,27 +32,7 @@ export default function PublicSkillProfilePage() {
       try {
         const { success, data } = await getSkillDetailsWorker(skillId);
         if (success && data) {
-          // Fallback icon if not present
-          const updatedBadges = (data.badges ?? []).map((badge: any) => ({
-            ...badge,
-            icon: badge.icon || DefaultBadgeIcon,
-          }));
-
-          const updatedRecommendations = (data.recommendations ?? []).map(
-            (rec: any) => ({
-              ...rec,
-              date: rec.date
-                ? new Date(rec.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-                : null,
-            })
-          );    
-
-          setProfile({
-            ...data,
-            badges: updatedBadges,
-            qualifications: data?.qualifications ?? [],
-            recommendations: updatedRecommendations,
-          });
+          setProfile(data);
         }
       } catch (error) {
         console.error("Error fetching skill profile:", error);

@@ -116,51 +116,7 @@ import {
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
-
-// Parse experience text to extract years and months as numeric values
-const parseExperienceToNumeric = (experienceText: string): { years: number; months: number } => {
-  if (!experienceText || experienceText.trim().length === 0) {
-    return { years: 0, months: 0 };
-  }
-
-  const text = experienceText.toLowerCase();
-  let years = 0;
-  let months = 0;
-
-  // Pattern 1: "25 years" or "25 yrs" or "25y"
-  const yearsMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:years?|yrs?|y)\b/);
-  if (yearsMatch) {
-    years = parseFloat(yearsMatch[1]);
-  }
-
-  // Pattern 2: "25 years and 3 months" or "25 years 3 months" or "25y 3m"
-  const yearsAndMonthsMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:years?|yrs?|y).*?(\d+)\s*(?:months?|mon|m)\b/);
-  if (yearsAndMonthsMatch) {
-    years = parseFloat(yearsAndMonthsMatch[1]);
-    months = parseInt(yearsAndMonthsMatch[2]);
-  }
-
-  // Pattern 3: "3 months" only (no years mentioned)
-  const monthsOnlyMatch = text.match(/(\d+)\s*(?:months?|mon|m)\b/);
-  if (monthsOnlyMatch && years === 0) {
-    months = parseInt(monthsOnlyMatch[1]);
-    // Convert months to years if more than 12 months
-    if (months >= 12) {
-      years = Math.floor(months / 12);
-      months = months % 12;
-    }
-  }
-
-  // Pattern 4: "2.5 years" (decimal years)
-  const decimalYearsMatch = text.match(/(\d+\.\d+)\s*(?:years?|yrs?|y)\b/);
-  if (decimalYearsMatch && years === 0) {
-    const decimalYears = parseFloat(decimalYearsMatch[1]);
-    years = Math.floor(decimalYears);
-    months = Math.round((decimalYears - years) * 12);
-  }
-
-  return { years, months };
-};
+import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
@@ -168,6 +124,7 @@ const requiredFields: RequiredField[] = [
   { name: "experience", type: "text", placeholder: "How many years of experience do you have?", defaultPrompt: "How many years of experience do you have in your field?", rows: 1 },
   { name: "skills", type: "text", placeholder: "List your skills and certifications...", defaultPrompt: "What skills and certifications do you have?", rows: 3 },
   { name: "equipment", type: "text", placeholder: "List any equipment you have...", defaultPrompt: "What equipment do you have that you can use for your work?", rows: 3 },
+  { name: "qualifications", type: "text", placeholder: "List your qualifications and certifications...", defaultPrompt: "What qualifications and certifications do you have?", rows: 3 },
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "What's your preferred hourly rate?" },
   { name: "location", type: "location", defaultPrompt: "Where are you based? This helps us find gigs near you!" },
   { name: "availability", type: "availability", defaultPrompt: "When are you available to work? Let's set up your weekly schedule!" },
@@ -1565,7 +1522,7 @@ Return 3 relevant hashtags like "#bartender", "#mixology", "#events" for hospita
         skills: formData.skills || '', // This is now the sanitized version from the form
         qualifications: formData.qualifications || '', // Add qualifications field
         equipment: typeof formData.equipment === 'string' && formData.equipment.trim().length > 0
-          ? formData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined }))
+          ? formData.equipment.split(/[,\n;]/).map((item: string) => ({ name: item.trim(), description: undefined })).filter((item: { name: string; description: undefined }) => item.name.length > 0)
           : [],
         hourlyRate: String(formData.hourlyRate || ''),
         location: formData.location || '',
@@ -1626,6 +1583,57 @@ Return 3 relevant hashtags like "#bartender", "#mixology", "#events" for hospita
 
     const trimmedValue = String(value).trim();
     
+    // Pre-validation: Check for inappropriate content before AI processing with context
+    // Skip pre-validation for numeric fields like hourlyRate to avoid false positives
+    const numericFields = ['hourlyRate', 'experienceYears', 'experienceMonths'];
+    let preValidation: any = { 
+      isAppropriate: true, 
+      confidence: 0, 
+      reason: '', 
+      category: 'clean' as const, 
+      suggestedAction: 'accept' as const,
+      contextAnalysis: undefined 
+    };
+    
+    if (!numericFields.includes(field)) {
+      const { preValidateContentWithContext } = await import('../../../../../../lib/utils/contentModeration');
+      
+      // Build chat context from conversation history
+      const chatContext = {
+        conversationHistory: chatSteps
+          .filter(step => step.type === 'user' || step.type === 'bot')
+          .map(step => ({
+            type: step.type as 'user' | 'bot',
+            content: step.content || '',
+            timestamp: step.id
+          })),
+        currentField: field,
+        userRole: 'worker' as const,
+        sessionDuration: Date.now() - (chatSteps[0]?.id || Date.now())
+      };
+      
+      preValidation = preValidateContentWithContext(trimmedValue, chatContext);
+      
+      // If pre-validation rejects with high confidence, reject immediately
+      if (!preValidation.isAppropriate && preValidation.confidence > 0.8) {
+        // Log rejected content for monitoring
+        console.warn('🚫 Content rejected by pre-validation:', {
+          field,
+          input: trimmedValue,
+          reason: preValidation.reason,
+          category: preValidation.category,
+          confidence: preValidation.confidence,
+          userId: user?.uid || 'unknown',
+          timestamp: new Date().toISOString()
+        });
+        
+        return {
+          sufficient: false,
+          clarificationPrompt: `I'm sorry, but "${preValidation.reason}" is not appropriate for a professional worker profile. Please provide legitimate work-related information.`
+        };
+      }
+    }
+    
     // Use AI for all validation
     try {
       if (!ai) {
@@ -1666,6 +1674,12 @@ CURRENT VALIDATION:
 - User input: "${trimmedValue}"
 - Input type: "${type}"
 
+CONTEXT ANALYSIS:
+- User behavior pattern: ${preValidation.contextAnalysis?.userBehaviorPattern || 'normal'}
+- Conversation theme: ${preValidation.contextAnalysis?.conversationTheme || 'general'}
+- Previous inappropriate attempts: ${preValidation.contextAnalysis?.previousInappropriateCount || 0}
+- Is follow-up to rejection: ${preValidation.contextAnalysis?.isFollowUp ? 'Yes' : 'No'}
+
 ENHANCED AI-POWERED VALIDATION & SANITIZATION:
 
 1. **AI-Powered Context Analysis:**
@@ -1675,10 +1689,15 @@ ENHANCED AI-POWERED VALIDATION & SANITIZATION:
    - Identify patterns in user communication style
 
 2. **Intelligent Validation:**
-   - isAppropriate: Check if content is appropriate for professional worker profile
-   - isWorkerRelated: Check if content relates to worker skills/experience (be VERY lenient)
+   - isAppropriate: Check if content is appropriate for professional worker profile (REJECT nonsense, jokes, memes, fictional characters, inappropriate content)
+   - isWorkerRelated: Check if content relates to worker skills/experience (be lenient for legitimate worker content, but STRICT against nonsense)
    - isSufficient: Check if content provides basic information
    - Consider context: If user mentioned job title earlier, validate against it
+   - REJECT: Video game references, fictional characters, memes, jokes, gibberish, random text
+   - CONTEXT AWARENESS: 
+     * If user behavior pattern is "testing" (multiple previous rejections), be EXTRA strict
+     * If user behavior pattern is "confused" and this is a follow-up, be more lenient for legitimate attempts
+     * If conversation theme is clear (experience, skills, etc.), validate against that context
 
 3. **Enhanced Sanitization & Data Extraction:**
    - naturalSummary: Create a natural, conversational summary that shows understanding
@@ -1686,14 +1705,20 @@ ENHANCED AI-POWERED VALIDATION & SANITIZATION:
    - Cross-reference with existing profile data for consistency
 
 4. **Field-Specific AI Intelligence:**
-   - **experience**: Extract years, validate against job title, suggest improvements
+   - **experience**: Extract years, validate against job title, suggest improvements (accept simple numbers but REJECT nonsense)
+     Example: "5" → "Great! You have 5 years of experience, is that right?"
      Example: "25 years of experience" → "Wow, 25 years of experience! That's fantastic. You've been working as a baker for that long, correct?"
+     REJECT: "its a me mario", "super mario", "luigi", "peach", "bowser", "mushroom kingdom", "jumpman", etc.
    - **skills**: Extract skill names, categorize by industry, suggest additional relevant skills
      Example: "Fondant building, cake decorating" → "Fondant building and cake decorating, that sounds amazing! Those are great skills for a baker, correct?"
    - **equipment**: Extract equipment list, validate relevance, suggest additions
      Example: "Stand mixer, piping bags, cake tins" → "Perfect! You have a stand mixer, piping bags, and cake tins. That's a solid setup for baking, is that right?"
-   - **hourlyRate**: Convert to pounds (£), validate against experience level, suggest competitive rates
+   - **hourlyRate**: Convert to pounds (£), validate against experience level, suggest competitive rates (BE VERY LENIENT with numeric inputs)
      Example: "20" → "Perfect! You're charging £20 per hour, is that right?"
+     Example: "20.50" → "Great! £20.50 per hour, is that correct?"
+     Example: "£20" → "Excellent! £20 per hour, is that right?"
+     Example: "20 pounds" → "Perfect! £20 per hour, is that correct?"
+     ACCEPT: Any reasonable numeric value, currency symbols, "pounds", "per hour", etc.
    - **location**: Extract coordinates, validate against job market, suggest nearby areas
    - **availability**: Extract days/times, validate against job requirements, suggest optimizations
 
@@ -1737,6 +1762,21 @@ If validation fails, respond with:
 - naturalSummary: string
 - extractedData: string
 
+CONTENT MODERATION RULES - REJECT THE FOLLOWING:
+- Video game references: "mario", "luigi", "peach", "bowser", "sonic", "link", "zelda", "pokemon", "pikachu", etc.
+- Fictional characters: "batman", "superman", "spiderman", "wonder woman", etc.
+- Memes and internet culture: "its a me mario", "hello there", "general kenobi", "this is fine", etc.
+- Jokes and humor: "i am the best at nothing", "i can fly", "i am a wizard", etc.
+- Nonsense and gibberish: "asdf", "qwerty", "random text", "blah blah", etc.
+- Inappropriate content: profanity, sexual content, violence, etc.
+- Non-professional content: personal information, unrelated topics, etc.
+
+ACCEPT THE FOLLOWING:
+- Legitimate work experience: "5 years", "2.5 years", "5 years of experience", etc.
+- Professional skills: "customer service", "cooking", "cleaning", "driving", etc.
+- Real equipment: "stand mixer", "car", "tools", "computer", etc.
+- Professional qualifications: "certified", "licensed", "degree", etc.
+
 WORKER ONBOARDING CONTEXT: Remember, this user is creating a worker profile to find gig opportunities. They are the worker/employee looking to be hired. Keep responses focused on worker onboarding only.
 
 Be conversational, intelligent, and always ask for confirmation in natural language.`;
@@ -1760,10 +1800,14 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
       if (result.ok && result.data) {
         const validation = result.data as AIValidationResponse;
         
-        if (!validation.isAppropriate || !validation.isWorkerRelated || !validation.isSufficient) {
+        // Enhance AI validation with pre-validation results
+        const { enhanceAIValidation } = await import('../../../../../../lib/utils/contentModeration');
+        const enhancedValidation = enhanceAIValidation(validation, preValidation);
+        
+        if (!enhancedValidation.isAppropriate || !enhancedValidation.isWorkerRelated || !enhancedValidation.isSufficient) {
           return {
             sufficient: false,
-            clarificationPrompt: validation.clarificationPrompt || 'Please provide appropriate worker-related information.',
+            clarificationPrompt: enhancedValidation.clarificationPrompt || 'Please provide appropriate worker-related information.',
           };
         }
         
@@ -1816,6 +1860,55 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
       }
     } catch (error) {
       console.error('AI validation failed:', error);
+      
+      // Fallback validation when AI fails (with context) - skip for numeric fields
+      let fallbackValidation: any = { isAppropriate: true, confidence: 0, reason: '', category: 'clean' as const };
+      
+      if (!numericFields.includes(field)) {
+        const { preValidateContentWithContext } = await import('../../../../../../lib/utils/contentModeration');
+        
+        // Build chat context from conversation history
+        const chatContext = {
+          conversationHistory: chatSteps
+            .filter(step => step.type === 'user' || step.type === 'bot')
+            .map(step => ({
+              type: step.type as 'user' | 'bot',
+              content: step.content || '',
+              timestamp: step.id
+            })),
+          currentField: field,
+          userRole: 'worker' as const,
+          sessionDuration: Date.now() - (chatSteps[0]?.id || Date.now())
+        };
+        
+        fallbackValidation = preValidateContentWithContext(trimmedValue, chatContext);
+        if (!fallbackValidation.isAppropriate && fallbackValidation.confidence > 0.7) {
+          console.warn('🚫 Content rejected by fallback validation:', {
+            field,
+            input: trimmedValue,
+            reason: fallbackValidation.reason,
+            category: fallbackValidation.category,
+            confidence: fallbackValidation.confidence,
+            userId: user?.uid || 'unknown',
+            timestamp: new Date().toISOString()
+          });
+          
+          return {
+            sufficient: false,
+            clarificationPrompt: `I'm sorry, but "${fallbackValidation.reason}" is not appropriate for a professional worker profile. Please provide legitimate work-related information.`
+          };
+        }
+      }
+      
+      // If fallback validation passes, accept with warning
+      console.warn('⚠️ AI validation failed, using fallback validation:', {
+        field,
+        input: trimmedValue,
+        fallbackResult: fallbackValidation,
+        userId: user?.uid || 'unknown',
+        timestamp: new Date().toISOString()
+      });
+      
       setError('AI validation failed. Please try again.');
       
       // Check if we should escalate due to AI failure
@@ -3579,8 +3672,9 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                           about: step.summaryData?.about || '',
                           experience: step.summaryData?.experience || '',
                           skills: step.summaryData?.skills || '',
+                          qualifications: step.summaryData?.qualifications || '',
                           equipment: typeof step.summaryData?.equipment === 'string' && step.summaryData.equipment.trim().length > 0
-                            ? step.summaryData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined }))
+                            ? step.summaryData.equipment.split(/[,\n;]/).map((item: string) => ({ name: item.trim(), description: undefined })).filter((item: { name: string; description: undefined }) => item.name.length > 0)
                             : [],
                           hourlyRate: String(step.summaryData?.hourlyRate || ''),
                           location: step.summaryData?.location || '',
@@ -4060,6 +4154,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                                  about: summaryData.about || '',
                                  experience: summaryData.experience || '',
                                  skills: summaryData.skills || '',
+                                 qualifications: summaryData.qualifications || '',
                                  equipment: summaryData.equipment ? summaryData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined })) : [],
                                  hourlyRate: String(summaryData.hourlyRate || ''),
                                  location: summaryData.location || '',

@@ -1,92 +1,212 @@
 .card {
-  background-color: #2B2B2B; /* User card background */
-  padding: 1rem; /* Increased padding */
-  border-radius: 16px; /* Rounded corners */
+  background: linear-gradient(135deg, #2B2B2B, #1F1F1F);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.cardHeader {
   display: flex;
   align-items: flex-start;
-  gap: 1rem; /* Space between avatar, info, button */
-  margin-bottom: 0.75rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
+
 .avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  border: 2px solid rgba(59, 130, 246, 0.3);
 }
-.userInfo {
+
+.headerInfo {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
+
 .nameRow {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
+
 .name {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #ffffff;
 }
+
 .username {
   font-size: 0.85rem;
   color: #a0a0a0;
 }
+
+.availableBadge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scoreRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.scoreItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.scoreLabel {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.scoreValue {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 .skillRow {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
+
 .skill {
   font-size: 0.9rem;
   color: #7AF0F5;
   font-weight: 500;
+  background: rgba(122, 240, 245, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
 }
+
 .experience {
   font-size: 0.8rem;
   color: #a0a0a0;
 }
+
 .rateRow {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
+
 .rate {
   font-size: 0.9rem;
   color: #4ade80;
   font-weight: 600;
 }
+
 .location {
   font-size: 0.8rem;
   color: #a0a0a0;
 }
+
+.skillsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skillsLabel {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.skillTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skillTag {
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
 .bio {
   font-size: 0.85rem;
   color: #d1d5db;
-  margin: 0.25rem 0 0 0;
-  line-height: 1.3;
+  line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.lastActive {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(107, 114, 128, 0.2);
+}
+
 .delegateButton {
-  background-color: #7AF0F5; /* Bright cyan/light blue */
-  color: #121212; /* Black text */
-  padding: 0.5rem 1.25rem; /* Adjust padding for button size */
+  background: linear-gradient(135deg, #7AF0F5, #5edce3);
+  color: #121212;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 9999px; /* Pill shape */
+  border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .delegateButton:hover:not(:disabled) {
-  background-color: #5edce3; /* Slightly darker on hover */
+  background: linear-gradient(135deg, #5edce3, #4dd0d9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
+
 .delegateButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 } 

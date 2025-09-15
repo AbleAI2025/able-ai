@@ -1,10 +1,8 @@
 import React, { ReactNode } from "react";
-import styles from "./ChatBotLayout.module.css";
 import ChatInput from "./ChatInput";
-import { useRouter } from "next/navigation";
-// import { useAuth } from '@/context/AuthContext';
 import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
 import OnboardingOptionsDropdown from "./OnboardingOptionsDropdown";
+import styles from "./ChatBotLayout.module.css";
 
 interface ChatBotLayoutProps {
   children: ReactNode;
@@ -37,14 +35,6 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
     },
     ref
   ) => {
-    const router = useRouter();
-    // const { user } = useAuth();
-    /**
-      const onHomeClickInternal = () => {
-      router.push(`/user/${user?.uid}/worker`);
-      }
-     */
-
     const handleSendMessage = (message: string) => {
       if (onSendMessage) {
         onSendMessage(message);
@@ -54,7 +44,7 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
     return (
       <div className={`${styles.chatContainerWrapper} ${className}`}>
         <div className={styles.chatContainer} onScroll={onScroll} ref={ref}>
-          <ScreenHeaderWithBack onBackClick={() => router.back()} />
+          <ScreenHeaderWithBack />
           <div className={styles.chatContent}>
             {showOnboardingOptions &&
               onSwitchToManual &&

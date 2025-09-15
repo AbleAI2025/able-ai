@@ -211,7 +211,7 @@ export default function BuyerProfilePage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack />
       <div className={styles.pageWrapper}>
         {/* Profile Header */}
         <header className={styles.profileHeader}>

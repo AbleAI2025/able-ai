@@ -2,19 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link"; // For Home button
-import Image from "next/image"; // For notification icons
+import Image from "next/image";
+import { AlertTriangle, ChevronRight, Info } from "lucide-react";
 
-// Using Lucide Icons
-import { AlertTriangle, ChevronRight, Info, ChevronLeft } from "lucide-react";
-
-import styles from "./NotificationsPage.module.css";
-import Loader from "@/app/components/shared/Loader"; // Assuming you have a Loader component
+import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { getAllNotificationsAction, updateNotificationStatusAction } from "@/actions/notifications/notifications";
 import { Notification, NotificationType } from "@/app/types/NotificationTypes";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 
+import styles from "./NotificationsPage.module.css";
 
 // Helper to get icon based on notification type
 const getNotificationIcon = (type: Notification["type"]) => {
@@ -34,7 +31,7 @@ const getNotificationIcon = (type: Notification["type"]) => {
         />
       );
     case "payment":
-      return <Info size={20} className={styles.notificationIcon} />; // Or a currency icon
+      return <Info size={20} className={styles.notificationIcon} />;
     case "actionRequired":
       return <AlertTriangle size={20} className={styles.notificationIcon} />;
     case "system":
@@ -66,7 +63,7 @@ export interface ClientNotification {
   link?: string;
   isRead: boolean;
   icon?: string;
-  timestamp: string; // ISO string
+  timestamp: string;
 }
 
 
@@ -100,7 +97,6 @@ export default function NotificationsPage() {
       );
   }
 
-  // Fetch notifications
   useEffect(() => {
     if (user && authUserToken) {
       setIsLoadingNotifications(true);
@@ -126,31 +122,14 @@ export default function NotificationsPage() {
     await updateNotificationStatusAction(notification.id, "read")
   };
 
-  const handleGoBack = () => {
-    // Navigate to appropriate dashboard based on user.lastRoleUsed
-    if (user?.claims.role === "BUYER") {
-      router.push(`/user/${authUserId}/buyer`); // Assuming buyer dashboard path
-    } else if (user?.claims.role === "GIG_WORKER") {
-      router.push(`/user/${authUserId}/worker`); // Assuming worker dashboard path
-    } else {
-      // If lastRoleUsed is not set, or user is not available, fallback to previous page or a default
-      // For now, let's try to go to select-role if user exists but no role, else back.
-      if (user) {
-        router.push("/select-role");
-      } else {
-        router.back();
-      }
-    }
-  };
-
   if (!user || (authUserId && authUserId !== pageUserId)) {
-    return <Loader />; // Show loader while checking auth
+    return <Loader />;
   }
 
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <ScreenHeaderWithBack title="Notifications" onBackClick={handleGoBack} />
+        <ScreenHeaderWithBack title="Notifications" />
         <div className={styles.pageWrapper}>
           {isLoadingNotifications ? (
             <Loader />
@@ -192,30 +171,6 @@ export default function NotificationsPage() {
               ))}
             </div>
           )}
-
-          <footer className={styles.footer}>
-            <Link
-              href={
-                user?.claims.role === "BUYER"
-                  ? `/user/${authUserId}/buyer`
-                  : user?.claims.role === "GIG_WORKER"
-                  ? `/user/${authUserId}/worker`
-                  : `/select-role` // Fallback if role is unknown
-              }
-              passHref
-            >
-              <button className={styles.homeButton} aria-label="Go to Home">
-                {/* <Home size={24} /> */}
-                <Image
-                  src="/images/home.svg"
-                  width={24}
-                  height={24}
-                  className={styles.homeIcon}
-                  alt="Home icon"
-                />
-              </button>
-            </Link>
-          </footer>
         </div>
       </div>
     </div>

@@ -6,6 +6,10 @@ import { GigsTable, GigWorkerProfilesTable, UsersTable, gigStatusEnum } from "@/
 import moment from "moment";
 import GigDetails from "@/app/types/GigDetailsTypes";
 
+// Constants for worker statistics calculation
+const MAX_EXPERIENCE_YEARS = 10;
+const MIN_GIGS_FOR_STAR_WORKER = 5;
+
 function getMappedStatus(internalStatus: string): GigDetails['status'] {
 
   switch (internalStatus) {
@@ -28,20 +32,14 @@ function getMappedStatus(internalStatus: string): GigDetails['status'] {
 function extractLocationFromObject(obj: any): string | null {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
   
-  console.log('Location debug - extracting from object:', obj);
-  
   // Handle address objects - prioritize readable text over coordinates
   if (obj.formatted_address) {
-    const result = obj.formatted_address;
-    console.log('Location debug - extracted formatted_address:', result);
-    return result;
+    return obj.formatted_address;
   }
   
   // Handle other address fields
   if (obj.address) {
-    const result = obj.address;
-    console.log('Location debug - extracted address:', result);
-    return result;
+    return obj.address;
   }
   
   // Handle street address components
@@ -55,244 +53,153 @@ function extractLocationFromObject(obj: any): string | null {
     if (obj.country) parts.push(obj.country);
     
     if (parts.length > 0) {
-      const result = parts.join(', ');
-      console.log('Location debug - extracted address components:', result);
-      return result;
+      return parts.join(', ');
     }
   }
   
   // Only use coordinates as a last resort if no readable address is available
   if (obj.lat && obj.lng && typeof obj.lat === 'number' && typeof obj.lng === 'number') {
-    const result = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-    console.log('Location debug - extracted coordinates (fallback):', result);
-    return result;
+    return `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
   }
   
-  console.log('Location debug - no meaningful data found in object');
   return null;
 }
+
 // Helper function to extract location from a string
 function extractLocationFromString(str: string): string | null {
   if (!str || typeof str !== 'string') return null;
-  console.log('Location debug - processing string:', str);
   
   // Check if it's a URL first
   if (str.startsWith('http')) {
-    const result = `Map Link: ${str}`;
-    console.log('Location debug - formatted URL:', result);
-    return result;
+    return `Map Link: ${str}`;
   }
   
   // Check if it's already a formatted location string (prioritize readable text)
   if (str.includes(',') && !str.includes('[object Object]') && !str.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
-    console.log('Location debug - using string as-is (readable text):', str);
     return str;
   }
   
   // Only use coordinates as a last resort if no readable text is available
   if (str.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
-    const result = `Coordinates: ${str}`;
-    console.log('Location debug - formatted coordinates (fallback):', result);
-    return result;
+    return `Coordinates: ${str}`;
   }
   
-  console.log('Location debug - string not recognized as location');
+  return null;
+}
+
+// Helper function to extract location from any data type (object or string)
+function extractLocationFromData(data: any): string | null {
+  if (!data) return null;
+  
+  if (typeof data === 'string') {
+    return extractLocationFromString(data);
+  }
+  
+  if (typeof data === 'object') {
+    return extractLocationFromObject(data);
+  }
+  
+  return null;
+}
+
+// Helper function to perform aggressive location extraction from an object
+function extractLocationAggressively(obj: any): string | null {
+  if (!obj || typeof obj !== 'object') return null;
+  
+  // Prioritize readable address text over coordinates
+  if (obj.formatted_address) {
+    return obj.formatted_address;
+  }
+  
+  if (obj.address) {
+    return obj.address;
+  }
+  
+  if (obj.street && obj.city) {
+    return `${obj.street}, ${obj.city}`;
+  }
+  
+  // Show any available string data (but not coordinates)
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string' && value.trim() && 
+        value !== 'null' && value !== 'undefined' && value !== '[object Object]' && 
+        !value.includes('[object Object]') && !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
+      return value.trim();
+    }
+  }
+  
+  // Only use coordinates as absolute last resort
+  if (obj.lat && obj.lng) {
+    return `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
+  }
+  
   return null;
 }
 
 // Helper function to parse location from gig data
 function parseGigLocation(gig: any): string {
-  let locationDisplay = 'Location not specified';
-  
-  console.log('Location debug - exactLocation:', gig.exactLocation);
-  console.log('Location debug - addressJson:', gig.addressJson);
-  console.log('Location debug - exactLocation type:', typeof gig.exactLocation);
-  console.log('Location debug - addressJson type:', typeof gig.addressJson);
-  
   // Try to extract location from addressJson first (prioritize formatted addresses)
   if (gig.addressJson) {
-    console.log('Location debug - processing addressJson:', gig.addressJson);
     if (typeof gig.addressJson === 'string') {
       try {
         const parsed = JSON.parse(gig.addressJson);
         const extracted = extractLocationFromObject(parsed);
         if (extracted) {
-          locationDisplay = extracted;
-          console.log('Location debug - using parsed addressJson:', locationDisplay);
+          return extracted;
         }
       } catch (e) {
-        console.log('Location debug - addressJson parsing failed, trying as string');
+        // If JSON parsing fails, try as string
         const extracted = extractLocationFromString(gig.addressJson);
         if (extracted) {
-          locationDisplay = extracted;
-          console.log('Location debug - using addressJson as string:', locationDisplay);
+          return extracted;
         }
       }
     } else if (typeof gig.addressJson === 'object') {
       const extracted = extractLocationFromObject(gig.addressJson);
       if (extracted) {
-        locationDisplay = extracted;
-        console.log('Location debug - using addressJson object:', locationDisplay);
+        return extracted;
       }
     }
   }
   
   // If addressJson didn't work, try exactLocation
-  if (locationDisplay === 'Location not specified' && gig.exactLocation) {
-    console.log('Location debug - processing exactLocation:', gig.exactLocation);
-    if (typeof gig.exactLocation === 'string') {
-      const extracted = extractLocationFromString(gig.exactLocation);
-      if (extracted) {
-        locationDisplay = extracted;
-        console.log('Location debug - using exactLocation string:', locationDisplay);
-      }
-    } else if (typeof gig.exactLocation === 'object') {
-      const extracted = extractLocationFromObject(gig.exactLocation);
-      if (extracted) {
-        locationDisplay = extracted;
-        console.log('Location debug - using exactLocation object:', locationDisplay);
-      }
+  if (gig.exactLocation) {
+    const extracted = extractLocationFromData(gig.exactLocation);
+    if (extracted) {
+      return extracted;
     }
   }
 
-    // If still no location, try one more aggressive pass
-    if (locationDisplay === 'Location not specified') {
-      // Try addressJson again with more aggressive parsing
-      if (gig.addressJson && typeof gig.addressJson === 'object') {
-        const obj = gig.addressJson as any;
-        
-        // Prioritize readable address text over coordinates
-        if (obj.formatted_address) {
-          locationDisplay = obj.formatted_address;
-        } else if (obj.address) {
-          locationDisplay = obj.address;
-        } else if (obj.street && obj.city) {
-          locationDisplay = `${obj.street}, ${obj.city}`;
-        } else {
-          // Show any available string data (but not coordinates)
-          for (const [key, value] of Object.entries(obj)) {
-            if (typeof value === 'string' && value.trim() && 
-                value !== 'null' && value !== 'undefined' && value !== '[object Object]' && 
-                !value.includes('[object Object]') && !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
-              locationDisplay = value.trim();
-              break;
-            }
-          }
-        }
-        
-        // Only use coordinates as absolute last resort
-        if (locationDisplay === 'Location not specified' && obj.lat && obj.lng) {
-          locationDisplay = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-        }
-      }
-      
-      // Try exactLocation one more time
-      if (locationDisplay === 'Location not specified' && gig.exactLocation && typeof gig.exactLocation === 'object') {
-        const obj = gig.exactLocation as any;
-        
-        // Prioritize readable address text over coordinates
-        if (obj.formatted_address) {
-          locationDisplay = obj.formatted_address;
-        } else if (obj.address) {
-          locationDisplay = obj.address;
-        } else if (obj.street && obj.city) {
-          locationDisplay = `${obj.street}, ${obj.city}`;
-        }
-        
-        // Only use coordinates as absolute last resort
-        if (locationDisplay === 'Location not specified' && obj.lat && obj.lng) {
-          locationDisplay = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-        }
-      }
+  // If still no location, try aggressive extraction
+  if (gig.addressJson && typeof gig.addressJson === 'object') {
+    const extracted = extractLocationAggressively(gig.addressJson);
+    if (extracted) {
+      return extracted;
     }
-  // Final aggressive extraction attempt
-  if (locationDisplay === 'Location not specified') {
-    console.log('Location debug - attempting final aggressive extraction');
-    
-    if (gig.addressJson && typeof gig.addressJson === 'object') {
-      const obj = gig.addressJson as any;
-      console.log('Location debug - final addressJson object:', obj);
-      
-      // Prioritize readable address text over coordinates
-      if (obj.formatted_address) {
-        locationDisplay = obj.formatted_address;
-      } else if (obj.address) {
-        locationDisplay = obj.address;
-      } else if (obj.street && obj.city) {
-        locationDisplay = `${obj.street}, ${obj.city}`;
-      } else {
-        // Show any available string data (but not coordinates)
-        for (const [key, value] of Object.entries(obj)) {
-          if (typeof value === 'string' && value.trim() && 
-              value !== 'null' && value !== 'undefined' && value !== '[object Object]' && 
-              !value.includes('[object Object]') && !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
-            locationDisplay = value.trim();
-            console.log('Location debug - final extraction from key:', key, 'value:', locationDisplay);
-            break;
-          }
-        }
-      }
-      
-      // Only use coordinates as absolute last resort
-      if (locationDisplay === 'Location not specified' && obj.lat && obj.lng) {
-        locationDisplay = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-      }
-    }
-    
-    if (locationDisplay === 'Location not specified' && gig.exactLocation && typeof gig.exactLocation === 'object') {
-      const obj = gig.exactLocation as any;
-      console.log('Location debug - final exactLocation object:', obj);
-      
-      // Prioritize readable address text over coordinates
-      if (obj.formatted_address) {
-        locationDisplay = obj.formatted_address;
-      } else if (obj.address) {
-        locationDisplay = obj.address;
-      } else if (obj.street && obj.city) {
-        locationDisplay = `${obj.street}, ${obj.city}`;
-      }
-      
-      // Only use coordinates as absolute last resort
-      if (locationDisplay === 'Location not specified' && obj.lat && obj.lng) {
-        locationDisplay = `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-      }
+  }
+  
+  if (gig.exactLocation && typeof gig.exactLocation === 'object') {
+    const extracted = extractLocationAggressively(gig.exactLocation);
+    if (extracted) {
+      return extracted;
     }
   }
 
-    // Final validation: ensure we never return problematic values
-    if (locationDisplay === '[object Object]' || locationDisplay.includes('[object Object]')) {
-      locationDisplay = 'Location not specified';
-    }
-  // Final validation and fallback
-  if (locationDisplay === '[object Object]' || locationDisplay.includes('[object Object]')) {
-    console.warn('Location debug - caught problematic location value, clearing it');
-    locationDisplay = 'Location not specified';
-  }
-
-    // Additional safety check - ensure we always have a meaningful location
-    if (locationDisplay === 'Location not specified') {
-      locationDisplay = 'Location details available';
-    }
-
-    // Use the full titleInternal as the role (no truncation)
-  if (locationDisplay === 'Location not specified') {
-    console.log('Location debug - no location found, using fallback');
-    locationDisplay = 'Location details available';
-  }
-
-  console.log('Location debug - FINAL locationDisplay:', locationDisplay);
-  return locationDisplay;
+  // Return fallback location if no valid location found
+  return 'Location details available';
 }
 
 export async function getGigDetails({
   gigId,
   userId,
   role,
+  isDatabaseUserId = false,
 }: { 
   gigId: string; 
   userId: string; 
   role?: 'buyer' | 'worker'; 
-  isViewQA?: boolean; 
+  isViewQA?: boolean;
+  isDatabaseUserId?: boolean;
 }) {
 
   
@@ -302,18 +209,45 @@ export async function getGigDetails({
   }
 
   try {
-    console.log('🔍 DEBUG: Looking up user with Firebase UID:', userId);
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, userId),
-      columns: {
-        id: true,
-      }
+    let user;
+    
+    if (isDatabaseUserId) {
+      // Look up by database user ID directly
+      console.log('🔍 DEBUG: Looking up user with database user ID:', userId);
+      user = await db.query.UsersTable.findFirst({
+        where: eq(UsersTable.id, userId),
+        columns: {
+          id: true,
+          firebaseUid: true,
+          fullName: true,
+        }
+      });
+    } else {
+      // Look up by Firebase UID (original behavior)
+      console.log('🔍 DEBUG: Looking up user with Firebase UID:', userId);
+      user = await db.query.UsersTable.findFirst({
+        where: eq(UsersTable.firebaseUid, userId),
+        columns: {
+          id: true,
+          firebaseUid: true,
+          fullName: true,
+        }
+      });
+    }
+
+    console.log('🔍 DEBUG: User lookup result:', { 
+      found: !!user, 
+      userId: user?.id, 
+      firebaseUid: user?.firebaseUid,
+      fullName: user?.fullName,
+      searchedFor: userId,
+      isDatabaseUserId
     });
 
     console.log('🔍 DEBUG: User lookup result:', { found: !!user, userId: user?.id });
 
     if (!user) {
-      console.log('🔍 DEBUG: User not found in database');
+      console.log('🔍 DEBUG: User not found in database for ID:', userId);
       return { error: 'User is not found', gig: {} as GigDetails, status: 404 };
     }
 
@@ -421,7 +355,8 @@ export async function getGigDetails({
     let isWorkerStar = false;
 
     if (gig.worker?.id) {
-      // Get completed gigs count for the worker
+      // Get completed gigs count for the worker in a separate optimized query
+      // This is more efficient than including it in the main query due to the complexity
       const completedGigs = await db.query.GigsTable.findMany({
         where: and(
           eq(GigsTable.workerUserId, gig.worker.id),
@@ -433,10 +368,10 @@ export async function getGigDetails({
 
       // Calculate experience based on completed gigs (rough estimate)
       // Assuming each gig represents some experience
-      workerExperience = Math.min(workerGigs, 10); // Cap at 10 years for now
+      workerExperience = Math.min(workerGigs, MAX_EXPERIENCE_YEARS);
 
       // Determine if worker is a star (simplified logic)
-      isWorkerStar = workerGigs >= 5; // Consider a worker a star if they have 5+ completed gigs
+      isWorkerStar = workerGigs >= MIN_GIGS_FOR_STAR_WORKER;
     }
 
     const gigDetails: GigDetails = {

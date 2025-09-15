@@ -407,6 +407,7 @@ export const qualifications = pgTable("qualifications", {
 	description: text(),
 	documentUrl: text("document_url"),
 	isVerifiedByAdmin: boolean("is_verified_by_admin").default(false),
+	skillId: uuid("skill_id"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
@@ -415,6 +416,11 @@ export const qualifications = pgTable("qualifications", {
 			foreignColumns: [gigWorkerProfiles.id],
 			name: "qualifications_worker_profile_id_gig_worker_profiles_id_fk"
 		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.skillId],
+			foreignColumns: [skills.id],
+			name: "qualifications_skill_id_skills_id_fk"
+		}).onDelete("set null"),
 ]);
 
 export const recommendations = pgTable("recommendations", {

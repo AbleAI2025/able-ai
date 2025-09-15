@@ -142,7 +142,6 @@ export function useAiSuggestionBanner({
       }
     }
     // If not in session storage or parsing failed, fetch new suggestions
-    console.log('No valid batch in session, proceeding to fetchSuggestions from initial useEffect.');
     fetchSuggestions(); // Now fetchSuggestions is defined
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, userId, isLongTermDismissed]);

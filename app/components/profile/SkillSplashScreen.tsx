@@ -224,7 +224,7 @@ const SkillSplashScreen = ({
 
   return (
     <div className={styles.pageWrapper}>
-      <ScreenHeaderWithBack onBackClick={onBackClick} />
+      <ScreenHeaderWithBack />
       <div className={styles.skillSplashContainer}>
         <div className={styles.header}>
           <div className={styles.videoContainer}>
@@ -300,14 +300,14 @@ const SkillSplashScreen = ({
                 height={31}
               />
               <p>
-                {profile.statistics.paymentsCollected}
+                £{profile.statistics.paymentsCollected}
                 <span>Payments collected</span>
               </p>
             </div>
             <div className={styles.stats}>
               <Image src="/images/tips.svg" alt="Tips" width={46} height={30} />
               <p>
-                {profile.statistics.tipsReceived}
+                £{profile.statistics.tipsReceived}
                 <span>Tips received</span>
               </p>
             </div>
@@ -404,18 +404,6 @@ const SkillSplashScreen = ({
         )}
 
         {/* Qualifications */}
-        {/* {profile.qualifications && profile.qualifications.length > 0 && (
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Qualifications and training:</h3>
-            <ul className={styles.list}>
-              {profile?.qualifications?.map((q, index) => (
-                <li key={index}>
-                  {q.title}: {q.description}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )} */}
         <Qualifications
           qualifications={profile?.qualifications || []}
           isSelfView={isSelfView}
@@ -430,9 +418,9 @@ const SkillSplashScreen = ({
             profile.buyerReviews.map((review, index) => (
               <ReviewCardItem
                 key={index}
-                reviewerName={review?.name}
-                date={review?.date?.toString()}
-                comment={review?.text}
+                reviewerName={review?.author?.fullName || "Unknown"}
+                date={review?.createdAt?.toString()}
+                comment={review?.comment}
               />
             ))
           ) : (
@@ -447,9 +435,9 @@ const SkillSplashScreen = ({
             profile.recommendations.map((recommendation, index) => (
               <RecommendationCardItem
                 key={index}
-                recommenderName={recommendation.name}
-                date={recommendation?.date?.toString()}
-                comment={recommendation?.text}
+                recommenderName={recommendation?.author?.fullName || recommendation?.recommenderName || "Unknown"}
+                date={recommendation?.createdAt?.toString()}
+                comment={recommendation?.comment}
               />
             ))
           ) : (

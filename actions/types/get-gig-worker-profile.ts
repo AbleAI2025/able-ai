@@ -59,8 +59,8 @@ export interface SkillProfile {
   videoUrl: string;
   statistics: {
     reviews?: number;
-    paymentsCollected: string;
-    tipsReceived: string;
+    paymentsCollected: number;
+    tipsReceived: number;
   };
   supportingImages: string[];
   badges: any[];

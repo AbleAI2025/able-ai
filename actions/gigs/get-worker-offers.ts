@@ -3,25 +3,22 @@
 import { db } from "@/lib/drizzle/db";
 import { eq } from "drizzle-orm";
 import { gigStatusEnum, UsersTable, GigsTable, GigWorkerProfilesTable } from "@/lib/drizzle/schema";
-import { isWorkerWithinDistance } from "@/lib/utils/distance";
+import { isWorkerWithinDistance, parseCoordinates, calculateDistance } from "@/lib/utils/distance";
+
+// Constants
+const DEFAULT_GIG_SEARCH_RADIUS_KM = 30;
 
 // Gig statuses for offers (pending worker acceptance)
-const PENDING_WORKER_ACCEPTANCE = gigStatusEnum.enumValues[0];
-// const PAYMENT_HELD_PENDING_ACCEPTANCE = gigStatusEnum.enumValues[1];
+const PENDING_WORKER_ACCEPTANCE = 'PENDING_WORKER_ACCEPTANCE';
 
 // Gig statuses for accepted gigs
-const ACCEPTED = gigStatusEnum.enumValues[2];
-const IN_PROGRESS = gigStatusEnum.enumValues[4];
-const PENDING_COMPLETION_WORKER = gigStatusEnum.enumValues[5];
-const PENDING_COMPLETION_BUYER = gigStatusEnum.enumValues[6];
-const COMPLETED = gigStatusEnum.enumValues[7];
-const AWAITING_PAYMENT = gigStatusEnum.enumValues[8];
-const PAID = gigStatusEnum.enumValues[9];
-
-// Debug: Log the actual enum values
-console.log("Debug - Enum values:", gigStatusEnum.enumValues);
-console.log("Debug - PENDING_WORKER_ACCEPTANCE:", PENDING_WORKER_ACCEPTANCE);
-console.log("Debug - ACCEPTED:", ACCEPTED);
+const ACCEPTED = 'ACCEPTED';
+const IN_PROGRESS = 'IN_PROGRESS';
+const PENDING_COMPLETION_WORKER = 'PENDING_COMPLETION_WORKER';
+const PENDING_COMPLETION_BUYER = 'PENDING_COMPLETION_BUYER';
+const COMPLETED = 'COMPLETED';
+const AWAITING_PAYMENT = 'AWAITING_PAYMENT';
+const PAID = 'PAID';
 
 export interface WorkerGigOffer {
   id: string;
@@ -129,28 +126,45 @@ function transformGigToWorkerOffer(
 
 export async function getWorkerOffers(userId: string) {
   try {
-    console.log("Debug - getWorkerOffers called with userId:", userId);
-
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
       columns: { id: true },
       with: {
         gigWorkerProfile: {
-          columns: { location: true }
+          columns: { 
+            location: true,
+            latitude: true,
+            longitude: true
+          }
         }
       }
     });
-
-    console.log("Debug - User found:", user);
 
     if (!user) {
       return { error: "User not found", status: 404 };
     }
 
     // Get worker's location for distance filtering
-    const workerLocation = user.gigWorkerProfile?.location;
-
-    console.log("Debug - Using simplified approach...");
+    const workerProfile = user.gigWorkerProfile;
+    let workerCoords = null;
+    
+    // Try to get coordinates from latitude/longitude fields first
+    if (workerProfile?.latitude && workerProfile?.longitude) {
+      const lat = parseFloat(workerProfile.latitude.toString());
+      const lng = parseFloat(workerProfile.longitude.toString());
+      if (!isNaN(lat) && !isNaN(lng)) {
+        workerCoords = { lat, lon: lng };
+        console.log(`🔍 DEBUG: Worker coordinates from lat/lng: ${lat}, ${lng}`);
+      }
+    }
+    
+    // Fallback to parsing location string
+    if (!workerCoords && workerProfile?.location) {
+      workerCoords = parseCoordinates(workerProfile.location);
+      console.log(`🔍 DEBUG: Worker coordinates from location string:`, workerCoords);
+    }
+    
+    console.log(`🔍 DEBUG: Final worker coordinates:`, workerCoords);
 
     const allGigs = await db.query.GigsTable.findMany({
       columns: {
@@ -169,8 +183,6 @@ export async function getWorkerOffers(userId: string) {
       },
     });
 
-    console.log("Debug - Total gigs fetched:", allGigs.length);
-
     const offerGigs = allGigs.filter(
       (gig) => {
         const basicFilter = gig.statusInternal === PENDING_WORKER_ACCEPTANCE &&
@@ -179,13 +191,30 @@ export async function getWorkerOffers(userId: string) {
         
         if (!basicFilter) return false;
         
-        // If worker has location, filter by distance (30km)
-        if (workerLocation) {
+        // If worker has coordinates, filter by distance
+        if (workerCoords) {
           const gigLocation = gig.exactLocation || gig.addressJson;
-          return isWorkerWithinDistance(gigLocation, workerLocation, 30);
+          const gigCoords = parseCoordinates(gigLocation);
+          
+          if (gigCoords) {
+            const distance = calculateDistance(
+              workerCoords.lat,
+              workerCoords.lon,
+              gigCoords.lat,
+              gigCoords.lon
+            );
+            
+            const withinRange = distance <= DEFAULT_GIG_SEARCH_RADIUS_KM;
+            console.log(`🔍 DEBUG: Gig ${gig.id} - Distance: ${distance.toFixed(2)}km, Within range: ${withinRange}`);
+            return withinRange;
+          } else {
+            console.log(`🔍 DEBUG: Gig ${gig.id} - No valid gig coordinates, including anyway`);
+            return true; // Include gigs without coordinates
+          }
         }
         
-        // If no worker location, include all gigs (fallback)
+        // If no worker coordinates, include all gigs (fallback)
+        console.log(`🔍 DEBUG: No worker coordinates, including all gigs`);
         return true;
       }
     );
@@ -212,13 +241,6 @@ export async function getWorkerOffers(userId: string) {
 
     const accepted: WorkerGigOffer[] = acceptedGigs.map((gig) =>
       transformGigToWorkerOffer(gig, userId)
-    );
-
-    console.log(
-      "Debug - Final result - offers:",
-      offers.length,
-      "accepted:",
-      accepted.length
     );
 
     return {

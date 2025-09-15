@@ -1,5 +1,24 @@
-import {BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
+import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import { Qualification } from "@/app/types";
+
+type authorType = {
+  fullName: string;
+};
+
+type buyerReviews = {
+  id: string;
+  author: authorType | null;
+  createdAt: Date | string;
+  comment: string | null;
+}[];
+
+type recommendations = {
+  id: string;
+  recommenderName?: string | null | undefined;
+  author: authorType | null;
+  createdAt: Date | null;
+  comment: string | null;
+}[];
 
 export type SkillProfile = {
   workerProfileId?: string;
@@ -17,28 +36,22 @@ export type SkillProfile = {
   videoUrl?: string | null;
   statistics: {
     reviews?: number;
-    paymentsCollected: string;
-    tipsReceived: string;
+    paymentsCollected: number;
+    tipsReceived: number;
   };
   supportingImages: string[];
-  badges: {
-    id: string;
-    type: "COMMON" | "EARLY_JOINER" | "OTHER";
-    name: string;
-    icon?: BadgeIcon;
-    description?: string | null;
-    awardedAt: Date;
-    awardedBySystem?: boolean | null;
-  }[] | undefined;
+  badges:
+    | {
+        id: string;
+        type: "COMMON" | "EARLY_JOINER" | "OTHER";
+        name: string;
+        icon?: BadgeIcon | string | null;
+        description?: string | null;
+        awardedAt: Date;
+        awardedBySystem?: boolean | null;
+      }[]
+    | undefined;
   qualifications: Qualification[];
-  buyerReviews: {
-    name: string;
-    date: Date | string;
-    text: string | null;
-  }[];
-  recommendations?: {
-    name: string;
-    date: Date | null;
-    text: string | null;
-  }[];
+  buyerReviews?: buyerReviews | undefined;
+  recommendations?: recommendations | undefined;
 };

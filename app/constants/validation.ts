@@ -9,6 +9,8 @@ export const VALIDATION_CONSTANTS = {
     MIN_EXPERIENCE_LENGTH: 1, // Minimum characters for experience field
     MIN_SKILLS_LENGTH: 5, // Minimum characters for skills field
     MIN_EQUIPMENT_LENGTH: 5, // Minimum characters for equipment field
+    MIN_QUALIFICATIONS_LENGTH: 5, // Minimum characters for qualifications field
+    MIN_REFERENCES_LENGTH: 1, // Minimum characters for references field
   },
   
   // Gig validation

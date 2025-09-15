@@ -573,7 +573,7 @@ const WorkerCalendarPage = () => {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack />
       <CalendarHeader
         date={date}
         view={view}

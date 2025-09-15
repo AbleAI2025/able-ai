@@ -296,25 +296,41 @@ export async function findMatchingWorkers(
       
       // LOCATION IS MANDATORY - workers must be within 30km to be considered
       let withinRange = false; // Default to false - must have valid coordinates
-      if (gigCoords && worker.gigWorkerProfile?.latitude && worker.gigWorkerProfile?.longitude) {
-        const workerLat = parseFloat(worker.gigWorkerProfile.latitude.toString());
-        const workerLng = parseFloat(worker.gigWorkerProfile.longitude.toString());
+      
+      if (gigCoords) {
+        let workerCoords = null;
         
-        if (!isNaN(workerLat) && !isNaN(workerLng)) {
+        // Try to get coordinates from latitude/longitude fields first
+        if (worker.gigWorkerProfile?.latitude && worker.gigWorkerProfile?.longitude) {
+          const workerLat = parseFloat(worker.gigWorkerProfile.latitude.toString());
+          const workerLng = parseFloat(worker.gigWorkerProfile.longitude.toString());
+          
+          if (!isNaN(workerLat) && !isNaN(workerLng)) {
+            workerCoords = { lat: workerLat, lng: workerLng };
+          }
+        }
+        
+        // Fallback to parsing location string
+        if (!workerCoords && worker.gigWorkerProfile?.location) {
+          const parsed = extractCoordinates(worker.gigWorkerProfile.location);
+          if (parsed) {
+            workerCoords = { lat: parsed.lat, lng: parsed.lng };
+          }
+        }
+        
+        if (workerCoords) {
           const distance = calculateDistance(
             gigCoords.lat, 
             gigCoords.lng, 
-            workerLat, 
-            workerLng
+            workerCoords.lat, 
+            workerCoords.lng
           );
           withinRange = distance <= 30; // 30km radius is MANDATORY
           
           console.log(`Worker ${worker.fullName}: Distance ${distance.toFixed(2)}km, Within range: ${withinRange}, Has skills: ${hasSkills}, Available: ${isAvailable}`);
         } else {
-          console.log(`Worker ${worker.fullName}: Invalid worker coordinates (${workerLat}, ${workerLng}), REJECTED - no valid coordinates`);
+          console.log(`Worker ${worker.fullName}: No valid worker coordinates, REJECTED - no coordinates`);
         }
-      } else if (gigCoords) {
-        console.log(`Worker ${worker.fullName}: No worker coordinates (lat: ${worker.gigWorkerProfile?.latitude}, lng: ${worker.gigWorkerProfile?.longitude}), REJECTED - no coordinates`);
       } else {
         console.log(`Worker ${worker.fullName}: No gig coordinates, REJECTED - cannot calculate distance`);
       }

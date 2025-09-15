@@ -8,7 +8,7 @@ import Link from "next/link";
 
 import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming shared location
 import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import new component
-import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
+
 import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
 import { Loader2, Inbox, Calendar } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
@@ -16,7 +16,7 @@ import Logo from "@/app/components/brand/Logo";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
-import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
+
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
@@ -95,32 +95,7 @@ export default function WorkerOffersPage() {
     fetchWorkerProfileId();
   }, [uid]);
 
-  // AI Suggestion Banner Hook
-  const {
-    suggestions: aiSuggestions,
-    currentIndex,
-    isLoading: isLoadingSuggestions,
-    error: suggestionsError,
-    dismissed: suggestionsDismissed,
-    dismiss: dismissSuggestions,
-    refresh: refreshSuggestions,
-    goToNext,
-    goToPrev,
-  } = useAiSuggestionBanner({
-    role: "worker",
-    userId: uid || "", // Provide fallback for undefined uid
-    // enabled: true, // Removed duplicate enabled property
-    context: {
-      // Example context for worker, replace with actual relevant data
-      profileCompletion: 0.7,
-      recentActivity: "applied for 2 gigs",
-      platformTrends: [
-        "high demand for photographers",
-        "weekend shifts available",
-      ],
-    },
-    enabled: !!uid, // Only enable if uid is available
-  });
+  
 
   // Fetch worker data (offers and accepted gigs)
   useEffect(() => {
@@ -298,21 +273,8 @@ export default function WorkerOffersPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Gig Offers" onBackClick={() => router.back()} />
-      {uid && (
-        <AiSuggestionBanner
-          suggestions={aiSuggestions}
-          currentIndex={currentIndex}
-          isLoading={isLoadingSuggestions}
-          error={suggestionsError}
-          dismissed={suggestionsDismissed} // Pass the dismissed state
-          onDismiss={dismissSuggestions}
-          onRefresh={refreshSuggestions}
-          goToNext={goToNext}
-          goToPrev={goToPrev}
-          userId={uid}
-        />
-      )}
+      <ScreenHeaderWithBack title="Gig Offers" />
+    
       <div className={styles.pageWrapper}>
         {offers.filter((o) => o.status !== "expired").length > 0 && (
           <div className={styles.pageHeader}>
