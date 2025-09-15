@@ -4,7 +4,7 @@ import React from "react";
 import styles from "./CalendarEventComponent.module.css";
 import { Check, Clock, User, Eye } from "lucide-react";
 import { View } from 'react-big-calendar';
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 // Optionally import an icon library for checkmark, etc.
 
@@ -47,7 +47,7 @@ const CalendarEventComponent: React.FC<CalendarEventComponentProps> = ({
   activeFilter
 }) => {
 
-  const router = useRouter();
+  // const router = useRouter();
   // Format time (e.g., 9:00 AM - 11:00 AM)
   const formatTime = (start: Date, end: Date) => {
     const opts: Intl.DateTimeFormatOptions = { 

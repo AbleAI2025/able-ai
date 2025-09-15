@@ -7,7 +7,6 @@ import {
   ChevronRight,
   RefreshCw,
   X,
-  MessageSquare,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import styles from "./AiSuggestionBanner.module.css";
