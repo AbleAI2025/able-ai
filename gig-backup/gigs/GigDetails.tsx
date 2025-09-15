@@ -11,7 +11,6 @@ import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { updateGigOfferStatus } from '@/actions/gigs/update-gig-offer-status';
-import { holdGigFunds } from '@/app/actions/stripe/create-hold-gig-Funds';
 import { deleteGig } from '@/actions/gigs/delete-gig';
 import { toast } from 'sonner';
 import ScreenHeaderWithBack from '../layout/ScreenHeaderWithBack';

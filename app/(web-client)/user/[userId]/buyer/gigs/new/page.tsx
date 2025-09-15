@@ -48,6 +48,7 @@ import {
   findStandardizedJobTitleWithAIFallback,
   ALL_JOB_TITLES
 } from '@/app/components/shared/ChatAI/roles/JobTitles';
+import { holdGigFunds } from "@/app/actions/stripe/create-hold-gig-Funds";
 
 interface OnboardingStep {
   id: number;
@@ -2127,7 +2128,7 @@ Make the conversation feel natural and build on what they've already told you, b
       }
       
       console.log('Gig created successfully:', gigResult.gigId);
-      
+
       // Send notification to the worker with the real gigId
       const notificationResult = await sendWorkerBookingNotificationAction(
         {
@@ -2150,6 +2151,18 @@ Make the conversation feel natural and build on what they've already told you, b
         // Continue anyway, don't block the booking
       }
 
+      // funds withholding for the selected worker 
+      const holdFundsResult = await holdGigFunds({
+        firebaseUid: user?.uid || '',
+        gigId: gigResult.gigId,
+        currency: 'usd',
+        serviceAmountInCents: ((selectedWorker.hourlyRate * VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS) * 100)
+      });
+
+      if (!holdFundsResult.success) {
+        console.error('Failed to hold gig funds:', holdFundsResult.error);
+      }
+
       // Update the UI state
       setSelectedWorkerId(workerId);
       
@@ -2167,7 +2180,7 @@ Make the conversation feel natural and build on what they've already told you, b
       // Navigate to buyer dashboard after a delay
       setTimeout(() => {
         router.push(`/user/${user?.uid}/buyer`);
-      }, 1000);
+      }, 5000);
       
     } catch (error) {
       console.error('Error selecting worker:', error);
@@ -2557,6 +2570,7 @@ Make the conversation feel natural and build on what they've already told you, b
         if (currentInputStep) {
           // Handle promo code step (no inputConfig needed)
           if (currentInputStep.type === "discountCode") {
+            // add discount code
             // Don't process chat input for promo code step - user should use buttons
             return;
           }
@@ -2786,6 +2800,7 @@ Make the conversation feel natural and build on what they've already told you, b
               summaryData = null;
             }
           }
+          console.log({summaryData})
           if (summaryData) {
             return (
               <MessageBubble
@@ -2799,6 +2814,7 @@ Make the conversation feel natural and build on what they've already told you, b
                           return (
                             <li key={field} className={styles.gigSummaryListItem}>
                               <strong className={styles.gigSummaryField}>
+                              kzq
                                 {field.replace(/([A-Z])/g, " $1")}:{" "}
                               </strong>
                               <span
