@@ -2,10 +2,10 @@
 
 import { db } from "@/lib/drizzle/db";
 import { UsersTable, GigWorkerProfilesTable, SkillsTable, GigsTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
-import { eq, and, ne, like, or, gte, lte, sql } from "drizzle-orm";
+import { eq, and, ne, like, or } from "drizzle-orm";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { ERROR_CODES } from "@/lib/responses/errors";
-import { isWorkerWithinDistance, calculateDistance, parseCoordinates } from "@/lib/utils/distance";
+import { calculateDistance, parseCoordinates } from "@/lib/utils/distance";
 
 // Constants
 const DELEGATION_SEARCH_RADIUS_KM = 30;

@@ -111,14 +111,12 @@ export default function PieChartComponent({
   const [chartHeight, setChartHeight] = useState(220);
   const [tooltipActive, setTooltipActive] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
+  const dependencyValue = typeof window !== "undefined" ? window.innerWidth : 1024;
   const outerRadius = useMemo(() => {
-    if (typeof window !== "undefined") {
-      // if (window.innerWidth < 400) return 70;
-      if (window.innerWidth < 500) return 70;
-      if (window.innerWidth < 768) return 90;
-    }
+    if (dependencyValue < 500) return 70;
+    if (dependencyValue < 768) return 90;
     return 110;
-  }, [typeof window !== "undefined" ? window.innerWidth : 1024]);
+  }, [dependencyValue]);
 
   useEffect(() => {
     const handleResize = () => {

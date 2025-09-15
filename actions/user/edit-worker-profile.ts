@@ -200,7 +200,7 @@ export const addEquipmentAction = async (
   name: string,
   token?: string,
   description?: string,
-  documentUrl?: string
+  // documentUrl?: string
 ) => {
   try {
     if (!token) {
