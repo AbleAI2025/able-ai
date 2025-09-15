@@ -3,18 +3,18 @@ import styles from './UpdateGig.module.css';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
 import { calculateHoursInRange } from "@/utils/calculate-hours";
+import { useState } from 'react';
 
 interface GigDetailsProps {
 	editedGigDetails: GigReviewDetailsData;
-	handleEditDetails: () => void;
 	setEditedGigDetails: React.Dispatch<React.SetStateAction<GigReviewDetailsData>>;
-	isEditingDetails?: boolean;
 	isOnConfirm?: boolean;
 	title: string;
 }
 
-const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
+const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
 	const lastRoleUsed = getLastRoleUsed()
+  const [isEditingDetails, setIsEditingDetails] = useState<boolean>(true)
 
 	const convertTo12Hour = (time24: string): string => {
 		const [hours, minutes] = time24.split(':');
@@ -110,9 +110,9 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 					{title}
 				</h2>
 				{!isEditingDetails ? (
-					<Pencil className={styles.editPencilIcon} onClick={handleEditDetails} />
+					<Pencil className={styles.editPencilIcon} onClick={() => setIsEditingDetails(true)} />
 				) : (
-					<X onClick={handleEditDetails} />
+					<X onClick={() => setIsEditingDetails(false)} />
 				)}
 			</div>
 			{isEditingDetails ? (

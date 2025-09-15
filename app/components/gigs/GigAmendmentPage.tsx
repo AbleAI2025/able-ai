@@ -1,18 +1,12 @@
 "use client";
 import React from "react";
-import { usePathname } from 'next/navigation';
 import styles from "./GigAmendmentPage.module.css";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
 import { GigAmendmentActions, AmendmentReasonSection, AmendmentDummyChatbot } from "@/app/components/gigs/GigAmendmentSections";
 import { useGigAmendment } from "@/app/hooks/useGigAmendment";
 
-interface GigAmendmentPageProps {
-  mode: 'edit' | 'amend';
-}
-
-export default function GigAmendmentPage({ mode }: GigAmendmentPageProps) {
-  const pathname = usePathname();
+export default function GigAmendmentPage() {
   const {
     isLoading,
     isSubmitting,
@@ -23,32 +17,25 @@ export default function GigAmendmentPage({ mode }: GigAmendmentPageProps) {
     setReason,
     existingAmendmentId,
     gig,
-    router,
     handleSubmit,
     handleCancel,
     handleBackClick
   } = useGigAmendment();
 
   const config = {
-    edit: {
       title: "Edit Gig Details",
       errorTitle: "Error",
       errorMessage: "Could not load gig details.",
       gigTitle: "Updated gig details:",
       isEditingDetails: true,
-      handleEditDetails: () => router.back(),
-    },
-    amend: {
-      title: "Cancel or Amend",
-      errorTitle: "Amend Gig",
-      errorMessage: "Gig not found",
-      gigTitle: "Updated gig details:",
-      isEditingDetails: false,
-      handleEditDetails: () => router.push(`${pathname}/edit`),
-    }
+    // amend: {
+    //   title: "Cancel or Amend",
+    //   errorTitle: "Amend Gig",
+    //   errorMessage: "Gig not found",
+    //   gigTitle: "Updated gig details:",
+    //   isEditingDetails: false,
+    // }
   };
-
-  const currentConfig = config[mode];
 
   if (isLoading) {
     return (
@@ -64,15 +51,15 @@ export default function GigAmendmentPage({ mode }: GigAmendmentPageProps) {
   if (!gig) {
     return (
       <div className={styles.container}>
-        <ScreenHeaderWithBack title={currentConfig.errorTitle} />
-        <div className={styles.error}>{currentConfig.errorMessage}</div>
+        <ScreenHeaderWithBack title={config.errorTitle} />
+        <div className={styles.error}>{config.errorMessage}</div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title={currentConfig.title}  onBackClick={handleBackClick}/>
+      <ScreenHeaderWithBack title={config.title}  onBackClick={handleBackClick}/>
       <main className={styles.contentWrapper}>
         <AmendmentDummyChatbot />
         <AmendmentReasonSection 
@@ -81,11 +68,9 @@ export default function GigAmendmentPage({ mode }: GigAmendmentPageProps) {
           workerId={gig.worker?.id} 
         />
         <UpdateGig
-          title={currentConfig.gigTitle}
+          title={config.gigTitle}
           editedGigDetails={editedGigDetails}
           setEditedGigDetails={setEditedGigDetails}
-          isEditingDetails={currentConfig.isEditingDetails}
-          handleEditDetails={currentConfig.handleEditDetails}
         />
         <GigAmendmentActions
           handleSubmit={handleSubmit}
