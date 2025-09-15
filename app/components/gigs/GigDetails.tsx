@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import { Calendar, Check, Info } from "lucide-react";
 import styles from "./GigDetails.module.css";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import GigActionButton from "../shared/GigActionButton";
 import Link from "next/link";
 import { useState } from "react";
@@ -16,7 +16,6 @@ import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
 import GigStatusIndicator from "../shared/GigStatusIndicator";
 import ProfileVideo from "../profile/WorkerProfileVideo";
 import { findExistingGigAmendment } from "@/actions/gigs/manage-amendment";
-import { RoutePaths } from "@/lib/path";
 
 const formatGigDate = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString(undefined, {
@@ -77,8 +76,7 @@ const GigDetailsComponent = ({
   const [isActionLoading, setIsActionLoading] = useState(false);
   const { user } = useAuth();
   const lastRoleUsed = getLastRoleUsed();
-
-  console.log(lastRoleUsed)
+  const pathname = usePathname();
 
   // Get worker name from gig data if available, otherwise use a placeholder
   const getWorkerName = () => {
@@ -237,9 +235,7 @@ const GigDetailsComponent = ({
 
           // const userRole = lastRoleUsed === "GIG_WORKER" ? 'worker' : 'buyer';
           
-          const userRole = window.location.pathname.includes("/worker/")
-            ? "worker"
-            : "buyer";
+          const userRole = pathname.includes("/worker/") ? "worker" : "buyer";
           const path = `/user/${user?.uid}/${userRole}/gigs/${gig.id}/amend`;
 
           try {

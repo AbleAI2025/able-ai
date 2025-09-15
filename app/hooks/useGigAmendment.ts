@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useGigAmendContext } from '@/context/GigAmendContext';
 import { createGigAmendment, cancelGigAmendment, findExistingGigAmendment, getGigAmendmentDetails } from "@/actions/gigs/manage-amendment";
@@ -26,9 +26,8 @@ export function useGigAmendment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  const userRole = window.location.pathname.includes("/worker/")
-    ? "worker"
-    : "buyer";
+  const pathname = usePathname();
+  const userRole = pathname.includes("/worker/") ? "worker" : "buyer";
 
   useEffect(() => {
     const fetchAmendmentData = async () => {

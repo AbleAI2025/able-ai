@@ -14,6 +14,50 @@ interface GigLayoutProps {
   children: React.ReactNode;
 }
 
+interface UserIdResolution {
+  actualUserId: string;
+  isDatabaseUserId: boolean;
+}
+
+async function resolveUserId(userId: string): Promise<UserIdResolution> {
+  const { getWorkerUserFromProfileId } = await import('@/actions/user/get-worker-user');
+  
+  const workerUserResult = await getWorkerUserFromProfileId(userId);
+  if (workerUserResult.success && workerUserResult.data) {
+    return {
+      actualUserId: workerUserResult.data.id,
+      isDatabaseUserId: true
+    };
+  }
+  
+  const profileIdResult = await getWorkerProfileIdFromFirebaseUid(userId);
+  if (profileIdResult.success && profileIdResult.data) {
+    const workerUserResult2 = await getWorkerUserFromProfileId(profileIdResult.data);
+    if (workerUserResult2.success && workerUserResult2.data) {
+      return {
+        actualUserId: workerUserResult2.data.id,
+        isDatabaseUserId: true
+      };
+    }
+  }
+  
+  const dbUserIdResult = await getWorkerProfileIdFromUserId(userId);
+  if (dbUserIdResult.success && dbUserIdResult.data) {
+    const workerUserResult3 = await getWorkerUserFromProfileId(dbUserIdResult.data);
+    if (workerUserResult3.success && workerUserResult3.data) {
+      return {
+        actualUserId: workerUserResult3.data.id,
+        isDatabaseUserId: true
+      };
+    }
+  }
+  
+  return {
+    actualUserId: userId,
+    isDatabaseUserId: false
+  };
+}
+
 export default function GigLayout({ children }: GigLayoutProps) {
   const params = useParams();
   const pathname = usePathname();
@@ -35,38 +79,7 @@ export default function GigLayout({ children }: GigLayoutProps) {
       setIsLoading(true);
       setError(null);
       try {
-        let actualUserId = userId;
-        let isDatabaseUserId = false;
-        
-        const { getWorkerUserFromProfileId } = await import('@/actions/user/get-worker-user');
-        const workerUserResult = await getWorkerUserFromProfileId(userId);
-        
-        if (workerUserResult.success && workerUserResult.data) {
-          actualUserId = workerUserResult.data.id;
-          isDatabaseUserId = true;
-        } else {
-          const profileIdResult = await getWorkerProfileIdFromFirebaseUid(userId);
-          
-          if (profileIdResult.success && profileIdResult.data) {
-            const workerUserResult2 = await getWorkerUserFromProfileId(profileIdResult.data);
-            
-            if (workerUserResult2.success && workerUserResult2.data) {
-              actualUserId = workerUserResult2.data.id;
-              isDatabaseUserId = true;
-            }
-          } else {
-            const dbUserIdResult = await getWorkerProfileIdFromUserId(userId);
-            
-            if (dbUserIdResult.success && dbUserIdResult.data) {
-              const workerUserResult3 = await getWorkerUserFromProfileId(dbUserIdResult.data);
-              
-              if (workerUserResult3.success && workerUserResult3.data) {
-                actualUserId = workerUserResult3.data.id;
-                isDatabaseUserId = true;
-              }
-            }
-          }
-        }
+        const { actualUserId, isDatabaseUserId } = await resolveUserId(userId);
         
         const { gig: fetchedGig, status, error: fetchError } = await getGigDetails({ 
           gigId, 
