@@ -2120,13 +2120,13 @@ Make the conversation feel natural and build on what they've already told you, b
         gigDate: gigData.date || new Date().toISOString().split('T')[0],
         gigTime: gigData.time || '09:00-17:00',
       };
-      
+
       const gigResult = await createGig(gigPayload);
-      
+
       if (gigResult.status !== 200 || !gigResult.gigId) {
         throw new Error(`Failed to create gig: ${gigResult.error}`);
       }
-      
+   
       console.log('Gig created successfully:', gigResult.gigId);
 
       // Send notification to the worker with the real gigId
@@ -2154,6 +2154,7 @@ Make the conversation feel natural and build on what they've already told you, b
       // funds withholding for the selected worker 
       const holdFundsResult = await holdGigFunds({
         firebaseUid: user?.uid || '',
+        workerId: selectedWorker.workerId,
         gigId: gigResult.gigId,
         currency: 'usd',
         serviceAmountInCents: ((selectedWorker.hourlyRate * VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS) * 100)
