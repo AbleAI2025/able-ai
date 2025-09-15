@@ -35,6 +35,7 @@ export async function createGigAmendment(data: {
   gigId: string;
   userId: string;
   requestType: string;
+  oldValues: Record<string, any>;
   newValues: Record<string, any>;
   reason?: string;
 }) {
@@ -47,6 +48,7 @@ export async function createGigAmendment(data: {
     const commonValues = {
       gigId: data.gigId,
       requestType: data.requestType,
+      oldValues: data.oldValues,
       newValues: data.newValues,
       reason: data.reason,
       status: "PENDING" as const,

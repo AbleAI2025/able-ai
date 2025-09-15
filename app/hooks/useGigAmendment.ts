@@ -26,9 +26,12 @@ export function useGigAmendment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  const userRole = window.location.pathname.includes("/worker/")
+    ? "worker"
+    : "buyer";
+
   useEffect(() => {
     const fetchAmendmentData = async () => {
-      // Guard clause to ensure all required data is available
       if (!user || !gigId || isGigContextLoading || !gig) return;
 
       try {
@@ -66,21 +69,27 @@ export function useGigAmendment() {
   }, [gig, isGigContextLoading, gigId, user, userId, amendId, router]);
 
   const handleSubmit = async () => {
-    if (!user?.uid || !gigId || !reason.trim()) {
+    if (!user?.uid || !gigId || !reason.trim() || !gig) {
       toast.error("Please provide a reason for the changes.");
       return;
     }
     setIsSubmitting(true);
-    const result = await createGigAmendment({ amendId, gigId, userId: user.uid, requestType: "GENERAL", newValues: editedGigDetails, reason });
+    const result = await createGigAmendment({
+      amendId,
+      gigId,
+      userId: user.uid,
+      requestType: "GENERAL",
+      oldValues: formatGigDataForEditing(gig),
+      newValues: editedGigDetails,
+      reason
+    });
     setIsSubmitting(false);
     
     if (result.success && result.amendmentId) {
       toast.success(amendId === "new" ? "Submitted amendment request" : "Amendment request updated");
       if (amendId === "new") {
-        // For a new amendment, always redirect to the new amendment's page
-        router.push(`/user/${userId}/worker/gigs/${gigId}/amend/${result.amendmentId}`);
+        router.push(`/user/${userId}/${userRole}/gigs/${gigId}/amend/${result.amendmentId}`);
       } else {
-        // When updating an existing one, just go back to the previous page
         router.back();
       }
     } else {
@@ -95,15 +104,16 @@ export function useGigAmendment() {
       setIsCancelling(false);
       if (result.success) {
         toast.success("Your pending amendment has been withdrawn.");
-        router.push(`/user/${userId}/worker/gigs/${gigId}`);
+        router.push(`/user/${userId}/${userRole}/gigs/${gigId}`);
       } else {
         toast.error(`Could not withdraw amendment: ${result.error}`);
       }
     } else {
-      // If there's no amendment to cancel, just go back
       router.back();
     }
   };
+
+  const handleBackClick = () => router.push(`/user/${userId}/${userRole}/gigs/${gigId}`);
 
   return {
     isLoading: isLoading || isGigContextLoading,
@@ -118,5 +128,6 @@ export function useGigAmendment() {
     router,
     handleSubmit,
     handleCancel,
+    handleBackClick
   };
 }

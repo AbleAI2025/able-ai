@@ -26,6 +26,7 @@ export default function GigAmendmentPage({ mode }: GigAmendmentPageProps) {
     router,
     handleSubmit,
     handleCancel,
+    handleBackClick
   } = useGigAmendment();
 
   const config = {
@@ -71,7 +72,7 @@ export default function GigAmendmentPage({ mode }: GigAmendmentPageProps) {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title={currentConfig.title} />
+      <ScreenHeaderWithBack title={currentConfig.title}  onBackClick={handleBackClick}/>
       <main className={styles.contentWrapper}>
         <AmendmentDummyChatbot />
         <AmendmentReasonSection 
