@@ -84,21 +84,6 @@ export async function getGigWorkerProfile({ userId }: { userId?: string }) {
       return { error: "User ID is required", profile: null, status: 400 };
     }
 
-    /*
-    const workerProfile = await db.query.WorkerProfilesTable.findFirst({
-      where: eq(WorkerProfilesTable.userId, userId),
-      with: {
-        skills: true,
-        statistics: true,
-        awards: true,
-      },
-    });
-
-    if (!workerProfile) {
-      return { error: "Worker profile not found", profile: null, status: 404 };
-    }
-    */
-
     return { profile: mockDashboardData, success: true, status: 200 };
 
   } catch (error) {

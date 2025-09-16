@@ -1,14 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import {
   Users,
   CalendarDays,
   CreditCard,
   LayoutDashboard,
-  MessageCircle,
 } from "lucide-react";
 
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
@@ -17,7 +14,6 @@ import ReferralBanner from "@/app/components/shared/ReferralBanner";
 import RoleToggle from "@/app/components/shared/RoleToggle";
 import SettingsButton from "@/app/components/shared/SettingsButton";
 import Loader from "@/app/components/shared/Loader";
-import Logo from "@/app/components/brand/Logo";
 
 import styles from "./HomePage.module.css";
 import { useAuth } from "@/context/AuthContext";
@@ -28,14 +24,12 @@ import {
 } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
-import { useRouter } from "next/navigation";
 
 export default function BuyerDashboardPage() {
   const { user: userPublicProfile } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { user } = useAuth();
-  const router = useRouter();
   const authUserToken = user?.token;
 
   async function fetchNotifications(token: string) {

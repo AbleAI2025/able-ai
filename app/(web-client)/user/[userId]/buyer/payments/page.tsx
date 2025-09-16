@@ -6,13 +6,10 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Using Lucide Icons
-import { Home, Filter, FileText, Repeat, ArrowLeft, Loader2, Wine, Utensils, Briefcase, ClipboardList } from 'lucide-react';
-// Import Recharts components
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { Home, Filter, FileText, ArrowLeft, Loader2, Wine, Utensils, Briefcase } from 'lucide-react';
 
 import styles from './PaymentsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
-import Image from 'next/image';
 import { BuyerPayment, getBuyerPayments } from '@/actions/payments/get-buyer-payments';
 
 // Define interfaces for payment data
