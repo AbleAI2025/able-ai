@@ -11,6 +11,7 @@ import { useFirebase } from "./FirebaseContext";
 
 type Claims = {
   role: string;
+  haveWorkerProfile?: boolean;
 };
 
 export type User = FirebaseUser & {

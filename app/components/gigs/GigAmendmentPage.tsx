@@ -1,13 +1,12 @@
 "use client";
-
 import React from "react";
-import styles from "../AmendmentPage.module.css";
+import styles from "./GigAmendmentPage.module.css";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
 import { GigAmendmentActions, AmendmentReasonSection, AmendmentDummyChatbot } from "@/app/components/gigs/GigAmendmentSections";
 import { useGigAmendment } from "@/app/hooks/useGigAmendment";
 
-export default function EditGigPage() {
+export default function GigAmendmentPage() {
   const {
     isLoading,
     isSubmitting,
@@ -18,10 +17,25 @@ export default function EditGigPage() {
     setReason,
     existingAmendmentId,
     gig,
-    router,
     handleSubmit,
     handleCancel,
+    handleBackClick
   } = useGigAmendment();
+
+  const config = {
+      title: "Edit Gig Details",
+      errorTitle: "Error",
+      errorMessage: "Could not load gig details.",
+      gigTitle: "Updated gig details:",
+      isEditingDetails: true,
+    // amend: {
+    //   title: "Cancel or Amend",
+    //   errorTitle: "Amend Gig",
+    //   errorMessage: "Gig not found",
+    //   gigTitle: "Updated gig details:",
+    //   isEditingDetails: false,
+    // }
+  };
 
   if (isLoading) {
     return (
@@ -37,24 +51,26 @@ export default function EditGigPage() {
   if (!gig) {
     return (
       <div className={styles.container}>
-        <ScreenHeaderWithBack title="Error" onBackClick={() => router.back()} />
-        <div className={styles.error}>Could not load gig details.</div>
+        <ScreenHeaderWithBack title={config.errorTitle} />
+        <div className={styles.error}>{config.errorMessage}</div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Edit Gig Details" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title={config.title}  onBackClick={handleBackClick}/>
       <main className={styles.contentWrapper}>
         <AmendmentDummyChatbot />
-        <AmendmentReasonSection onReasonChange={setReason} reason={reason} workerId={gig.workerId} />
+        <AmendmentReasonSection 
+          onReasonChange={setReason} 
+          reason={reason} 
+          workerId={gig.worker?.id} 
+        />
         <UpdateGig
-          title="Updated gig details:"
+          title={config.gigTitle}
           editedGigDetails={editedGigDetails}
           setEditedGigDetails={setEditedGigDetails}
-          isEditingDetails={true}
-          handleEditDetails={() => router.back()}
         />
         <GigAmendmentActions
           handleSubmit={handleSubmit}

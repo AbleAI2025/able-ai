@@ -52,13 +52,13 @@ export async function delegateGigToWorker(
       return { error: 'Gig not found', status: 404 };
     }
 
-    // Verify user is the buyer of this gig
-    if (gig.buyerUserId !== user.id) {
+    // Verify user is either the buyer or the assigned worker of this gig
+    if (gig.buyerUserId !== user.id && gig.workerUserId !== user.id) {
       return { error: 'Unauthorized to delegate this gig', status: 403 };
     }
 
     // Check if gig is in a state that allows delegation
-    const allowedStatuses = ['ACCEPTED', 'IN_PROGRESS'];
+    const allowedStatuses = ['PENDING_WORKER_ACCEPTANCE', 'ACCEPTED', 'IN_PROGRESS'];
     if (!allowedStatuses.includes(gig.statusInternal)) {
       return { 
         error: `Cannot delegate gig with status: ${gig.statusInternal}`, 
@@ -67,9 +67,24 @@ export async function delegateGigToWorker(
     }
 
     // Get new worker details
+    console.log('🔍 DEBUG: Looking for new worker with ID:', input.newWorkerId);
     const newWorker = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.id, input.newWorkerId),
-      columns: { id: true, fullName: true, firebaseUid: true }
+      columns: { id: true, fullName: true, firebaseUid: true },
+      with: {
+        gigWorkerProfile: {
+          columns: { id: true }
+        }
+      }
+    });
+
+    console.log('🔍 DEBUG: New worker found:', {
+      found: !!newWorker,
+      userId: newWorker?.id,
+      fullName: newWorker?.fullName,
+      firebaseUid: newWorker?.firebaseUid,
+      hasWorkerProfile: !!newWorker?.gigWorkerProfile,
+      workerProfileId: newWorker?.gigWorkerProfile?.id
     });
 
     if (!newWorker) {
@@ -79,40 +94,71 @@ export async function delegateGigToWorker(
     // Get current worker details for notification
     const currentWorker = gig.workerUserId ? await db.query.UsersTable.findFirst({
       where: eq(UsersTable.id, gig.workerUserId),
-      columns: { id: true, fullName: true, firebaseUid: true }
+      columns: { id: true, fullName: true, firebaseUid: true },
+      with: {
+        gigWorkerProfile: {
+          columns: { id: true }
+        }
+      }
     }) : null;
 
-    // Update gig with new worker
+    // Update gig - set workerUserId to null and status to pending so new worker needs to accept
     await db
       .update(GigsTable)
       .set({ 
-        workerUserId: input.newWorkerId,
-        statusInternal: 'ACCEPTED' // Reset to accepted status for new worker
+        workerUserId: null, // Set to null so gig becomes available for new worker to accept
+        statusInternal: 'PENDING_WORKER_ACCEPTANCE' // Set to pending so new worker needs to accept
       })
       .where(eq(GigsTable.id, input.gigId));
 
     // Send notification to new worker
-    if (newWorker.firebaseUid) {
+    console.log('🔍 DEBUG: Notification check:', {
+      hasFirebaseUid: !!newWorker.firebaseUid,
+      hasWorkerProfile: !!newWorker.gigWorkerProfile?.id,
+      workerProfileId: newWorker.gigWorkerProfile?.id,
+      notificationPath: newWorker.gigWorkerProfile?.id ? `/user/${newWorker.gigWorkerProfile.id}/worker/gigs/${input.gigId}` : 'NO_PROFILE'
+    });
+
+    if (newWorker.firebaseUid && newWorker.gigWorkerProfile?.id) {
+      console.log('🔍 DEBUG: Creating notification for new worker');
       await createNotificationAction({
         userUid: newWorker.firebaseUid,
         type: 'gigAssignment',
         title: '🎯 Gig Delegated to You',
-        body: `${user.fullName} has delegated "${gig.titleInternal}" to you. Check your dashboard for details.`,
+        body: `${user.fullName} has delegated you for this gig!`,
         image: '/images/gig-delegated.png',
-        path: `/user/${newWorker.id}/worker/gigs/${input.gigId}`,
+        path: `/user/${newWorker.gigWorkerProfile.id}/worker/gigs/${input.gigId}`,
         status: 'unread'
       }, token);
+      console.log('🔍 DEBUG: Notification created successfully');
+    } else {
+      console.log('🔍 DEBUG: Cannot create notification - missing Firebase UID or worker profile');
     }
 
     // Send notification to current worker (if they exist)
     if (currentWorker?.firebaseUid) {
+      // Determine if current worker is the buyer or a worker
+      const isCurrentWorkerTheBuyer = gig.buyerUserId === currentWorker.id;
+      
+      let notificationPath;
+      if (isCurrentWorkerTheBuyer) {
+        // If current worker is the buyer, route to buyer gig details
+        notificationPath = `/user/${currentWorker.id}/buyer/gigs/${input.gigId}`;
+      } else if (currentWorker.gigWorkerProfile?.id) {
+        // If current worker is actually a worker, route to worker page
+        notificationPath = `/user/${currentWorker.gigWorkerProfile.id}/worker`;
+      } else {
+        // Fallback to user ID
+        notificationPath = `/user/${currentWorker.id}`;
+      }
+      
       await createNotificationAction({
         userUid: currentWorker.firebaseUid,
         type: 'gigUpdate',
         title: '⚠️ Gig Delegated Away',
         body: `The gig "${gig.titleInternal}" has been delegated to another worker.`,
         image: '/images/gig-delegated-away.png',
-        path: `/user/${currentWorker.id}/worker`,
+        path: notificationPath,
         status: 'unread'
       }, token);
     }

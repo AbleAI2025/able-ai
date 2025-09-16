@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import styles from './AmendGigConfirmationPage.module.css';
+import { getGigAmendmentDetails } from '@/actions/gigs/manage-amendment';
 
 interface Gig {
   id: string;
@@ -37,6 +38,7 @@ export default function AmendGigConfirmationPage() {
 
   const gigId = params.gigId as string;
   const userId = params.userId as string;
+  const amendId = params.amendId as string;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,11 +52,10 @@ export default function AmendGigConfirmationPage() {
           setGig(gigData);
         }
 
-        // Fetch amendment request
-        const amendmentResponse = await fetch(`/api/gigs/${gigId}/amendment-request`);
-        if (amendmentResponse.ok) {
-          const amendmentData = await amendmentResponse.json();
-          setAmendmentRequest(amendmentData);
+        const amendmentResult = await getGigAmendmentDetails({ amendmentId: amendId });
+
+        if (amendmentResult.amendment) {
+
         }
       } catch (error) {
         console.error('Error fetching data:', error);

@@ -18,10 +18,10 @@ interface DailyAvailabilityViewProps {
 }
 
 const DailyAvailabilityView: React.FC<DailyAvailabilityViewProps> = ({
-  events,
+  // events,
   availabilitySlots,
-  currentDate,
-  onEventClick,
+  // currentDate,
+  // onEventClick,
   onDateSelect,
   onAvailabilityEdit,
   onAvailabilityDelete,

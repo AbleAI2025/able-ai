@@ -6,9 +6,11 @@ export const VALIDATION_CONSTANTS = {
   WORKER: {
     MIN_HOURLY_RATE: 12.21, // Minimum hourly rate in British Pounds (£)
     MIN_ABOUT_LENGTH: 10, // Minimum characters for about field
-    MIN_EXPERIENCE_LENGTH: 10, // Minimum characters for experience field
+    MIN_EXPERIENCE_LENGTH: 1, // Minimum characters for experience field
     MIN_SKILLS_LENGTH: 5, // Minimum characters for skills field
     MIN_EQUIPMENT_LENGTH: 5, // Minimum characters for equipment field
+    MIN_QUALIFICATIONS_LENGTH: 5, // Minimum characters for qualifications field
+    MIN_REFERENCES_LENGTH: 1, // Minimum characters for references field
   },
   
   // Gig validation

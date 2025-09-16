@@ -140,7 +140,6 @@ export default function WorkerDashboardPage() {
       <div className={styles.card}>
         <ScreenHeaderWithBack
           isHomePage
-          onBackClick={() => router.back()}
           handleClick={handleClick}
           unreadCount={unreadCount}
           unreadNotifications={unreadNotifications}

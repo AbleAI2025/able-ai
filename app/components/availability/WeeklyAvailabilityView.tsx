@@ -18,10 +18,10 @@ interface WeeklyAvailabilityViewProps {
 }
 
 const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
-  events,
+  // events,
   availabilitySlots,
   currentDate,
-  onEventClick,
+  // onEventClick,
   onDateSelect,
   onAvailabilityEdit,
   onAvailabilityDelete,
@@ -170,7 +170,7 @@ const WeeklyAvailabilityView: React.FC<WeeklyAvailabilityViewProps> = ({
     let currentDate = new Date(slotStartDate);
     
     while (currentDate <= endDate) {
-      const dayName = moment(currentDate).format('ddd');
+      // const dayName = moment(currentDate).format('ddd');
       const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const dayIndex = moment(currentDate).isoWeekday() - 1;
       const dayNameShort = dayNames[dayIndex];

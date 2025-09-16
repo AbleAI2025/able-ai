@@ -18,7 +18,18 @@ export async function GET(
       );
     }
 
-    const result = await searchWorkersForDelegation(token, gigId, searchTerm);
+    // Parse filters from query parameters
+    const filters = {
+      searchTerm: searchParams.get('search') || '',
+      minExperience: searchParams.get('minExperience') ? parseInt(searchParams.get('minExperience')!) : undefined,
+      maxRate: searchParams.get('maxRate') ? parseFloat(searchParams.get('maxRate')!) : undefined,
+      minRate: searchParams.get('minRate') ? parseFloat(searchParams.get('minRate')!) : undefined,
+      skills: searchParams.get('skills') ? searchParams.get('skills')!.split(',') : undefined,
+      availableOnly: searchParams.get('availableOnly') === 'true',
+      sortBy: (searchParams.get('sortBy') as 'relevance' | 'distance' | 'experience' | 'rate') || 'relevance'
+    };
+
+    const result = await searchWorkersForDelegation(token, gigId, searchTerm, filters);
 
     if (result.error) {
       return NextResponse.json(

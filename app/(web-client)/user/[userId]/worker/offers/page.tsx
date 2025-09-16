@@ -8,7 +8,7 @@ import Link from "next/link";
 
 import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming shared location
 import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import new component
-import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
+
 import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
 import { Loader2, Inbox, Calendar } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
@@ -16,11 +16,12 @@ import Logo from "@/app/components/brand/Logo";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
-import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
+
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { declineGigOffer } from "@/actions/gigs/decline-gig-offer";
+import { getWorkerProfileIdFromFirebaseUid } from "@/actions/user/get-worker-user";
 
 type GigOffer = WorkerGigOffer;
 
@@ -71,34 +72,30 @@ export default function WorkerOffersPage() {
   >(null);
   const [selectedGig, setSelectedGig] = useState<GigOffer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [workerProfileId, setWorkerProfileId] = useState<string | null>(null);
   const uid = authUserId;
 
-  // AI Suggestion Banner Hook
-  const {
-    suggestions: aiSuggestions,
-    currentIndex,
-    isLoading: isLoadingSuggestions,
-    error: suggestionsError,
-    dismissed: suggestionsDismissed,
-    dismiss: dismissSuggestions,
-    refresh: refreshSuggestions,
-    goToNext,
-    goToPrev,
-  } = useAiSuggestionBanner({
-    role: "worker",
-    userId: uid || "", // Provide fallback for undefined uid
-    // enabled: true, // Removed duplicate enabled property
-    context: {
-      // Example context for worker, replace with actual relevant data
-      profileCompletion: 0.7,
-      recentActivity: "applied for 2 gigs",
-      platformTrends: [
-        "high demand for photographers",
-        "weekend shifts available",
-      ],
-    },
-    enabled: !!uid, // Only enable if uid is available
-  });
+  // Fetch worker profile ID when component mounts
+  useEffect(() => {
+    const fetchWorkerProfileId = async () => {
+      if (!uid) return;
+      
+      try {
+        const result = await getWorkerProfileIdFromFirebaseUid(uid);
+        if (result.success && result.data) {
+          setWorkerProfileId(result.data);
+        } else {
+          console.error("Failed to get worker profile ID:", result.error);
+        }
+      } catch (error) {
+        console.error("Error fetching worker profile ID:", error);
+      }
+    };
+
+    fetchWorkerProfileId();
+  }, [uid]);
+
+  
 
   // Fetch worker data (offers and accepted gigs)
   useEffect(() => {
@@ -240,10 +237,12 @@ export default function WorkerOffersPage() {
  const handleViewDetails = (gigId: string) => {
   // Search in offers first, then in acceptedGigs
   const gig = offers.find(o => o.id === gigId) || acceptedGigs.find(g => g.id === gigId);
-  if (gig) {
+  if (gig && workerProfileId) {
     setSelectedGig(gig);
-    router.push(`/user/${pageUserId}/worker/gigs/${gigId}`);
+    router.push(`/user/${workerProfileId}/worker/gigs/${gigId}`);
     // setIsModalOpen(true);
+    } else if (!workerProfileId) {
+      console.error("Worker profile ID not available yet");
   }
 };
 
@@ -274,21 +273,8 @@ export default function WorkerOffersPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title="Gig Offers" onBackClick={() => router.back()} />
-      {uid && (
-        <AiSuggestionBanner
-          suggestions={aiSuggestions}
-          currentIndex={currentIndex}
-          isLoading={isLoadingSuggestions}
-          error={suggestionsError}
-          dismissed={suggestionsDismissed} // Pass the dismissed state
-          onDismiss={dismissSuggestions}
-          onRefresh={refreshSuggestions}
-          goToNext={goToNext}
-          goToPrev={goToPrev}
-          userId={uid}
-        />
-      )}
+      <ScreenHeaderWithBack title="Gig Offers" />
+    
       <div className={styles.pageWrapper}>
         {offers.filter((o) => o.status !== "expired").length > 0 && (
           <div className={styles.pageHeader}>

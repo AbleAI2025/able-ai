@@ -1,5 +1,5 @@
 import React from "react";
-import { Send, Star, Trophy } from "lucide-react";
+import { Send } from "lucide-react";
 import {
   BuyerFeedbackFormData,
   GigDetails,
@@ -29,8 +29,8 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
   submitting,
   onToggleTopCommunicator,
   onToggleTeamBuilder,
-  onThumbsUp,
-  onThumbsDown,
+  // onThumbsUp,
+  // onThumbsDown,
 }) => (
   <div className={stylesFeed.buyerFeedbackContainer}>
     <div className={styles.stepItem}>

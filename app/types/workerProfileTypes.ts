@@ -103,6 +103,7 @@ export default interface PublicWorkerProfile {
   equipment?: Equipment[];
   skills?: Skill[];
   reviews?: Review[];
+  socialLink?: string | null;
   qualifications?: Qualification[];
   recommendations?: Review[];
 }

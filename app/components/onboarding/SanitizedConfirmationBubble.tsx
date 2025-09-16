@@ -15,10 +15,10 @@ interface SanitizedConfirmationBubbleProps {
 const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = ({
   fieldName,
   sanitizedValue,
-  originalValue,
+  // originalValue,
   onConfirm,
   onReformulate,
-  showReformulate = false,
+  // showReformulate = false,
   isProcessing: externalIsProcessing = false,
   role = 'BUYER'
 }) => {

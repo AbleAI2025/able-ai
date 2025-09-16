@@ -2,6 +2,11 @@
 // Reusable prompt templates for common interactions
 
 export const PROMPT_TEMPLATES = {
+  reasoning: {
+    process: "Before responding, I'll follow this structured approach:\n1. UNDERSTAND: Identify your core question\n2. ANALYZE: Break down the key factors\n3. REASON: Find logical connections\n4. SYNTHESIZE: Combine information coherently\n5. CONCLUDE: Provide accurate, helpful guidance",
+    application: "I'll apply this reasoning process to ensure you receive the most accurate and helpful response possible."
+  },
+  
   welcome: {
     onboarding: "Welcome to Able AI! I'm your Gigfolio Coach, here to guide you through creating an amazing worker profile. Let's start by understanding your background and goals.",
     gigCreation: "Hello! I'm your Shift Concierge, ready to help you create and manage successful gigs. Let's start by understanding your event needs and requirements.",

@@ -14,8 +14,11 @@ import pageStyles from "./AbleAIPage.module.css";
 import { useFirebase } from '@/context/FirebaseContext';
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { Schema } from '@firebase/ai';
-import { detectIncident } from '@/lib/incident-detection';
-import IncidentReportingModal from '@/app/components/incidents/IncidentReportingModal';
+import { detectIncidentEnhanced } from '@/lib/ai-incident-detection';
+import { createEscalatedIssueClient } from '@/utils/client-escalation';
+
+// Constants
+const MIN_INCIDENT_DETAILS_LENGTH_FOR_SUBMISSION = 100;
 
 type WorkerGigOffer = {
   id: string;
@@ -138,6 +141,19 @@ interface AIResponse {
   needsLiveAgent?: boolean;
 }
 
+// Helper function to add a bot message to chat steps
+const addBotMessage = (setChatSteps: React.Dispatch<React.SetStateAction<ChatStep[]>>, content: string, generateUniqueId: () => number) => {
+  setChatSteps(prev => [
+    ...prev,
+    {
+      id: generateUniqueId(),
+      type: "bot",
+      content,
+      isNew: true,
+    },
+  ]);
+};
+
 export default function AbleAIPage() {
   const { user, loading: loadingAuth } = useAuth();
   const { ai } = useFirebase();
@@ -145,6 +161,11 @@ export default function AbleAIPage() {
   const params = useParams();
   const pageUserId = (params as Record<string, string | string[]>)?.userId;
   const resolvedUserId = Array.isArray(pageUserId) ? pageUserId[0] : pageUserId;
+
+  // ID generator to prevent duplicate keys
+  const generateUniqueId = useCallback(() => {
+    return Date.now() + Math.random() * 1000;
+  }, []);
   
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const endOfChatRef = useRef<HTMLDivElement>(null);
@@ -166,8 +187,11 @@ export default function AbleAIPage() {
   const [escalated, setEscalated] = useState<boolean>(false);
   
   // Incident reporting state
-  const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
-  const [detectedIncidentType, setDetectedIncidentType] = useState<string | null>(null);
+  const [isReportingIncident, setIsReportingIncident] = useState(false);
+  const [incidentType, setIncidentType] = useState<string | null>(null);
+  const [incidentDetails, setIncidentDetails] = useState<string>('');
+  const [waitingForIncidentConfirmation, setWaitingForIncidentConfirmation] = useState(false);
+  const [incidentConfirmationTargetId, setIncidentConfirmationTargetId] = useState<number | null>(null);
 
   const SUPPORT_EMAIL = 'support@ableai.com';
 
@@ -211,12 +235,63 @@ export default function AbleAIPage() {
       return;
     }
 
+    // Pre-validation: Check for inappropriate content before AI processing
+    try {
+      const { preValidateContentWithContext } = await import('../../../../../lib/utils/contentModeration');
+      
+      // Build chat context from conversation history
+      const chatContext = {
+        conversationHistory: chatSteps
+          .filter(step => step.type === 'user' || step.type === 'bot')
+          .map(step => ({
+            type: step.type as 'user' | 'bot',
+            content: step.content || '',
+            timestamp: step.id
+          })),
+        currentField: 'general_chat',
+        userRole: 'worker' as const,
+        sessionDuration: Date.now() - (chatSteps[0]?.id || Date.now())
+      };
+      
+      const preValidation = preValidateContentWithContext(userMessage, chatContext);
+      
+      // If pre-validation rejects with high confidence, reject immediately
+      if (!preValidation.isAppropriate && preValidation.confidence > 0.8) {
+        console.warn('🚫 Content rejected by pre-validation in Able AI chat:', {
+          input: userMessage,
+          reason: preValidation.reason,
+          category: preValidation.category,
+          confidence: preValidation.confidence,
+          userId: user?.uid || 'unknown',
+          timestamp: new Date().toISOString()
+        });
+        
+        // Add user message
+        setChatSteps(prev => [
+          ...prev,
+          {
+            id: generateUniqueId(),
+            type: "user",
+            content: userMessage,
+            isNew: true,
+          },
+        ]);
+        
+        // Add rejection message
+        addBotMessage(setChatSteps, `I'm sorry, but "${preValidation.reason}" is not appropriate for our professional platform. Please ask about gigs, platform features, or other work-related topics.`, generateUniqueId);
+        return;
+      }
+    } catch (error) {
+      console.error('Pre-validation failed in Able AI chat:', error);
+      // Continue with normal processing if pre-validation fails
+    }
+
     try {
       // Add typing indicator
       setChatSteps(prev => [
         ...prev,
         {
-          id: Date.now() + 1,
+          id: generateUniqueId(),
           type: "typing",
           isNew: true,
         },
@@ -301,13 +376,13 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
               // TODO: Implement live agent redirect logic here
             }
             
-            const newMessage = {
-              id: Date.now() + 1,
-              type: "bot" as const,
-              content: responseContent,
-              gigs: gigsToShow,
-              isNew: true,
-            };
+          const newMessage = {
+            id: generateUniqueId(),
+            type: "bot" as const,
+            content: responseContent,
+            gigs: gigsToShow,
+            isNew: true,
+          };
 
             // After any AI response, show feedback prompt unless escalated
             setFeedbackTargetId(newMessage.id);
@@ -319,12 +394,6 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
               newMessage,
             ];
           });
-          
-          // After any AI response, show feedback prompt unless escalated
-          const newStepId = Date.now() + 1;
-          setFeedbackTargetId(newStepId);
-          setFeedbackPending(true);
-          setEscalated(false);
         }, 1000);
       } else {
         throw new Error('Failed to get AI response');
@@ -340,7 +409,7 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
           return [
             ...filtered,
             {
-              id: Date.now() + 2,
+              id: generateUniqueId(),
               type: "bot",
               content: "I'm sorry, I'm having trouble processing your request right now. Please try again in a moment.",
               isNew: true,
@@ -358,13 +427,13 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
     setChatSteps(prev => ([
       ...prev,
       {
-        id: Date.now() + 3,
+        id: generateUniqueId(),
         type: 'bot',
         content: 'Thanks for the feedback! If you have more questions, I\'m here to help.',
         isNew: true,
       },
     ]));
-  }, [feedbackPending]);
+  }, [feedbackPending, generateUniqueId]);
 
   const handleNotHelpful = useCallback(() => {
     if (!feedbackPending) return;
@@ -377,7 +446,7 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
       setChatSteps(prev => ([
         ...prev,
         {
-          id: Date.now() + 4,
+          id: generateUniqueId(),
           type: 'bot',
           content: `I\'m sorry I couldn\'t resolve this. I\'m escalating to human support. Please email us at ${SUPPORT_EMAIL} or compose an email here: mailto:${SUPPORT_EMAIL}`,
           isNew: true,
@@ -390,7 +459,7 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
     setChatSteps(prev => ([
       ...prev,
       {
-        id: Date.now() + 5,
+        id: generateUniqueId(),
         type: 'bot',
         content: 'Sorry about that. Could you share a bit more detail so I can better assist?',
         isNew: true,
@@ -401,25 +470,242 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
     setTimeout(() => {
       setFeedbackPending(true);
     }, 0);
-  }, [feedbackPending, notHelpfulCount]);
+  }, [feedbackPending, notHelpfulCount, generateUniqueId]);
 
-  // Handle sending messages
-  const onSendMessage = useCallback((message: string) => {
-    // Check for incident keywords before processing
-    const incidentDetection = detectIncident(message);
+  // Incident confirmation handlers
+  const handleIncidentConfirm = useCallback(() => {
+    if (!waitingForIncidentConfirmation) return;
     
-    if (incidentDetection.isIncident) {
-      console.log('🚨 Incident detected in Able AI chat:', incidentDetection);
-      setDetectedIncidentType(incidentDetection.incidentType || 'other');
-      setIsIncidentModalOpen(true);
-      return;
-    }
+    setWaitingForIncidentConfirmation(false);
+    setIncidentConfirmationTargetId(null);
+    setIsReportingIncident(true);
+    
+    const responseMessage = `Thank you for confirming. I'll help you report this ${incidentType?.replace('_', ' ')} incident properly. 
 
-    // Add user message
+Can you please provide more details about what happened? Please include:
+- When and where this occurred
+- Who was involved (if anyone)
+- Any other relevant information
+
+The more details you can provide, the better we can help you.`;
+    
     setChatSteps(prev => [
       ...prev,
       {
-        id: Date.now(),
+        id: generateUniqueId(),
+        type: "bot",
+        content: responseMessage,
+        isNew: true,
+      },
+    ]);
+  }, [waitingForIncidentConfirmation, incidentType, generateUniqueId]);
+
+  const handleIncidentCancel = useCallback(() => {
+    if (!waitingForIncidentConfirmation) return;
+    
+    setWaitingForIncidentConfirmation(false);
+    setIncidentConfirmationTargetId(null);
+    setIncidentType(null);
+    
+    setChatSteps(prev => [
+      ...prev,
+      {
+        id: generateUniqueId(),
+        type: "bot",
+        content: "No problem! I understand this is not an incident report. Is there anything else I can help you with?",
+        isNew: true,
+      },
+    ]);
+  }, [waitingForIncidentConfirmation, generateUniqueId]);
+
+  // Handle incident reporting in chat
+  const handleIncidentReporting = useCallback(async (message: string) => {
+    // Skip incident reporting logic if waiting for button confirmation
+    if (waitingForIncidentConfirmation) {
+      // Add user message but don't process incident reporting
+      setChatSteps(prev => [
+        ...prev,
+        {
+          id: generateUniqueId(),
+          type: "user",
+          content: message,
+          isNew: true,
+        },
+      ]);
+      
+      // Let the user know to use the buttons
+      addBotMessage(setChatSteps, "Please use the buttons below to confirm whether you want to report this as an incident or not.", generateUniqueId);
+      return;
+    }
+
+    if (!isReportingIncident) {
+      // Start incident reporting flow with AI validation
+      try {
+        const incidentDetection = await detectIncidentEnhanced(message, ai);
+        console.log('🔍 AI Incident Detection Result:', incidentDetection);
+        
+        if (incidentDetection.isIncident) {
+          console.log('🚨 Incident detected in Able AI chat:', incidentDetection);
+          
+          // Add user message
+          setChatSteps(prev => [
+            ...prev,
+            {
+              id: generateUniqueId(),
+              type: "user",
+              content: message,
+              isNew: true,
+            },
+          ]);
+
+          // Set waiting for confirmation state
+          setWaitingForIncidentConfirmation(true);
+          setIncidentType(incidentDetection.incidentType || 'other');
+
+          // Add confirmation step before starting incident reporting
+          const confirmationMessage = incidentDetection.requiresImmediateAttention 
+            ? `🚨 URGENT: I understand you may be experiencing a ${incidentDetection.incidentType?.replace('_', ' ')} issue. This sounds serious and I want to help you report this properly. 
+
+**Before we proceed with incident reporting, please confirm:**
+- Are you reporting something that happened to you personally?
+- Do you want to file an official incident report?`
+            : `I understand you may be experiencing a ${incidentDetection.incidentType?.replace('_', ' ')} issue. I want to help you report this properly if that's what you need.
+
+**Before we proceed with incident reporting, please confirm:**
+- Are you reporting something that happened to you personally?
+- Do you want to file an official incident report?`;
+
+          const botMessageId = generateUniqueId();
+          setIncidentConfirmationTargetId(botMessageId);
+          
+          setChatSteps(prev => [
+            ...prev,
+            {
+              id: botMessageId,
+              type: "bot",
+              content: confirmationMessage,
+              isNew: true,
+            },
+          ]);
+          return;
+        } else {
+          // Not an incident - provide helpful response based on context
+          if (incidentDetection.context === 'exit_request') {
+            // User wants to exit incident reporting
+            setIsReportingIncident(false);
+            setIncidentType(null);
+            setIncidentDetails('');
+            addBotMessage(setChatSteps, incidentDetection.suggestedAction, generateUniqueId);
+            return;
+          } else if (incidentDetection.context === 'professional' || incidentDetection.context === 'educational') {
+            addBotMessage(setChatSteps, 
+              `I see you're discussing this from a ${incidentDetection.context} perspective. If you need to report an actual incident or have questions about our platform, I'm here to help!`, generateUniqueId
+            );
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error in AI incident detection:', error);
+        // Continue with normal processing if AI detection fails
+      }
+    } else {
+      // Continue incident reporting flow - check for exit requests first
+      try {
+        const incidentDetection = await detectIncidentEnhanced(message, ai);
+        
+        if (incidentDetection.isExitRequest) {
+          // User wants to exit incident reporting
+          setIsReportingIncident(false);
+          setIncidentType(null);
+          setIncidentDetails('');
+          
+          // Add user message
+          setChatSteps(prev => [
+            ...prev,
+            {
+              id: generateUniqueId(),
+              type: "user",
+              content: message,
+              isNew: true,
+            },
+          ]);
+          
+          addBotMessage(setChatSteps, incidentDetection.suggestedAction, generateUniqueId);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking for exit request:', error);
+        // Continue with normal incident reporting if AI fails
+      }
+      
+      // Continue incident reporting flow
+      setIncidentDetails(prev => prev + (prev ? ' ' : '') + message);
+      
+      // Add user message
+      setChatSteps(prev => [
+        ...prev,
+        {
+          id: generateUniqueId(),
+          type: "user",
+          content: message,
+          isNew: true,
+        },
+      ]);
+
+      // Check if we have enough details
+      if (incidentDetails.length + message.length > MIN_INCIDENT_DETAILS_LENGTH_FOR_SUBMISSION) {
+        // Submit incident report to database
+        const finalDetails = incidentDetails + (incidentDetails ? ' ' : '') + message;
+        
+        try {
+          const escalationResult = await createEscalatedIssueClient({
+            userId: user?.uid || '',
+            issueType: `incident_${incidentType}`,
+            description: `Incident Report - ${incidentType?.replace('_', ' ')}: ${finalDetails}`,
+            contextType: 'ai_chat'
+          });
+
+          if (escalationResult.success) {
+            addBotMessage(setChatSteps, 
+              `Thank you for providing those details. I've documented your ${incidentType?.replace('_', ' ')} report (ID: ${escalationResult.issueId}). This has been escalated to our support team who will review it within 24 hours. You should receive a confirmation email shortly. Is there anything else I can help you with?`, generateUniqueId
+            );
+          } else {
+            addBotMessage(setChatSteps, 
+              `Thank you for providing those details. I've documented your ${incidentType?.replace('_', ' ')} report. There was a technical issue saving it to our system, but I've noted it down. Please contact support directly if needed. Is there anything else I can help you with?`, generateUniqueId
+            );
+          }
+        } catch (error) {
+          console.error('Error saving incident report:', error);
+          addBotMessage(setChatSteps, 
+            `Thank you for providing those details. I've documented your ${incidentType?.replace('_', ' ')} report. There was a technical issue saving it to our system, but I've noted it down. Please contact support directly if needed. Is there anything else I can help you with?`, generateUniqueId
+          );
+        }
+        
+        // Reset incident reporting state
+        setIsReportingIncident(false);
+        setIncidentType(null);
+        setIncidentDetails('');
+        return;
+      } else {
+        // Ask for more details
+        setChatSteps(prev => [
+          ...prev,
+          {
+            id: generateUniqueId(),
+            type: "bot",
+            content: `Thank you for that information. Can you provide more specific details about the incident? For example, who was involved, what exactly happened, and any witnesses?`,
+            isNew: true,
+          },
+        ]);
+        return;
+      }
+    }
+
+    // Normal message processing
+    setChatSteps(prev => [
+      ...prev,
+      {
+        id: generateUniqueId(),
         type: "user",
         content: message,
         isNew: true,
@@ -428,7 +714,12 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
 
     // Get AI response
     handleAIResponse(message);
-  }, [handleAIResponse]);
+  }, [handleAIResponse, isReportingIncident, incidentType, incidentDetails, waitingForIncidentConfirmation, incidentConfirmationTargetId, ai, setChatSteps, generateUniqueId]);
+
+  // Handle sending messages
+  const onSendMessage = useCallback((message: string) => {
+    handleIncidentReporting(message);
+  }, [handleIncidentReporting]);
 
   // Auto-scroll to the bottom whenever chatSteps changes
   useEffect(() => {
@@ -475,6 +766,37 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
           fontSize: '14px'
         }}>
           {error}
+        </div>
+      )}
+
+      {isReportingIncident && (
+        <div style={{ 
+          background: 'linear-gradient(135deg, #ff6b6b, #ee5a52)', 
+          color: 'white', 
+          padding: '12px 16px', 
+          margin: '8px 0', 
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3)'
+        }}>
+          <div style={{ 
+            width: '8px', 
+            height: '8px', 
+            borderRadius: '50%', 
+            background: 'white',
+            animation: 'pulse 1.5s infinite'
+          }}></div>
+          <span>🚨 Incident Reporting Mode - Please provide details about the incident</span>
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+          `}</style>
         </div>
       )}
       
@@ -571,7 +893,7 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
                   marginLeft: '40px',
                   marginTop: '8px'
                 }}>
-                  <span style={{ fontSize: '14px', color: 'var(--text-color)' }}>Was this helpful?</span>
+                  <span style={{ fontSize: '14px', color: 'white' }}>Was this helpful?</span>
                   <button
                     type="button"
                     onClick={handleHelpful}
@@ -598,6 +920,43 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
                       fontWeight: 600,
                     }}
                   >Not helpful</button>
+                </div>
+              )}
+              {waitingForIncidentConfirmation && incidentConfirmationTargetId === step.id && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginLeft: '40px',
+                  marginTop: '8px'
+                }}>
+                  <span style={{ fontSize: '14px', color: 'white' }}>Is this an incident report?</span>
+                  <button
+                    type="button"
+                    onClick={handleIncidentConfirm}
+                    style={{
+                      padding: '6px 10px',
+                      background: '#dc3545',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >Yes, report this</button>
+                  <button
+                    type="button"
+                    onClick={handleIncidentCancel}
+                    style={{
+                      padding: '6px 10px',
+                      background: 'transparent',
+                      color: '#6c757d',
+                      border: '1px solid #6c757d',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >No, not an incident</button>
                 </div>
               )}
             </div>
@@ -684,19 +1043,6 @@ For gig requests, provide a helpful response and set hasGigs to true.`;
         </div>
       )}
 
-      {/* Incident Reporting Modal */}
-      {isIncidentModalOpen && detectedIncidentType && (
-        <IncidentReportingModal
-          isOpen={isIncidentModalOpen}
-          onClose={() => {
-            setIsIncidentModalOpen(false);
-            setDetectedIncidentType(null);
-          }}
-          userId={resolvedUserId || ''}
-          ai={ai}
-          incidentType={detectedIncidentType as any}
-        />
-      )}
     </ChatBotLayout>
   );
 }

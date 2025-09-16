@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle/db";
-import { NotificationPreferencesTable, UsersTable } from "@/lib/drizzle/schema";
+import { BuyerProfilesTable, GigWorkerProfilesTable, NotificationPreferencesTable, TeamMembersTable, UsersTable } from "@/lib/drizzle/schema";
 import { DiscountCodesTable } from "@/lib/drizzle/schema/payments";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
@@ -41,7 +41,7 @@ export const getProfileInfoUserAction = async (token?: string) => {
  */
 export const updateUserProfileAction = async (
   updateData: { fullName: string; phone?: string },
-  token?: string,
+  token?: string
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -75,7 +75,7 @@ export const updateUserProfileAction = async (
  */
 export const updateProfileVisibilityAction = async (
   updateData: { profileVisibility: boolean },
-  token?: string,
+  token?: string
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -104,7 +104,7 @@ export const updateProfileVisibilityAction = async (
  */
 export const updateNotificationEmailAction = async (
   updateData: { emailProferences: boolean },
-  token?: string,
+  token?: string
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -147,7 +147,7 @@ export const updateNotificationEmailAction = async (
  */
 export const updateNotificationSmsAction = async (
   updateData: { smsGigAlerts: boolean },
-  token?: string,
+  token?: string
 ) => {
   try {
     if (!token) throw "Token is required";
@@ -193,7 +193,7 @@ export const getUserReferralCodeAction = async ({
       .from(UsersTable)
       .leftJoin(
         DiscountCodesTable,
-        eq(DiscountCodesTable.userId, UsersTable.id),
+        eq(DiscountCodesTable.userId, UsersTable.id)
       )
       .where(eq(UsersTable.firebaseUid, firebaseUid));
 
@@ -222,5 +222,79 @@ export const getUserReferralCodeAction = async ({
   } catch (error) {
     console.error("Error in getUserReferralCodeAction:", error);
     return null;
+  }
+};
+
+export const deleteUserAccountAction = async (token?: string) => {
+  try {
+    if (!token) throw "Token is required";
+
+    const { data, uid } = await isUserAuthenticated(token);
+    if (!data) throw ERROR_CODES.UNAUTHORIZED;
+
+    await admin.auth().deleteUser(uid);
+
+    const pgUser = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+
+    if (!pgUser) throw new Error("User not found in database");
+
+    const userId = pgUser.id;
+
+    await db
+      .update(UsersTable)
+      .set({
+        email: `${uid}@able.com`,
+        fullName: "*********",
+        phone: "*********",
+        isDisabled: true,
+        isBanned: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(UsersTable.id, userId));
+
+    await db
+      .update(GigWorkerProfilesTable)
+      .set({
+        fullBio: "*********",
+        location: "*********",
+        address: "*********",
+        latitude: null,
+        longitude: null,
+        privateNotes: "*********",
+        videoUrl: "*********",
+        socialLink: "*********",
+        updatedAt: new Date(),
+      })
+      .where(eq(GigWorkerProfilesTable.userId, userId));
+
+    await db
+      .update(BuyerProfilesTable)
+      .set({
+        fullCompanyName: "*********",
+        vatNumber: "*********",
+        businessRegistrationNumber: "*********",
+        billingAddressJson: { deleted: true },
+        videoUrl: "*********",
+        companyRole: "*********",
+        updatedAt: new Date(),
+      })
+      .where(eq(BuyerProfilesTable.userId, userId));
+
+    await db
+      .update(TeamMembersTable)
+      .set({
+        name: "*********",
+        email: "*********",
+        roleInTeam: "*********",
+        updatedAt: new Date(),
+      })
+      .where(eq(TeamMembersTable.memberUserId, userId));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    return { success: false, error: "Error deleting user account" };
   }
 };

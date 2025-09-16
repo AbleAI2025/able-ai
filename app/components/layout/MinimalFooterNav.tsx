@@ -11,11 +11,9 @@ const MinimalFooterNav: React.FC = () => {
 
   return (
     <footer className={styles.footerNav}>
-      <Link href="/dashboard" legacyBehavior>
-        <a className={`${styles.navItem} ${pathname === '/dashboard' ? styles.active : ''}`}>
-          <Home size={24} className={styles.navIcon} />
-          {/* Optional: <span className={styles.navLabel}>Home</span> */}
-        </a>
+      <Link href="/dashboard" className={`${styles.navItem} ${pathname === '/dashboard' ? styles.active : ''}`}>
+        <Home size={24} className={styles.navIcon} />
+        {/* Optional: <span className={styles.navLabel}>Home</span> */}
       </Link>
       {/* Add more items if needed */}
     </footer>

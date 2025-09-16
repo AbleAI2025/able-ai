@@ -1,8 +1,8 @@
 'use client'
-import Logo from '@/app/components/brand/Logo'
+
 import styles from '../noReply/NoReply.module.css'
 import RehireWorkerCard from '@/app/components/buyer/RehireWorkerCard';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -92,7 +92,6 @@ const suggestedWorkers = [
 ];
 
   const { userId, gigId } = useParams();
-  const router = useRouter();
 
 useEffect(() => {
     const fetchData = async (buyerUserId: string, gigId: string) => {
@@ -138,7 +137,7 @@ useEffect(() => {
 
   return (
     <div className={styles.container}>
-       <ScreenHeaderWithBack onBackClick={() => router.back()} />
+       <ScreenHeaderWithBack />
       <main className={styles.mainContent}>
         <p className={styles.originalGigInfo}>
           {data.originalGig.workerName.split(" ")[0]} cant make your offer, we are going to automatically offer the gig to {suggestedWorkers[0].name.split(" ")[0]} (profile below) 

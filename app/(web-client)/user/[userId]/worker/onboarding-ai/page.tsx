@@ -82,6 +82,7 @@ import { Schema } from '@firebase/ai';
 import { FormInputType } from "@/app/types/form";
 import { createEscalatedIssueClient } from '@/utils/client-escalation';
 import { detectEscalationTriggers, generateEscalationDescription } from '@/utils/escalation-detection';
+import { detectIncident } from '@/lib/incident-detection';
 
 // Type assertion for Schema to resolve TypeScript errors
 const TypedSchema = Schema as any;
@@ -115,6 +116,7 @@ import {
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
+import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
@@ -122,6 +124,7 @@ const requiredFields: RequiredField[] = [
   { name: "experience", type: "text", placeholder: "How many years of experience do you have?", defaultPrompt: "How many years of experience do you have in your field?", rows: 1 },
   { name: "skills", type: "text", placeholder: "List your skills and certifications...", defaultPrompt: "What skills and certifications do you have?", rows: 3 },
   { name: "equipment", type: "text", placeholder: "List any equipment you have...", defaultPrompt: "What equipment do you have that you can use for your work?", rows: 3 },
+  { name: "qualifications", type: "text", placeholder: "List your qualifications and certifications...", defaultPrompt: "What qualifications and certifications do you have?", rows: 3 },
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "What's your preferred hourly rate?" },
   { name: "location", type: "location", defaultPrompt: "Where are you based? This helps us find gigs near you!" },
   { name: "availability", type: "availability", defaultPrompt: "When are you available to work? Let's set up your weekly schedule!" },
@@ -169,7 +172,7 @@ interface FormData {
 // Chat step type definition - matching gig creation structure
  type ChatStep = {
   id: number;
-  type: "bot" | "user" | "input" | "sanitized" | "typing" | "calendar" | "location" | "confirm" | "video" | "shareLink" | "availability" | "jobTitleConfirmation" | "summary" | "support";
+  type: "bot" | "user" | "input" | "sanitized" | "typing" | "calendar" | "location" | "confirm" | "video" | "shareLink" | "availability" | "jobTitleConfirmation" | "summary" | "support" | "hashtag-generation";
   content?: string;
   inputConfig?: {
     type: string;
@@ -289,7 +292,8 @@ Create a natural, engaging script that showcases their unique profile.`;
         }),
         isStream: false,
       },
-      ai
+      ai,
+      "gemini-2.5-flash-preview-05-20"
     );
 
     if (result.ok && result.data) {
@@ -349,95 +353,487 @@ async function interpretJobTitle(userExperience: string, ai: any): Promise<{ job
   return null;
 }
 
-// Helper: detect if user response is unrelated to current prompt
-function isUnrelatedResponse(userInput: string, currentPrompt: string): boolean {
-  // Simple heuristic: check if response contains common unrelated phrases
-  const unrelatedPhrases = [
-    'problem', 'broken', 'not working', 'error',
-   'speak to someone', 'talk to human', 'real person',
-                  // Curse words and inappropriate language
-              'fuck', 'shit', 'damn', 'bitch', 'ass', 'asshole', 'bastard', 'crap',
-              'piss', 'dick', 'pussy', 'cunt', 'whore', 'slut', 'fucker',
-              'motherfucker', 'fucking', 'shitty', 'damned', 'bloody', 'bugger',
-              'wanker', 'twat', 'bellend', 'knob', 'prick', 'tosser', 'arse',
-              'bollocks', 'wank', 'fanny', 'minge', 'gash', 'snatch', 'cooch',
-              'vagina', 'penis', 'willy', 'johnson'
-            ];
-  
-  const userLower = userInput.toLowerCase().trim();
-  const promptLower = currentPrompt.toLowerCase();
-  
-  // Check for unrelated phrases (more strict matching)
-  const hasUnrelatedPhrase = unrelatedPhrases.some(phrase => {
-    // Check for exact phrase matches
-    if (userLower.includes(phrase)) return true;
-    // Check for phrase with "i" prefix
-    if (userLower.includes(`i ${phrase}`)) return true;
-    // Check for phrase with "please" prefix
-    if (userLower.includes(`please ${phrase}`)) return true;
-    return false;
-  });
-  
-  // Check if response is too short (likely not answering the question)
-  const isTooShort = userInput.trim().length < 15;
-  
-  // Check if response doesn't contain relevant keywords from the prompt
-  const promptKeywords = promptLower.match(/\b\w+\b/g) || [];
-  const relevantKeywords = promptKeywords.filter(word => word.length > 3);
-  const hasRelevantKeywords = relevantKeywords.some(keyword => userLower.includes(keyword));
-  
-  // Check for common valid short responses that should NOT be flagged
-  const validShortResponses = [
-    // Job titles (common short responses)
-    'developer', 'web developer', 'frontend developer', 'backend developer', 'full stack developer',
-    'designer', 'ui designer', 'ux designer', 'graphic designer',
-    'manager', 'project manager', 'event manager', 'sales manager',
-    'assistant', 'admin assistant', 'executive assistant',
-    'consultant', 'freelancer', 'contractor',
-    'chef', 'cook', 'bartender', 'server', 'waiter', 'waitress',
-    'receptionist', 'cashier', 'barista', 'baker',
-    'security', 'guard', 'technician', 'operator',
-    
-    // Numbers and rates (common short responses)
-    /\d+/, // Any number
-    /\d+\s*(pound|pounds|£|gbp|per\s*hour|hourly|rate)/i, // Rate patterns
-    
-    // Common affirmative responses
-    'yes', 'no', 'ok', 'okay', 'sure', 'fine', 'good', 'great',
-    
-    // Common location responses
-    'london', 'manchester', 'birmingham', 'leeds', 'liverpool', 'sheffield', 'edinburgh', 'glasgow',
-    'cardiff', 'belfast', 'bristol', 'newcastle', 'leicester', 'coventry', 'nottingham', 'southampton'
-  ];
-  
-  // Check if the response matches any valid short response patterns
-  const isValidShortResponse = validShortResponses.some(pattern => {
-    if (typeof pattern === 'string') {
-      return userLower.includes(pattern);
-    } else if (pattern instanceof RegExp) {
-      return pattern.test(userLower);
-    }
-    return false;
-  });
-  
-  // Check if the prompt is asking for specific types of information that might have short answers
-  const promptAskingFor = {
-    jobTitle: /(job|title|position|role|what\s*do\s*you\s*do|profession)/i.test(promptLower),
-    rate: /(rate|price|cost|hourly|per\s*hour|how\s*much|charge)/i.test(promptLower),
-    location: /(location|where|city|area|place)/i.test(promptLower),
-    availability: /(available|when|time|schedule|hours)/i.test(promptLower),
-    yesNo: /(yes|no|do\s*you|can\s*you|would\s*you|are\s*you)/i.test(promptLower)
-  };
-  
-  // If the prompt is asking for specific information types, be more lenient with short responses
-  const isSpecificQuestion = promptAskingFor.jobTitle || promptAskingFor.rate || promptAskingFor.location || promptAskingFor.yesNo;
-  
+/**
+ * AI-Powered Help Request Detection System
+ * Uses Gemini AI for intelligent intent analysis
+ */
+interface IntentAnalysis {
+  isHelpRequest: boolean;
+  confidence: number;
+  reason: string;
+  suggestedAction: 'continue' | 'clarify' | 'redirect';
+}
 
+/**
+ * AI-Powered Intent Analysis using Gemini
+ */
+async function analyzeUserIntentWithAI(
+  userInput: string,
+  currentPrompt: string,
+  conversationContext: {
+    currentStep: string;
+    previousMessages: string[];
+    isCollectingSkills: boolean;
+  },
+  ai: any
+): Promise<IntentAnalysis> {
+  try {
+    const prompt = `You are an expert AI assistant analyzing user intent in a worker onboarding system. Your job is to determine if the user needs platform help or is describing their professional skills.
+
+CONTEXT:
+- User is in a worker onboarding process
+- Current step: ${conversationContext.currentStep}
+- Is collecting skills: ${conversationContext.isCollectingSkills}
+- Current prompt: "${currentPrompt}"
+
+USER INPUT: "${userInput}"
+
+ANALYZE if this is a HELP REQUEST or SKILL DESCRIPTION:
+
+HELP REQUEST examples (should return isHelpRequest: true):
+- "I need help with this form"
+- "How do I use this?"
+- "I'm stuck"
+- "This isn't working"
+- "Can someone help me?"
+- "I'm confused with this platform"
+- "/help"
+- "Contact support"
+
+SKILL DESCRIPTION examples (should return isHelpRequest: false):
+- "I have 5 years of customer support experience"
+- "I provide technical support"
+- "I work in IT support"
+- "I help businesses with their needs"
+- "Customer service is my passion"
+- "I'm a people person"
+- "I was a travel agent"
+- "I have customer service experience"
+- "I need flexible hours" (when asked about availability)
+- "I want to work weekends" (when asked about schedule)
+
+Be very careful during skill collection - users describing their professional experience should NOT trigger help flow.
+
+Respond with JSON only:`;
+
+    const result = await geminiAIAgent(
+      "gemini-2.0-flash",
+      {
+        prompt: prompt,
+        responseSchema: Schema.object({
+          properties: {
+            isHelpRequest: Schema.boolean(),
+            confidence: Schema.number(),
+            reason: Schema.string(),
+            suggestedAction: Schema.string()
+          },
+          required: ['isHelpRequest', 'confidence', 'reason', 'suggestedAction']
+        }),
+        isStream: false,
+      },
+      ai
+    );
+
+    if (result.ok) {
+      const data = result.data as any;
+      return {
+        isHelpRequest: data.isHelpRequest,
+        confidence: data.confidence,
+        reason: data.reason,
+        suggestedAction: data.suggestedAction as 'continue' | 'clarify' | 'redirect'
+      };
+    } else {
+      console.error('AI intent analysis failed:', result.error);
+      // Fallback to rule-based system
+      return analyzeUserIntentFallback(userInput, currentPrompt, conversationContext);
+    }
+  } catch (error) {
+    console.error('AI intent analysis error:', error);
+    // Fallback to rule-based system
+    return analyzeUserIntentFallback(userInput, currentPrompt, conversationContext);
+  }
+}
+
+/**
+ * Fallback rule-based system (original implementation)
+ */
+function analyzeUserIntentFallback(
+  userInput: string,
+  currentPrompt: string,
+  conversationContext: {
+    currentStep: string;
+    previousMessages: string[];
+    isCollectingSkills: boolean;
+  }
+): IntentAnalysis {
+  const input = userInput.toLowerCase().trim();
+
+  // 1. EXPLICIT HELP COMMANDS (High confidence)
+  const explicitHelpPatterns = [
+    /^\/help/,
+    /^help$/,
+    /^get me (help|support|assistance)$/,
+    /^i need help with (this|the) (form|platform|site|app)/,
+    /^how do i use this/,
+    /^i'?m? (stuck|lost|confused) (with|on) (this|the)/,
+    /^(i )?(don'?t|can'?t) (understand|figure out|work out)/,
+    /^this (isn'?t|is not) working/,
+    /^(something'?s?|it'?s?) broken/,
+    /^contact (support|customer service|someone)$/
+  ];
+
+  for (const pattern of explicitHelpPatterns) {
+    if (pattern.test(input)) {
+      return {
+        isHelpRequest: true,
+        confidence: 0.95,
+        reason: 'Explicit help request pattern',
+        suggestedAction: 'redirect'
+      };
+    }
+  }
+
+  // 2. CONTEXT-AWARE CHECKING
+  // During skill collection, be very conservative
+  if (conversationContext.isCollectingSkills) {
+    // These are ONLY help requests if they're questions or problems
+    const contextualHelpPatterns = [
+      /^(where|what|how|why|when) .*(help|support|contact)/,
+      /^(can|could|would) (you|someone|anyone) help/,
+      /^is there (someone|anyone|support)/,
+      /^i (need|want) to (speak|talk) to (someone|support|a human)/,
+      /\?.*\b(help|support|assistance)\b/ // Questions containing help words
+    ];
+
+    for (const pattern of contextualHelpPatterns) {
+      if (pattern.test(input)) {
+        return {
+          isHelpRequest: true,
+          confidence: 0.7,
+          reason: 'Contextual help pattern during skill collection',
+          suggestedAction: 'clarify'
+        };
+      }
+    }
+
+    // During skill collection, these are DEFINITELY NOT help requests
+    const skillDeclarationPatterns = [
+      /i (have|had|provide|offer|do|work|worked) .*(support|help|service)/,
+      /(experience|skilled|expert|proficient) .*(support|help|service)/,
+      /(customer|technical|it|phone|email) (support|service)/,
+      /my (skill|experience|background|job|role)/,
+      /years? (of|in) .*(support|service|help)/
+    ];
+
+    for (const pattern of skillDeclarationPatterns) {
+      if (pattern.test(input)) {
+        return {
+          isHelpRequest: false,
+          confidence: 0.95,
+          reason: 'Skill declaration pattern detected',
+          suggestedAction: 'continue'
+        };
+      }
+    }
+  }
+
+  // 3. INAPPROPRIATE CONTENT CHECK (separate from help detection)
+  const inappropriateContent = checkInappropriateContent(input);
+  if (inappropriateContent.isInappropriate) {
+    return {
+      isHelpRequest: false,
+      confidence: 1.0,
+      reason: inappropriateContent.reason,
+      suggestedAction: 'continue' // Handle separately with a warning
+    };
+  }
+
+  // 4. DEFAULT: Not a help request
+  return {
+    isHelpRequest: false,
+    confidence: 0.9,
+    reason: 'No help patterns detected',
+    suggestedAction: 'continue'
+  };
+}
+
+/**
+ * Main intent analysis function - tries AI first, falls back to rules
+ */
+async function analyzeUserIntent(
+  userInput: string,
+  currentPrompt: string,
+  conversationContext: {
+    currentStep: string;
+    previousMessages: string[];
+    isCollectingSkills: boolean;
+  },
+  ai?: any
+): Promise<IntentAnalysis> {
+  // If AI is available, use it
+  if (ai) {
+    return await analyzeUserIntentWithAI(userInput, currentPrompt, conversationContext, ai);
+  }
   
-  // Only flag as unrelated if:
-  // 1. It contains unrelated phrases, OR
-  // 2. It's too short AND doesn't have relevant keywords AND isn't a valid short response AND isn't answering a specific question
-  return hasUnrelatedPhrase || (isTooShort && !hasRelevantKeywords && !isValidShortResponse && !isSpecificQuestion);
+  // Otherwise use fallback
+  return analyzeUserIntentFallback(userInput, currentPrompt, conversationContext);
+}
+
+/**
+ * Separate function for inappropriate content
+ * This should NOT trigger help flow, but rather a warning
+ */
+function checkInappropriateContent(input: string): {
+  isInappropriate: boolean;
+  reason: string;
+  severity: 'mild' | 'moderate' | 'severe';
+} {
+  // Only check for actual inappropriate language, not help-related words
+  const severePatterns = [
+    // Add actual inappropriate patterns here if needed
+    // But keep them separate from help detection
+  ];
+
+  // Return appropriate response
+  return {
+    isInappropriate: false,
+    reason: '',
+    severity: 'mild'
+  };
+}
+
+// Legacy function for backward compatibility - now uses AI-powered detection
+async function isUnrelatedResponse(userInput: string, currentPrompt: string, ai?: any): Promise<boolean> {
+  const intent = await analyzeUserIntent(userInput, currentPrompt, {
+    currentStep: 'unknown',
+    previousMessages: [],
+    isCollectingSkills: currentPrompt.includes('skill') || 
+                       currentPrompt.includes('experience') || 
+                       currentPrompt.includes('background')
+  }, ai);
+  
+  return intent.isHelpRequest;
+}
+
+/**
+ * Enhanced handler with AI-powered smart routing
+ */
+async function handleUserResponseWithIntent(
+  userInput: string,
+  currentPrompt: string,
+  context: {
+    currentStep: string;
+    recentMessages: string[];
+    isCollectingSkills: boolean;
+    formData: any;
+    user: any;
+    chatSteps: any[];
+    setChatSteps: (steps: any) => void;
+    setUnrelatedResponseCount: (count: number) => void;
+    setShowHumanSupport: (show: boolean) => void;
+    setSupportCaseId: (id: string) => void;
+    ai?: any;
+  }
+): Promise<any> {
+  // Analyze intent with AI-powered system
+  const intent = await analyzeUserIntent(userInput, currentPrompt, {
+    currentStep: context.currentStep,
+    previousMessages: context.recentMessages || [],
+    isCollectingSkills: context.isCollectingSkills
+  }, context.ai);
+
+  // Handle based on confidence and action
+  switch (intent.suggestedAction) {
+    case 'redirect':
+      // High confidence help request
+      return {
+        action: 'show_help_options',
+        message: `I understand you need help. Would you like to:
+
+1. View a tutorial on using this form
+2. Contact our support team  
+3. Continue with onboarding (I'll guide you)
+
+Type 1, 2, or 3`,
+        saveProgress: true
+      };
+
+    case 'clarify':
+      // Medium confidence - need clarification
+      if (intent.confidence > 0.5 && intent.confidence < 0.8) {
+        return {
+          action: 'clarify_intent',
+          message: `Just to clarify - are you:
+
+A) Telling me about your professional experience
+B) Asking for help with the platform
+
+Type A or B`,
+          saveProgress: true,
+          continueOnA: true
+        };
+      }
+      break;
+
+    case 'continue':
+    default:
+      // Process normally - this is not a help request
+      return {
+        action: 'continue_normal',
+        message: null,
+        saveProgress: false
+      };
+  }
+}
+
+/**
+ * Setup explicit help command that always works
+ */
+function setupHelpCommand(): void {
+  // This ensures users can ALWAYS get help when they explicitly ask
+  document.addEventListener('userCommand', (e: any) => {
+    if (e.detail.command === '/help') {
+      // Trigger help menu
+      const helpEvent = new CustomEvent('showHelpMenu');
+      document.dispatchEvent(helpEvent);
+    }
+  });
+}
+
+/**
+ * Test function to verify the AI-powered help detection system
+ * This function can be called to test the implementation
+ */
+async function testHelpDetectionSystem(ai?: any): Promise<void> {
+  console.log('🧪 Testing AI-Powered Help Detection System...');
+  
+  // Test cases that should NOT trigger help flow
+  const shouldNotTriggerHelp = [
+    "I have 5 years of customer support experience",
+    "I provide technical support",
+    "I work in IT support", 
+    "I help businesses with their needs",
+    "Customer service is my passion",
+    "I need flexible hours",
+    "I want to work weekends",
+    "I'm a people person",
+    "I was a travel agent",
+    "I have customer service experience"
+  ];
+
+  // Test cases that SHOULD trigger help flow
+  const shouldTriggerHelp = [
+    "/help",
+    "How do I use this?",
+    "I'm stuck",
+    "This isn't working",
+    "Can someone help me?",
+    "I need to speak to support",
+    "I'm confused with this form",
+    "Something's broken",
+    "Contact support"
+  ];
+
+  const skillCollectionContext = {
+    currentStep: 'skills',
+    previousMessages: [],
+    isCollectingSkills: true
+  };
+
+  const generalContext = {
+    currentStep: 'general',
+    previousMessages: [],
+    isCollectingSkills: false
+  };
+
+  console.log('\n✅ Testing cases that should NOT trigger help:');
+  for (let i = 0; i < shouldNotTriggerHelp.length; i++) {
+    const testCase = shouldNotTriggerHelp[i];
+    const intent = await analyzeUserIntent(testCase, "What skills do you have?", skillCollectionContext, ai);
+    const result = intent.isHelpRequest ? '❌ FAIL' : '✅ PASS';
+    console.log(`${i + 1}. "${testCase}" - ${result} (${intent.reason})`);
+  }
+
+  console.log('\n✅ Testing cases that SHOULD trigger help:');
+  for (let i = 0; i < shouldTriggerHelp.length; i++) {
+    const testCase = shouldTriggerHelp[i];
+    const intent = await analyzeUserIntent(testCase, "What skills do you have?", generalContext, ai);
+    const result = intent.isHelpRequest ? '✅ PASS' : '❌ FAIL';
+    console.log(`${i + 1}. "${testCase}" - ${result} (${intent.reason})`);
+  }
+
+  console.log('\n🎯 Test completed! Check results above.');
+}
+
+// Make test function available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).testHelpDetectionSystem = testHelpDetectionSystem;
+}
+
+/**
+ * Enhanced AI-powered conversation flow management
+ */
+async function enhanceConversationWithAI(
+  userInput: string,
+  currentStep: string,
+  formData: any,
+  chatSteps: any[],
+  ai: any
+): Promise<{
+  enhancedPrompt?: string;
+  suggestions?: string[];
+  emotionalTone?: 'encouraging' | 'professional' | 'friendly' | 'supportive';
+  nextSteps?: string[];
+}> {
+  try {
+    const prompt = `You are an expert AI conversation manager for a worker onboarding system. Analyze the conversation and provide enhancements.
+
+CONVERSATION CONTEXT:
+- Current step: ${currentStep}
+- User input: "${userInput}"
+- Form data so far: ${JSON.stringify(formData, null, 2)}
+- Recent conversation: ${chatSteps.slice(-3).map(s => `${s.type}: ${s.content}`).join('\n')}
+
+PROVIDE ENHANCEMENTS:
+1. enhancedPrompt: Improve the next prompt to be more engaging and context-aware
+2. suggestions: 2-3 helpful suggestions for the user
+3. emotionalTone: Choose the best tone for this moment
+4. nextSteps: What should happen next in the conversation
+
+Respond with JSON only:`;
+
+    const result = await geminiAIAgent(
+      "gemini-2.0-flash",
+      {
+        prompt: prompt,
+        responseSchema: Schema.object({
+          properties: {
+            enhancedPrompt: Schema.string(),
+            suggestions: Schema.array({ items: Schema.string() }),
+            emotionalTone: Schema.string(),
+            nextSteps: Schema.array({ items: Schema.string() })
+          },
+          required: ['enhancedPrompt', 'suggestions', 'emotionalTone', 'nextSteps']
+        }),
+        isStream: false,
+      },
+      ai
+    );
+
+    if (result.ok) {
+      const data = result.data as any;
+      return {
+        enhancedPrompt: data.enhancedPrompt,
+        suggestions: data.suggestions,
+        emotionalTone: data.emotionalTone as 'encouraging' | 'professional' | 'friendly' | 'supportive',
+        nextSteps: data.nextSteps
+      };
+    }
+  } catch (error) {
+    console.error('AI conversation enhancement failed:', error);
+  }
+
+  return {};
 }
 
 // Helper: save support case to database
@@ -509,6 +905,8 @@ Rules:
 5. Use extracted information intelligently
 6. Keep it concise but comprehensive
 7. Make it sound professional but friendly
+8. CRITICAL: Always use "You are" not "I am" - this is the AI confirming what the user told them
+9. Write as if you're confirming their profile back to them
 
 Create a natural summary that flows well and sounds like a human describing the worker.`;
 
@@ -523,7 +921,8 @@ Create a natural summary that flows well and sounds like a human describing the 
         }),
         isStream: false,
       },
-      ai
+      ai,
+      "gemini-2.5-flash-preview-05-20"
     );
 
     if (result.ok && result.data) {
@@ -688,31 +1087,26 @@ async function generateContextAwarePrompt(fieldName: string, aboutInfo: string, 
     });
 
     // Build specialized prompt using ChatAI system
-    const basePrompt = buildRolePrompt('gigfolioCoach', 'Profile Creation', `Generate a friendly, contextual prompt for the next question about: ${fieldName}`);
+    const basePrompt = buildRolePrompt('gigfolioCoach', 'Profile Creation', `Generate a friendly, contextual prompt for the next question about: ${fieldName}. You MUST follow the field-specific guidance exactly and not deviate from it.`);
     
     // Add field-specific context
-    const fieldContext = `Previous conversation context: About: "${aboutInfo || 'Not provided'}"
-Next field to ask about: "${fieldName}"
+    const fieldContext = `Generate a friendly prompt for the next onboarding question.
 
-Field-specific guidance for WORKERS:
-- experience: Ask about their years of experience in their field (e.g., "How many years have you been working as a [job title]?" or "How long have you been in this line of work?")
-- skills: Ask about their specific skills, certifications, or qualifications they can offer to clients
-- hourlyRate: Ask about their preferred hourly rate for their services in British Pounds (£). Note: London minimum wage is £12.21 per hour.
-- location: Ask about their location with context about finding nearby gig opportunities
-- availability: Ask about when they are available to work for clients
-- videoIntro: Ask about recording a video introduction to help clients get to know them
-- references: Ask about references or testimonials from previous clients or employers
+Context: User said "${aboutInfo || 'Not provided'}" about themselves.
+Next field: "${fieldName}"
 
-The prompt should:
-1. Be conversational and natural - avoid repetitive phrases
-2. Reference what they've already shared about themselves in a fresh way
-3. Be specific to the field being asked about
-4. Include relevant emojis to make it engaging
-5. Provide helpful context or examples when appropriate
-6. Vary your language - don't start every message the same way
-7. ALWAYS stay focused on worker onboarding - this is for creating a worker profile
+RULES FOR EACH FIELD:
+- experience: Ask ONLY about years of experience. Example: "How many years have you been working as a [job title]?"
+- skills: Ask about skills and certifications
+- hourlyRate: Ask about hourly rate in British Pounds (£)
+- location: Ask about their location for finding gigs
+- availability: Ask about when they're available to work
+- videoIntro: Ask about recording a video introduction
+- references: Ask about references or testimonials
 
-Be creative and natural in your responses. Don't repeat the same phrases or structure. Make each message feel fresh and conversational.`;
+IMPORTANT: For "experience" field, ask ONLY about years of experience, NOT specific work experiences or roles.
+
+Make it conversational and engaging with emojis.`;
 
     const fullPrompt = `${basePrompt}\n\n${fieldContext}`;
 
@@ -723,18 +1117,40 @@ Be creative and natural in your responses. Don't repeat the same phrases or stru
         responseSchema: promptSchema,
         isStream: false,
       },
-      ai
+      ai,
+      "gemini-2.5-flash-preview-05-20"
     );
+
+    console.log('AI prompt generation result:', { fieldName, result });
 
     if (result.ok && result.data) {
       const data = result.data as AIPromptResponse;
+      console.log('AI prompt data:', data);
       return data.prompt || buildSpecializedPrompt('profileCreation', `Field: ${fieldName}`, `Tell me more about your ${fieldName}`);
+    } else {
+      console.log('AI prompt generation failed - result not ok or no data:', result);
     }
   } catch (error) {
     console.error('AI prompt generation failed:', error);
   }
   
-  // Fallback using ChatAI system
+  // Fallback using ChatAI system with field-specific prompts
+  if (fieldName === 'experience') {
+    return `Great! Now, how many years have you been working as a ${aboutInfo ? aboutInfo.toLowerCase() : 'professional'}? 🕒`;
+  } else if (fieldName === 'skills') {
+    return `Awesome! What skills and certifications do you have that you can offer to clients? 🛠️`;
+  } else if (fieldName === 'hourlyRate') {
+    return `Perfect! What's your preferred hourly rate in British Pounds (£)? 💰`;
+  } else if (fieldName === 'location') {
+    return `Excellent! Where are you based? This helps us find gig opportunities near you! 📍`;
+  } else if (fieldName === 'availability') {
+    return `Great! When are you available to work? Let's set up your weekly schedule! 📅`;
+  } else if (fieldName === 'videoIntro') {
+    return `Fantastic! Ready to record a short video introduction to help clients get to know you? 🎥`;
+  } else if (fieldName === 'references') {
+    return `Wonderful! Do you have any references or testimonials from previous clients or employers? ⭐`;
+  }
+  
   return buildSpecializedPrompt('profileCreation', `Field: ${fieldName}`, `Tell me more about your ${fieldName}`);
 }
 
@@ -859,6 +1275,147 @@ export default function OnboardWorkerPage() {
   
   // Worker profile ID for recommendation URL
   const [workerProfileId, setWorkerProfileId] = useState<string | null>(null);
+  
+  // Incident reporting state
+  const [isReportingIncident, setIsReportingIncident] = useState(false);
+  const [incidentType, setIncidentType] = useState<string | null>(null);
+  const [incidentDetails, setIncidentDetails] = useState<string>('');
+
+  // Hashtag generation state
+  const [hashtagState, setHashtagState] = useState({
+    isGenerating: false,
+    hashtags: [] as string[],
+    error: null as string | null
+  });
+
+  // Simple hashtag generation function
+  const generateHashtags = async (profileData: any): Promise<string[]> => {
+    setHashtagState({ isGenerating: true, hashtags: [], error: null });
+    
+    try {
+      if (!ai) {
+        throw new Error('AI not available');
+      }
+
+      const prompt = `Generate exactly 3 professional hashtags for this gig worker profile:
+
+About: ${profileData.about || 'Not provided'}
+Skills: ${profileData.skills || 'Not provided'}
+Experience: ${profileData.experience || 'Not provided'}
+
+Return 3 relevant hashtags like "#bartender", "#mixology", "#events" for hospitality/gig work.`;
+
+      const schema = Schema.object({
+        properties: {
+          hashtags: Schema.array({
+            items: Schema.string()
+          })
+        },
+        required: ["hashtags"]
+      });
+
+      const result = await geminiAIAgent(
+        "gemini-2.0-flash",
+        { prompt, responseSchema: schema },
+        ai,
+        "gemini-2.5-flash-preview-05-20"
+      );
+
+      if (result.ok && result.data) {
+        const hashtags = (result.data as { hashtags: string[] }).hashtags;
+        setHashtagState({ isGenerating: false, hashtags, error: null });
+        return hashtags;
+      } else {
+        throw new Error('AI generation failed');
+      }
+    } catch (error) {
+      console.error('❌ Error generating hashtags:', error);
+      const fallbackHashtags = [
+        `#${profileData.skills?.split(',')[0]?.trim().toLowerCase().replace(/\s+/g, '-') || 'worker'}`,
+        '#professional',
+        '#gig-worker'
+      ];
+      setHashtagState({ isGenerating: false, hashtags: fallbackHashtags, error: null });
+      return fallbackHashtags;
+    }
+  };
+
+  // Function to handle profile submission with hashtag generation
+  const handleProfileSubmission = async (requiredData: any) => {
+    try {
+      // Add hashtag generation step to chat
+      const hashtagStepId = Date.now();
+      const hashtagStep: ChatStep = {
+        id: hashtagStepId,
+        type: "hashtag-generation",
+        isComplete: false
+      };
+      setChatSteps(prev => [...prev, hashtagStep]);
+      
+      // Generate hashtags
+      const hashtags = await generateHashtags({
+        about: requiredData.about,
+        experience: requiredData.experience,
+        skills: requiredData.skills,
+        equipment: requiredData.equipment,
+        location: requiredData.location,
+      });
+      
+      // Mark hashtag step as complete
+      setChatSteps(prev => prev.map(step => 
+        step.id === hashtagStepId ? { ...step, isComplete: true } : step
+      ));
+      
+      // Add profile saving step
+      const savingStepId = Date.now() + 1;
+      const savingStep: ChatStep = {
+        id: savingStepId,
+        type: "bot",
+        content: "Saving your profile with generated hashtags...",
+        isComplete: false
+      };
+      setChatSteps(prev => [...prev, savingStep]);
+      
+      // Save profile with generated hashtags
+      const profileDataWithHashtags = {
+        ...requiredData,
+        hashtags: hashtags
+      };
+      
+      const result = await saveWorkerProfileFromOnboardingAction(profileDataWithHashtags, user?.token || '');
+      
+      // Mark saving step as complete
+      setChatSteps(prev => prev.map(step => 
+        step.id === savingStepId ? { ...step, isComplete: true } : step
+      ));
+      
+      if (result.success) {
+        console.log('✅ Profile saved successfully with hashtags:', hashtags);
+        if (result.workerProfileId) {
+          setWorkerProfileId(result.workerProfileId);
+        }
+        
+        // Add success step
+        const successStep: ChatStep = {
+          id: Date.now() + 2,
+          type: "bot",
+          content: "🎉 Profile created successfully! Redirecting to your dashboard...",
+          isComplete: true
+        };
+        setChatSteps(prev => [...prev, successStep]);
+        
+        // Navigate to worker dashboard after a short delay
+        setTimeout(() => {
+          router.push(`/user/${user?.uid}/worker`);
+        }, 2000);
+      } else {
+        setError('Failed to save profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error in profile submission:', error);
+      setError('An error occurred while saving your profile. Please try again.');
+    }
+  };
 
   // Create worker profile automatically when component mounts
   useEffect(() => {
@@ -924,6 +1481,7 @@ export default function OnboardWorkerPage() {
 
     console.log('🔍 Starting manual form submission validation...');
     
+    
     // Validate the form data before proceeding
     const validation = validateWorkerProfileData(formData);
     if (!validation.isValid) {
@@ -934,6 +1492,8 @@ export default function OnboardWorkerPage() {
 
     console.log('✅ Form validation passed, proceeding with submission');
     setIsSubmitting(true);
+    setError(null);
+    
     setError(null);
     
     try {
@@ -953,31 +1513,35 @@ export default function OnboardWorkerPage() {
 
       // Ensure all required fields are present - use sanitized data from form
       // Ensure all required fields are present - use sanitized data from form
-        const requiredData = {
-          about: formData.about || '', // This is now the sanitized version from the form
-          experience: formData.experience || '', // This is now the sanitized version from the form
-          skills: formData.skills || '', // This is now the sanitized version from the form
-          qualifications: formData.qualifications || '', // Add qualifications field
-          equipment: typeof formData.equipment === 'string' && formData.equipment.trim().length > 0
-            ? formData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined }))
-            : [],
-          hourlyRate: String(formData.hourlyRate || ''),
-          location: formData.location || '',
-          availability: formData.availability || { 
-            days: [], 
-            startTime: '09:00', 
-            endTime: '17:00',
-            frequency: 'weekly',
-            ends: 'never',
-            startDate: new Date().toISOString().split('T')[0],
-            endDate: undefined,
-            occurrences: undefined
-          },
-          videoIntro: typeof formData.videoIntro === 'string' ? formData.videoIntro : '',
-          time: formData.time || '',
-          jobTitle: formData.jobTitle || extractedJobTitle // Use sanitized jobTitle from form first
-          
-        };
+      // Parse experience to get numeric values
+      const { years: experienceYears, months: experienceMonths } = parseExperienceToNumeric(formData.experience || '');
+      
+      const requiredData = {
+        about: formData.about || '', // This is now the sanitized version from the form
+        experience: formData.experience || '', // This is now the sanitized version from the form
+        skills: formData.skills || '', // This is now the sanitized version from the form
+        qualifications: formData.qualifications || '', // Add qualifications field
+        equipment: typeof formData.equipment === 'string' && formData.equipment.trim().length > 0
+          ? formData.equipment.split(/[,\n;]/).map((item: string) => ({ name: item.trim(), description: undefined })).filter((item: { name: string; description: undefined }) => item.name.length > 0)
+          : [],
+        hourlyRate: String(formData.hourlyRate || ''),
+        location: formData.location || '',
+        availability: formData.availability || { 
+          days: [], 
+          startTime: '09:00', 
+          endTime: '17:00',
+          frequency: 'weekly',
+          ends: 'never',
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: undefined,
+          occurrences: undefined
+        },
+        videoIntro: typeof formData.videoIntro === 'string' ? formData.videoIntro : '',
+        time: formData.time || '',
+        jobTitle: formData.jobTitle || extractedJobTitle, // Use sanitized jobTitle from form first
+        experienceYears: experienceYears,
+        experienceMonths: experienceMonths
+      };
       
       console.log('📤 Sending validated data to backend:', {
         about: requiredData.about?.substring(0, 50) + '...',
@@ -992,21 +1556,9 @@ export default function OnboardWorkerPage() {
       });
       
       // Save the profile data to database - THIRD OCCURRENCE
-      const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
-      if (result.success) {
-        console.log('✅ Profile saved successfully');
-        // Set the worker profile ID for references link generation
-        if (result.workerProfileId) {
-          setWorkerProfileId(result.workerProfileId);
-        }
-        
-        // Navigate to worker dashboard
-        router.push(`/user/${user?.uid}/worker`);
-      } else {
-        console.error('❌ Profile save failed:', result);
-        setError('Failed to save profile. Please try again.');
-      }
+      await handleProfileSubmission(requiredData);
     } catch (error) {
+      console.error('❌ Manual form submission error:', error);
       console.error('❌ Manual form submission error:', error);
       setError('Failed to save profile. Please try again.');
     } finally {
@@ -1020,7 +1572,7 @@ export default function OnboardWorkerPage() {
     setManualFormData({});
   }, []);
 
-  // AI validation function using new ChatAI system
+  // Enhanced AI validation function with improved context awareness
   const simpleAICheck = useCallback(async (field: string, value: unknown, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | unknown, naturalSummary?: string, extractedData?: string }> => {
     if (!value) {
       return { 
@@ -1030,6 +1582,57 @@ export default function OnboardWorkerPage() {
     }
 
     const trimmedValue = String(value).trim();
+    
+    // Pre-validation: Check for inappropriate content before AI processing with context
+    // Skip pre-validation for numeric fields like hourlyRate to avoid false positives
+    const numericFields = ['hourlyRate', 'experienceYears', 'experienceMonths'];
+    let preValidation: any = { 
+      isAppropriate: true, 
+      confidence: 0, 
+      reason: '', 
+      category: 'clean' as const, 
+      suggestedAction: 'accept' as const,
+      contextAnalysis: undefined 
+    };
+    
+    if (!numericFields.includes(field)) {
+      const { preValidateContentWithContext } = await import('../../../../../../lib/utils/contentModeration');
+      
+      // Build chat context from conversation history
+      const chatContext = {
+        conversationHistory: chatSteps
+          .filter(step => step.type === 'user' || step.type === 'bot')
+          .map(step => ({
+            type: step.type as 'user' | 'bot',
+            content: step.content || '',
+            timestamp: step.id
+          })),
+        currentField: field,
+        userRole: 'worker' as const,
+        sessionDuration: Date.now() - (chatSteps[0]?.id || Date.now())
+      };
+      
+      preValidation = preValidateContentWithContext(trimmedValue, chatContext);
+      
+      // If pre-validation rejects with high confidence, reject immediately
+      if (!preValidation.isAppropriate && preValidation.confidence > 0.8) {
+        // Log rejected content for monitoring
+        console.warn('🚫 Content rejected by pre-validation:', {
+          field,
+          input: trimmedValue,
+          reason: preValidation.reason,
+          category: preValidation.category,
+          confidence: preValidation.confidence,
+          userId: user?.uid || 'unknown',
+          timestamp: new Date().toISOString()
+        });
+        
+        return {
+          sufficient: false,
+          clarificationPrompt: `I'm sorry, but "${preValidation.reason}" is not appropriate for a professional worker profile. Please provide legitimate work-related information.`
+        };
+      }
+    }
     
     // Use AI for all validation
     try {
@@ -1050,52 +1653,92 @@ export default function OnboardWorkerPage() {
          },
        });
 
-      // Build validation prompt using ChatAI system
+      // Build enhanced validation prompt with better context awareness
       const basePrompt = buildRolePrompt('gigfolioCoach', 'Profile Validation', `Validate and intelligently sanitize the following input for field: ${field}`);
       
-      
-      
-      const validationContext = `Previous context from this conversation:
+      // Enhanced context awareness
+      const conversationHistory = chatSteps
+        .filter(step => step.type === 'user' || step.type === 'bot')
+        .slice(-5) // Last 5 messages for context
+        .map(step => `${step.type}: ${step.content}`)
+        .join('\n');
+
+      const validationContext = `CONVERSATION CONTEXT:
+${conversationHistory}
+
+PREVIOUS PROFILE DATA:
 ${Object.entries(formData).filter(([key, value]) => value && key !== field).map(([key, value]) => `${key}: ${value}`).join(', ')}
 
-Current field being validated: "${field}"
-User input: "${trimmedValue}"
-Input type: "${type}"
+CURRENT VALIDATION:
+- Field: "${field}"
+- User input: "${trimmedValue}"
+- Input type: "${type}"
 
-ENHANCED VALIDATION & SANITIZATION REQUIREMENTS:
+CONTEXT ANALYSIS:
+- User behavior pattern: ${preValidation.contextAnalysis?.userBehaviorPattern || 'normal'}
+- Conversation theme: ${preValidation.contextAnalysis?.conversationTheme || 'general'}
+- Previous inappropriate attempts: ${preValidation.contextAnalysis?.previousInappropriateCount || 0}
+- Is follow-up to rejection: ${preValidation.contextAnalysis?.isFollowUp ? 'Yes' : 'No'}
 
-1. **Basic Validation:**
-   - isAppropriate: Check if content is appropriate for professional worker profile
-   - isWorkerRelated: Check if content relates to worker skills/experience (be VERY lenient)
+ENHANCED AI-POWERED VALIDATION & SANITIZATION:
+
+1. **AI-Powered Context Analysis:**
+   - Analyze the conversation flow to understand user intent
+   - Consider previous responses for consistency
+   - Detect if user is struggling or needs guidance
+   - Identify patterns in user communication style
+
+2. **Intelligent Validation:**
+   - isAppropriate: Check if content is appropriate for professional worker profile (REJECT nonsense, jokes, memes, fictional characters, inappropriate content)
+   - isWorkerRelated: Check if content relates to worker skills/experience (be lenient for legitimate worker content, but STRICT against nonsense)
    - isSufficient: Check if content provides basic information
+   - Consider context: If user mentioned job title earlier, validate against it
+   - REJECT: Video game references, fictional characters, memes, jokes, gibberish, random text
+   - CONTEXT AWARENESS: 
+     * If user behavior pattern is "testing" (multiple previous rejections), be EXTRA strict
+     * If user behavior pattern is "confused" and this is a follow-up, be more lenient for legitimate attempts
+     * If conversation theme is clear (experience, skills, etc.), validate against that context
 
-2. **Intelligent Sanitization & Data Extraction:**
-   - naturalSummary: Create a natural, conversational summary for user confirmation
+3. **Enhanced Sanitization & Data Extraction:**
+   - naturalSummary: Create a natural, conversational summary that shows understanding
    - extractedData: Extract and structure key information as JSON string
+   - Cross-reference with existing profile data for consistency
 
-3. **Field-Specific Intelligence:**
-   - **experience**: Extract years of experience and validate reasonableness
-     Example: "25 years of experience" → "Ah, so you have 25 years of experience as a cashier, right?"
-     Validation: Check if years are reasonable (0-50), extract numeric value, format naturally
-   - **hourlyRate**: Convert to pounds (£), format properly, ensure minimum £12.21 (London minimum wage)
-     Example: "15" → "Got it, you're charging £15 per hour, correct?"
-     Validation: Must be at least £12.21 per hour. If below, mark as insufficient and ask to increase.
-   - **location**: Extract coordinates, format address naturally
-   - **availability**: Extract days, times, format as natural schedule
-   - **skills**: Extract skill names, categorize, format naturally
+4. **Field-Specific AI Intelligence:**
+   - **experience**: Extract years, validate against job title, suggest improvements (accept simple numbers but REJECT nonsense)
+     Example: "5" → "Great! You have 5 years of experience, is that right?"
+     Example: "25 years of experience" → "Wow, 25 years of experience! That's fantastic. You've been working as a baker for that long, correct?"
+     REJECT: "its a me mario", "super mario", "luigi", "peach", "bowser", "mushroom kingdom", "jumpman", etc.
+   - **skills**: Extract skill names, categorize by industry, suggest additional relevant skills
+     Example: "Fondant building, cake decorating" → "Fondant building and cake decorating, that sounds amazing! Those are great skills for a baker, correct?"
+   - **equipment**: Extract equipment list, validate relevance, suggest additions
+     Example: "Stand mixer, piping bags, cake tins" → "Perfect! You have a stand mixer, piping bags, and cake tins. That's a solid setup for baking, is that right?"
+   - **hourlyRate**: Convert to pounds (£), validate against experience level, suggest competitive rates (BE VERY LENIENT with numeric inputs)
+     Example: "20" → "Perfect! You're charging £20 per hour, is that right?"
+     Example: "20.50" → "Great! £20.50 per hour, is that correct?"
+     Example: "£20" → "Excellent! £20 per hour, is that right?"
+     Example: "20 pounds" → "Perfect! £20 per hour, is that correct?"
+     ACCEPT: Any reasonable numeric value, currency symbols, "pounds", "per hour", etc.
+   - **location**: Extract coordinates, validate against job market, suggest nearby areas
+   - **availability**: Extract days/times, validate against job requirements, suggest optimizations
 
-4. **Natural Summary Examples:**
-   - User: "25 years of experience" → AI: "Got it, you have 25 years of experience as a cashier, right?"
-   - User: "15" → AI: "Perfect! You're charging £15 per hour for your services, correct?"
-   - User: "Monday to Friday 9-5" → AI: "So you're available Monday to Friday from 9 AM to 5 PM, right?"
+5. **Context-Aware Natural Summaries:**
+   - Be enthusiastic and warm, but avoid redundancy
+   - Show genuine interest: "Wow, that's fantastic!" or "That's impressive!"
+   - Reference the specific job title when known: "You've been working as a [job title] for [years], correct?"
+   - Avoid repeating the same information multiple times in one response
+   - Be conversational and engaging, not robotic
+   - Use variety in your responses - don't use the same phrases repeatedly
 
-5. **Data Extraction Format (JSON string):**
+6. **Enhanced Data Extraction (JSON string):**
    {
      "jobTitle": "cashier",
      "duration": "25 years",
-     "rate": "£15",
+     "rate": "£20",
      "location": "London",
-     "skills": ["customer service", "cash handling"]
+     "skills": ["customer service", "cash handling"],
+     "confidence": 0.95,
+     "suggestions": ["retail management", "inventory control"]
    }
 
 IMPORTANT: Always provide a naturalSummary that asks for user confirmation in a conversational way. The user should feel like you're understanding and confirming their input, not just processing it.
@@ -1119,6 +1762,21 @@ If validation fails, respond with:
 - naturalSummary: string
 - extractedData: string
 
+CONTENT MODERATION RULES - REJECT THE FOLLOWING:
+- Video game references: "mario", "luigi", "peach", "bowser", "sonic", "link", "zelda", "pokemon", "pikachu", etc.
+- Fictional characters: "batman", "superman", "spiderman", "wonder woman", etc.
+- Memes and internet culture: "its a me mario", "hello there", "general kenobi", "this is fine", etc.
+- Jokes and humor: "i am the best at nothing", "i can fly", "i am a wizard", etc.
+- Nonsense and gibberish: "asdf", "qwerty", "random text", "blah blah", etc.
+- Inappropriate content: profanity, sexual content, violence, etc.
+- Non-professional content: personal information, unrelated topics, etc.
+
+ACCEPT THE FOLLOWING:
+- Legitimate work experience: "5 years", "2.5 years", "5 years of experience", etc.
+- Professional skills: "customer service", "cooking", "cleaning", "driving", etc.
+- Real equipment: "stand mixer", "car", "tools", "computer", etc.
+- Professional qualifications: "certified", "licensed", "degree", etc.
+
 WORKER ONBOARDING CONTEXT: Remember, this user is creating a worker profile to find gig opportunities. They are the worker/employee looking to be hired. Keep responses focused on worker onboarding only.
 
 Be conversational, intelligent, and always ask for confirmation in natural language.`;
@@ -1132,18 +1790,24 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
           responseSchema: validationSchema,
           isStream: false,
         },
-        ai
+        ai,
+        "gemini-2.5-flash-preview-05-20"
       );
+      
       
       
 
       if (result.ok && result.data) {
         const validation = result.data as AIValidationResponse;
         
-        if (!validation.isAppropriate || !validation.isWorkerRelated || !validation.isSufficient) {
+        // Enhance AI validation with pre-validation results
+        const { enhanceAIValidation } = await import('../../../../../../lib/utils/contentModeration');
+        const enhancedValidation = enhanceAIValidation(validation, preValidation);
+        
+        if (!enhancedValidation.isAppropriate || !enhancedValidation.isWorkerRelated || !enhancedValidation.isSufficient) {
           return {
             sufficient: false,
-            clarificationPrompt: validation.clarificationPrompt || 'Please provide appropriate worker-related information.',
+            clarificationPrompt: enhancedValidation.clarificationPrompt || 'Please provide appropriate worker-related information.',
           };
         }
         
@@ -1155,24 +1819,6 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
           };
         }
         
-        // Experience field - let AI handle it completely
-        // Experience field - let AI handle it completely
-        if (field === 'experience') {
-          // Skip local validation, let AI handle it
-          return {
-            sufficient: true,
-            sanitized: trimmedValue,
-            naturalSummary: `Got it! You have ${trimmedValue}, correct?`,
-            extractedData: JSON.stringify({ experience: trimmedValue })
-          };
-          // Skip local validation, let AI handle it
-          return {
-            sufficient: true,
-            sanitized: trimmedValue,
-            naturalSummary: `Got it! You have ${trimmedValue}, correct?`,
-            extractedData: JSON.stringify({ experience: trimmedValue })
-          };
-        }
         
         // For date fields, ensure proper date format
         if (field === 'availability') {
@@ -1214,6 +1860,55 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
       }
     } catch (error) {
       console.error('AI validation failed:', error);
+      
+      // Fallback validation when AI fails (with context) - skip for numeric fields
+      let fallbackValidation: any = { isAppropriate: true, confidence: 0, reason: '', category: 'clean' as const };
+      
+      if (!numericFields.includes(field)) {
+        const { preValidateContentWithContext } = await import('../../../../../../lib/utils/contentModeration');
+        
+        // Build chat context from conversation history
+        const chatContext = {
+          conversationHistory: chatSteps
+            .filter(step => step.type === 'user' || step.type === 'bot')
+            .map(step => ({
+              type: step.type as 'user' | 'bot',
+              content: step.content || '',
+              timestamp: step.id
+            })),
+          currentField: field,
+          userRole: 'worker' as const,
+          sessionDuration: Date.now() - (chatSteps[0]?.id || Date.now())
+        };
+        
+        fallbackValidation = preValidateContentWithContext(trimmedValue, chatContext);
+        if (!fallbackValidation.isAppropriate && fallbackValidation.confidence > 0.7) {
+          console.warn('🚫 Content rejected by fallback validation:', {
+            field,
+            input: trimmedValue,
+            reason: fallbackValidation.reason,
+            category: fallbackValidation.category,
+            confidence: fallbackValidation.confidence,
+            userId: user?.uid || 'unknown',
+            timestamp: new Date().toISOString()
+          });
+          
+          return {
+            sufficient: false,
+            clarificationPrompt: `I'm sorry, but "${fallbackValidation.reason}" is not appropriate for a professional worker profile. Please provide legitimate work-related information.`
+          };
+        }
+      }
+      
+      // If fallback validation passes, accept with warning
+      console.warn('⚠️ AI validation failed, using fallback validation:', {
+        field,
+        input: trimmedValue,
+        fallbackResult: fallbackValidation,
+        userId: user?.uid || 'unknown',
+        timestamp: new Date().toISOString()
+      });
+      
       setError('AI validation failed. Please try again.');
       
       // Check if we should escalate due to AI failure
@@ -1306,7 +2001,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
         .find(s => s.type === 'bot' && s.content);
       
       if (previousBotMessage && previousBotMessage.content) {
-        const isUnrelated = isUnrelatedResponse(valueToUse, previousBotMessage.content);
+        const isUnrelated = await isUnrelatedResponse(valueToUse, previousBotMessage.content, ai);
         
         if (isUnrelated) {
           const newCount = unrelatedResponseCount + 1;
@@ -1386,6 +2081,7 @@ Be conversational, intelligent, and always ask for confirmation in natural langu
           step.id === stepId ? { ...step, isComplete: true } : step
         );
       });
+      
       
       if (!aiResult.sufficient) {
         // Add clarification message and re-open the same input step to collect a better answer
@@ -1603,8 +2299,15 @@ Share this link to get your reference\n\nSend this link to get your reference: $
           // Try to interpret job title from user input
           const jobTitleResult = await interpretJobTitle(valueToUse, ai);
           
+          console.log('Job title interpretation result:', {
+            input: valueToUse,
+            result: jobTitleResult,
+            isAISuggested: jobTitleResult?.isAISuggested
+          });
+          
           if (jobTitleResult && jobTitleResult.confidence >= 50) {
-            // Show job title confirmation step
+            console.log('Showing job title confirmation for:', jobTitleResult.jobTitle);
+            // Show job title confirmation step for all matches
             setChatSteps((prev) => [
               ...prev,
               { 
@@ -1673,7 +2376,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
     try {
       // Update formData with the standardized job title only
       // Clear the original field value since it's being replaced by the standardized job title
-      const updatedFormData = { ...formData, jobTitle: suggestedJobTitle, [fieldName]: undefined };
+      const updatedFormData = { ...formData, jobTitle: suggestedJobTitle };
       setFormData(updatedFormData);
       
       // Mark job title confirmation step as complete and set the confirmed choice
@@ -2232,7 +2935,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
               ends: 'never',
               startDate: new Date().toISOString().split('T')[0],
               endDate: undefined,
-              occurrences: undefined
+              occurrences: undefined,
             }
           }));
         } else {
@@ -2298,6 +3001,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            updateVideoUrlProfileAction(downloadURL, user.token);
             updateVideoUrlProfileAction(downloadURL, user.token);
             updateVideoUrlProfileAction(downloadURL, user.token);
             handleInputChange(name, downloadURL);
@@ -2528,20 +3232,122 @@ Share this link to get your reference\n\nSend this link to get your reference: $
     }
   }, [reformulateField, requiredFields]);
 
-  if (loadingAuth) {
-    return (
-      <div className={pageStyles.loadingContainer}>
-        <p>Loading authentication...</p>
-      </div>
-    );
-  }
+  // Handle incident reporting in chat
+  const handleIncidentReporting = useCallback(async (message: string) => {
+    if (!isReportingIncident) {
+      // Start incident reporting flow
+      const incidentDetection = detectIncident(message);
+      if (incidentDetection.isIncident) {
+        console.log('🚨 Incident detected in onboarding AI chat:', incidentDetection);
+        setIncidentType(incidentDetection.incidentType || 'other');
+        setIsReportingIncident(true);
+        
+        // Add user message
+        setChatSteps(prev => [
+          ...prev,
+          {
+            id: Date.now(),
+            type: "user",
+            content: message,
+            isNew: true,
+          },
+        ]);
 
-  if (!user) {
-    return <Loader />;
-  }
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const onSendMessage = useCallback((message: string) => {
-    // Find the current active input step
+        // Add AI response for incident reporting
+        setChatSteps(prev => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: "bot",
+            content: `I understand you may be experiencing a ${incidentDetection.incidentType?.replace('_', ' ')} issue. This is serious and I want to help you report this properly. Can you please provide more details about what happened? Please include when and where this occurred, and any other relevant information.`,
+            isNew: true,
+          },
+        ]);
+        return;
+      }
+    } else {
+      // Continue incident reporting flow
+      setIncidentDetails(prev => prev + (prev ? ' ' : '') + message);
+      
+      // Add user message
+      setChatSteps(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: "user",
+          content: message,
+          isNew: true,
+        },
+      ]);
+
+      // Check if we have enough details
+      if (incidentDetails.length + message.length > 100) {
+        // Submit incident report to database
+        const finalDetails = incidentDetails + (incidentDetails ? ' ' : '') + message;
+        
+        try {
+          const escalationResult = await createEscalatedIssueClient({
+            userId: user?.uid || '',
+            issueType: `incident_${incidentType}`,
+            description: `Incident Report - ${incidentType?.replace('_', ' ')}: ${finalDetails}`,
+            contextType: 'onboarding_ai_chat'
+          });
+
+          if (escalationResult.success) {
+            setChatSteps(prev => [
+              ...prev,
+              {
+                id: Date.now() + 1,
+                type: "bot",
+                content: `Thank you for providing those details. I've documented your ${incidentType?.replace('_', ' ')} report (ID: ${escalationResult.issueId}). This has been escalated to our support team who will review it within 24 hours. You should receive a confirmation email shortly. Let's continue with your profile setup - what would you like to work on next?`,
+                isNew: true,
+              },
+            ]);
+          } else {
+            setChatSteps(prev => [
+              ...prev,
+              {
+                id: Date.now() + 1,
+                type: "bot",
+                content: `Thank you for providing those details. I've documented your ${incidentType?.replace('_', ' ')} report. There was a technical issue saving it to our system, but I've noted it down. Please contact support directly if needed. Let's continue with your profile setup - what would you like to work on next?`,
+                isNew: true,
+              },
+            ]);
+          }
+        } catch (error) {
+          console.error('Error saving incident report:', error);
+          setChatSteps(prev => [
+            ...prev,
+            {
+              id: Date.now() + 1,
+              type: "bot",
+              content: `Thank you for providing those details. I've documented your ${incidentType?.replace('_', ' ')} report. There was a technical issue saving it to our system, but I've noted it down. Please contact support directly if needed. Let's continue with your profile setup - what would you like to work on next?`,
+              isNew: true,
+            },
+          ]);
+        }
+        
+        // Reset incident reporting state
+        setIsReportingIncident(false);
+        setIncidentType(null);
+        setIncidentDetails('');
+        return;
+      } else {
+        // Ask for more details
+        setChatSteps(prev => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: "bot",
+            content: `Thank you for that information. Can you provide more specific details about the incident? For example, who was involved, what exactly happened, and any witnesses?`,
+            isNew: true,
+          },
+        ]);
+        return;
+      }
+    }
+
+    // Normal message processing
     const currentInputStep = chatSteps.find(step => 
       (step.type === "input" || step.type === "calendar" || step.type === "location") && !step.isComplete
     );
@@ -2562,7 +3368,23 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       handleInputChange(currentInputStep.inputConfig!.name, message);
       handleInputSubmit(currentInputStep.id, currentInputStep.inputConfig!.name, message); // Pass message as value
     }
-  }, [chatSteps, handleInputChange, handleInputSubmit]);
+  }, [chatSteps, handleInputChange, handleInputSubmit, isReportingIncident, incidentType, incidentDetails, user?.uid]);
+
+  const onSendMessage = useCallback((message: string) => {
+    handleIncidentReporting(message);
+  }, [handleIncidentReporting]);
+
+  if (loadingAuth) {
+    return (
+      <div className={pageStyles.loadingContainer}>
+        <p>Loading authentication...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Loader />;
+  }
 
   // Show setup choice modal if no mode has been selected
   if (showSetupChoice) {
@@ -2588,6 +3410,37 @@ Share this link to get your reference\n\nSend this link to get your reference: $
             fontSize: '14px'
           }}>
             {error}
+          </div>
+        )}
+
+        {isReportingIncident && (
+          <div style={{ 
+            background: 'linear-gradient(135deg, #ff6b6b, #ee5a52)', 
+            color: 'white', 
+            padding: '12px 16px', 
+            margin: '8px 0', 
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3)'
+          }}>
+            <div style={{ 
+              width: '8px', 
+              height: '8px', 
+              borderRadius: '50%', 
+              background: 'white',
+              animation: 'pulse 1.5s infinite'
+            }}></div>
+            <span>🚨 Incident Reporting Mode - Please provide details about the incident</span>
+            <style>{`
+              @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+              }
+            `}</style>
           </div>
         )}
         <div style={{ 
@@ -2640,7 +3493,8 @@ Share this link to get your reference\n\nSend this link to get your reference: $
 
   // Show AI chat if AI mode is selected
   return (
-    <ChatBotLayout 
+    <>
+      <ChatBotLayout 
       ref={chatContainerRef} 
       className={pageStyles.container} 
       role="GIG_WORKER"
@@ -2654,6 +3508,36 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       }}
       onChangeSetupMethod={handleResetChoice}
     >
+      {isReportingIncident && (
+        <div style={{ 
+          background: 'linear-gradient(135deg, #ff6b6b, #ee5a52)', 
+          color: 'white', 
+          padding: '12px 16px', 
+          margin: '8px 0', 
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3)'
+        }}>
+          <div style={{ 
+            width: '8px', 
+            height: '8px', 
+            borderRadius: '50%', 
+            background: 'white',
+            animation: 'pulse 1.5s infinite'
+          }}></div>
+          <span>🚨 Incident Reporting Mode - Please provide details about the incident</span>
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+          `}</style>
+        </div>
+      )}
       {error && (
         <div style={{ 
           background: '#ff4444', 
@@ -2781,12 +3665,16 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                       try {
                         setIsSubmitting(true);
                         // Ensure all required fields are present from summary data - FIRST OCCURRENCE
+                        // Parse experience to get numeric values
+                        const { years: experienceYears, months: experienceMonths } = parseExperienceToNumeric(step.summaryData?.experience || '');
+                        
                         const requiredData = {
                           about: step.summaryData?.about || '',
                           experience: step.summaryData?.experience || '',
                           skills: step.summaryData?.skills || '',
+                          qualifications: step.summaryData?.qualifications || '',
                           equipment: typeof step.summaryData?.equipment === 'string' && step.summaryData.equipment.trim().length > 0
-                            ? step.summaryData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined }))
+                            ? step.summaryData.equipment.split(/[,\n;]/).map((item: string) => ({ name: item.trim(), description: undefined })).filter((item: { name: string; description: undefined }) => item.name.length > 0)
                             : [],
                           hourlyRate: String(step.summaryData?.hourlyRate || ''),
                           location: step.summaryData?.location || '',
@@ -2802,22 +3690,13 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                           },
                           videoIntro: step.summaryData?.videoIntro || '',
                           references: step.summaryData?.references || '',
-                          jobTitle: step.summaryData?.jobTitle || ''
+                          jobTitle: step.summaryData?.jobTitle || '',
+                          experienceYears: experienceYears,
+                          experienceMonths: experienceMonths
                         };
                         
                         // Save the profile data to database - FIRST OCCURRENCE
-                        const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
-                        if (result.success) {
-                          // Set the worker profile ID for references link generation
-                          if (result.workerProfileId) {
-                            setWorkerProfileId(result.workerProfileId);
-                          }
-                          
-                          // Navigate to worker dashboard
-                          router.push(`/user/${user?.uid}/worker`);
-                        } else {
-                          setError('Failed to save profile. Please try again.');
-                        }
+                        await handleProfileSubmission(requiredData);
                       } catch (error) {
                         console.error('Error saving profile:', error);
                         setError('Failed to save profile. Please try again.');
@@ -3268,10 +4147,14 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                                }
                                
                                // Ensure all required fields are present from summary data - SECOND OCCURRENCE
+                               // Parse experience to get numeric values
+                               const { years: experienceYears, months: experienceMonths } = parseExperienceToNumeric(summaryData.experience || '');
+                               
                                const requiredData = {
                                  about: summaryData.about || '',
                                  experience: summaryData.experience || '',
                                  skills: summaryData.skills || '',
+                                 qualifications: summaryData.qualifications || '',
                                  equipment: summaryData.equipment ? summaryData.equipment.split(',').map((item: string) => ({ name: item.trim(), description: undefined })) : [],
                                  hourlyRate: String(summaryData.hourlyRate || ''),
                                  location: summaryData.location || '',
@@ -3287,22 +4170,13 @@ Share this link to get your reference\n\nSend this link to get your reference: $
                                  },
                                  videoIntro: summaryData.videoIntro || '',
                                  references: summaryData.references || '',
-                                 jobTitle: summaryData.jobTitle || ''
+                                 jobTitle: summaryData.jobTitle || '',
+                                 experienceYears: experienceYears,
+                                 experienceMonths: experienceMonths
                                };
                                
                                // Save the profile data to database - SECOND OCCURRENCE
-                               const result = await saveWorkerProfileFromOnboardingAction(requiredData, user.token);
-                               if (result.success) {
-                                 // Set the worker profile ID for references link generation
-                                 if (result.workerProfileId) {
-                                   setWorkerProfileId(result.workerProfileId);
-                                 }
-                                 
-                                 // Navigate to worker dashboard
-                                 router.push(`/user/${user?.uid}/worker`);
-                               } else {
-                                 setError('Failed to save profile. Please try again.');
-                               }
+                               await handleProfileSubmission(requiredData);
                              } catch (error) {
                                console.error('Error saving profile:', error);
                                setError('Failed to save profile. Please try again.');
@@ -4187,12 +5061,152 @@ Share this link to get your reference\n\nSend this link to get your reference: $
             </div>
           );
         }
+
+        if (step.type === "hashtag-generation") {
+          return (
+            <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* AI Avatar */}
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                marginBottom: '0.5rem'
+              }}>
+                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, var(--primary-color), var(--primary-darker-color))',
+                    boxShadow: '0 2px 8px rgba(37, 255, 235, 0.3)'
+                  }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      background: '#000000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                      <Image 
+                        src="/images/ableai.png" 
+                        alt="Able AI" 
+                        width={24} 
+                        height={24} 
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.1)',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                marginLeft: '40px'
+              }}>
+                {hashtagState.isGenerating && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '20px',
+                        height: '20px',
+                        border: '2px solid rgba(37, 255, 235, 0.3)',
+                        borderTop: '2px solid var(--primary-color)',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      <span style={{ 
+                        color: 'var(--primary-color)', 
+                        fontWeight: 600,
+                        fontSize: '14px'
+                      }}>
+                        Generating personalized hashtags...
+                      </span>
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontStyle: 'italic'
+                    }}>
+                      Analyzing your skills and experience to create the perfect hashtags for job matching
+                    </div>
+                  </div>
+                )}
+
+                {!hashtagState.isGenerating && hashtagState.hashtags.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ 
+                      color: 'var(--primary-color)', 
+                      fontWeight: 600,
+                      fontSize: '14px'
+                    }}>
+                      ✅ Hashtags generated successfully!
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {hashtagState.hashtags.map((hashtag, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            background: 'rgba(37, 255, 235, 0.1)',
+                            color: 'var(--primary-color)',
+                            padding: '4px 8px',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            border: '1px solid rgba(37, 255, 235, 0.3)'
+                          }}
+                        >
+                          {hashtag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {hashtagState.error && (
+                  <div style={{ 
+                    color: '#ff6b6b', 
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span>⚠️</span>
+                    <span>Using fallback hashtags: {hashtagState.error}</span>
+                  </div>
+                )}
+              </div>
+
+              <style jsx>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          );
+        }
         
         return null;
       })}
       
       
       <div ref={endOfChatRef} />
-    </ChatBotLayout>
+      </ChatBotLayout>
+
+    </>
   );
 } 

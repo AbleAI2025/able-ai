@@ -100,6 +100,7 @@ export const GigWorkerProfilesTable = pgTable("gig_worker_profiles", {
   availabilityJson: jsonb("availability_json"), // Stores complex availability rules
   semanticProfileJson: jsonb("semantic_profile_json"), // For AI matching data
   videoUrl: text("video_url"),
+  socialLink: text("social_link"),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

@@ -6,28 +6,27 @@ interface ReferenceMessageBubbleProps {
 }
 
 const ReferenceMessageBubble: React.FC<ReferenceMessageBubbleProps> = ({ content }) => {
-  console.log('🎯 ReferenceMessageBubble rendered with content:', content);
-  console.log('🎯 ReferenceMessageBubble component is working!');
+  // debug logs removed
   
   // Function to make URLs clickable with copy/share functionality
   const makeUrlsClickable = (text: string) => {
-    console.log('🔗 makeUrlsClickable called with:', text);
+  // debug log removed
     
     // URL regex that handles localhost and various URL formats
     const urlRegex = /(https?:\/\/[^\s\n]+)/g;
     
     // If no URLs found, return the original text
     if (!text.match(urlRegex)) {
-      console.log('🔗 No URLs found in text');
+  // debug log removed
       return text;
     }
     
-    console.log('🔗 URLs found, processing...');
+  // debug log removed
     const parts = text.split(urlRegex);
     
     return parts.map((part, index) => {
       if (urlRegex.test(part)) {
-        console.log('🔗 Rendering URL part:', part);
+  // debug log removed
         return (
           <div key={index} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '4px 0' }}>
             <a

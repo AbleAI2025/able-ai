@@ -21,7 +21,6 @@ const Feedback: React.FC<FeedbackProps> = ({
   onSubmit,
   loading,
   submitting,
-  handleBack,
   role
 }) => {
   if (loading) {
@@ -29,7 +28,7 @@ const Feedback: React.FC<FeedbackProps> = ({
   }
   return (
     <div className={`${stylesFeed.container} ${stylesFeed.pageWrapper}`}>
-      <ScreenHeaderWithBack title="Feedback" onBackClick={handleBack} />
+      <ScreenHeaderWithBack title="Feedback" />
       <GigSummary gigDetails={gigDetails} role={role} />
       <form onSubmit={onSubmit} className={styles.stepperContainer}>
         {mode === "worker" ? (

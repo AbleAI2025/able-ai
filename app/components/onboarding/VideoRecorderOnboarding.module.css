@@ -159,3 +159,36 @@
     transform: scale(0.95);
   }
 }
+
+.countdownOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 8px; /* Adjust to match your video border radius */
+}
+
+.countdown {
+  font-size: 5rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.countdownText {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.countdownSubtext {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+}

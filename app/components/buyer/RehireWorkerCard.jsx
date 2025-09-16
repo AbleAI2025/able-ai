@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image'; // Or your Avatar component
 import styles from './RehireWorkerCard.module.css'; // Create this CSS module
-import { UserCircle, Loader2, Pencil } from 'lucide-react'; // Added UserCircle and Loader2
+import { UserCircle, Loader2 } from 'lucide-react'; // Added UserCircle and Loader2
 
 // Interface for the data needed for this card
 // interface RehireWorkerData {

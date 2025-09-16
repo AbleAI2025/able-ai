@@ -3,18 +3,18 @@ import styles from './UpdateGig.module.css';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
 import { calculateHoursInRange } from "@/utils/calculate-hours";
+import { useState } from 'react';
 
 interface GigDetailsProps {
 	editedGigDetails: GigReviewDetailsData;
-	handleEditDetails: () => void;
 	setEditedGigDetails: React.Dispatch<React.SetStateAction<GigReviewDetailsData>>;
-	isEditingDetails?: boolean;
 	isOnConfirm?: boolean;
 	title: string;
 }
 
-const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
+const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }: GigDetailsProps) => {
 	const lastRoleUsed = getLastRoleUsed()
+  const [isEditingDetails, setIsEditingDetails] = useState<boolean>(true)
 
 	const convertTo12Hour = (time24: string): string => {
 		const [hours, minutes] = time24.split(':');
@@ -64,9 +64,9 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 		const { name, value } = e.target;
 
 		setEditedGigDetails((prevState) => {
-			const newTotalPay = name === 'payPerHour' 
-				? (calculateHoursInRange(editedGigDetails.time) * Number(value)).toString()
-				: prevState.totalPay;
+      const newTotalPay = name === 'payPerHour'
+        ? (calculateHoursInRange(editedGigDetails.time) * Number(value)).toFixed(2)
+        : prevState.totalPay;
 
 			return {
 				...prevState,
@@ -92,7 +92,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 
 		if (newStartTime && newEndTime) {
 			const newTimeRange = `${newStartTime} - ${newEndTime}`;
-			const newTotalPay = (calculateHoursInRange(newTimeRange) * Number(editedGigDetails.payPerHour)).toString();
+      const newTotalPay = (calculateHoursInRange(newTimeRange) * Number(editedGigDetails.payPerHour)).toFixed(2);
 			
 			setEditedGigDetails((prevState) => ({
 				...prevState,
@@ -110,9 +110,9 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 					{title}
 				</h2>
 				{!isEditingDetails ? (
-					<Pencil className={styles.editPencilIcon} onClick={handleEditDetails} />
+					<Pencil className={styles.editPencilIcon} onClick={() => setIsEditingDetails(true)} />
 				) : (
-					<X onClick={handleEditDetails} />
+					<X onClick={() => setIsEditingDetails(false)} />
 				)}
 			</div>
 			{isEditingDetails ? (
@@ -123,7 +123,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 						<input
 							type="text"
 							name="location"
-							value={editedGigDetails.location}
+							value={editedGigDetails.location?.formatted_address || ''}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
 							disabled={lastRoleUsed === "GIG_WORKER"}
@@ -132,12 +132,11 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Date:</span>
 						<input
-							type="text"
+							type="date"
 							name="date"
-							value={editedGigDetails.date}
+              value={editedGigDetails.date ? new Date(editedGigDetails.date).toISOString().split("T")[0] : ""}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
-							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
@@ -161,12 +160,11 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Pay per hour:</span>
 						<input
-							type="text"
+							type="number"
 							name="payPerHour"
 							value={editedGigDetails.payPerHour}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
-							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
@@ -174,7 +172,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 						<input
 							type="text"
 							name="totalPay"
-							value={editedGigDetails.totalPay}
+							value={`£ ${editedGigDetails.totalPay}`}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
 							disabled={true}
@@ -187,7 +185,7 @@ const AmendGig = ({ editedGigDetails, handleEditDetails, isEditingDetails, setEd
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Location:</span>
 						<span className={styles.detailItemValue}>
-							{editedGigDetails.location}
+							{editedGigDetails.location?.formatted_address || ''}
 						</span>
 					</div>
 					<div className={styles.detailItem}>

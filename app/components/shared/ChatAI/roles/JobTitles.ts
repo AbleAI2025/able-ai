@@ -82,7 +82,7 @@ export const HOSPITALITY_JOB_TITLES: JobTitle[] = [
     id: 'baker',
     title: 'Baker',
     category: 'Food & Beverage Service',
-    synonyms: ['baker', 'cake maker', 'pastry chef', 'dessert maker', 'bread maker', 'patisserie', 'cake decorator', 'pastry baker'],
+    synonyms: ['baker', 'cake maker', 'pastry chef', 'dessert maker', 'bread maker', 'patisserie', 'cake decorator', 'pastry baker', 'baking'],
     description: 'Prepares and bakes bread, pastries, cakes, and other baked goods',
     skillLevel: 'intermediate',
     requiredSkills: ['baking skills', 'food safety', 'recipe following', 'attention to detail'],
@@ -291,6 +291,86 @@ export async function findStandardizedJobTitleWithAIFallback(
   userInput: string, 
   ai: any
 ): Promise<{ jobTitle: JobTitle; confidence: number; matchedTerms: string[]; isAISuggested: boolean } | null> {
+  // Pre-check: If input is already a clear, standardized job title, don't suggest again
+  const normalizedInput = userInput.toLowerCase().trim();
+  
+  // Remove common prefixes and clean the input
+  const cleanedInput = normalizedInput
+    .replace(/^(i am a|i'm a|i am an|i'm an|i work as a|i work as an|i do|i'm|i am)\s+/i, '')
+    .replace(/[.,!?]$/, '')
+    .trim();
+  
+  // Check if input contains a clear job title (more flexible matching)
+  const jobTitleMatch = ALL_JOB_TITLES.find(job => {
+    const jobTitleLower = job.title.toLowerCase();
+    const synonyms = job.synonyms.map(s => s.toLowerCase());
+    
+    // Check exact matches
+    if (jobTitleLower === cleanedInput || 
+        jobTitleLower === normalizedInput ||
+        jobTitleLower === `i am a ${cleanedInput}` ||
+        jobTitleLower === `i'm a ${cleanedInput}` ||
+        jobTitleLower === `i'm an ${cleanedInput}` ||
+        jobTitleLower === `i am an ${cleanedInput}`) {
+      return true;
+    }
+    
+    // Check if input contains the job title or its synonyms
+    if (normalizedInput.includes(jobTitleLower) || 
+        normalizedInput.includes(`i am a ${jobTitleLower}`) ||
+        normalizedInput.includes(`i'm a ${jobTitleLower}`) ||
+        normalizedInput.includes(`i am an ${jobTitleLower}`) ||
+        normalizedInput.includes(`i'm an ${jobTitleLower}`)) {
+      return true;
+    }
+    
+    // Check synonyms
+    for (const synonym of synonyms) {
+      if (normalizedInput.includes(synonym) || 
+          normalizedInput.includes(`i am a ${synonym}`) ||
+          normalizedInput.includes(`i'm a ${synonym}`) ||
+          normalizedInput.includes(`i am an ${synonym}`) ||
+          normalizedInput.includes(`i'm an ${synonym}`)) {
+        return true;
+      }
+    }
+    
+    return false;
+  });
+  
+  // Check if input is already a standardized job title (exact match)
+  const exactMatch = ALL_JOB_TITLES.find(job => 
+    job.title.toLowerCase() === cleanedInput ||
+    job.title.toLowerCase() === normalizedInput ||
+    job.title.toLowerCase() === `i am a ${cleanedInput}` ||
+    job.title.toLowerCase() === `i'm a ${cleanedInput}` ||
+    job.title.toLowerCase() === `i'm an ${cleanedInput}` ||
+    job.title.toLowerCase() === `i am an ${cleanedInput}`
+  );
+  
+  // Debug logging
+  console.log('Job title pre-check:', {
+    userInput,
+    normalizedInput,
+    cleanedInput,
+    exactMatch: exactMatch?.title,
+    jobTitleMatch: jobTitleMatch?.title,
+    isAISuggested: false
+  });
+  
+  // Use the more flexible match if available, otherwise use exact match
+  const finalMatch = jobTitleMatch || exactMatch;
+  
+  if (finalMatch) {
+    console.log('Returning job title match, skipping AI suggestion');
+    return {
+      jobTitle: finalMatch,
+      confidence: 95,
+      matchedTerms: [finalMatch.title],
+      isAISuggested: false
+    };
+  }
+  
   // First, try to find a match in our existing taxonomy
   const existingMatch = findClosestJobTitle(userInput);
   

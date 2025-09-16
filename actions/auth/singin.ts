@@ -10,10 +10,18 @@ export async function signInWithFirebaseAction(uid: string) {
   try {
     const pgUser = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, uid),
+      with: {
+        gigWorkerProfile: {
+          columns: {
+            id: true,
+          }
+        }
+      }
     });
 
     const customClaims = {
       role: pgUser?.appRole,
+      haveWorkerProfile: !!pgUser?.gigWorkerProfile?.id,
     };
 
     await admin.auth().setCustomUserClaims(uid, customClaims);

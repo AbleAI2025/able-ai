@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState, FormEvent } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import styles from './ReportIssuePage.module.css';
+import React, { useState, FormEvent } from "react";
+import { useRouter, useParams } from "next/navigation";
+import styles from "./ReportIssuePage.module.css";
 
-import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
-import FormCard from '@/app/components/forms/FormCard';
-import LabelledSelectInput from '@/app/components/forms/LabelledSelectInput';
-import LabelledTextareaInput from '@/app/components/forms/LabelledTextareaInput';
-import LabelledFileUploadButton from '@/app/components/forms/LabelledFileUploadButton';
+import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import FormCard from "@/app/components/forms/FormCard";
+import LabelledSelectInput from "@/app/components/forms/LabelledSelectInput";
+import LabelledTextareaInput from "@/app/components/forms/LabelledTextareaInput";
+import LabelledFileUploadButton from "@/app/components/forms/LabelledFileUploadButton";
 
 const issueTypes = [
-  { value: 'payment_issue', label: 'Payment Issue' },
-  { value: 'service_quality', label: 'Service Quality' },
-  { value: 'technical_problem', label: 'Technical Problem' },
-  { value: 'other', label: 'Other' },
+  { value: "payment_issue", label: "Payment Issue" },
+  { value: "service_quality", label: "Service Quality" },
+  { value: "technical_problem", label: "Technical Problem" },
+  { value: "other", label: "Other" },
 ];
 
 export default function ReportIssuePage() {
@@ -23,7 +23,7 @@ export default function ReportIssuePage() {
   const gigId = params.gigId as string;
 
   const [issueType, setIssueType] = useState<string>(issueTypes[0].value);
-  const [description, setDescription] = useState<string>('');
+  const [description, setDescription] = useState<string>("");
   const [attachedFiles, setAttachedFiles] = useState<FileList | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -46,29 +46,34 @@ export default function ReportIssuePage() {
     }
 
     const formData = new FormData();
-    formData.append('gigId', gigId);
-    formData.append('issueType', issueType);
-    formData.append('description', description);
+    formData.append("gigId", gigId);
+    formData.append("issueType", issueType);
+    formData.append("description", description);
     if (attachedFiles) {
       for (let i = 0; i < attachedFiles.length; i++) {
-        formData.append('files', attachedFiles[i]);
+        formData.append("files", attachedFiles[i]);
       }
     }
 
     try {
       // Simulate API call
-      console.log("Submitting issue:", { gigId, issueType, description, numFiles: attachedFiles?.length || 0 });
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log("Submitting issue:", {
+        gigId,
+        issueType,
+        description,
+        numFiles: attachedFiles?.length || 0,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       // const response = await fetch('/api/report-issue', { method: 'POST', body: formData });
       // if (!response.ok) throw new Error('Failed to submit issue.');
       setSubmitSuccess(true);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error submitting issue:", error);
-        setSubmitError(error.message || 'An unknown error occurred.');
+        setSubmitError(error.message || "An unknown error occurred.");
       } else {
         console.error("Unknown error submitting issue:", error);
-        setSubmitError('An unknown error occurred.');
+        setSubmitError("An unknown error occurred.");
       }
     } finally {
       setIsSubmitting(false);
@@ -78,12 +83,18 @@ export default function ReportIssuePage() {
   if (submitSuccess) {
     return (
       <div className={styles.pageContainer}>
-        <ScreenHeaderWithBack title="Report an Issue" onBackClick={() => router.back()} />
+        <ScreenHeaderWithBack title="Report an Issue" />
         <FormCard className={styles.formCard}>
-          <div style={{textAlign: 'center', padding: '2rem'}}>
-            <h2 style={{color: '#4CAF50', marginBottom: '1rem'}}>Issue Reported Successfully!</h2>
+          <div style={{ textAlign: "center", padding: "2rem" }}>
+            <h2 style={{ color: "#4CAF50", marginBottom: "1rem" }}>
+              Issue Reported Successfully!
+            </h2>
             <p>Thank you for your feedback. We will get back to you shortly.</p>
-            <button onClick={() => router.back()} className={styles.submitButton} style={{marginTop: '1.5rem', backgroundColor: '#555'}}>
+            <button
+              onClick={() => router.back()}
+              className={styles.submitButton}
+              style={{ marginTop: "1.5rem", backgroundColor: "#555" }}
+            >
               Go Back
             </button>
           </div>
@@ -94,9 +105,12 @@ export default function ReportIssuePage() {
 
   return (
     <div className={styles.pageContainer}>
-      <ScreenHeaderWithBack title="Report an Issue" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Report an Issue" />
       <div className={styles.chatBot}>
-        <p>Chat with Able or complete the form manually. A member of our team will be in touch</p>
+        <p>
+          Chat with Able or complete the form manually. A member of our team
+          will be in touch
+        </p>
       </div>
       <form onSubmit={handleSubmit} className={styles.formCard}>
         <LabelledSelectInput
@@ -117,11 +131,15 @@ export default function ReportIssuePage() {
           onFilesSelected={handleFileChange}
         />
         {submitError && <p className={styles.errorMessage}>{submitError}</p>}
-        <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-          {isSubmitting ? 'Submitting...' : 'Submit Issue'}
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Submitting..." : "Submit Issue"}
         </button>
       </form>
       {/* <ChatWidget /> */}
     </div>
   );
-} 
+}

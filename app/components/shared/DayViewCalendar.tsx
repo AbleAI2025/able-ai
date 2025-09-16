@@ -1,7 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import React from 'react';
 import moment from 'moment';
-import { Eye } from 'lucide-react';
 import styles from './DayViewCalendar.module.css';
 import CalendarEventComponent from './CalendarEventComponent';
 
@@ -30,7 +29,7 @@ const DayViewCalendar: React.FC<DayViewCalendarProps> = ({
   events,
   currentDate,
   onEventClick,
-  onDateClick,
+  // onDateClick,
   userRole = 'buyer',
   activeFilter
 }) => {

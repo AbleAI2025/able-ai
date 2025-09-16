@@ -22,7 +22,7 @@ export default function WorkerMatchmakingResults({
   isLoading = false,
   onSelectWorker,
   onSkipSelection,
-  selectedWorkerId,
+  // selectedWorkerId,
   isSelecting = false,
   isSkipping = false,
   totalWorkersAnalyzed = 0,

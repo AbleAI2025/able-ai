@@ -41,14 +41,17 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 export default function BarChartComponent({totalPayments}: {totalPayments?: { name: string; a: number }[]}) {
   const [chartHeight, setChartHeight] = useState(220);
 
+  const isWindowDefined = typeof window !== 'undefined';
+  const windowWidth = isWindowDefined ? window.innerWidth : 1024;
+
   const fontSize = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      if (window.innerWidth < 400) return 11;
-      if (window.innerWidth < 500) return 13;
-      if (window.innerWidth < 768) return 15;
+    if (isWindowDefined) {
+      if (windowWidth < 400) return 11;
+      if (windowWidth < 500) return 13;
+      if (windowWidth < 768) return 15;
     }
     return 17;
-  }, [typeof window !== 'undefined' ? window.innerWidth : 1024]);
+  }, [isWindowDefined, windowWidth]);
 
   useEffect(() => {
     const handleResize = () => {

@@ -25,36 +25,7 @@ export default function WorkerSkillDetailPage() {
     try {
       const { success, data } = await getSkillDetailsWorker(skillId);
       if (success && data) {
-        // Fallback icon if not present
-        const updatedBadges = (data.badges ?? []).map((badge: any) => ({
-          ...badge,
-          icon: badge.icon,
-        }));
-
-        const updatedRecommendations = (data.recommendations ?? []).map(
-          (rec: any) => ({
-            ...rec,
-            date: rec.date
-              ? new Date(rec.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-              : null,
-          })
-        );
-
-        const normalizedStatistics = {
-          reviews: Number(data?.statistics?.reviews ?? 0), // siempre number
-          paymentsCollected: String(data?.statistics?.paymentsCollected ?? "0"), // si SkillProfile espera string
-          tipsReceived: String(data?.statistics?.tipsReceived ?? "0"),
-        };
-
-        setProfile({
-          ...data,
-          workerProfileId: skillId,
-          badges: updatedBadges,
-          qualifications: data?.qualifications ?? [],
-          recommendations: updatedRecommendations,
-          statistics: normalizedStatistics,
-
-        });
+        setProfile(data);
       }
     } catch (error) {
       console.error("Error fetching skill profile:", error);

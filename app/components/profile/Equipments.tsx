@@ -62,7 +62,7 @@ export default function Equipments({ workerProfileId, equipments, isSelfView, fe
       {/* Equipment List */}
       <div className={styles.equipmentListContainer}>
         {equipments.length > 0 ? (
-          equipments.map((item, index) => (
+          equipments.map((item) => (
             <div key={item.id} className={styles.listItem}>
               <CheckboxDisplayItem label={item.name} />
               {isEditing && (

@@ -4,7 +4,6 @@ import ConfirmAmendedGigDetailsDetails from './ConfirmAmendedGigDetailsDetails';
 import ConfirmAmendedGigDetailsFooterActions from './ConfirmAmendedGigDetailsFooterActions';
 import styles from './ConfirmAmendedGigDetailsPage.module.css';
 import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
-import { useRouter } from 'next/navigation';
 
 type NotificationMessage = {
   user: string;
@@ -32,17 +31,15 @@ const ConfirmAmendedGigDetailsView: React.FC<ConfirmAmendedGigDetailsViewProps> 
   isLoading,
   isLoadingConfirm,
   lastRoleUsed,
-  notificationMessage,
   handleEditDetails,
   handleConfirm,
   handleSuggestNew,
   handleDecline,
   isEditingDetails
 }) => {
-  const router = useRouter();
   return (
     <div className={styles.viewContainer}>
-      <ScreenHeaderWithBack title="Confirm Amended" onBackClick={() => router.back()} />
+      <ScreenHeaderWithBack title="Confirm Amended" />
       <section className={`${styles.card} ${styles.instructionBlock}`}>
         <p className={styles.instructionText}>
           {gigDetails.buyerName || "Unknown"} has changed the hourly rate to £22ph, the update details are below.

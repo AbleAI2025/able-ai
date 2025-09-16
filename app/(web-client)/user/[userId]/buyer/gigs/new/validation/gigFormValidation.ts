@@ -3,8 +3,8 @@ import { ValidationRules } from '../hooks/useFormValidation';
 export const gigFormValidation: ValidationRules = {
   gigDescription: [
     {
-      test: (value: string) => value.length >= 10,
-      message: 'Description must be at least 10 characters long'
+      test: (value: string) => value.length >= 1,
+      message: 'Description must be at least 1 characters long'
     },
     {
       test: (value: string) => value.length <= 500,

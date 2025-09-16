@@ -249,7 +249,8 @@ Respond as JSON: { sufficient: boolean, sanitized?: string, clarificationPrompt?
     const aiCallPromise = geminiAIAgent(
       "gemini-2.5-flash-preview-05-20",
       { prompt, responseSchema: aiSchema },
-      ai
+      ai,
+      "gemini-2.0-flash"
     );
 
     try {

@@ -8,6 +8,8 @@ import ProfileVideo from "./WorkerProfileVideo";
 import LocationPickerBubble from "../onboarding/LocationPickerBubble";
 import { useEffect, useState } from "react";
 import PublicWorkerProfile from "@/app/types/workerProfileTypes";
+import { updateWorkerLocationAction } from "@/actions/user/edit-worker-profile";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProfileMediaProps {
   workerProfile: PublicWorkerProfile;
@@ -27,6 +29,7 @@ export default function ProfileMedia({
   const [tempLocation, setTempLocation] = useState(location);
   const [isPicking, setIsPicking] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const { user } = useAuth();
 
   // sync with profile when it changes
   useEffect(() => {
@@ -42,6 +45,34 @@ export default function ProfileMedia({
   // shorten address for collapsed view
   const shortAddress =
     location.length > 20 ? location.substring(0, 20) + "..." : location;
+
+  const updateWorkerLocation = async (
+    address: string,
+    coord: { lat: number; lng: number }
+  ) => {
+    try {
+      if (!user) throw new Error("User is required");
+
+      setLocation(address);
+
+      const { success, error } = await updateWorkerLocationAction(
+        address,
+        coord.lat.toString(),
+        coord.lng.toString(),
+        user.token
+      );
+
+      if (!success) {
+        throw error || new Error("Failed to update location");
+      }
+
+      toast.success("Location updated successfully!");
+      setIsPicking(false);
+    } catch (error) {
+      console.error("Error updating worker location:", error);
+      toast.error("Error updating location");
+    }
+  };
 
   return (
     <div className={styles.profileHeaderImageSection}>
@@ -98,12 +129,9 @@ export default function ProfileMedia({
                     setTempLocation(updated);
                   }}
                   showConfirm
-                  onConfirm={() => {
-                    setLocation(tempLocation);
-                    // TODO: Call a prop passed to ProfileMedia to persist tempLocation to the backend.
-                    toast.success("Location updated!");
-                    setIsPicking(false);
-                  }}
+                  onConfirm={(address, coord) =>
+                    updateWorkerLocation(address, coord)
+                  }
                 />
               </div>
             </div>

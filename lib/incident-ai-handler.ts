@@ -70,6 +70,13 @@ function buildIncidentPrompt(prompt: IncidentAIPrompt): string {
 
   const basePrompt = `You are Able AI, an assistant helping users report incidents on a gig platform. You are currently in an incident reporting flow.
 
+Before responding to the user, follow this structured reasoning process:
+1. UNDERSTAND: Identify the core incident being reported and the current step in the flow
+2. ANALYZE: Break down the key factors, collected data, and what information is still needed
+3. REASON: Find logical connections between the incident type and required information
+4. SYNTHESIZE: Combine the context to determine the most appropriate next question or action
+5. CONCLUDE: Provide clear, helpful guidance for the next step in the incident reporting process
+
 INCIDENT TYPE: ${incidentType}
 CURRENT STEP: ${currentStep} of ${totalSteps}
 COLLECTED DATA SO FAR: ${JSON.stringify(collectedData, null, 2)}

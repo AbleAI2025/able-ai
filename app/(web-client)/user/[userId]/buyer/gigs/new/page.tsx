@@ -281,7 +281,8 @@ Be creative and natural in your responses. Don't repeat the same phrases or stru
         responseSchema: promptSchema,
         isStream: false,
       },
-      ai
+      ai,
+      "gemini-2.5-flash-preview-05-20"
     );
 
     if (result.ok) {
@@ -438,7 +439,8 @@ Create a natural summary that explains what the user wants for this field.`;
         }),
         isStream: false,
       },
-      ai
+      ai,
+      "gemini-2.5-flash-preview-05-20"
     );
 
     if (result.ok && result.data) {
@@ -504,7 +506,8 @@ Create a natural summary that flows well and sounds like a human describing the 
         }),
         isStream: false,
       },
-      ai
+      ai,
+      "gemini-2.5-flash-preview-05-20"
     );
 
     if (result.ok && result.data) {
@@ -1149,7 +1152,8 @@ Make the conversation feel natural and build on what they've already told you, b
           responseSchema: validationSchema,
           isStream: false,
         },
-        ai
+        ai,
+        "gemini-2.5-flash-preview-05-20"
       );
 
       // Debug logging for AI response

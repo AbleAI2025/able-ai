@@ -8,7 +8,7 @@ interface LocationPickerBubbleProps {
   value?: any;
   onChange: (value: any) => void;
   showConfirm?: boolean;
-  onConfirm?: () => void;
+  onConfirm?: (address: string,coord: {lat: number, lng: number}) => void;
   role?: 'BUYER' | 'GIG_WORKER';
   googleMapsApiKey?: string;
 }
@@ -99,13 +99,18 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({
   }, [value]);
 
   const handleUseCurrentLocation = () => {
+    
     setError('');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
+          console.log(formattedAddress);
+          
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const coords = { lat, lng };
+          console.log(coords);
+
           
           setMarker(coords);
           
@@ -388,7 +393,7 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({
               color: '#fff',
               marginTop: 8
             }}
-            onClick={onConfirm}
+            onClick={() => onConfirm(formattedAddress, marker)}
           >
             Confirm Location
           </button>

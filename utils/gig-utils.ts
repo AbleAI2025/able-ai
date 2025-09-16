@@ -25,7 +25,7 @@ export const formatGigDataForEditing = (gig: GigDetails): GigReviewDetailsData =
 };
 
 export const initialGigState: GigReviewDetailsData = {
-  location: '',
+  location: { formatted_address: '' },
   date: '',
   time: '',
   payPerHour: '',
