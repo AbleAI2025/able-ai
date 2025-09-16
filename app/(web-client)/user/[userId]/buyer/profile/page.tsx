@@ -23,13 +23,16 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { toast } from "sonner";
-import DashboardData from "@/app/types/BuyerProfileTypes";
+import BuyerType from "@/app/types/BuyerProfileTypes";
 import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
 import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import UserNameModal from "@/app/components/profile/UserNameModal";
 import EditBusinessModal from "@/app/components/profile/EditBusinessModal";
+import LocationPickerBubble from "@/app/components/onboarding/LocationPickerBubble";
+import SocialLinkModal from "./SocialLinkModal";
+import { updateSocialLinkWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 
 interface BusinessInfo {
   fullCompanyName: string;
@@ -44,18 +47,13 @@ export default function BuyerProfilePage() {
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null
-  );
+  const [dashboardData, setDashboardData] = useState<BuyerType | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [
-    error,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    setError,
-  ] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const isSelfView = authUserId === pageUserId;
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   // default empty state
@@ -77,16 +75,9 @@ export default function BuyerProfilePage() {
 
     if (success && profile) {
       // Format review dates
-      const updatedReviews = (profile.reviews ?? []).map((rev: any) => ({
-        ...rev,
-        date: rev.date
-          ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-          : null,
-      }));
 
       setDashboardData({
         ...profile,
-        reviews: updatedReviews,
       });
       setError(null);
     } else {
@@ -182,7 +173,6 @@ export default function BuyerProfilePage() {
     setIsModalOpen(false);
   };
 
-
   if (!user || isLoadingData) {
     return (
       <div className={styles.loadingContainer}>
@@ -217,21 +207,25 @@ export default function BuyerProfilePage() {
         <header className={styles.profileHeader}>
           <h3 className={styles.profileHeaderName}>
             {dashboardData.fullName}
-            <button 
-                className={styles.editButton} 
-                type="button" 
-                aria-label="Edit name"
-                onClick={() => setIsOpen(true)}
-              >
-                <Edit2
-                  size={16}
-                  color="#ffffff"
-                  className={styles.icon}
-                />
-              </button>
+            <button
+              className={styles.editButton}
+              type="button"
+              aria-label="Edit name"
+              onClick={() => setIsOpen(true)}
+            >
+              <Edit2 size={16} color="#ffffff" className={styles.icon} />
+            </button>
           </h3>
           <p className={styles.profileHeaderUsername}>
-            {dashboardData.username}
+            {dashboardData?.socialLink}
+            <button
+              className={styles.editButton}
+              type="button"
+              aria-label="Edit social link"
+              onClick={() => setIsSocialModalOpen(true)}
+            >
+              <Edit2 size={14} color="#ffffff" className={styles.icon} />
+            </button>
           </p>
         </header>
 
@@ -244,54 +238,62 @@ export default function BuyerProfilePage() {
             setIsEditingVideo={setIsEditingVideo}
             handleVideoUpload={handleVideoUpload}
           />
-      
+
           <div className={styles.businessInfoCard}>
             <div className={styles.headerRow}>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className={styles.editInfoBtn}
               >
-                <Pencil size={20}/>
+                <Pencil size={20} />
               </button>
             </div>
 
             <h4>Business:</h4>
             <p>{businessInfo.fullCompanyName}</p>
 
-            <span className={styles.location}>
-              {businessInfo.location}
-            </span>
+            <span className={styles.location}>{businessInfo.location}</span>
 
             <h4>Role:</h4>
             <p>{businessInfo.companyRole}</p>
+
+            {/*
+            <LocationPickerBubble
+              value={"location"}
+              onChange={(val) => console.log(val)}
+              showConfirm={false}
+              onConfirm={() => {}}
+              role="BUYER"
+            />
+*/}
           </div>
         </section>
 
         {/* Statistics Section */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Statistics</h2>
-            <div className={styles.statisticsItemsContainer}>
-              <StatisticItemDisplay
-                stat={{
-                  id: 1,
-                  icon: ThumbsUp,
-                  value: dashboardData?.responseRateInternal || 0,
-                  label: `Would work with ${
-                    user?.displayName?.split(" ")?.[0] ?? ""
-                  } again`,
-                  iconColor: "#7eeef9",
-                }}
-              />
-              <StatisticItemDisplay
-                stat={{
-                  id: 2,
-                  icon: MessageSquare,
-                  value: dashboardData?.averageRating || 0,
-                  label: "Response rate",
-                  iconColor: "#7eeef9",
-                }}
-              />
-            </div>
+          <div className={styles.statisticsItemsContainer}>
+            <StatisticItemDisplay
+              stat={{
+                id: 1,
+                icon: ThumbsUp,
+                value: dashboardData?.responseRateInternal || 0,
+                label: `Would work with ${
+                  user?.displayName?.split(" ")?.[0] ?? ""
+                } again`,
+                iconColor: "#7eeef9",
+              }}
+            />
+            <StatisticItemDisplay
+              stat={{
+                id: 2,
+                icon: MessageSquare,
+                value: dashboardData?.averageRating || 0,
+                label: "Response rate",
+                iconColor: "#7eeef9",
+              }}
+            />
+          </div>
         </section>
 
         {/* Completed Hires Card */}
@@ -377,6 +379,14 @@ export default function BuyerProfilePage() {
           initialData={businessInfo}
           onSave={handleSave}
           onClose={() => setIsModalOpen(false)}
+        />
+      )}
+      {isSocialModalOpen && (
+        <SocialLinkModal
+          initialValue={dashboardData.socialLink}
+          onClose={() => setIsSocialModalOpen(false)}
+          fetchUserProfile={fetchUserProfile}
+          updateAction={updateSocialLinkWorkerProfileAction}
         />
       )}
     </div>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import {
   getPrivateWorkerProfileAction,
+  updateSocialLinkWorkerProfileAction,
   updateVideoUrlProfileAction,
 } from "@/actions/user/gig-worker-profile";
 import { firebaseApp } from "@/lib/firebase/clientApp";
@@ -41,6 +42,7 @@ import { BadgeIcon } from "./GetBadgeIcon";
 import Qualifications from "./Qualifications";
 import Equipments from "./Equipments";
 import UserNameModal from "./UserNameModal";
+import SocialLinkModal from "@/app/(web-client)/user/[userId]/buyer/profile/SocialLinkModal";
 
 const WorkerProfile = ({
   workerProfile,
@@ -60,6 +62,8 @@ const WorkerProfile = ({
   const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false); // 👈 nuevo estado
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -129,8 +133,6 @@ const WorkerProfile = ({
     }
   }, [workerProfile]);
 
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className={styles.profilePageContainer}>
       {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
@@ -179,6 +181,16 @@ const WorkerProfile = ({
         </div>
         <h3 className={styles.workerName}>
           <span>{workerProfile?.socialLink ?? ""}</span>
+          {isSelfView && (
+            <button
+              className={styles.editButton}
+              type="button"
+              aria-label="Edit social link"
+              onClick={() => setIsSocialModalOpen(true)}
+            >
+              <Edit2 size={14} color="#ffffff" className={styles.icon} />
+            </button>
+          )}
         </h3>
         <div className={styles.workerInfo}>
           {true && (
@@ -336,6 +348,14 @@ const WorkerProfile = ({
           initialValue={workerProfile.user?.fullName ?? ""}
           fetchUserProfile={fetchUserProfile}
           onClose={() => setIsOpen(false)}
+        />
+      )}
+            {isSocialModalOpen && (
+        <SocialLinkModal
+          initialValue={workerProfile.socialLink ?? ""}
+          onClose={() => setIsSocialModalOpen(false)}
+          fetchUserProfile={() => fetchUserProfile(workerProfile.id)}
+          updateAction={updateSocialLinkWorkerProfileAction}
         />
       )}
     </div>

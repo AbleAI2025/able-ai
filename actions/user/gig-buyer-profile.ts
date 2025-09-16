@@ -227,3 +227,38 @@ export const updateVideoUrlBuyerProfileAction = async (
     return { success: false, data: "Url video updated successfully", error };
   }
 };
+
+export const updateSocialLinkBuyerProfileAction = async (
+  socialLink: string,
+  token?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (!token) {
+      return { success: false, error: "User token is required" };
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) return { success: false, error: "Unauthorized" };
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+    if (!user) return { success: false, error: "User not found" };
+
+    await db
+      .update(BuyerProfilesTable)
+      .set({
+        socialLink,
+        updatedAt: new Date(),
+      })
+      .where(eq(BuyerProfilesTable.userId, user.id));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving social link", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};

@@ -102,7 +102,7 @@ const VideoRecorderView: React.FC<VideoRecorderViewProps> = ({
       case "no_specified_media_found":
         return "No camera or microphone found.";
       case "media_in_use":
-        return "Camera or microphone is already in use.";
+        return "Camera or microphone is already in use. Please close other applications or browser tabs that might be using them.";
       case "invalid_media_constraints":
         return "Invalid media settings.";
       default:

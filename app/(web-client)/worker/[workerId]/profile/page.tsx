@@ -45,16 +45,8 @@ export default function PublicWorkerProfilePage() {
       }  
       const { data } = await getPublicWorkerProfileAction(workerId);
       if (data) {
-        const updatedReviews = (data.reviews ?? []).map(
-          (rev: any) => ({
-            ...rev,
-            date: rev.date
-              ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-              : null,
-          })
-        );
 
-        setWorkerProfile({ ...data, reviews: updatedReviews });
+        setWorkerProfile(data);
         setError(null);
       } else {
         setError("Could not load worker profile.");
@@ -72,16 +64,6 @@ export default function PublicWorkerProfilePage() {
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadingAuth, user?.claims.role, userId, router, lastRoleUsed]);
-
-
-  // useEffect(() => {
-  //   if (workerProfileIdToView) {
-  //     setIsLoadingProfile(true);
-  //   } else {
-  //     setError("Worker ID missing.");
-  //     setIsLoadingProfile(false);
-  //   }
-  // }, [workerProfileIdToView]);
 
   if (loadingAuth || isLoadingProfile) {
     return <div className={styles.pageLoadingContainer}><Loader2 className="animate-spin" size={48} /> Loading Profile...</div>;

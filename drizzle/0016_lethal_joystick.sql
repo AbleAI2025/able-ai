@@ -1,0 +1,1 @@
+ALTER TABLE "buyer_profiles" ADD COLUMN "social_link" text;
