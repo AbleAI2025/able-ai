@@ -5,12 +5,6 @@ import { and, eq } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
 import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
 
-export interface CancelPaymentsParams {
-  id: string;
-  stripePaymentIntentId: string | null;
-  stripeChargeId: string | null;
-}
-
 const ACCEPTED = gigStatusEnum.enumValues[2];
 const CANCELLED_BY_BUYER = gigStatusEnum.enumValues[10];
 const CANCELLED_BY_WORKER = gigStatusEnum.enumValues[11];

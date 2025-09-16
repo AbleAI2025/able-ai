@@ -2803,7 +2803,7 @@ Make the conversation feel natural and build on what they've already told you, b
               summaryData = null;
             }
           }
-          console.log({ summaryData })
+
           if (summaryData) {
             return (
               <MessageBubble
@@ -2817,7 +2817,6 @@ Make the conversation feel natural and build on what they've already told you, b
                           return (
                             <li key={field} className={styles.gigSummaryListItem}>
                               <strong className={styles.gigSummaryField}>
-                                kzq
                                 {field.replace(/([A-Z])/g, " $1")}:{" "}
                               </strong>
                               <span
