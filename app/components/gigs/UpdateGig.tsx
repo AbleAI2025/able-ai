@@ -132,12 +132,11 @@ const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }:
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Date:</span>
 						<input
-							type="text"
+							type="date"
 							name="date"
-							value={editedGigDetails.date}
+              value={editedGigDetails.date ? new Date(editedGigDetails.date).toISOString().split("T")[0] : ""}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
-							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
@@ -161,12 +160,11 @@ const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }:
 					<div className={styles.detailItem}>
 						<span className={styles.detailItemLabel}>Pay per hour:</span>
 						<input
-							type="text"
+							type="number"
 							name="payPerHour"
 							value={editedGigDetails.payPerHour}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
-							disabled={lastRoleUsed === "GIG_WORKER"}
 						/>
 					</div>
 					<div className={styles.detailItem}>
