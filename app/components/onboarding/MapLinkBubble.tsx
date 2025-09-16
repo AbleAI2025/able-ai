@@ -16,8 +16,8 @@ interface MapLinkBubbleProps {
 const defaultCenter = { lat: 51.5074, lng: -0.1278 }; // London as default
 
 const MapLinkBubble: React.FC<MapLinkBubbleProps> = ({
-    id,
-    name,
+    // id,
+    // name,
     label = 'Select a location on the map',
     value,
     onChange,

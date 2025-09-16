@@ -1,5 +1,4 @@
 /* eslint-disable max-lines-per-function */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useState } from 'react';
 import { Calendar as BigCalendar, Formats, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
@@ -123,13 +122,15 @@ const AppCalendar = <TEvent extends object>({
         setShowDayViewModal(true);
       }
     };
-
-    // Check if this date has any events
-    const hasEvents = filteredEvents.some(event => {
+    /**
+      const hasEvents = filteredEvents.some(event => {
       const eventDate = moment((event as any).start).startOf('day');
       const cellDate = moment(props.value).startOf('day');
       return eventDate.isSame(cellDate);
-    });
+      });
+     */
+    // Check if this date has any events
+
 
     return (
       <div 

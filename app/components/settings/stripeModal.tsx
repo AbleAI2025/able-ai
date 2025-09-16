@@ -5,7 +5,6 @@ import {
 import styles from './stripeModal.module.css';
 import PaymentSetupForm from "./PaymentSetupForm";
 import { FlowStep, UserRole } from "@/app/types/SettingsTypes";
-import RoleToggle from "../shared/RoleToggle";
 
 const StripeModal = ({
   userId,
@@ -55,7 +54,7 @@ const StripeModal = ({
         {
           userRole === 'BUYER' ?
             <p>
-              To pay for your services, you'll do so through our payment provider, Stripe.
+              To pay for your services, you&#39;ll do so through our payment provider, Stripe.
               Stripe ensures your transactions are secure, free, and processed quickly.
             </p>
             :

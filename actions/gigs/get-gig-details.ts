@@ -135,9 +135,9 @@ function extractLocationAggressively(obj: any): string | null {
   
   return null;
 }
-
-// Helper function to parse location from gig data
-function parseGigLocation(gig: any): string {
+/**
+ * Helper function to parse location from gig data
+  function parseGigLocation(gig: any): string {
   // Try to extract location from addressJson first (prioritize formatted addresses)
   if (gig.addressJson) {
     if (typeof gig.addressJson === 'string') {
@@ -188,6 +188,9 @@ function parseGigLocation(gig: any): string {
   // Return fallback location if no valid location found
   return 'Location details available';
 }
+ */
+
+
 
 export async function getGigDetails({
   gigId,

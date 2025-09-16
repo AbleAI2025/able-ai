@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
 import styles from "./WorkerProfileVideo.module.css";
-import { MonitorPlay, Pencil, Video, X } from "lucide-react";
+import { MonitorPlay, Pencil } from "lucide-react";
 
 interface ProfileVideoProps {
   videoUrl?: string | null;

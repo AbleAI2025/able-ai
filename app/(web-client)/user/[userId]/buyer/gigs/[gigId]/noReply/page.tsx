@@ -2,7 +2,7 @@
 
 import styles from './NoReply.module.css'
 import RehireWorkerCard from '@/app/components/buyer/RehireWorkerCard';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -92,7 +92,7 @@ const suggestedWorkers = [
 ];
 
   const { userId, gigId } = useParams();
-  const router = useRouter();
+  // const router = useRouter();
 
 useEffect(() => {
     const fetchData = async (buyerUserId: string, gigId: string) => {

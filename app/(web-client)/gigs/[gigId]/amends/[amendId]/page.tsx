@@ -44,12 +44,6 @@ export default function CancelOrAmendGigDetailsPage() {
   };
   */
 
-  const handleEditDetails = () => {
-    // Logic for editing gig details - perhaps opens a modal or navigates
-    console.log("Edit details clicked");
-    setIsEditingDetails(!isEditingDetails); // Toggle edit mode
-  };
-
   const handleSubmit = () => {
     // Logic for submitting the amendment/cancellation request
     console.log("Submit for Confirmation clicked. Message:", userMessage);
@@ -107,9 +101,7 @@ export default function CancelOrAmendGigDetailsPage() {
         <UpdateGig
           title="Gig Details"
           editedGigDetails={editedGigDetails}
-          handleEditDetails={handleEditDetails}
           setEditedGigDetails={setEditedGigDetails}
-          isEditingDetails={isEditingDetails}
         />
      {/* Action Button Area */}
       <div className={`${styles.actionBtnContainer}`}>

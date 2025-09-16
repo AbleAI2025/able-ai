@@ -24,6 +24,7 @@ const ChatBotLayout = React.forwardRef<HTMLDivElement, ChatBotLayoutProps>(
       children,
       onScroll,
       className,
+      // onHomeClick,
       onSendMessage,
       role = "GIG_WORKER",
       showChatInput = false,

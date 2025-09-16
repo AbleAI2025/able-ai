@@ -2,8 +2,8 @@
 
 import { db } from "@/lib/drizzle/db";
 import { eq } from "drizzle-orm";
-import { gigStatusEnum, UsersTable, GigsTable, GigWorkerProfilesTable } from "@/lib/drizzle/schema";
-import { isWorkerWithinDistance, parseCoordinates, calculateDistance } from "@/lib/utils/distance";
+import { UsersTable, GigsTable } from "@/lib/drizzle/schema";
+import { parseCoordinates, calculateDistance } from "@/lib/utils/distance";
 
 // Constants
 const DEFAULT_GIG_SEARCH_RADIUS_KM = 30;

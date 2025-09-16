@@ -3,6 +3,7 @@
 import { db } from "@/lib/drizzle/db";
 import { and, eq, desc } from "drizzle-orm";
 import { GigAmendmentRequestsTable, UsersTable } from "@/lib/drizzle/schema";
+import { GigReviewDetailsData } from "@/app/types";
 
 export async function findExistingGigAmendment({ gigId, userId }: { gigId: string; userId: string }) {
   try {
@@ -35,7 +36,8 @@ export async function createGigAmendment(data: {
   gigId: string;
   userId: string;
   requestType: string;
-  newValues: Record<string, any>;
+  oldValues: GigReviewDetailsData;
+  newValues: GigReviewDetailsData;
   reason?: string;
 }) {
   try {
@@ -47,6 +49,7 @@ export async function createGigAmendment(data: {
     const commonValues = {
       gigId: data.gigId,
       requestType: data.requestType,
+      oldValues: data.oldValues,
       newValues: data.newValues,
       reason: data.reason,
       status: "PENDING" as const,

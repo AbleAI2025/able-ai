@@ -201,7 +201,7 @@ async function getBuyerCalendarEvents(user: typeof UsersTable.$inferSelect): Pro
 export async function getCalendarEvents({
   userId,
   role,
-  isViewQA,
+  // isViewQA,
 }: {
   userId: string;
   role?: "buyer" | "worker";

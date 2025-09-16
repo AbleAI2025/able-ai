@@ -45,7 +45,7 @@ import UserNameModal from "./UserNameModal";
 const WorkerProfile = ({
   workerProfile,
   isSelfView = false,
-  handleAddSkill,
+  // handleAddSkill,
   handleSkillDetails, // Optional handler for skill details
   fetchUserProfile,
 }: {

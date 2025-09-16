@@ -3,7 +3,7 @@ import ChatBotLayout from "@/app/components/onboarding/ChatBotLayout";
 import MessageBubble from "@/app/components/onboarding/MessageBubble";
 import RehireWorkerCard from "@/app/components/buyer/RehireWorkerCard";
 import Link from "next/link";
-import { Home, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import styles from "./RehirePage.module.css";
 import type { OriginalGigInfo, RehireWorkerData } from "./RehireContainer";
 import Image from "next/image";
