@@ -3,6 +3,13 @@
 import { db } from "@/lib/drizzle/db";
 import { and, eq } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
+import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
+
+export interface CancelPaymentsParams {
+  id: string;
+  stripePaymentIntentId: string | null;
+  stripeChargeId: string | null;
+}
 
 const ACCEPTED = gigStatusEnum.enumValues[2];
 const CANCELLED_BY_BUYER = gigStatusEnum.enumValues[10];
@@ -28,7 +35,7 @@ export async function updateGigOfferStatus({ gigId, userId, role, action }: { gi
     }
 
     const newStatus = getNewStatus(action, role);
-    
+
     // For declining offers, we need to check if the gig exists and is available for the worker
     // For accepting offers, we need to assign the worker to the gig
     if (action === 'cancel' && role === 'worker') {
@@ -44,10 +51,14 @@ export async function updateGigOfferStatus({ gigId, userId, role, action }: { gi
         .where(and(eq(GigsTable.id, gigId), eq(gigUserIdCondition, user.id)));
     }
 
+    if (action === 'cancel') {
+      await cancelRelatedPayments(gigId);
+    }
+
     return { status: 200 };
 
   } catch (error: unknown) {
     console.error("Error updating gig:", error);
-        return { error: error instanceof Error ? error.message : 'Unknown error updating gig', status: 500 };
+    return { error: error instanceof Error ? error.message : 'Unknown error updating gig', status: 500 };
   }
 }

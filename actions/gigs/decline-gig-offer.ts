@@ -3,6 +3,7 @@
 import { db } from "@/lib/drizzle/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
+import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
 
 // Use the exact string value for declined status
 const DECLINED_BY_WORKER = "DECLINED_BY_WORKER";
@@ -41,6 +42,8 @@ export async function declineGigOffer({ gigId, userId }: { gigId: string; userId
         updatedAt: new Date()
       })
       .where(eq(GigsTable.id, gigId));
+
+    await cancelRelatedPayments(gig.id);
 
     return { 
       success: true, 
