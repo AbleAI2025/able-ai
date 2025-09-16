@@ -64,9 +64,9 @@ const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }:
 		const { name, value } = e.target;
 
 		setEditedGigDetails((prevState) => {
-			const newTotalPay = name === 'payPerHour' 
-				? (calculateHoursInRange(editedGigDetails.time) * Number(value)).toString()
-				: prevState.totalPay;
+      const newTotalPay = name === 'payPerHour'
+        ? (calculateHoursInRange(editedGigDetails.time) * Number(value)).toFixed(2)
+        : prevState.totalPay;
 
 			return {
 				...prevState,
@@ -92,7 +92,7 @@ const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }:
 
 		if (newStartTime && newEndTime) {
 			const newTimeRange = `${newStartTime} - ${newEndTime}`;
-			const newTotalPay = (calculateHoursInRange(newTimeRange) * Number(editedGigDetails.payPerHour)).toString();
+      const newTotalPay = (calculateHoursInRange(newTimeRange) * Number(editedGigDetails.payPerHour)).toFixed(2);
 			
 			setEditedGigDetails((prevState) => ({
 				...prevState,
@@ -172,7 +172,7 @@ const AmendGig = ({ editedGigDetails, setEditedGigDetails, isOnConfirm, title }:
 						<input
 							type="text"
 							name="totalPay"
-							value={editedGigDetails.totalPay}
+							value={`£ ${editedGigDetails.totalPay}`}
 							onChange={handleInputChange}
 							className={styles.textareaInput}
 							disabled={true}
