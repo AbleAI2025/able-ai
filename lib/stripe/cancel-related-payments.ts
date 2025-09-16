@@ -3,25 +3,27 @@ import Stripe from "stripe";
 import { stripeApi as stripeApiServer } from "@/lib/stripe-server";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/drizzle/db";
-import { GigsTable, PaymentsTable } from "@/lib/drizzle/schema";
+import { PaymentsTable } from "@/lib/drizzle/schema";
 
 const stripeApi: Stripe = stripeApiServer;
 
 export async function cancelRelatedPayments(gigId: string) {
   try {
     const payments = await db.query.PaymentsTable.findMany({
-      where: eq(GigsTable.id, gigId),
+      where: eq(PaymentsTable.gigId, gigId),
       columns: {
         id: true,
         stripePaymentIntentId: true,
       }
     });
 
-    if (payments.length < 0) throw new Error(`There is not registered payments for this gig ${gigId}`);
+    if (payments.length === 0) throw new Error(`There are not registered payments for this gig ${gigId}`);
 
-    payments.forEach(async (payment) => {
-      await stripeApi.paymentIntents.cancel(payment.stripePaymentIntentId || '');
-    });
+    const cancellationPromises = payments
+      .filter(p => p.stripePaymentIntentId)
+      .map(payment => stripeApi.paymentIntents.cancel(payment.stripePaymentIntentId!));
+
+    await Promise.all(cancellationPromises);
 
     await db
       .update(PaymentsTable)
