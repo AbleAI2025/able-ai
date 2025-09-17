@@ -128,17 +128,38 @@ export function isWorkerAvailable(worker: any, gigStartTime: string, gigEndTime:
     return true; // No availability data means assume available (more lenient)
   }
 
-  // Check if any availability window covers the gig time
-  return workerAvailability.some((avail: any) => {
-    const availStart = avail.startTimeStr;
-    const availEnd = avail.endTimeStr;
+// Check if any availability window covers the gig time
+return workerAvailability.some((avail: any) => {
+  // Parse gig times (assuming they are ISO date-time strings)
+  const gigStart = new Date(gigStartTime);
+  const gigEnd = new Date(gigEndTime);
+  
+  // Get the day of the week for the gig (e.g., 'Mon', 'Tue')
+  const gigDay = gigStart.toLocaleDateString('en-US', { weekday: 'short' });
+  
+  // Check if gig day matches worker's available days
+  if (!avail.days || !avail.days.includes(gigDay)) {
+    return false;
+  }
+  
+  // Parse worker's availability times (HH:mm format)
+  const [startHour, startMin] = avail.startTimeStr.split(':').map(Number);
+  const [endHour, endMin] = avail.endTimeStr.split(':').map(Number);
+  
+  // Create Date objects for worker's availability on the gig date
+  const availStart = new Date(gigStart);
+  availStart.setHours(startHour, startMin, 0, 0);
+  
+  const availEnd = new Date(gigStart);
+  availEnd.setHours(endHour, endMin, 0, 0);
+  
+  // Check for time overlap: gig overlaps with availability if
+  // gig starts before availability ends AND gig ends after availability starts
+  return gigStart < availEnd && gigEnd > availStart;
+});
 
-    // Simple time comparison (you might want to enhance this with proper date/time parsing)
-    // For now, we'll assume if they have availability data, they're available
-    // This could be enhanced to check specific days and times
-    return availStart && availEnd;
-  });
 }
+
 
 // Helper function to check if worker has any skills (AI will determine relevance)
 export function hasRelevantSkills(worker: any, gigTitle: string, gigDescription: string): boolean {

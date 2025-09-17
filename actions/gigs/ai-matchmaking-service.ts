@@ -87,22 +87,21 @@ export function createIntelligentFallbackMatches(gigContext: any, workerData: an
     }
 
     // Bio relevance scoring
+    const roleKeywords: { [key: string]: string[] } = {
+      baker: ['baker', 'cake', 'pastry'],
+      chef: ['chef', 'cook'],
+      server: ['server', 'waiter', 'bartender'],
+      bartender: ['bartender', 'mixologist'],
+    };
     if (bio) {
-      if (gigText.includes('baker') && (bio.includes('baker') || bio.includes('cake') || bio.includes('pastry'))) {
-        matchScore += 15;
-        reasons.push('Bio mentions relevant experience');
-      } else if (gigText.includes('chef') && (bio.includes('chef') || bio.includes('cook'))) {
-        matchScore += 15;
-        reasons.push('Bio mentions relevant experience');
-      } else if (gigText.includes('server') && (bio.includes('server') || bio.includes('waiter') || bio.includes('bartender'))) {
-        matchScore += 15;
-        reasons.push('Bio mentions relevant experience');
-      } else if (gigText.includes('bartender') && (bio.includes('bartender') || bio.includes('mixologist'))) {
-        matchScore += 15;
-        reasons.push('Bio mentions relevant experience');
+      for (const role in roleKeywords) {
+        if (gigText.includes(role) && roleKeywords[role].some(kw => bio.includes(kw))) {
+          matchScore += 15;
+          reasons.push('Bio mentions relevant experience');
+          break; // Found a match, no need to check others
+        }
       }
     }
-
     // Experience scoring
     if (experience > 0) {
       if (experience >= 5) {
@@ -135,11 +134,11 @@ export function createIntelligentFallbackMatches(gigContext: any, workerData: an
     }
 
     // Location scoring (if available)
-    if (worker.location && worker.location !== 'Colombia' && worker.location !== 'Ethiopia') {
+    const EXCLUDED_LOCATIONS = ['Colombia', 'Ethiopia'];
+    if (worker.location && !EXCLUDED_LOCATIONS.includes(worker.location)) {
       matchScore += 5;
       reasons.push(`Located in ${worker.location}`);
     }
-
     // Cap the score at 100
     matchScore = Math.min(matchScore, 100);
 
