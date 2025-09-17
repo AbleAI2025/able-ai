@@ -13,6 +13,7 @@ import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
 import {
   getGigBuyerProfileAction,
+  updateSocialLinkBuyerProfileAction,
   updateVideoUrlBuyerProfileAction,
 } from "@/actions/user/gig-buyer-profile";
 import { firebaseApp } from "@/lib/firebase/clientApp";
@@ -386,7 +387,7 @@ export default function BuyerProfilePage() {
           initialValue={dashboardData.socialLink}
           onClose={() => setIsSocialModalOpen(false)}
           fetchUserProfile={fetchUserProfile}
-          updateAction={updateSocialLinkWorkerProfileAction}
+          updateAction={updateSocialLinkBuyerProfileAction}
         />
       )}
     </div>
