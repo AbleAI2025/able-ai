@@ -447,11 +447,17 @@
 
 .secondaryActionsSection {
   margin-top: 1.2rem;
+  display:flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.secondaryButtonsContainer {
   display: flex;
   justify-content: space-between;
 }
 
-.secondaryActionButton {
+.secondaryActionButton, .termsLink {
   cursor: pointer;
   width: 47%;
   padding: 0.75rem 1rem;
@@ -466,6 +472,10 @@
   text-align: center;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.termsLink {
+  width: 100%;
 }
 
 .secondaryActionButton:hover {
@@ -487,15 +497,6 @@
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
 }
 
-@media (min-width: 600px) {
-    .secondaryActionsSection {
-        flex-direction: row;
-        justify-content: space-around;
-    }
-    .secondaryActionButton {
-        width: auto;
-    }
-}
 
 .actionButtonPrimary .icon { color: white; }
 

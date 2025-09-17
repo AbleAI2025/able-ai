@@ -47,7 +47,7 @@ export const GigAmendmentActions = ({
         onClick={handleCancel}
         disabled={isProcessing}
       >
-        {isCancelling ? 'Withdrawing...' : (existingAmendmentId ? 'Withdraw Amendment' : 'Cancel Edit')}
+        Cancel gig
         <p>(This might incur charges or penalties)</p>
       </button>
     </div>

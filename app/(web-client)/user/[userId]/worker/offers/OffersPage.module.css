@@ -6,6 +6,8 @@
   color: #e0e0e0;
   font-family: var(--font-family);
   position: relative;
+  max-width: 450px;
+  margin: auto;
 }
 
 .pageWrapper {

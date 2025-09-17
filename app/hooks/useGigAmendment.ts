@@ -97,6 +97,8 @@ export function useGigAmendment() {
   };
 
   const handleCancel = async () => {
+    // this method is not for cancelling the gig amendement, it should be for canceling the gig itself, 
+    // so it should be updated to reflect that
     if (existingAmendmentId && user?.uid) {
       setIsCancelling(true);
       const result = await cancelGigAmendment({ amendmentId: existingAmendmentId, userId: user.uid });

@@ -149,14 +149,6 @@
   align-items: center;
 }
 
-.currencySymbol {
-  position: absolute;
-  left: 16px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #a0a0a0;
-  z-index: 1;
-}
 
 .rateInput {
   padding-left: 32px;

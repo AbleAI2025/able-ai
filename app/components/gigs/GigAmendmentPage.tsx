@@ -61,12 +61,6 @@ export default function GigAmendmentPage() {
     <div className={styles.container}>
       <ScreenHeaderWithBack title={config.title}  onBackClick={handleBackClick}/>
       <main className={styles.contentWrapper}>
-        <AmendmentDummyChatbot />
-        <AmendmentReasonSection 
-          onReasonChange={setReason} 
-          reason={reason} 
-          workerId={gig.worker?.id} 
-        />
         <UpdateGig
           title={config.gigTitle}
           editedGigDetails={editedGigDetails}
