@@ -2124,7 +2124,8 @@ Make the conversation feel natural and build on what they've already told you, b
         gigDate: gigData.date || new Date().toISOString().split('T')[0],
         gigTime: gigData.time || '09:00-17:00',
       };
-
+      const { duration } = parseTimeRange(gigData.time);
+      const totalHours = Math.max(Number(duration), VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS);
       const gigResult = await createGig(gigPayload);
 
       if (gigResult.status !== 200 || !gigResult.gigId) {
@@ -2161,7 +2162,7 @@ Make the conversation feel natural and build on what they've already told you, b
         workerId: selectedWorker.workerId,
         gigId: gigResult.gigId,
         currency: 'usd',
-        serviceAmountInCents: ((selectedWorker.hourlyRate * VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS) * 100)
+        serviceAmountInCents: ((selectedWorker.hourlyRate * totalHours) * 100)
       });
 
       if (!holdFundsResult.success) {
@@ -2720,8 +2721,8 @@ Make the conversation feel natural and build on what they've already told you, b
                   <div className={styles.jobTitleConfirmButtonGroup}>
                     <button
                       className={`${styles.jobTitleConfirmButton} ${isCompleted
-                          ? styles.jobTitleConfirmYesCompleted
-                          : styles.jobTitleConfirmYes
+                        ? styles.jobTitleConfirmYesCompleted
+                        : styles.jobTitleConfirmYes
                         }`}
                       onClick={
                         isCompleted
@@ -2740,8 +2741,8 @@ Make the conversation feel natural and build on what they've already told you, b
 
                     <button
                       className={`${styles.jobTitleConfirmButton} ${isCompleted
-                          ? styles.jobTitleConfirmSkipCompleted
-                          : styles.jobTitleConfirmSkip
+                        ? styles.jobTitleConfirmSkipCompleted
+                        : styles.jobTitleConfirmSkip
                         }`}
                       onClick={
                         isCompleted
