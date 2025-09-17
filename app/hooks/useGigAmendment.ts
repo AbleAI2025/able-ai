@@ -68,8 +68,7 @@ export function useGigAmendment() {
   }, [gig, isGigContextLoading, gigId, user, userId, amendId, router]);
 
   const handleSubmit = async () => {
-    if (!user?.uid || !gigId || !reason.trim() || !gig) {
-      toast.error("Please provide a reason for the changes.");
+    if (!user?.uid || !gigId || !gig) {
       return;
     }
     setIsSubmitting(true);
