@@ -27,7 +27,7 @@ interface Review {
 export default interface DashboardData {
   fullName: string;
   username: string;
-  socialLink: string;
+  socialLink?: string;
   introVideoUrl?: string;
   fullCompanyName: string;
   billingAddressJson?: {

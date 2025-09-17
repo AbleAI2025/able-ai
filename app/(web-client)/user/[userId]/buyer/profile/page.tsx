@@ -25,15 +25,12 @@ import {
 } from "firebase/storage";
 import { toast } from "sonner";
 import BuyerType from "@/app/types/BuyerProfileTypes";
-import mockDashboardData from "./mockBuyerProfile";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
 import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import UserNameModal from "@/app/components/profile/UserNameModal";
 import EditBusinessModal from "@/app/components/profile/EditBusinessModal";
-import LocationPickerBubble from "@/app/components/onboarding/LocationPickerBubble";
 import SocialLinkModal from "./SocialLinkModal";
-import { updateSocialLinkWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 
 interface BusinessInfo {
   fullCompanyName: string;
@@ -64,14 +61,7 @@ export default function BuyerProfilePage() {
     companyRole: "",
   });
 
-  const isViewQA = false;
-
   const fetchUserProfile = async () => {
-    if (isViewQA) {
-      setDashboardData(mockDashboardData);
-      setIsLoadingData(false);
-      return;
-    }
     const { success, profile } = await getGigBuyerProfileAction(user?.token);
 
     if (success && profile) {

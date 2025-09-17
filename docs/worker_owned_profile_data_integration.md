@@ -12,10 +12,6 @@ const qaMockProfileData = { /* ... mock data structure ... */ };
 
 // Mock data fetch for the worker's own profile
 async function fetchWorkerOwnedProfile(userId: string, isViewQA: boolean) {
-  if (isViewQA) {
-    // ... return mock data ...
-  }
-  
   // --- REAL DATA FETCH LOGIC GOES HERE ---
   console.log("Attempting to fetch real worker profile for userId:", userId);
   await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate fetch delay
@@ -51,11 +47,6 @@ Modify the `fetchWorkerOwnedProfile` function to perform a real API call to your
 
 ```typescript
 async function fetchWorkerOwnedProfile(userId: string, isViewQA: boolean): Promise<any | null> {
-  if (isViewQA) {
-    console.log("Using QA mock data for worker profile.");
-    return { ...qaMockProfileData, id: userId };
-  }
-
   try {
     // Replace with your actual authenticated API endpoint path
     // Ensure your fetch includes authentication headers (e.g., Authorization: Bearer <token>)

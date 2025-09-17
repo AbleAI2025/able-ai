@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 interface SocialLinkModalProps {
-  initialValue: string;
+  initialValue?: string;
   onClose: () => void;
   fetchUserProfile: () => void;
   updateAction: (link: string, token?: string) => Promise<{ success: boolean; error?: string }>;
@@ -19,9 +19,14 @@ const SocialLinkModal = ({ initialValue, onClose, fetchUserProfile, updateAction
   const { user } = useAuth();
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  const handleProfileUpdate = async (link: string) => {
+  const handleProfileUpdate = async (link?: string) => {
     setIsSavingProfile(true);
     try {
+      if (!link || link.trim() === "") {
+        setError("Social link cannot be empty.");
+        setIsSavingProfile(false);
+        return;
+      }
       const { success: updateSuccess, error: updateError } = await updateAction(link, user?.token);
 
       if (!updateSuccess) throw updateError;

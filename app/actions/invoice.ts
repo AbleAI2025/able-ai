@@ -63,15 +63,6 @@ const mockInvoiceData: InvoiceData = {
 export async function getInvoiceData(userId: string, invoiceId: string): Promise<InvoiceData> {
   const cookieStore = await cookies();
   const token = cookieStore.get('token');
-  const isViewQA = cookieStore.get('isViewQA')?.value === 'true';
-
-//   if (!token && !isViewQA) {
-//     redirect('/');
-//   }
-
-  if (isViewQA) {
-    return mockInvoiceData;
-  }
 
   try {
     const response = await fetch(`${process.env.API_URL}/api/invoices/${invoiceId}`, {

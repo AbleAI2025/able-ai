@@ -38,11 +38,6 @@ export default function PublicWorkerProfilePage() {
     const isViewQA = false;
   
     const fetchUserProfile = async (workerId: string) => {
-      if (isViewQA) {
-        setWorkerProfile(mockWorkerProfile)
-        setIsLoadingProfile(false);
-        return;
-      }  
       const { data } = await getPublicWorkerProfileAction(workerId);
       if (data) {
 

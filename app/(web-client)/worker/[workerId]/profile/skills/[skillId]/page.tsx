@@ -1,18 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import styles from './SkillSpecificPage.module.css';
-import SkillSplashScreen from '@/app/components/profile/SkillSplashScreen';
-import CloseButton from '@/app/components/profile/CloseButton';
-import HireButton from '@/app/components/profile/HireButton';
-import { getSkillDetailsWorker } from '@/actions/user/gig-worker-profile';
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import styles from "./SkillSpecificPage.module.css";
+import SkillSplashScreen from "@/app/components/profile/SkillSplashScreen";
+import CloseButton from "@/app/components/profile/CloseButton";
+import HireButton from "@/app/components/profile/HireButton";
+import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
 import { Star as DefaultBadgeIcon, Router } from "lucide-react";
-import { SkillProfile } from '@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile';
-import { mockSkillProfile } from '@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/mockSkillProfile';
-import Loader from '@/app/components/shared/Loader';
-
-
+import { SkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile";
+import { mockSkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/mockSkillProfile";
+import Loader from "@/app/components/shared/Loader";
 
 // --- COMPONENT ---
 export default function PublicSkillProfilePage() {
@@ -21,23 +19,17 @@ export default function PublicSkillProfilePage() {
   const [profile, setProfile] = useState<SkillProfile | null>(null);
   const router = useRouter();
 
-  const isViewQA = false;
-
-      const fetchSkillData = async () => {
-      if (!skillId) return;
-      if (isViewQA) {
-        setProfile(mockSkillProfile);
-        return;
+  const fetchSkillData = async () => {
+    if (!skillId) return;
+    try {
+      const { success, data } = await getSkillDetailsWorker(skillId);
+      if (success && data) {
+        setProfile(data);
       }
-      try {
-        const { success, data } = await getSkillDetailsWorker(skillId);
-        if (success && data) {
-          setProfile(data);
-        }
-      } catch (error) {
-        console.error("Error fetching skill profile:", error);
-      }
-    };
+    } catch (error) {
+      console.error("Error fetching skill profile:", error);
+    }
+  };
 
   useEffect(() => {
     fetchSkillData();
@@ -48,14 +40,14 @@ export default function PublicSkillProfilePage() {
   return (
     <div className={styles.skillPageContainer}>
       <CloseButton />
-      <SkillSplashScreen 
-        profile={profile} 
-        skillId={skillId} 
-        fetchSkillData={fetchSkillData} 
-        isSelfView={false} 
+      <SkillSplashScreen
+        profile={profile}
+        skillId={skillId}
+        fetchSkillData={fetchSkillData}
+        isSelfView={false}
         onBackClick={() => router.back()}
       />
       <HireButton workerId={skillId} workerName={profile?.name} />
-    </div> 
+    </div>
   );
-} 
+}
