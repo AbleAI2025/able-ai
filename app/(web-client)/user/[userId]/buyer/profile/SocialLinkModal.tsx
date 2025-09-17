@@ -35,8 +35,9 @@ const SocialLinkModal = ({ initialValue, onClose, fetchUserProfile, updateAction
       onClose();
       toast.success("Social link updated successfully");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to update social link.";
+      const message = typeof err === 'string' ? err : (err instanceof Error ? err.message : "Failed to update social link.");
       setError(message);
+      toast.error("Error updating social link: " + message);
     } finally {
       setIsSavingProfile(false);
     }

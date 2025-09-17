@@ -24,7 +24,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { toast } from "sonner";
-import BuyerType from "@/app/types/BuyerProfileTypes";
+import DashboardData from "@/app/types/BuyerProfileTypes";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
 import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
@@ -45,7 +45,7 @@ export default function BuyerProfilePage() {
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
-  const [dashboardData, setDashboardData] = useState<BuyerType | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
