@@ -63,7 +63,7 @@ const WorkerProfile = ({
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false); // 👈 nuevo estado
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
