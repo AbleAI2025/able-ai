@@ -8,8 +8,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import Notification from '../shared/Notification';
 import Image from 'next/image';
 
-
-
 type OtherpageProps = {
   isHomePage?: boolean;
   title?: string;

@@ -27,7 +27,7 @@ export const GigAmendmentActions = ({
   existingAmendmentId,
 }: GigAmendmentActionsProps) => {
   const lastRoleUsed = getLastRoleUsed();
-
+  
   const isProcessing = isSubmitting || isCancelling;
 
   return (
@@ -36,7 +36,7 @@ export const GigAmendmentActions = ({
         type="button"
         className={`${styles.submitButton} ${lastRoleUsed === "GIG_WORKER" ? styles.workerBtn : styles.buyerBtn}`}
         onClick={handleSubmit}
-        disabled={isProcessing}
+        disabled={lastRoleUsed !== "BUYER" || isProcessing}
       >
         {isSubmitting ? 'Submitting...' : 'Submit for confirmation'}
       </button>
