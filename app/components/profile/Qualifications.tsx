@@ -52,8 +52,9 @@ const Qualifications = ({
   };
 
   const handleDelete = async (id: string) => {
-    await deleteQualificationAction(id, user?.token);
-    fetchUserProfile(user?.token || workerId);
+    if (!user?.token) return;
+    await deleteQualificationAction(id, user.token);
+    fetchUserProfile(user.token || workerId);
     setModalOpen(false);
     setIsEditMode(false);
   };

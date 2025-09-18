@@ -15,41 +15,35 @@ import { and, eq } from "drizzle-orm";
  * Centralized error messages for consistency
  */
 const ERROR_MESSAGES = {
-  TOKEN_REQUIRED: "El token de autenticación es requerido",
-  USER_NOT_FOUND: "Usuario no encontrado",
-  WORKER_PROFILE_NOT_FOUND: "Perfil de trabajador no encontrado",
-  UNAUTHORIZED: "Acceso no autorizado",
-  QUALIFICATION_NOT_FOUND: "Calificación no encontrada",
-  EQUIPMENT_NOT_FOUND: "Equipo no encontrado",
-  SKILL_NOT_FOUND: "Habilidad no encontrada",
-  FAILED_TO_CREATE: "Error al crear",
-  FAILED_TO_DELETE: "Error al eliminar",
-  FAILED_TO_EDIT: "Error al editar",
-  SKILL_ID_REQUIRED: "El ID de habilidad es requerido",
+  TOKEN_REQUIRED: "Authentication token is required",
+  USER_NOT_FOUND: "User not found",
+  WORKER_PROFILE_NOT_FOUND: "Worker profile not found",
+  UNAUTHORIZED: "Unauthorized access",
+  QUALIFICATION_NOT_FOUND: "Qualification not found",
+  EQUIPMENT_NOT_FOUND: "Equipment not found",
+  SKILL_NOT_FOUND: "Skill not found",
+  FAILED_TO_CREATE: "Error creating",
+  FAILED_TO_DELETE: "Error deleting",
+  FAILED_TO_EDIT: "Error editing",
+  SKILL_ID_REQUIRED: "Skill ID is required",
 } as const;
 
 /**
  * Standard response types
  */
-interface SuccessResponse<T = any> {
-  success: true;
-  data: T;
+interface ActionResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
-
-interface ErrorResponse {
-  success: false;
-  error: string;
-}
-
-type ActionResponse<T = any> = SuccessResponse<T> | ErrorResponse;
 
 /**
  * Helper function to authenticate and fetch worker profile
  */
-async function authenticateAndGetWorkerProfile(token: string): Promise<{ user: any; workerProfile: any }> {
+async function authenticateAndGetWorkerProfile(token: string): Promise<{ user: typeof UsersTable.$inferSelect; workerProfile: typeof GigWorkerProfilesTable.$inferSelect }> {
   if (!token) throw new Error(ERROR_MESSAGES.TOKEN_REQUIRED);
   const { uid } = await isUserAuthenticated(token);
-  if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+  if (!uid) throw new Error(ERROR_CODES.UNAUTHORIZED.message);
 
   const user = await db.query.UsersTable.findFirst({
     where: eq(UsersTable.firebaseUid, uid),
@@ -78,7 +72,7 @@ function validateOwnership(ownerId: string, resourceOwnerId: string): void {
  */
 export const addQualificationAction = async (
   title: string,
-  token?: string,
+  token: string,
   skillId?: string,
   description?: string,
   institution?: string,
@@ -119,7 +113,7 @@ export const addQualificationAction = async (
  */
 export const deleteQualificationAction = async (
   qualificationId: string,
-  token?: string
+  token: string
 ): Promise<ActionResponse<string>> => {
   try {
     const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
@@ -154,7 +148,7 @@ export const deleteQualificationAction = async (
 export const editQualificationAction = async (
   qualificationId: string,
   title: string,
-  token?: string,
+  token: string,
   description?: string,
   institution?: string,
   documentUrl?: string
@@ -197,7 +191,7 @@ export const editQualificationAction = async (
  */
 export const addEquipmentAction = async (
   name: string,
-  token?: string,
+  token: string,
   description?: string
 ): Promise<ActionResponse<string>> => {
   try {
@@ -229,7 +223,7 @@ export const addEquipmentAction = async (
  */
 export const deleteEquipmentAction = async (
   equipmentId: string,
-  token?: string
+  token: string
 ): Promise<ActionResponse<string>> => {
   try {
     const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
@@ -264,7 +258,7 @@ export const deleteEquipmentAction = async (
 export const editEquipmentAction = async (
   equipmentId: string,
   name: string,
-  token?: string,
+  token: string,
   description?: string
 ): Promise<ActionResponse<string>> => {
   try {
@@ -319,24 +313,16 @@ export const getAllSkillsAction = async (workerId: string): Promise<ActionRespon
 /**
  * Deletes a skill if the authenticated worker owns it.
  */
-export const deleteSkillWorker = async (skillId: string, token?: string): Promise<ActionResponse<string>> => {
+export const deleteSkillWorker = async (skillId: string, token: string): Promise<ActionResponse<string>> => {
   try {
-    const { user, workerProfile } = await authenticateAndGetWorkerProfile(token!);
-
-    // Use the optimized query from original
-    const userWithProfile = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, user.firebaseUid),
-      with: { gigWorkerProfile: { columns: { id: true } } },
-    });
-
-    if (!userWithProfile?.gigWorkerProfile) throw new Error(ERROR_MESSAGES.WORKER_PROFILE_NOT_FOUND);
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token);
 
     const result = await db
       .delete(SkillsTable)
       .where(
         and(
           eq(SkillsTable.id, skillId),
-          eq(SkillsTable.workerProfileId, userWithProfile.gigWorkerProfile.id)
+          eq(SkillsTable.workerProfileId, workerProfile.id)
         )
       )
       .returning();
@@ -360,10 +346,10 @@ export const updateWorkerLocationAction = async (
   location: string,
   latitude: string,
   longitude: string,
-  token?: string
+  token: string
 ): Promise<ActionResponse<any>> => {
   try {
-    const { user } = await authenticateAndGetWorkerProfile(token!);
+    const { user } = await authenticateAndGetWorkerProfile(token);
 
     const updatedProfile = await db
       .update(GigWorkerProfilesTable)
