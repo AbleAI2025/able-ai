@@ -12,7 +12,7 @@ interface GigDetailsProps {
   >;
   isOnConfirm?: boolean;
   title: string;
-  setIsEdited: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsEdited?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AmendGig = ({
@@ -82,7 +82,7 @@ const AmendGig = ({
             ).toFixed(2)
           : prevState.totalPay;
 
-      setIsEdited(true);
+      if (setIsEdited) setIsEdited(true);
 
       return {
         ...prevState,
@@ -123,7 +123,7 @@ const AmendGig = ({
       }));
     }
 
-    setIsEdited(true);
+    if (setIsEdited) setIsEdited(true);
   };
 
   return (
