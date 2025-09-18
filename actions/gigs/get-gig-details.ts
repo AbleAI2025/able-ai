@@ -234,7 +234,6 @@ export async function getGigDetails({
     }
 
     if (!user) {
-      console.log('🔍 DEBUG: User not found in database for ID:', userId);
       return { error: 'User is not found', gig: {} as GigDetails, status: 404 };
     }
 

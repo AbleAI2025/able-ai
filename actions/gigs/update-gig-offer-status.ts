@@ -30,13 +30,6 @@ export async function updateGigOfferStatus({
   isViewQA?: boolean;
 }) {
   try {
-    console.log("🔍 DEBUG: updateGigOfferStatus called with:", {
-      gigId,
-      userId,
-      role,
-      action,
-    });
-
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
       columns: {

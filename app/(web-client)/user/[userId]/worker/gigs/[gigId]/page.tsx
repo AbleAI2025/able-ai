@@ -119,6 +119,7 @@ export default function WorkerGigDetailsPage() {
           setIsLoadingGig(false);
         }
       } catch (err) {
+        console.error("Error fetching worker user:", err);
         setError("Could not load worker information");
         setIsLoadingGig(false);
       }
