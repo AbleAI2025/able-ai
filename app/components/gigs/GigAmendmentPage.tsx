@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import styles from "./GigAmendmentPage.module.css";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
@@ -29,6 +29,9 @@ export default function GigAmendmentPage() {
     cancelLeave,
     confirmLeave,
   } = useGigAmendment();
+
+  const [isEdited, setIsEdited] = useState(false);
+
 
   const config = {
     title: "Edit Gig Details",
@@ -75,6 +78,7 @@ export default function GigAmendmentPage() {
           title={config.gigTitle}
           editedGigDetails={editedGigDetails}
           setEditedGigDetails={setEditedGigDetails}
+          setIsEdited={setIsEdited}
         />
         <GigAmendmentActions
           handleSubmit={handleSubmit}
@@ -82,6 +86,7 @@ export default function GigAmendmentPage() {
           isSubmitting={isSubmitting}
           isCancelling={isCancelling}
           existingAmendmentId={existingAmendmentId}
+          isEdited={isEdited}
         />
         {showLeaveDialog && (
           <LeavePageDialog onClose={cancelLeave} onConfirm={confirmLeave} />
