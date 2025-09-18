@@ -11,6 +11,71 @@ import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { and, eq } from "drizzle-orm";
 
+/**
+ * Centralized error messages for consistency
+ */
+const ERROR_MESSAGES = {
+  TOKEN_REQUIRED: "El token de autenticación es requerido",
+  USER_NOT_FOUND: "Usuario no encontrado",
+  WORKER_PROFILE_NOT_FOUND: "Perfil de trabajador no encontrado",
+  UNAUTHORIZED: "Acceso no autorizado",
+  QUALIFICATION_NOT_FOUND: "Calificación no encontrada",
+  EQUIPMENT_NOT_FOUND: "Equipo no encontrado",
+  SKILL_NOT_FOUND: "Habilidad no encontrada",
+  FAILED_TO_CREATE: "Error al crear",
+  FAILED_TO_DELETE: "Error al eliminar",
+  FAILED_TO_EDIT: "Error al editar",
+  SKILL_ID_REQUIRED: "El ID de habilidad es requerido",
+} as const;
+
+/**
+ * Standard response types
+ */
+interface SuccessResponse<T = any> {
+  success: true;
+  data: T;
+}
+
+interface ErrorResponse {
+  success: false;
+  error: string;
+}
+
+type ActionResponse<T = any> = SuccessResponse<T> | ErrorResponse;
+
+/**
+ * Helper function to authenticate and fetch worker profile
+ */
+async function authenticateAndGetWorkerProfile(token: string): Promise<{ user: any; workerProfile: any }> {
+  if (!token) throw new Error(ERROR_MESSAGES.TOKEN_REQUIRED);
+  const { uid } = await isUserAuthenticated(token);
+  if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+  const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firebaseUid, uid),
+  });
+  if (!user) throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
+
+  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+    where: eq(GigWorkerProfilesTable.userId, user.id),
+  });
+  if (!workerProfile) throw new Error(ERROR_MESSAGES.WORKER_PROFILE_NOT_FOUND);
+
+  return { user, workerProfile };
+}
+
+/**
+ * Helper for ownership validation
+ */
+function validateOwnership(ownerId: string, resourceOwnerId: string): void {
+  if (ownerId !== resourceOwnerId) {
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+  }
+}
+
+/**
+ * Creates a new qualification for the authenticated worker.
+ */
 export const addQualificationAction = async (
   title: string,
   token?: string,
@@ -18,118 +83,74 @@ export const addQualificationAction = async (
   description?: string,
   institution?: string,
   documentUrl?: string
-) => {
+): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
+    if (!skillId) throw new Error(ERROR_MESSAGES.SKILL_ID_REQUIRED);
 
-    if (!skillId) {
-      throw new Error("Skill id is required");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
     const result = await db
       .insert(QualificationsTable)
       .values({
         workerProfileId: workerProfile.id,
-        title: title,
-        description: description,
-        institution: institution,
-        documentUrl: documentUrl,
-        skillId: skillId,
+        title,
+        description,
+        institution,
+        documentUrl,
+        skillId,
         yearAchieved: new Date().getFullYear(),
       })
       .returning();
 
-    if (result.length === 0) {
-      throw new Error("Failed to add qualification");
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE);
 
-    return { success: true, data: "Qualification created successfully" };
+    return { success: true, data: "Calificación creada exitosamente" };
   } catch (error) {
-    console.log("Error adding qualification", error);
+    console.error("Error al agregar calificación:", error);
     return {
       success: false,
-      error: "An unexpected error occurred while adding the qualification.",
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE,
     };
   }
 };
 
+/**
+ * Deletes a qualification if the authenticated worker owns it.
+ */
 export const deleteQualificationAction = async (
   qualificationId: string,
   token?: string
-) => {
+): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
     const qualification = await db.query.QualificationsTable.findFirst({
       where: eq(QualificationsTable.id, qualificationId),
     });
+    if (!qualification) throw new Error(ERROR_MESSAGES.QUALIFICATION_NOT_FOUND);
 
-    if (!qualification) {
-      throw new Error("Qualification not found");
-    }
-
-    if (qualification.workerProfileId !== workerProfile.id) {
-      throw new Error("Unauthorized to delete this qualification");
-    }
+    validateOwnership(qualification.workerProfileId, workerProfile.id);
 
     const result = await db
       .delete(QualificationsTable)
       .where(eq(QualificationsTable.id, qualificationId))
       .returning();
 
-    if (result.length === 0) {
-      throw new Error("Failed to delete qualification");
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE);
 
-    return { success: true, data: "Qualification deleted successfully" };
+    return { success: true, data: "Calificación eliminada exitosamente" };
   } catch (error) {
-    console.log("Error subscribing to topic", error);
-    return { success: false, error: error };
+    console.error("Error al eliminar calificación:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE,
+    };
   }
 };
 
+/**
+ * Edits a qualification if the authenticated worker owns it.
+ */
 export const editQualificationAction = async (
   qualificationId: string,
   title: string,
@@ -137,317 +158,212 @@ export const editQualificationAction = async (
   description?: string,
   institution?: string,
   documentUrl?: string
-) => {
+): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
     const qualification = await db.query.QualificationsTable.findFirst({
       where: eq(QualificationsTable.id, qualificationId),
     });
+    if (!qualification) throw new Error(ERROR_MESSAGES.QUALIFICATION_NOT_FOUND);
 
-    if (!qualification) {
-      throw new Error("Qualification not found");
-    }
-
-    if (qualification.workerProfileId !== workerProfile.id) {
-      throw new Error("Unauthorized to edit this qualification");
-    }
+    validateOwnership(qualification.workerProfileId, workerProfile.id);
 
     const result = await db
       .update(QualificationsTable)
       .set({
-        title: title,
-        description: description,
-        institution: institution,
-        documentUrl: documentUrl,
+        title,
+        description,
+        institution,
+        documentUrl,
       })
       .where(eq(QualificationsTable.id, qualificationId))
       .returning();
 
-    if (result.length === 0) {
-      throw new Error("Failed to edit qualification");
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT);
 
-    return { success: true, data: "Qualification edited successfully" };
+    return { success: true, data: "Calificación editada exitosamente" };
   } catch (error) {
-    console.log("Error subscribing to topic", error);
-    return { success: false, error: error };
+    console.error("Error al editar calificación:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT,
+    };
   }
 };
 
+/**
+ * Creates a new equipment for the authenticated worker.
+ */
 export const addEquipmentAction = async (
   name: string,
   token?: string,
-  description?: string,
-  // documentUrl?: string
-) => {
+  description?: string
+): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
     const result = await db
       .insert(EquipmentTable)
       .values({
-        name: name,
-        description: description,
+        name,
+        description,
         workerProfileId: workerProfile.id,
       })
       .returning();
 
-    if (result.length === 0) {
-      throw new Error("Failed to add equipment");
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE);
 
-    return { success: true, data: "Equipment created successfully" };
+    return { success: true, data: "Equipo creado exitosamente" };
   } catch (error) {
-    console.log("Error subscribing to topic", error);
-    return { success: false, error: error };
+    console.error("Error al agregar equipo:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE,
+    };
   }
 };
 
+/**
+ * Deletes equipment if the authenticated worker owns it.
+ */
 export const deleteEquipmentAction = async (
   equipmentId: string,
   token?: string
-) => {
+): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
     const equipment = await db.query.EquipmentTable.findFirst({
       where: eq(EquipmentTable.id, equipmentId),
     });
+    if (!equipment) throw new Error(ERROR_MESSAGES.EQUIPMENT_NOT_FOUND);
 
-    if (!equipment) {
-      throw new Error("Equipment not found");
-    }
-
-    if (equipment.workerProfileId !== workerProfile.id) {
-      throw new Error("Unauthorized to delete this equipment");
-    }
+    validateOwnership(equipment.workerProfileId, workerProfile.id);
 
     const result = await db
       .delete(EquipmentTable)
       .where(eq(EquipmentTable.id, equipmentId))
       .returning();
 
-    if (result.length === 0) {
-      throw new Error("Failed to delete equipment");
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE);
 
-    return { success: true, data: "Equipment deleted successfully" };
+    return { success: true, data: "Equipo eliminado exitosamente" };
   } catch (error) {
-    console.log("Error subscribing to topic", error);
-    return { success: false, error: error };
+    console.error("Error al eliminar equipo:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE,
+    };
   }
 };
 
+/**
+ * Edits equipment if the authenticated worker owns it.
+ */
 export const editEquipmentAction = async (
   equipmentId: string,
   name: string,
   token?: string,
   description?: string
-) => {
+): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    if (!workerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
     const equipment = await db.query.EquipmentTable.findFirst({
       where: eq(EquipmentTable.id, equipmentId),
     });
+    if (!equipment) throw new Error(ERROR_MESSAGES.EQUIPMENT_NOT_FOUND);
 
-    if (!equipment) {
-      throw new Error("Equipment not found");
-    }
-
-    if (equipment.workerProfileId !== workerProfile.id) {
-      throw new Error("Unauthorized to edit this equipment");
-    }
+    validateOwnership(equipment.workerProfileId, workerProfile.id);
 
     const result = await db
       .update(EquipmentTable)
       .set({
-        name: name,
-        description: description,
+        name,
+        description,
       })
       .where(eq(EquipmentTable.id, equipmentId))
       .returning();
 
-    if (result.length === 0) {
-      throw new Error("Failed to edit equipment");
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT);
 
-    return { success: true, data: "Equipment edited successfully" };
+    return { success: true, data: "Equipo editado exitosamente" };
   } catch (error) {
-    console.log("Error subscribing to topic", error);
-    return { success: false, error: error };
+    console.error("Error al editar equipo:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT,
+    };
   }
 };
 
-export const getAllSkillsAction = async (workerId: string) => {
+/**
+ * Fetches all skills for a given worker profile.
+ */
+export const getAllSkillsAction = async (workerId: string): Promise<ActionResponse<any[]>> => {
   try {
     const skills = await db.query.SkillsTable.findMany({
       where: eq(SkillsTable.workerProfileId, workerId),
     });
     return { success: true, data: skills };
   } catch (error) {
-    console.error("Error fetching skills:", error);
+    console.error("Error al obtener habilidades:", error);
     return {
       success: false,
-      error: "An unexpected error occurred while fetching skills.",
+      error: "Error inesperado al obtener habilidades.",
     };
   }
 };
 
-export const deleteSkillWorker = async (skillId: string, token?: string) => {
+/**
+ * Deletes a skill if the authenticated worker owns it.
+ */
+export const deleteSkillWorker = async (skillId: string, token?: string): Promise<ActionResponse<string>> => {
   try {
-    if (!token) {
-      throw new Error("Authentication token is required");
-    }
+    const { user, workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
+    // Use the optimized query from original
+    const userWithProfile = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, user.firebaseUid),
       with: { gigWorkerProfile: { columns: { id: true } } },
     });
-    
-    if (!user) {
-      throw new Error("User not found");
-    }
 
-    if (!user.gigWorkerProfile) {
-      throw new Error("Worker profile not found");
-    }
+    if (!userWithProfile?.gigWorkerProfile) throw new Error(ERROR_MESSAGES.WORKER_PROFILE_NOT_FOUND);
 
     const result = await db
       .delete(SkillsTable)
       .where(
         and(
           eq(SkillsTable.id, skillId),
-          eq(SkillsTable.workerProfileId, user.gigWorkerProfile.id)
+          eq(SkillsTable.workerProfileId, userWithProfile.gigWorkerProfile.id)
         )
       )
       .returning();
 
-    if (result.length === 0) {
-      throw new Error(
-        "Failed to delete skill. It may not exist or you don't have permission."
-      );
-    }
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE);
 
-    return { success: true, data: "Skill deleted successfully" };
-  } catch (error: any) {
-    console.error("Error deleting skill:", error);
+    return { success: true, data: "Habilidad eliminada exitosamente" };
+  } catch (error) {
+    console.error("Error al eliminar habilidad:", error);
     return {
       success: false,
-      error: error.message || "Unexpected error while deleting skill",
+      error: error instanceof Error ? error.message : "Error inesperado al eliminar habilidad",
     };
   }
 };
 
+/**
+ * Updates the worker's location.
+ */
 export const updateWorkerLocationAction = async (
   location: string,
-  latitude: string, 
+  latitude: string,
   longitude: string,
   token?: string
-) => {
+): Promise<ActionResponse<any>> => {
   try {
-    if (!token) {
-      throw new Error("Auth token is required to update worker location");
-    }
-
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const { user } = await authenticateAndGetWorkerProfile(token!);
 
     const updatedProfile = await db
       .update(GigWorkerProfilesTable)
@@ -457,7 +373,7 @@ export const updateWorkerLocationAction = async (
 
     return { success: true, data: updatedProfile[0] };
   } catch (error) {
-    console.error("Error updating worker location:", error);
-    return { success: false, error };
+    console.error("Error al actualizar ubicación del trabajador:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Error al actualizar ubicación" };
   }
 };

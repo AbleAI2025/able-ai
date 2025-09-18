@@ -81,22 +81,6 @@ export default function CancelOrAmendGigDetailsPage() {
           </p>
         </section>
 
-        {/* Text Input Block */}
-        {/* <section className={styles.botCard}>
-          <label htmlFor="benjiMessage" className={styles.textInputBlockLabel}>
-            {user?.displayName && user.displayName.toLocaleLowerCase() + ":"}
-          </label>
-          <textarea
-            id="benjiMessage"
-            name="benjiMessage"
-            className={styles.textareaInput}
-            value={userMessage}
-            onChange={(e) => setUserMessage(e.target.value)}
-            placeholder="e.g., Add one more hour to the gig or pay 22ph"
-            rows={4}
-          />
-        </section> */}
-
         {/* Updated Gig Details Block */}
         <UpdateGig
           title="Gig Details"
@@ -112,13 +96,7 @@ export default function CancelOrAmendGigDetailsPage() {
         >
           Submit for Confirmation
         </button>
-        
-          {/* <div className={styles.cancelBtnText}>
-            <span>
-              Cancel GIG
-            </span>
-            (This might incur charges or penalties)
-          </div> */}
+
         <button
           type="button"
           className={`${styles.cancelButton}`}

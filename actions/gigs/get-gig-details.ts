@@ -135,62 +135,6 @@ function extractLocationAggressively(obj: any): string | null {
   
   return null;
 }
-/**
- * Helper function to parse location from gig data
-  function parseGigLocation(gig: any): string {
-  // Try to extract location from addressJson first (prioritize formatted addresses)
-  if (gig.addressJson) {
-    if (typeof gig.addressJson === 'string') {
-      try {
-        const parsed = JSON.parse(gig.addressJson);
-        const extracted = extractLocationFromObject(parsed);
-        if (extracted) {
-          return extracted;
-        }
-      } catch (e) {
-        // If JSON parsing fails, try as string
-        const extracted = extractLocationFromString(gig.addressJson);
-        if (extracted) {
-          return extracted;
-        }
-      }
-    } else if (typeof gig.addressJson === 'object') {
-      const extracted = extractLocationFromObject(gig.addressJson);
-      if (extracted) {
-        return extracted;
-      }
-    }
-  }
-  
-  // If addressJson didn't work, try exactLocation
-  if (gig.exactLocation) {
-    const extracted = extractLocationFromData(gig.exactLocation);
-    if (extracted) {
-      return extracted;
-    }
-  }
-
-  // If still no location, try aggressive extraction
-  if (gig.addressJson && typeof gig.addressJson === 'object') {
-    const extracted = extractLocationAggressively(gig.addressJson);
-    if (extracted) {
-      return extracted;
-    }
-  }
-  
-  if (gig.exactLocation && typeof gig.exactLocation === 'object') {
-    const extracted = extractLocationAggressively(gig.exactLocation);
-    if (extracted) {
-      return extracted;
-    }
-  }
-
-  // Return fallback location if no valid location found
-  return 'Location details available';
-}
- */
-
-
 
 export async function getGigDetails({
   gigId,
