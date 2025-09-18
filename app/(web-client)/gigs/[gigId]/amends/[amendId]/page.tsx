@@ -112,18 +112,11 @@ export default function CancelOrAmendGigDetailsPage() {
         >
           Submit for Confirmation
         </button>
-        
-          {/* <div className={styles.cancelBtnText}>
-            <span>
-              Cancel GIG
-            </span>
-            (This might incur charges or penalties)
-          </div> */}
         <button
           type="button"
           className={`${styles.cancelButton}`}
           onClick={handleCancelGig}
-          disabled={isLoading}
+          disabled={lastRoleUsed === "GIG_WORKER" || isLoading}
         >
           Cancel Gig
           <p>This might incur charges or penalties</p>

@@ -46,7 +46,7 @@ export const GigAmendmentActions = ({
         type="button"
         className={styles.cancelButton}
         onClick={handleCancel}
-        disabled={isProcessing}
+        disabled={lastRoleUsed !== "BUYER" || isProcessing}
       >
         Cancel gig
         <p>(This might incur charges or penalties)</p>
