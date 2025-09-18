@@ -4,21 +4,21 @@ import LocationPickerBubble from "../onboarding/LocationPickerBubble";
 
 import { MapPin, X } from "lucide-react";
 
-// interface Location {
-//   formatted_address: string;
-//   lat: number | undefined;
-//   lng: number | undefined;
-// }
+interface Location {
+   formatted_address: string;
+   lat: number | undefined;
+   lng: number | undefined;
+ }
 
 interface EditBusinessModalProps {
   initialData: {
     fullCompanyName: string;
-    location: string;
+    location: Location;
     companyRole: string;
   };
   onSave: (data: {
     fullCompanyName: string;
-    location: string;
+    location: Location;
     companyRole: string;
   }) => void;
   onClose: () => void;
@@ -75,7 +75,7 @@ export default function EditBusinessModal({
             >
               <MapPin size={18} />
               <span>
-                {form.location || "Pick a location"}
+                {form?.location?.formatted_address || "Pick a location"}
               </span>
             </button>
           </div>
@@ -93,11 +93,15 @@ export default function EditBusinessModal({
                   </button>
                 </div>
                 <LocationPickerBubble
-                  value={form.location}
+                  value={form.location.formatted_address}
                   onChange={(loc) =>
                     setForm({
                       ...form,
-                      location: loc.formatted_address, 
+                      location: {
+                        formatted_address: loc.formatted_address,
+                        lat: loc.lat,
+                        lng: loc.lng,
+                      }
                     })
                   }
                   showConfirm

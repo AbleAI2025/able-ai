@@ -184,7 +184,7 @@ export const getGigBuyerProfileAction = async (
         completedHires?.flatMap((gig) =>
           gig.skillsRequired.map((skill) => skill.skillName)
         ) || [],
-      skillCounts: skillCountsArr,
+      skillCounts: 100,
       totalPayments: barData.reverse(),
     };
 
@@ -256,6 +256,50 @@ export const updateSocialLinkBuyerProfileAction = async (
     return { success: true };
   } catch (error) {
     console.error("Error saving social link", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
+
+
+type BusinessInfo = {
+  fullCompanyName: string;
+  location: { formatted_address: string; lat?: number; lng?: number };
+  companyRole: string;
+};
+
+export const updateBissinessInfoBuyerProfileAction = async (
+  { fullCompanyName, location, companyRole }: BusinessInfo,
+  token?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (!token) {
+      return { success: false, error: "User token is required" };
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) return { success: false, error: "Unauthorized" };
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+    if (!user) return { success: false, error: "User not found" };
+
+    await db
+      .update(BuyerProfilesTable)
+      .set({
+        fullCompanyName,
+        billingAddressJson: location,
+        companyRole,
+        updatedAt: new Date(),
+      })
+      .where(eq(BuyerProfilesTable.userId, user.id));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving business info", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
