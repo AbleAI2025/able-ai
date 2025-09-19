@@ -102,7 +102,6 @@ export async function getGigDetails({
 
   
   if (!userId) {
-    console.log('🔍 DEBUG: No userId provided');
     return { error: 'User id is required', gig: {} as GigDetails, status: 404 };
   }
 
@@ -110,8 +109,6 @@ export async function getGigDetails({
     let user;
     
     if (isDatabaseUserId) {
-      // Look up by database user ID directly
-      console.log('🔍 DEBUG: Looking up user with database user ID:', userId);
       user = await db.query.UsersTable.findFirst({
         where: eq(UsersTable.id, userId),
         columns: {
@@ -121,8 +118,6 @@ export async function getGigDetails({
         }
       });
     } else {
-      // Look up by Firebase UID (original behavior)
-      console.log('🔍 DEBUG: Looking up user with Firebase UID:', userId);
       user = await db.query.UsersTable.findFirst({
         where: eq(UsersTable.firebaseUid, userId),
         columns: {
@@ -133,19 +128,7 @@ export async function getGigDetails({
       });
     }
 
-    console.log('🔍 DEBUG: User lookup result:', { 
-      found: !!user, 
-      userId: user?.id, 
-      firebaseUid: user?.firebaseUid,
-      fullName: user?.fullName,
-      searchedFor: userId,
-      isDatabaseUserId
-    });
-
-    console.log('🔍 DEBUG: User lookup result:', { found: !!user, userId: user?.id });
-
     if (!user) {
-      console.log('🔍 DEBUG: User not found in database for ID:', userId);
       return { error: 'User is not found', gig: {} as GigDetails, status: 404 };
     }
 
@@ -172,8 +155,6 @@ export async function getGigDetails({
         },
       });
     } else if (role === 'worker') {
-      // For workers, show both assigned gigs and available offers
-      console.log('🔍 DEBUG: Querying gig for worker with user ID:', user.id);
       gig = await db.query.GigsTable.findFirst({
         where: and(
           eq(GigsTable.id, gigId),
@@ -202,8 +183,7 @@ export async function getGigDetails({
             },
           },
         },
-      });
-      console.log('🔍 DEBUG: Gig query result for worker:', { found: !!gig, gigId: gig?.id });
+      })
     } else {
       // Fallback to original logic for other roles
       const columnConditionId = role === 'buyer' ? GigsTable.buyerUserId : GigsTable.workerUserId;
@@ -232,7 +212,6 @@ export async function getGigDetails({
     })
 
     if (!gig) {
-      console.log('🔍 DEBUG: Gig not found in database');
       return { error: 'gig not found', gig: {} as GigDetails, status: 404 };
     }
 

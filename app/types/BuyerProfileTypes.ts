@@ -20,14 +20,14 @@ export interface Award {
 interface Review {
   id: string;
   name: string;
-  date: string;
+  date: Date;
   text: string;
 }
 
 export default interface DashboardData {
   fullName: string;
   username: string;
-  introVideoThumbnailUrl?: string;
+  socialLink?: string;
   introVideoUrl?: string;
   fullCompanyName: string;
   billingAddressJson?: {
@@ -51,16 +51,6 @@ export default interface DashboardData {
   badgesEarnedByTheirWorkers: Badge[];
   reviews: Review[];
   badges: Award[];
-  // badges: {
-  //   id: string | number;
-  //   icon?: React.ElementType | null;
-  //   notes: string;
-  //   badge: {
-  //     id: string | number;
-  //     icon?: React.ElementType | null;
-  //     description?: string | null;
-  //   };
-  // }[];
   skillCounts?: { name: string; value: number }[];
   totalPayments?: { name: string; a: number }[];
 }

@@ -16,9 +16,7 @@ const spinnerStyles = `
 `;
 
 async function fetchBuyerGigDetails(user: User, gigId: string): Promise<GigDetails | null> {
-  console.log("Fetching gig details for buyer:", user?.uid, "gig:", gigId);
 
-  // Force QA mock mode so any gigId returns mock during integration
   const isViewQA = false;
   const { gig, status } = await getGigDetails({ gigId, userId: user?.uid, role: 'buyer', isViewQA });
 

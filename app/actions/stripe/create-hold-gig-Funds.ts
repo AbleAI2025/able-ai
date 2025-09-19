@@ -11,11 +11,12 @@ interface HoldGigFundsParams {
   firebaseUid: string;
   gigId: string;
   serviceAmountInCents: number;
+  workerId?: string;
   currency?: string;
 }
 
 export async function holdGigFunds(params: HoldGigFundsParams) {
-  const { firebaseUid, gigId, currency, serviceAmountInCents } = params;
+  const { firebaseUid, gigId, currency, serviceAmountInCents, workerId } = params;
 
   try {
     if (!firebaseUid) {
@@ -34,7 +35,7 @@ export async function holdGigFunds(params: HoldGigFundsParams) {
       throw new Error('User is not connected with stripe');
     }
 
-    const { receiverAccountId, gig, discount } = await getPaymentAccountDetailsForGig(gigId);
+    const { receiverAccountId, gig, discount } = await getPaymentAccountDetailsForGig(gigId, workerId);
     const serviceAmountWithDiscount = calculateAmountWithDiscount(serviceAmountInCents, discount);
 
     const paymentIntent = await holdGigAmount({
@@ -54,6 +55,11 @@ export async function holdGigFunds(params: HoldGigFundsParams) {
 
   } catch (error: any) {
     console.error(`Error retaining amount for Gig ${gigId}:`, error);
-    return { error: error.message, status: 500 }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+      data: null,
+      status: 500
+    };
   }
 }

@@ -32,11 +32,6 @@ export default function WorkerOwnedProfilePage() {
   const isViewQA = false;
 
   const fetchUserProfile = async (token: string) => {
-    if (isViewQA) {
-      setProfile(mockWorkerProfile)
-      setLoadingProfile(false);
-      return;
-    } 
     const { data } = await getPrivateWorkerProfileAction(token);
     if (data) {
       const updatedReviews = (data.reviews ?? []).map(

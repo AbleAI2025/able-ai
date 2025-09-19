@@ -1,10 +1,15 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import styles from "./GigAmendmentPage.module.css";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
-import { GigAmendmentActions, AmendmentReasonSection, AmendmentDummyChatbot } from "@/app/components/gigs/GigAmendmentSections";
+import {
+  GigAmendmentActions,
+  AmendmentReasonSection,
+  AmendmentDummyChatbot,
+} from "@/app/components/gigs/GigAmendmentSections";
 import { useGigAmendment } from "@/app/hooks/useGigAmendment";
+import LeavePageDialog from "@/app/hooks/LeavePageDialog";
 
 export default function GigAmendmentPage() {
   const {
@@ -19,22 +24,21 @@ export default function GigAmendmentPage() {
     gig,
     handleSubmit,
     handleCancel,
-    handleBackClick
+    handleBackClick,
+    showLeaveDialog,
+    cancelLeave,
+    confirmLeave,
   } = useGigAmendment();
 
+  const [isEdited, setIsEdited] = useState(false);
+
+
   const config = {
-      title: "Edit Gig Details",
-      errorTitle: "Error",
-      errorMessage: "Could not load gig details.",
-      gigTitle: "Updated gig details:",
-      isEditingDetails: true,
-    // amend: {
-    //   title: "Cancel or Amend",
-    //   errorTitle: "Amend Gig",
-    //   errorMessage: "Gig not found",
-    //   gigTitle: "Updated gig details:",
-    //   isEditingDetails: false,
-    // }
+    title: "Edit Gig Details",
+    errorTitle: "Error",
+    errorMessage: "Could not load gig details.",
+    gigTitle: "Updated gig details:",
+    isEditingDetails: true,
   };
 
   if (isLoading) {
@@ -59,18 +63,16 @@ export default function GigAmendmentPage() {
 
   return (
     <div className={styles.container}>
-      <ScreenHeaderWithBack title={config.title}  onBackClick={handleBackClick}/>
+      <ScreenHeaderWithBack
+        title={config.title}
+        onBackClick={handleBackClick}
+      />
       <main className={styles.contentWrapper}>
-        <AmendmentDummyChatbot />
-        <AmendmentReasonSection 
-          onReasonChange={setReason} 
-          reason={reason} 
-          workerId={gig.worker?.id} 
-        />
         <UpdateGig
           title={config.gigTitle}
           editedGigDetails={editedGigDetails}
           setEditedGigDetails={setEditedGigDetails}
+          setIsEdited={setIsEdited}
         />
         <GigAmendmentActions
           handleSubmit={handleSubmit}
@@ -78,7 +80,11 @@ export default function GigAmendmentPage() {
           isSubmitting={isSubmitting}
           isCancelling={isCancelling}
           existingAmendmentId={existingAmendmentId}
+          isEdited={isEdited}
         />
+        {showLeaveDialog && (
+          <LeavePageDialog onClose={cancelLeave} onConfirm={confirmLeave} />
+        )}
       </main>
     </div>
   );

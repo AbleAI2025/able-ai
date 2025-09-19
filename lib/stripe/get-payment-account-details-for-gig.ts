@@ -3,7 +3,7 @@ import { db } from "@/lib/drizzle/db";
 import { GigsTable, UsersTable } from "@/lib/drizzle/schema";
 import { getAppliedDiscountCodeForGigPayment } from './get-applied-discount-code-for-gig-payment';
 
-export async function getPaymentAccountDetailsForGig(gigId: string) {
+export async function getPaymentAccountDetailsForGig(gigId: string, receiverUserIdParam?: string) {
   const gigRecord = await db.query.GigsTable.findFirst({
     where: eq(GigsTable.id, gigId),
     columns: {
@@ -20,8 +20,9 @@ export async function getPaymentAccountDetailsForGig(gigId: string) {
     throw new Error('Gig not found');
   }
 
+  const receiverUserId = (receiverUserIdParam || gigRecord.workerUserId || '');
   const receiverUserRecord = await db.query.UsersTable.findFirst({
-    where: eq(UsersTable.id, gigRecord.workerUserId as string),
+    where: eq(UsersTable.id, receiverUserId),
     columns: {
       id: true,
       stripeConnectAccountId: true,

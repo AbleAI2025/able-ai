@@ -1148,8 +1148,6 @@ Qualifications: "${value}"`;
               Hourly Rate (£) *
             </label>
             <div className={styles.inputWrapper}>
-              <span className={styles.currencySymbol}>£</span>
-              <span className={styles.currencySymbol}>£</span>
               <input
                 type="number"
                 className={`${styles.input} ${styles.rateInput} ${errors.hourlyRate ? styles.error : ''}`}

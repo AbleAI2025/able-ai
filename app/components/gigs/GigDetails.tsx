@@ -500,29 +500,33 @@ const GigDetailsComponent = ({
         <section className={`${styles.secondaryActionsSection}`}>
           {" "}
           {/* Using secondaryActionsSection class */}
+          <div className={styles.secondaryButtonsContainer}>
+            <button
+              onClick={() => handleGigAction("reportIssue")}
+              className={styles.secondaryActionButton}
+              disabled={isActionLoading}
+            >
+              Report an Issue
+            </button>
+            <button
+              onClick={() => handleGigAction("delegate")}
+              className={styles.secondaryActionButton}
+              disabled={isActionLoading}
+            >
+              Delegate gig
+            </button> 
+          </div>
+          
           <Link
             href="/terms-of-service"
             target="_blank"
             rel="noopener noreferrer"
-            className={styles.secondaryActionButton}
+            className={styles.termsLink}
           >
             Terms of agreement
           </Link>
-          <button
-            onClick={() => handleGigAction("reportIssue")}
-            className={styles.secondaryActionButton}
-            disabled={isActionLoading}
-          >
-            Report an Issue
-          </button>
-          <button
-            onClick={() => handleGigAction("delegate")}
-            className={styles.secondaryActionButton}
-            disabled={isActionLoading}
-          >
-            Delegate gig
-          </button>
         </section>
+        
       </main>
     </div>
   );

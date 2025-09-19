@@ -84,27 +84,25 @@ export default function CancelOrAmendGigDetailsPage() {
           editedGigDetails={editedGigDetails}
           setEditedGigDetails={setEditedGigDetails}
         />
-        {/* Action Button Area */}
-        <div className={`${styles.actionBtnContainer}`}>
-          <button
-            type="button"
-            className={`${styles.submitButton} ${
-              lastRoleUsed === "GIG_WORKER" ? styles.workerBtn : styles.buyerBtn
-            }`}
-            onClick={handleSubmit}
-          >
-            Submit for Confirmation
-          </button>
-          <button
-            type="button"
-            className={`${styles.cancelButton}`}
-            onClick={handleCancelGig}
-            disabled={isLoading}
-          >
-            Cancel Gig
-            <p>This might incur charges or penalties</p>
-          </button>
-        </div>
+     {/* Action Button Area */}
+      <div className={`${styles.actionBtnContainer}`}>
+        <button
+          type="button"
+          className={`${styles.submitButton} ${lastRoleUsed === "GIG_WORKER" ? styles.workerBtn : styles.buyerBtn}`}
+          onClick={handleSubmit}
+        >
+          Submit for Confirmation
+        </button>
+        <button
+          type="button"
+          className={`${styles.cancelButton}`}
+          onClick={handleCancelGig}
+          disabled={lastRoleUsed === "GIG_WORKER" || isLoading}
+        >
+          Cancel Gig
+          <p>This might incur charges or penalties</p>
+        </button>
+      </div>
       </main>
     </div>
   );

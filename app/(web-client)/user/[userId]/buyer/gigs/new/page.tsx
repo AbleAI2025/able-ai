@@ -48,18 +48,19 @@ import {
   findStandardizedJobTitleWithAIFallback,
   ALL_JOB_TITLES
 } from '@/app/components/shared/ChatAI/roles/JobTitles';
+import { holdGigFunds } from "@/app/actions/stripe/create-hold-gig-Funds";
 
 interface OnboardingStep {
   id: number;
   type:
-    | "botMessage"
-    | "userInput"
-    | "userResponseDisplay"
-    | "workerCard"
-    | "terms"
-    | "fileUpload"
-    | "datePicker"
-    | "discountCode";
+  | "botMessage"
+  | "userInput"
+  | "userResponseDisplay"
+  | "workerCard"
+  | "terms"
+  | "fileUpload"
+  | "datePicker"
+  | "discountCode";
   senderType?: "bot" | "user";
   content?: string | React.ReactNode; // For message-like steps or labels for non-input steps
   inputConfig?: StepInputConfig; // Configuration for input fields if the step type involves input
@@ -291,7 +292,7 @@ Be creative and natural in your responses. Don't repeat the same phrases or stru
   } catch (error) {
     console.error('AI prompt generation failed:', error);
   }
-  
+
   // Fallback prompt
   return `Tell me more about your ${fieldName}! I'm here to help you create the perfect gig listing! ✨`;
 }
@@ -322,8 +323,8 @@ function buildPromptFromFormData(formData: Record<string, any>, lastField: strin
 You are an onboarding assistant for gig creation. Here is the conversation so far:
 
 ${Object.entries(formData)
-  .map(([field, value]) => `User answered "${value}" for "${field}".`)
-  .join('\n')}
+      .map(([field, value]) => `User answered "${value}" for "${field}".`)
+      .join('\n')}
 
 The last question was about "${lastField}", and the user answered: "${lastValue}".
 
@@ -368,9 +369,9 @@ type ChatStep = {
 async function interpretJobTitle(gigDescription: string, ai: any): Promise<{ jobTitle: string; confidence: number; matchedTerms: string[]; isAISuggested: boolean } | null> {
   try {
     if (!gigDescription || !ai) return null;
-    
+
     const result = await findStandardizedJobTitleWithAIFallback(gigDescription, ai);
-    
+
     if (result && result.confidence >= 50) {
       return {
         jobTitle: result.jobTitle.title,
@@ -379,7 +380,7 @@ async function interpretJobTitle(gigDescription: string, ai: any): Promise<{ job
         isAISuggested: result.isAISuggested
       };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Job title interpretation failed:', error);
@@ -389,8 +390,8 @@ async function interpretJobTitle(gigDescription: string, ai: any): Promise<{ job
 
 
 
-  // Helper function to generate AI summary for individual field
-  async function generateAIFieldSummary(fieldName: string, originalValue: any, sanitizedValue: any, ai: any): Promise<string> {
+// Helper function to generate AI summary for individual field
+async function generateAIFieldSummary(fieldName: string, originalValue: any, sanitizedValue: any, ai: any): Promise<string> {
   try {
     if (!ai) {
       // Fallback to sanitized value if AI is not available
@@ -401,7 +402,7 @@ async function interpretJobTitle(gigDescription: string, ai: any): Promise<{ job
     const rolePrompt = buildRolePrompt('gigfolioCoach', 'gigCreation', 'Generate a natural field summary');
     const contextPrompt = buildContextPrompt('gigCreation', 'Field summary generation');
     const specializedPrompt = buildSpecializedPrompt('gigCreation', 'Field summary creation', 'Create a conversational field summary');
-    
+
     const summaryPrompt = `${rolePrompt}
 
 ${contextPrompt}
@@ -468,7 +469,7 @@ async function generateAIGigSummary(formData: any, ai: any): Promise<string> {
     const rolePrompt = buildRolePrompt('gigfolioCoach', 'gigCreation', 'Generate a natural gig summary');
     const contextPrompt = buildContextPrompt('gigCreation', 'Gig summary generation');
     const specializedPrompt = buildSpecializedPrompt('gigCreation', 'Gig summary creation', 'Create a conversational gig summary');
-    
+
     const summaryPrompt = `${rolePrompt}
 
 ${contextPrompt}
@@ -518,7 +519,7 @@ Create a natural summary that flows well and sounds like a human describing the 
   } catch (error) {
     console.error('AI gig summary generation failed:', error);
   }
-  
+
   // Fallback to basic summary
   const fallbackSummary = `You need a ${formData.gigDescription || 'worker'} for ${formData.additionalInstructions ? 'with specific requirements: ' + formData.additionalInstructions : 'general work'}, paying £${formData.hourlyRate || '0'} per hour, at ${formData.gigLocation || 'your location'} on ${formData.gigDate || 'your chosen date'}${formData.gigTime ? ' at ' + formData.gigTime : ''}.`;
 
@@ -615,35 +616,35 @@ function extractCoordsFromGoogleMapsUrl(url: string) {
 
 // Typing indicator component
 const TypingIndicator: React.FC = () => (
-  <div style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    padding: '12px 16px', 
-    color: 'var(--secondary-color)', 
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    padding: '12px 16px',
+    color: 'var(--secondary-color)',
     fontWeight: 600,
     animation: 'slideIn 0.3s ease-out',
     opacity: 0,
     animationFillMode: 'forwards'
   }}>
-    <div style={{ 
-      display: 'flex', 
+    <div style={{
+      display: 'flex',
       gap: '4px',
       background: 'rgba(126, 238, 249, 0.1)',
       padding: '8px 12px',
       borderRadius: '20px',
       border: '1px solid rgba(126, 238, 249, 0.2)'
     }}>
-      <span className="typing-dot" style={{ 
+      <span className="typing-dot" style={{
         animation: 'typingBounce 1.4s infinite ease-in-out',
         fontSize: '18px',
         lineHeight: '1'
       }}>●</span>
-      <span className="typing-dot" style={{ 
+      <span className="typing-dot" style={{
         animation: 'typingBounce 1.4s infinite ease-in-out 0.2s',
         fontSize: '18px',
         lineHeight: '1'
       }}>●</span>
-      <span className="typing-dot" style={{ 
+      <span className="typing-dot" style={{
         animation: 'typingBounce 1.4s infinite ease-in-out 0.4s',
         fontSize: '18px',
         lineHeight: '1'
@@ -776,7 +777,7 @@ export default function OnboardBuyerPage() {
       return [...filtered, response];
     });
   }, []);
-  
+
   // Matchmaking state
   const [isMatchmaking, setIsMatchmaking] = useState(false);
   const [workerMatches, setWorkerMatches] = useState<WorkerMatch[]>([]);
@@ -785,10 +786,10 @@ export default function OnboardBuyerPage() {
   const [isSkippingSelection, setIsSkippingSelection] = useState(false);
   const [totalWorkersAnalyzed, setTotalWorkersAnalyzed] = useState(0);
   const [selectedPromoCodeOption, setSelectedPromoCodeOption] = useState<'haveCode' | 'noCode' | null>(null);
-  
+
   // Check if a special component is currently active (location, calendar, promo code, etc.)
   const isSpecialComponentActive = useMemo(() => {
-    const currentStep = chatSteps.find(step => 
+    const currentStep = chatSteps.find(step =>
       (step.type === "calendar" || step.type === "location" || step.type === "discountCode") && !step.isComplete
     );
     return !!currentStep;
@@ -806,7 +807,7 @@ export default function OnboardBuyerPage() {
     const lastIncompleteInputStep = chatSteps
       .filter(s => s.type === 'input' && !s.isComplete)
       .pop();
-    
+
     // This step is active if it's the last incomplete input step
     return step.id === lastIncompleteInputStep?.id;
   }
@@ -818,40 +819,40 @@ export default function OnboardBuyerPage() {
   // Date and time formatting functions
   function formatDateForDisplay(dateValue: any): string {
     if (!dateValue) return '';
-    
+
     try {
       // Handle ISO string format (e.g., "2025-07-30T16:00:00.000Z")
       if (typeof dateValue === 'string' && dateValue.includes('T')) {
         const date = new Date(dateValue);
-        return date.toLocaleDateString('en-GB', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        return date.toLocaleDateString('en-GB', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         });
       }
-      
+
       // Handle date input format (e.g., "2025-07-30")
       if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const date = new Date(dateValue);
-        return date.toLocaleDateString('en-GB', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        return date.toLocaleDateString('en-GB', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         });
       }
-      
+
       // Handle Date object
       if (dateValue instanceof Date) {
-        return dateValue.toLocaleDateString('en-GB', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        return dateValue.toLocaleDateString('en-GB', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         });
       }
-      
+
       return String(dateValue);
     } catch (error) {
       return String(dateValue);
@@ -862,11 +863,11 @@ export default function OnboardBuyerPage() {
   function parseTimeToHHMM(timeValue: any): string | null {
     try {
       if (!timeValue) return null;
-      
+
       // Handle time ranges like "12:00-14:30" or "12:00 - 14:30"
       if (typeof timeValue === 'string') {
         const val = timeValue.trim();
-        
+
         // Check for time range pattern: HH:MM-HH:MM or HH:MM - HH:MM
         const timeRangeMatch = val.match(/^(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})$/);
         if (timeRangeMatch) {
@@ -877,23 +878,23 @@ export default function OnboardBuyerPage() {
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
           }
         }
-        
+
         // Check for time range with AM/PM: "12:00 PM - 2:30 PM"
         const timeRangeAMPM = val.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])\s*[-–]\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
         if (timeRangeAMPM) {
           let hours = parseInt(timeRangeAMPM[1], 10);
           const minutes = parseInt(timeRangeAMPM[2], 10);
           const mer = timeRangeAMPM[3]?.toLowerCase();
-          
+
           if (mer === 'pm' && hours !== 12) hours += 12;
           if (mer === 'am' && hours === 12) hours = 0;
-          
+
           if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
           }
         }
       }
-      
+
       // Original time parsing logic for single times
       if (timeValue instanceof Date) {
         const h = timeValue.getHours().toString().padStart(2, '0');
@@ -932,7 +933,7 @@ export default function OnboardBuyerPage() {
           if (hours >= 0 && hours <= 23) return `${hours.toString().padStart(2, '0')}:00`;
         }
       }
-    } catch {}
+    } catch { }
     return null;
   }
 
@@ -942,9 +943,9 @@ export default function OnboardBuyerPage() {
       if (!timeValue || typeof timeValue !== 'string') {
         return { startTime: null, endTime: null, duration: null };
       }
-      
+
       const val = timeValue.trim();
-      
+
       // Pattern: "12:00-14:30" or "12:00 - 14:30"
       const timeRangeMatch = val.match(/^(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})$/);
       if (timeRangeMatch) {
@@ -952,22 +953,22 @@ export default function OnboardBuyerPage() {
         const startMinutes = parseInt(timeRangeMatch[2], 10);
         const endHours = parseInt(timeRangeMatch[3], 10);
         const endMinutes = parseInt(timeRangeMatch[4], 10);
-        
+
         if (startHours >= 0 && startHours <= 23 && startMinutes >= 0 && startMinutes <= 59 &&
-            endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
-          
+          endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
+
           const startTime = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
           const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-          
+
           // Calculate duration in hours
           const startTotalMinutes = startHours * 60 + startMinutes;
           const endTotalMinutes = endHours * 60 + endMinutes;
           const durationHours = (endTotalMinutes - startTotalMinutes) / 60;
-          
+
           return { startTime, endTime, duration: durationHours };
         }
       }
-      
+
       // Pattern: "12:00 PM - 2:30 PM"
       const timeRangeAMPM = val.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])\s*[-–]\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
       if (timeRangeAMPM) {
@@ -977,28 +978,28 @@ export default function OnboardBuyerPage() {
         let endHours = parseInt(timeRangeAMPM[4], 10);
         const endMinutes = parseInt(timeRangeAMPM[5], 10);
         const endMer = timeRangeAMPM[6]?.toLowerCase();
-        
+
         // Convert to 24-hour format
         if (startMer === 'pm' && startHours !== 12) startHours += 12;
         if (startMer === 'am' && startHours === 12) startHours = 0;
         if (endMer === 'pm' && endHours !== 12) endHours += 12;
         if (endMer === 'am' && endHours === 12) endHours = 0;
-        
+
         if (startHours >= 0 && startHours <= 23 && startMinutes >= 0 && startMinutes <= 59 &&
-            endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
-          
+          endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
+
           const startTime = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
           const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-          
+
           // Calculate duration in hours
           const startTotalMinutes = startHours * 60 + startMinutes;
           const endTotalMinutes = endHours * 60 + endMinutes;
           const durationHours = (endTotalMinutes - startTotalMinutes) / 60;
-          
+
           return { startTime, endTime, duration: durationHours };
         }
       }
-      
+
       // If no range pattern found, return null for all
       return { startTime: null, endTime: null, duration: null };
     } catch {
@@ -1016,7 +1017,7 @@ export default function OnboardBuyerPage() {
         const formattedEnd = formatSingleTime(endTime);
         return `${formattedStart} to ${formattedEnd}`;
       }
-      
+
       // Handle single times
       return formatSingleTime(timeValue);
     } catch {
@@ -1043,16 +1044,16 @@ export default function OnboardBuyerPage() {
   // AI-powered validation function using Gemini
   async function simpleAICheck(field: string, value: any, type: string, ai: any): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | any }> {
     if (!value) {
-      return { 
-        sufficient: false, 
-        clarificationPrompt: 'Please provide some information so I can help you create the perfect gig listing!' 
+      return {
+        sufficient: false,
+        clarificationPrompt: 'Please provide some information so I can help you create the perfect gig listing!'
       };
     }
 
 
 
     const trimmedValue = String(value).trim();
-    
+
     // Debug logging for hourly rate validation
     if (field === 'hourlyRate') {
       console.log('🔍 Hourly Rate Validation Debug:', {
@@ -1064,7 +1065,7 @@ export default function OnboardBuyerPage() {
         isAboveMinimum: parseFloat(trimmedValue) >= 12.21
       });
     }
-    
+
     // Use AI for all validation
     try {
       const validationSchema = Schema.object({
@@ -1172,7 +1173,7 @@ Make the conversation feel natural and build on what they've already told you, b
           clarificationPrompt: string;
           sanitizedValue: string;
         };
-        
+
         // Fallback validation for hourly rate - if AI incorrectly rejects a valid rate
         if (field === 'hourlyRate' && !validation.isSufficient) {
           const rate = parseFloat(trimmedValue);
@@ -1192,7 +1193,7 @@ Make the conversation feel natural and build on what they've already told you, b
             clarificationPrompt: validation.clarificationPrompt || 'Please provide appropriate gig-related information.',
           };
         }
-        
+
         // For coordinate objects, preserve the original object
         if (value && typeof value === 'object' && 'lat' in value && 'lng' in value) {
           return {
@@ -1200,7 +1201,7 @@ Make the conversation feel natural and build on what they've already told you, b
             sanitized: value, // Keep the original coordinate object
           };
         }
-        
+
         // For date fields, ensure proper date format
         if (field === 'gigDate') {
           try {
@@ -1229,7 +1230,7 @@ Make the conversation feel natural and build on what they've already told you, b
             console.error('Date validation error:', error);
           }
         }
-        
+
         // For time fields, ensure proper time format
         if (field === 'gigTime') {
           try {
@@ -1241,7 +1242,7 @@ Make the conversation feel natural and build on what they've already told you, b
             console.error('Time validation error:', error);
           }
         }
-        
+
         return {
           sufficient: true,
           sanitized: validation.sanitizedValue || trimmedValue,
@@ -1250,7 +1251,7 @@ Make the conversation feel natural and build on what they've already told you, b
     } catch (error) {
       console.error('AI validation failed:', error);
     }
-    
+
     // Simple fallback - accept most inputs
     return { sufficient: true, sanitized: trimmedValue };
   }
@@ -1262,11 +1263,11 @@ Make the conversation feel natural and build on what they've already told you, b
     console.log('handleInputSubmit called', { stepId, inputName, inputValue, formData });
     const valueToUse = inputValue || formData[inputName];
     if (!valueToUse && inputName !== "confirmGig" && inputName !== "havePromoCode" && inputName !== "noPromoCode" && inputName !== "goToDashboard") return;
-    
+
     // Find the current step to get its type
     const currentStep = chatSteps.find(s => s.id === stepId);
     const inputType = currentStep?.inputConfig?.type || 'text';
-    
+
     // Handle confirm gig button click
     if (inputName === "confirmGig") {
       console.log('Confirm gig button clicked, calling handleFinalSubmit');
@@ -1274,12 +1275,12 @@ Make the conversation feel natural and build on what they've already told you, b
       setChatSteps((prev) => prev.map((step) =>
         step.id === stepId ? { ...step, isComplete: true } : step
       ));
-      
+
       // Call handleFinalSubmit to create gig and find workers
       await handleFinalSubmit();
       return;
     }
-    
+
     // Handle go to dashboard button click
     if (inputName === "goToDashboard") {
       console.log('Go to dashboard button clicked');
@@ -1287,14 +1288,14 @@ Make the conversation feel natural and build on what they've already told you, b
       setChatSteps((prev) => prev.map((step) =>
         step.id === stepId ? { ...step, isComplete: true } : step
       ));
-      
+
       // Navigate to dashboard
       if (user) {
         router.push(`/user/${user.uid}/buyer`);
       }
       return;
     }
-    
+
     // Handle promo code "I Have a Code" button click
     if (inputName === "havePromoCode") {
       console.log('Have promo code button clicked');
@@ -1303,7 +1304,7 @@ Make the conversation feel natural and build on what they've already told you, b
       setChatSteps((prev) => prev.map((step) =>
         step.id === stepId ? { ...step, isComplete: true } : step
       ));
-      
+
       // Add text input for promo code
       setChatSteps((prev) => [
         ...prev,
@@ -1328,7 +1329,7 @@ Make the conversation feel natural and build on what they've already told you, b
       ]);
       return;
     }
-    
+
     // Handle promo code "No Code" button click
     if (inputName === "noPromoCode") {
       console.log('No promo code button clicked');
@@ -1337,10 +1338,10 @@ Make the conversation feel natural and build on what they've already told you, b
       setChatSteps((prev) => prev.map((step) =>
         step.id === stepId ? { ...step, isComplete: true } : step
       ));
-      
+
       // Set promo code as asked and proceed to summary
       setFormData(prev => ({ ...prev, discountCodeAsked: true }));
-      
+
       // Add acknowledgment and proceed to AI summary
       setChatSteps((prev) => [
         ...prev,
@@ -1356,7 +1357,7 @@ Make the conversation feel natural and build on what they've already told you, b
           isNew: true,
         },
       ]);
-      
+
       setTimeout(async () => {
         const updatedFormData = { ...formData, discountCodeAsked: true };
         const aiSummary = await generateAIGigSummary(updatedFormData, ai);
@@ -1386,23 +1387,23 @@ Make the conversation feel natural and build on what they've already told you, b
       }, 1000);
       return;
     }
-    
+
     // Handle promo code input - no AI validation needed, just store and proceed to summary
     if (inputName === "discountCode") {
       console.log('Promo code submitted:', valueToUse);
-      
+
       // Mark the current step as complete
       setChatSteps((prev) => prev.map((step) =>
         step.id === stepId ? { ...step, isComplete: true } : step
       ));
-      
+
       // Store the promo code and mark as asked
-      setFormData(prev => ({ 
-        ...prev, 
-        [inputName]: valueToUse || '', 
-        discountCodeAsked: true 
+      setFormData(prev => ({
+        ...prev,
+        [inputName]: valueToUse || '',
+        discountCodeAsked: true
       }));
-      
+
       // Add acknowledgment message
       setChatSteps((prev) => [
         ...prev,
@@ -1413,12 +1414,12 @@ Make the conversation feel natural and build on what they've already told you, b
           isNew: true,
         },
       ]);
-      
+
       // Proceed to AI summary after a brief delay
       setTimeout(async () => {
         const updatedFormData = { ...formData, [inputName]: valueToUse || '', discountCodeAsked: true };
         const aiSummary = await generateAIGigSummary(updatedFormData, ai);
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1439,12 +1440,12 @@ Make the conversation feel natural and build on what they've already told you, b
           },
         ]);
       }, 1000);
-      
+
       return;
     }
-    
+
     // Remove reformulation check - now handled directly for insufficient answers
-    
+
     // Add typing indicator for AI processing
     setChatSteps((prev) => [
       ...prev,
@@ -1454,11 +1455,11 @@ Make the conversation feel natural and build on what they've already told you, b
         isNew: true,
       },
     ]);
-    
+
     try {
       // Use AI validation
       const aiResult = await simpleAICheck(inputName, valueToUse, inputType, ai);
-      
+
       // Remove typing indicator and mark current step as complete
       setChatSteps((prev) => {
         const filtered = prev.filter(s => s.type !== 'typing');
@@ -1466,14 +1467,14 @@ Make the conversation feel natural and build on what they've already told you, b
           step.id === stepId ? { ...step, isComplete: true } : step
         );
       });
-      
+
       if (!aiResult.sufficient) {
         // Add clarification message and re-open the same input step to collect a better answer
         setChatSteps((prev) => {
           const reopenedType: "input" | "calendar" | "location" =
             currentStep?.type === 'location' ? 'location' :
-            currentStep?.type === 'calendar' ? 'calendar' :
-            'input';
+              currentStep?.type === 'calendar' ? 'calendar' :
+                'input';
           const reopenedInputConfig = currentStep?.inputConfig ?? {
             type: 'text',
             name: inputName,
@@ -1481,9 +1482,9 @@ Make the conversation feel natural and build on what they've already told you, b
           };
           const nextSteps: ChatStep[] = [
             ...prev,
-            { 
-              id: Date.now() + 2, 
-              type: 'bot', 
+            {
+              id: Date.now() + 2,
+              type: 'bot',
               content: aiResult.clarificationPrompt!,
               isNew: true,
             },
@@ -1499,20 +1500,20 @@ Make the conversation feel natural and build on what they've already told you, b
         });
         return;
       }
-      
+
       // Check if this is a reformulation
       const isReformulation = reformulateField === inputName;
-      
+
       // Check for job title interpretation for gig description
       if (inputName === 'gigDescription' && !formData.jobTitle) {
         const jobTitleResult = await interpretJobTitle(valueToUse, ai);
-        
+
         if (jobTitleResult && jobTitleResult.confidence >= 50) {
           // Show job title confirmation step
           setChatSteps((prev) => [
             ...prev,
-            { 
-              id: Date.now() + 3, 
+            {
+              id: Date.now() + 3,
               type: "jobTitleConfirmation",
               fieldName: inputName,
               originalValue: valueToUse,
@@ -1526,32 +1527,32 @@ Make the conversation feel natural and build on what they've already told you, b
           return;
         }
       }
-      
+
       if (isReformulation) {
         // If this is a reformulation, update the form data and proceed to next field
         // instead of showing sanitized confirmation again
         setFormData(prev => ({ ...prev, [inputName]: aiResult.sanitized }));
-        
+
         // Reset reformulating state and clear reformulateField
         setIsReformulating(false);
         setReformulateField(null);
-        
+
         // Find next required field
         const updatedFormData = { ...formData, [inputName]: aiResult.sanitized };
         const nextField = getNextRequiredField(updatedFormData);
-        
+
         if (nextField) {
           // Generate context-aware prompt for next field
           const gigDescription = updatedFormData.gigDescription || '';
           const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, gigDescription, ai);
-          
+
           const newInputConfig = {
             type: nextField.type as FormInputType,
             name: nextField.name,
             placeholder: nextField.placeholder || nextField.defaultPrompt,
             ...(nextField.rows && { rows: nextField.rows }),
           };
-          
+
           // Determine the step type based on the field
           let stepType: "input" | "calendar" | "location" = "input";
           if (nextField.name === "gigDate") {
@@ -1559,7 +1560,7 @@ Make the conversation feel natural and build on what they've already told you, b
           } else if (nextField.name === "gigLocation") {
             stepType = "location";
           }
-          
+
           setChatSteps((prev) => [
             ...prev,
             {
@@ -1608,15 +1609,15 @@ Make the conversation feel natural and build on what they've already told you, b
       } else {
         // Generate AI summary for the field
         const aiSummary = await generateAIFieldSummary(inputName, valueToUse, aiResult.sanitized!, ai);
-        
+
         // Store the AI summary
         setAiFieldSummaries(prev => ({ ...prev, [inputName]: aiSummary }));
-        
+
         // Show sanitized confirmation step for regular inputs (not reformulations)
         setChatSteps((prev) => [
           ...prev,
-          { 
-            id: Date.now() + 3, 
+          {
+            id: Date.now() + 3,
             type: "sanitized",
             fieldName: inputName,
             sanitizedValue: aiResult.sanitized!,
@@ -1624,7 +1625,7 @@ Make the conversation feel natural and build on what they've already told you, b
             isNew: true,
           },
         ]);
-        
+
         // Also update formData with the validated value to preserve coordinates and other data
         setFormData(prev => ({ ...prev, [inputName]: aiResult.sanitized }));
       }
@@ -1640,9 +1641,9 @@ Make the conversation feel natural and build on what they've already told you, b
         const filtered = prev.filter(s => s.type !== 'typing');
         return [
           ...filtered,
-          { 
-            id: Date.now() + 2, 
-            type: 'bot', 
+          {
+            id: Date.now() + 2,
+            type: 'bot',
             content: 'I\'m having trouble processing that. Please try again with a clear description of your gig needs.',
             isNew: true
           }
@@ -1662,16 +1663,16 @@ Make the conversation feel natural and build on what they've already told you, b
   async function handlePickerConfirm(stepId: number, inputName: string) {
     const value = formData[inputName];
     if (!value) return;
-    
+
     // Prevent multiple clicks
     if (isConfirming) return;
     setIsConfirming(true);
-    
+
     // Mark the current step as complete
     setChatSteps((prev) => prev.map((step) =>
       step.id === stepId ? { ...step, isComplete: true } : step
     ));
-    
+
     // Add typing indicator
     setChatSteps((prev) => [
       ...prev,
@@ -1681,32 +1682,32 @@ Make the conversation feel natural and build on what they've already told you, b
         isNew: true,
       },
     ]);
-    
+
     // Process the confirmation (same logic as handleSanitizedConfirm)
     const updatedFormData = { ...formData, [inputName]: value };
     setFormData(updatedFormData);
-    
+
     // Find the next required field
     const nextField = getNextRequiredField(updatedFormData);
-    
+
     setTimeout(async () => {
       // Remove typing indicator first
       setChatSteps((prev) => prev.filter(s => s.type !== 'typing'));
-      
+
       if (nextField) {
         // Generate context-aware prompt
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
-        
+
         // Determine the step type based on the field
         const stepType = getStepTypeForField(nextField.name)
-        
+
         const newInputConfig = {
           type: nextField.type as FormInputType,
           name: nextField.name,
           placeholder: nextField.placeholder || nextField.defaultPrompt,
           ...(nextField.rows && { rows: nextField.rows }),
         };
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1725,7 +1726,7 @@ Make the conversation feel natural and build on what they've already told you, b
         ]);
       } else if (!updatedFormData.discountCodeAsked) {
         // All required fields collected, ask about discount code before summary
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1757,7 +1758,7 @@ Make the conversation feel natural and build on what they've already told you, b
             isNew: true,
           },
         ]);
-        
+
         setTimeout(async () => {
           const aiSummary = await generateAIGigSummary(updatedFormData, ai);
           setChatSteps((prev) => {
@@ -1782,10 +1783,10 @@ Make the conversation feel natural and build on what they've already told you, b
         }, 700);
       }
     }, 700);
-    
+
     // Mark this step as confirmed permanently
     setConfirmedSteps(prev => new Set([...prev, stepId]));
-    
+
     // Reset confirming state after a delay to ensure all operations are complete
     setTimeout(() => {
       setIsConfirming(false);
@@ -1798,35 +1799,35 @@ Make the conversation feel natural and build on what they've already told you, b
       // Reset reformulating state
       setIsReformulating(false);
       setReformulateField(null);
-      
+
       // Track clicked button
       setClickedSanitizedButtons(prev => new Set([...prev, `${fieldName}-confirm`]));
-      
+
       // Update formData first
       const updatedFormData = { ...formData, [fieldName]: sanitized };
       setFormData(updatedFormData);
-      
+
       // Mark sanitized step as complete
       setChatSteps((prev) => prev.map((step) =>
         step.type === "sanitized" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
       ));
-      
+
       // Find next required field using updated formData
       const nextField = getNextRequiredField(updatedFormData);
-      
+
       if (nextField) {
         // Generate context-aware prompt
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
-        
+
         const stepType = getStepTypeForField(nextField.name)
-        
+
         const newInputConfig = {
           type: nextField.type as FormInputType,
           name: nextField.name,
           placeholder: nextField.placeholder || nextField.defaultPrompt,
           ...(nextField.rows && { rows: nextField.rows }),
         };
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1845,7 +1846,7 @@ Make the conversation feel natural and build on what they've already told you, b
         ]);
       } else if (!updatedFormData.discountCodeAsked) {
         // All required fields collected, ask about discount code before summary
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1864,7 +1865,7 @@ Make the conversation feel natural and build on what they've already told you, b
       } else {
         // All fields completed, generate AI summary and show confirmation
         const aiSummary = await generateAIGigSummary(updatedFormData, ai);
-        
+
         console.log('Adding AI summary and confirm button to chat steps');
         setChatSteps((prev) => [
           ...prev,
@@ -1898,19 +1899,19 @@ Make the conversation feel natural and build on what they've already told you, b
       // Update formData with both the original value and the suggested job title
       const updatedFormData = { ...formData, [fieldName]: originalValue, jobTitle: suggestedJobTitle };
       setFormData(updatedFormData);
-      
+
       // Mark job title confirmation step as complete
       setChatSteps((prev) => prev.map((step) =>
         step.type === "jobTitleConfirmation" && step.fieldName === fieldName ? { ...step, isComplete: true } : step
       ));
-      
+
       // Find next required field using updated formData
       const nextField = getNextRequiredField(updatedFormData);
-      
+
       if (nextField) {
         // Generate context-aware prompt
         const contextAwarePrompt = await generateContextAwarePrompt(nextField.name, updatedFormData.gigDescription || '', ai);
-        
+
         // Determine the step type based on the field
         let stepType: "input" | "calendar" | "location" = "input";
         if (nextField.name === "gigDate") {
@@ -1918,14 +1919,14 @@ Make the conversation feel natural and build on what they've already told you, b
         } else if (nextField.name === "gigLocation") {
           stepType = "location";
         }
-        
+
         const newInputConfig = {
           type: nextField.type as FormInputType,
           name: nextField.name,
           placeholder: nextField.placeholder || nextField.defaultPrompt,
           ...(nextField.rows && { rows: nextField.rows }),
         };
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1944,7 +1945,7 @@ Make the conversation feel natural and build on what they've already told you, b
         ]);
       } else if (!updatedFormData.discountCodeAsked) {
         // All required fields collected, ask about discount code before summary
-        
+
         setChatSteps((prev) => [
           ...prev,
           {
@@ -1963,7 +1964,7 @@ Make the conversation feel natural and build on what they've already told you, b
       } else {
         // All fields completed, generate AI summary and show confirmation
         const aiSummary = await generateAIGigSummary(updatedFormData, ai);
-        
+
         console.log('Adding AI summary and confirm button to chat steps');
         setChatSteps((prev) => [
           ...prev,
@@ -1984,7 +1985,7 @@ Make the conversation feel natural and build on what they've already told you, b
             isNew: true,
           },
         ]);
-        
+
         setTimeout(async () => {
           const aiSummary = await generateAIGigSummary(updatedFormData, ai);
           setChatSteps((prev) => {
@@ -2024,12 +2025,12 @@ Make the conversation feel natural and build on what they've already told you, b
       // Update formData with the discount code
       const updatedFormData = { ...formData, discountCode: code || undefined };
       setFormData(updatedFormData);
-      
+
       // Mark discount code step as complete
       setChatSteps((prev) => prev.map((step) =>
         step.id === stepId ? { ...step, isComplete: true } : step
       ));
-      
+
       // Show AI-generated summary
       setChatSteps((prev) => [
         ...prev,
@@ -2045,7 +2046,7 @@ Make the conversation feel natural and build on what they've already told you, b
           isNew: true,
         },
       ]);
-      
+
       setTimeout(async () => {
         const aiSummary = await generateAIGigSummary(updatedFormData, ai);
         setChatSteps((prev) => {
@@ -2087,14 +2088,14 @@ Make the conversation feel natural and build on what they've already told you, b
   // Helper function to get gig data from form
   const getGigDataFromForm = () => {
     const gigData: any = {};
-    
+
     // Extract data from chat steps
     chatSteps.forEach(step => {
       if (step.type === 'summary' && step.summaryData) {
         Object.assign(gigData, step.summaryData);
       }
     });
-    
+
     return gigData;
   };
 
@@ -2111,7 +2112,7 @@ Make the conversation feel natural and build on what they've already told you, b
 
       // Get gig data from form
       const gigData = getGigDataFromForm();
-      
+
       // Create the gig first
       console.log('Creating gig for selected worker...');
       const gigPayload = {
@@ -2123,15 +2124,16 @@ Make the conversation feel natural and build on what they've already told you, b
         gigDate: gigData.date || new Date().toISOString().split('T')[0],
         gigTime: gigData.time || '09:00-17:00',
       };
-      
+      const { duration } = parseTimeRange(gigData.time);
+      const totalHours = Math.max(Number(duration), VALIDATION_CONSTANTS.GIG_DEFAULTS.DEFAULT_TOTAL_HOURS);
       const gigResult = await createGig(gigPayload);
-      
+
       if (gigResult.status !== 200 || !gigResult.gigId) {
         throw new Error(`Failed to create gig: ${gigResult.error}`);
       }
-      
+
       console.log('Gig created successfully:', gigResult.gigId);
-      
+
       // Send notification to the worker with the real gigId
       const notificationResult = await sendWorkerBookingNotificationAction(
         {
@@ -2154,9 +2156,22 @@ Make the conversation feel natural and build on what they've already told you, b
         // Continue anyway, don't block the booking
       }
 
+      // funds withholding for the selected worker 
+      const holdFundsResult = await holdGigFunds({
+        firebaseUid: user?.uid || '',
+        workerId: selectedWorker.workerId,
+        gigId: gigResult.gigId,
+        currency: 'usd',
+        serviceAmountInCents: ((selectedWorker.hourlyRate * totalHours) * 100)
+      });
+
+      if (!holdFundsResult.success) {
+        console.error('Failed to hold gig funds:', holdFundsResult.error);
+      }
+
       // Update the UI state
       setSelectedWorkerId(workerId);
-      
+
       // Show success message
       setChatSteps((prev) => [
         ...prev,
@@ -2167,12 +2182,12 @@ Make the conversation feel natural and build on what they've already told you, b
           isNew: true,
         },
       ]);
-      
+
       // Navigate to buyer dashboard after a delay
       setTimeout(() => {
         router.push(`/user/${user?.uid}/buyer`);
-      }, 1000);
-      
+      }, 5000);
+
     } catch (error) {
       console.error('Error selecting worker:', error);
       setError('Failed to select worker. Please try again.');
@@ -2197,12 +2212,12 @@ Make the conversation feel natural and build on what they've already told you, b
           isNew: true,
         },
       ]);
-      
+
       // Navigate to buyer dashboard after a delay
       setTimeout(() => {
         router.push(`/user/${user?.uid}/buyer`);
       }, 1000);
-      
+
     } catch (error) {
       console.error('Error skipping selection:', error);
       setError('Failed to proceed. Please try again.');
@@ -2236,17 +2251,17 @@ Make the conversation feel natural and build on what they've already told you, b
     // Special handling for date fields to ensure only date part is stored
     if (name === 'gigDate' && value) {
       let processedValue = value;
-      
+
       // If it's an ISO string with time, extract just the date part
       if (typeof value === 'string' && value.includes('T')) {
         processedValue = value.split('T')[0];
       }
-      
+
       // If it's a Date object, convert to date string
       if (value instanceof Date) {
         processedValue = value.toISOString().split('T')[0];
       }
-      
+
       setFormData((prev) => ({ ...prev, [name]: processedValue }));
     } else {
       if (name === 'gigTime' && value) {
@@ -2332,22 +2347,22 @@ Make the conversation feel natural and build on what they've already told you, b
         // Add a brief delay before starting matchmaking
         setTimeout(async () => {
           const matchmakingMessageStep: ChatStep = {
-          id: Date.now() + 1,
-          type: "bot",
+            id: Date.now() + 1,
+            type: "bot",
             content: "Now let me find the perfect workers for you...",
           };
           setChatSteps((prev) => [...prev, matchmakingMessageStep]);
-          
+
           // Start matchmaking process
           setIsMatchmaking(true);
-          
+
           try {
             const matchmakingResult = await findMatchingWorkers(result.gigId!);
-            
+
             if (matchmakingResult.success && matchmakingResult.matches) {
               setWorkerMatches(matchmakingResult.matches);
               setTotalWorkersAnalyzed(matchmakingResult.totalWorkersAnalyzed || 0);
-              
+
               // Add matchmaking results step
               const matchmakingStep: ChatStep = {
                 id: Date.now() + 2,
@@ -2366,7 +2381,7 @@ Make the conversation feel natural and build on what they've already told you, b
                 isNew: true,
               };
               setChatSteps((prev) => [...prev, noMatchesStep]);
-              
+
               // Add a button step for going to dashboard
               const goToDashboardStep: ChatStep = {
                 id: Date.now() + 3,
@@ -2389,7 +2404,7 @@ Make the conversation feel natural and build on what they've already told you, b
               isNew: true,
             };
             setChatSteps((prev) => [...prev, errorStep]);
-            
+
             // Add a button step for going to dashboard
             const goToDashboardStep: ChatStep = {
               id: Date.now() + 3,
@@ -2432,19 +2447,19 @@ Make the conversation feel natural and build on what they've already told you, b
     if (reformulateField) {
       // Set reformulating state to prevent multiple clicks
       setIsReformulating(true);
-      
+
       // Clear the value for that field
       setFormData(prev => ({ ...prev, [reformulateField]: undefined }));
 
       // Keep previous entries but mark sanitized step as complete and add new reformulation
       setChatSteps(prev => {
         // Mark the sanitized step as complete so it doesn't show buttons anymore
-        const updatedSteps = prev.map(step => 
-          step.type === "sanitized" && step.fieldName === reformulateField 
+        const updatedSteps = prev.map(step =>
+          step.type === "sanitized" && step.fieldName === reformulateField
             ? { ...step, isComplete: true }
             : step
         );
-        
+
         // Add typing indicator
         return [
           ...updatedSteps,
@@ -2458,12 +2473,12 @@ Make the conversation feel natural and build on what they've already told you, b
 
       // Generate a reformulation question asking for reformulated message
       const reformulationPrompt = `Could you provide your reformulated message?`;
-      
+
       setTimeout(() => {
         setChatSteps(prev => {
           const filtered = prev.filter(s => s.type !== "typing");
           const fieldConfig = requiredFields.find(f => f.name === reformulateField);
-          
+
           if (!fieldConfig) {
             console.error('Field config not found for:', reformulateField);
             return filtered;
@@ -2479,8 +2494,8 @@ Make the conversation feel natural and build on what they've already told you, b
             },
             {
               id: Date.now() + 3,
-              type: fieldConfig.type === "location" ? "location" : 
-                    fieldConfig.type === "date" ? "calendar" : "input",
+              type: fieldConfig.type === "location" ? "location" :
+                fieldConfig.type === "date" ? "calendar" : "input",
               inputConfig: {
                 type: fieldConfig.type as FormInputType,
                 name: fieldConfig.name,
@@ -2500,7 +2515,7 @@ Make the conversation feel natural and build on what they've already told you, b
   useEffect(() => {
     if (endOfChatRef.current) {
       setTimeout(() => {
-        endOfChatRef.current?.scrollIntoView({ 
+        endOfChatRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'end',
           inline: 'nearest'
@@ -2514,25 +2529,25 @@ Make the conversation feel natural and build on what they've already told you, b
     if (chatSteps.length === 1 && chatSteps[0].type === "typing") {
       // Replace typing indicator with initial message and input after a delay
       setTimeout(() => {
-      const firstField = requiredFields[0];
-      setChatSteps([
-        {
-          id: 1,
-          type: "bot",
-          content: firstField.defaultPrompt,
-        },
-        {
-          id: 2,
-          type: "input",
-          inputConfig: {
-            type: firstField.type as FormInputType,
-            name: firstField.name,
-            placeholder: firstField.placeholder,
-            ...(firstField.rows && { rows: firstField.rows }),
+        const firstField = requiredFields[0];
+        setChatSteps([
+          {
+            id: 1,
+            type: "bot",
+            content: firstField.defaultPrompt,
           },
-          isComplete: false,
-        },
-      ]);
+          {
+            id: 2,
+            type: "input",
+            inputConfig: {
+              type: firstField.type as FormInputType,
+              name: firstField.name,
+              placeholder: firstField.placeholder,
+              ...(firstField.rows && { rows: firstField.rows }),
+            },
+            isComplete: false,
+          },
+        ]);
       }, 1500); // 1.5 second delay to show typing indicator
     }
   }, []);
@@ -2544,7 +2559,7 @@ Make the conversation feel natural and build on what they've already told you, b
   return (
     <ChatBotLayout
       ref={chatContainerRef}
-      onScroll={() => {}}
+      onScroll={() => { }}
       onHomeClick={() => router.push(`/user/${user?.uid || "this_user"}/buyer`)}
       className={pageStyles.container}
       role="BUYER"
@@ -2552,37 +2567,38 @@ Make the conversation feel natural and build on what they've already told you, b
       disableChatInput={isSpecialComponentActive}
       onSendMessage={async (message) => {
         console.log('ChatInput received:', message);
-        
+
         // Find current input step (any type that needs user input)
-        const currentInputStep = chatSteps.find(step => 
+        const currentInputStep = chatSteps.find(step =>
           (step.type === "input" || step.type === "calendar" || step.type === "location" || step.type === "discountCode") && !step.isComplete
         );
-        
+
         if (currentInputStep) {
           // Handle promo code step (no inputConfig needed)
           if (currentInputStep.type === "discountCode") {
+            // add discount code
             // Don't process chat input for promo code step - user should use buttons
             return;
           }
-          
+
           if (currentInputStep.inputConfig) {
             const fieldName = currentInputStep.inputConfig.name;
-          
-          // Always add user message to chat for all input types
-          const userStep: ChatStep = {
-            id: Date.now(),
-            type: "user",
-            content: message,
-            isNew: true
-          };
-          
-          setChatSteps(prev => [...prev, userStep]);
-          
-          // Update form data
-          handleInputChange(fieldName, message);
-          
-          // Pass the message value directly to handleInputSubmit
-          await handleInputSubmit(currentInputStep.id, fieldName, message);
+
+            // Always add user message to chat for all input types
+            const userStep: ChatStep = {
+              id: Date.now(),
+              type: "user",
+              content: message,
+              isNew: true
+            };
+
+            setChatSteps(prev => [...prev, userStep]);
+
+            // Update form data
+            handleInputChange(fieldName, message);
+
+            // Pass the message value directly to handleInputSubmit
+            await handleInputSubmit(currentInputStep.id, fieldName, message);
           }
         }
       }}
@@ -2592,7 +2608,7 @@ Make the conversation feel natural and build on what they've already told you, b
 
       {chatSteps.map((step, idx) => {
         const key = `step-${step.id}-${idx}`;
-        
+
         // User message
         if (step.type === "user") {
           return (
@@ -2605,32 +2621,32 @@ Make the conversation feel natural and build on what they've already told you, b
             />
           );
         }
-        
+
         // Sanitized confirmation step
         if (step.type === "sanitized" && step.fieldName) {
           const sanitizedValue = step.sanitizedValue;
           const originalValue = step.originalValue;
-          
+
           // Use AI summary if available, otherwise fallback to sanitized value
           const displayValue = aiFieldSummaries[step.fieldName] || (() => {
             if (typeof sanitizedValue === 'string') {
               return sanitizedValue;
             }
-            
+
             if (typeof sanitizedValue === 'object') {
               return JSON.stringify(sanitizedValue);
             }
-            
+
             // Handle other types
             return String(sanitizedValue || '');
           })();
-          
+
           // Check button states
           const confirmClicked = clickedSanitizedButtons.has(`${step.fieldName}-confirm`);
           const reformulateClicked = clickedSanitizedButtons.has(`${step.fieldName}-reformulate`);
           const isReformulatingThisField = reformulateField === step.fieldName;
           const isCompleted = step.isComplete || confirmClicked || reformulateClicked;
-          
+
           return (
             <MessageBubble
               key={key}
@@ -2665,12 +2681,12 @@ Make the conversation feel natural and build on what they've already told you, b
                           ? "Re-shot"
                           : "Edited"
                         : isReformulatingThisField
-                        ? step.fieldName === "videoIntro"
-                          ? "Re-shooting..."
-                          : "Editing..."
-                        : step.fieldName === "videoIntro"
-                        ? "Re-shoot"
-                        : "Edit message"}
+                          ? step.fieldName === "videoIntro"
+                            ? "Re-shooting..."
+                            : "Editing..."
+                          : step.fieldName === "videoIntro"
+                            ? "Re-shoot"
+                            : "Edit message"}
                     </button>
                   </div>
                 </div>
@@ -2690,50 +2706,48 @@ Make the conversation feel natural and build on what they've already told you, b
           const matchedTerms = step.matchedTerms || [];
           const isAISuggested = step.isAISuggested || false;
           const isCompleted = step.isComplete;
-          
+
           return (
             <MessageBubble
               key={key}
               text={
-              <div>
-                <div className={styles.jobTitleConfirmWrapper}>
-                  I think you're looking for a <strong>{suggestedJobTitle}</strong>?
-                </div>
+                <div>
+                  <div className={styles.jobTitleConfirmWrapper}>
+                    I think you're looking for a <strong>{suggestedJobTitle}</strong>?
+                  </div>
 
-                
 
-                <div className={styles.jobTitleConfirmButtonGroup}>
-                  <button
-                    className={`${styles.jobTitleConfirmButton} ${
-                      isCompleted
+
+                  <div className={styles.jobTitleConfirmButtonGroup}>
+                    <button
+                      className={`${styles.jobTitleConfirmButton} ${isCompleted
                         ? styles.jobTitleConfirmYesCompleted
                         : styles.jobTitleConfirmYes
-                    }`}
-                    onClick={
-                      isCompleted
-                        ? undefined
-                        : () =>
+                        }`}
+                      onClick={
+                        isCompleted
+                          ? undefined
+                          : () =>
                             handleJobTitleConfirm(
                               step.fieldName!,
                               suggestedJobTitle!,
                               originalValue!
                             )
-                    }
-                    disabled={isCompleted}
-                  >
-                    {isCompleted ? "Confirmed" : "Yes, that's right"}
-                  </button>
+                      }
+                      disabled={isCompleted}
+                    >
+                      {isCompleted ? "Confirmed" : "Yes, that's right"}
+                    </button>
 
-                  <button
-                    className={`${styles.jobTitleConfirmButton} ${
-                      isCompleted
+                    <button
+                      className={`${styles.jobTitleConfirmButton} ${isCompleted
                         ? styles.jobTitleConfirmSkipCompleted
                         : styles.jobTitleConfirmSkip
-                    }`}
-                    onClick={
-                      isCompleted
-                        ? undefined
-                        : () => {
+                        }`}
+                      onClick={
+                        isCompleted
+                          ? undefined
+                          : () => {
                             setFormData((prev) => ({
                               ...prev,
                               [step.fieldName!]: originalValue,
@@ -2744,13 +2758,13 @@ Make the conversation feel natural and build on what they've already told you, b
                               )
                             );
                           }
-                    }
-                    disabled={isCompleted}
-                  >
-                    {isCompleted ? "Skipped" : "Skip"}
-                  </button>
+                      }
+                      disabled={isCompleted}
+                    >
+                      {isCompleted ? "Skipped" : "Skip"}
+                    </button>
+                  </div>
                 </div>
-              </div>
               }
               senderType="bot"
               role="BUYER"
@@ -2778,7 +2792,7 @@ Make the conversation feel natural and build on what they've already told you, b
             </div>
           );
         }
-        
+
         if (step.type === "bot" && typeof step.content === "string" && step.content.startsWith("Thank you! Here is a summary of your gig:")) {
           // Try to extract and parse the JSON
           const match = step.content.match(/Thank you! Here is a summary of your gig:\n([\s\S]*)/);
@@ -2790,6 +2804,7 @@ Make the conversation feel natural and build on what they've already told you, b
               summaryData = null;
             }
           }
+
           if (summaryData) {
             return (
               <MessageBubble
@@ -2806,9 +2821,8 @@ Make the conversation feel natural and build on what they've already told you, b
                                 {field.replace(/([A-Z])/g, " $1")}:{" "}
                               </strong>
                               <span
-                                className={`${styles.gigSummaryExpandable} ${
-                                  expandedSummaryFields[field] ? styles.gigSummaryExpanded : ""
-                                }`}
+                                className={`${styles.gigSummaryExpandable} ${expandedSummaryFields[field] ? styles.gigSummaryExpanded : ""
+                                  }`}
                                 title={
                                   expandedSummaryFields[field]
                                     ? "Click to collapse"
@@ -2837,17 +2851,17 @@ Make the conversation feel natural and build on what they've already told you, b
                               {field === "hourlyRate" && typeof value === "number"
                                 ? `£${value.toFixed(2)}`
                                 : value && typeof value === "object" && "lat" in value && "lng" in value
-                                ? (value as any).formatted_address ||
+                                  ? (value as any).formatted_address ||
                                   `Coordinates: ${(value as any).lat.toFixed(
                                     6
                                   )}, ${(value as any).lng.toFixed(6)}`
-                                : field === "gigDate"
-                                ? formatDateForDisplay(value)
-                                : field === "gigTime"
-                                ? formatTimeForDisplay(value)
-                                : typeof value === "object"
-                                ? JSON.stringify(value)
-                                : String(value)}
+                                  : field === "gigDate"
+                                    ? formatDateForDisplay(value)
+                                    : field === "gigTime"
+                                      ? formatTimeForDisplay(value)
+                                      : typeof value === "object"
+                                        ? JSON.stringify(value)
+                                        : String(value)}
                             </span>
                           </li>
                         );
@@ -2904,7 +2918,7 @@ Make the conversation feel natural and build on what they've already told you, b
         }
         if (step.type === "typing") {
           return (
-           <div key={key} className={styles.typingStepContainer}>
+            <div key={key} className={styles.typingStepContainer}>
               {/* AI Avatar */}
               <div className={styles.aiAvatar}>
                 <div className={styles.aiAvatarOuter}>
@@ -3006,7 +3020,7 @@ Make the conversation feel natural and build on what they've already told you, b
               </div>
             );
           }
-          
+
           // For other incomplete inputs, don't show anything - let the user use the chat input
           // For completed inputs, don't show anything since user messages are handled separately
           return null;
@@ -3088,7 +3102,7 @@ Make the conversation feel natural and build on what they've already told you, b
             </div>
           );
         }
-        
+
         // Handle location picker step
         if (step.type === "location") {
           return (
@@ -3125,9 +3139,8 @@ Make the conversation feel natural and build on what they've already told you, b
                   !confirmedSteps.has(step.id) && (
                     <div className={styles.locationStepConfirmContainer}>
                       <button
-                        className={`${styles.locationStepConfirmBtn} ${
-                          isConfirming ? styles.confirming : ""
-                        }`}
+                        className={`${styles.locationStepConfirmBtn} ${isConfirming ? styles.confirming : ""
+                          }`}
                         onClick={() => {
                           if (step.inputConfig?.name && !isConfirming) {
                             handlePickerConfirm(step.id, step.inputConfig.name);
@@ -3153,7 +3166,7 @@ Make the conversation feel natural and build on what they've already told you, b
             </div>
           );
         }
-        
+
         return null;
       })}
       <div ref={endOfChatRef} />
@@ -3166,6 +3179,6 @@ Make the conversation feel natural and build on what they've already told you, b
         />
       )}
     </ChatBotLayout>
-    
+
   );
 }

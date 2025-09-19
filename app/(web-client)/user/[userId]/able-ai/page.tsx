@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Clock, DollarSign, X, Calendar } from "lucide-react";
 
@@ -16,6 +16,7 @@ import { geminiAIAgent } from '@/lib/firebase/ai';
 import { Schema } from '@firebase/ai';
 import { detectIncidentEnhanced } from '@/lib/ai-incident-detection';
 import { createEscalatedIssueClient } from '@/utils/client-escalation';
+import { parseContextFromURL, generateContextAwarePrompt, PageContext } from '@/lib/context-detection';
 
 // Constants
 const MIN_INCIDENT_DETAILS_LENGTH_FOR_SUBMISSION = 100;
@@ -159,6 +160,7 @@ export default function AbleAIPage() {
   const { ai } = useFirebase();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const pageUserId = (params as Record<string, string | string[]>)?.userId;
   const resolvedUserId = Array.isArray(pageUserId) ? pageUserId[0] : pageUserId;
 
@@ -174,11 +176,43 @@ export default function AbleAIPage() {
   const [selectedGig, setSelectedGig] = useState<WorkerGigOffer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const [chatSteps, setChatSteps] = useState<ChatStep[]>([{
-    id: 1,
-    type: "bot",
-    content: "Hello! I'm Able, your AI assistant! 🤖 I'm here to help you find gigs, answer questions, and provide support. You can ask me about available gigs, how the platform works, or request help with anything else. What can I help you with today?",
-  }]);
+  // Context state
+  const [pageContext, setPageContext] = useState<PageContext | null>(null);
+  
+  // Initialize context from URL parameters
+  useEffect(() => {
+    if (searchParams) {
+      const context = parseContextFromURL(searchParams);
+      setPageContext(context);
+    }
+  }, [searchParams]);
+  
+  // Generate context-aware welcome message
+  const getWelcomeMessage = useCallback(() => {
+    if (!pageContext) {
+      return "Hello! I'm Able, your AI assistant! 🤖 I'm here to help you find gigs, answer questions, and provide support. You can ask me about available gigs, how the platform works, or request help with anything else. What can I help you with today?";
+    }
+    
+    return `Hello! I'm Able, your AI assistant! 🤖 
+
+I can see you're currently ${pageContext.action} on the ${pageContext.pageType} page. ${pageContext.description}
+
+I'm here to help you with tasks related to this page, such as:
+${pageContext.data?.availableActions?.map((action: string) => `• ${action}`).join('\n') || '• General platform assistance'}
+
+What would you like help with?`;
+  }, [pageContext]);
+  
+  const [chatSteps, setChatSteps] = useState<ChatStep[]>([]);
+  
+  // Initialize chat with context-aware welcome message
+  useEffect(() => {
+    setChatSteps([{
+      id: 1,
+      type: "bot",
+      content: getWelcomeMessage(),
+    }]);
+  }, [getWelcomeMessage]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedbackTargetId, setFeedbackTargetId] = useState<number | null>(null);
@@ -317,7 +351,10 @@ export default function AbleAIPage() {
         },
       });
 
-      const prompt = `You are Able, an AI assistant for a gig platform. Your role is to help users find gigs, answer questions about the platform, and provide support.
+      // Generate context-aware prompt
+      const prompt = pageContext 
+        ? generateContextAwarePrompt(pageContext, userMessage)
+        : `You are Able, an AI assistant for a gig platform. Your role is to help users find gigs, answer questions about the platform, and provide support.
 
 User message: "${userMessage}"
 

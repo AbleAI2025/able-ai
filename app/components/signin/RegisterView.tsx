@@ -40,10 +40,13 @@ const registrationInputs: StepInputConfig[] = [
   },
 ];
 
+type RegistrationStep = 'form' | 'email-verification';
+
 const RegisterView: React.FC<RegisterViewProps> = ({
   onToggleRegister,
   onError,
 }) => {
+  const [currentStep, setCurrentStep] = useState<RegistrationStep>('form');
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -51,12 +54,14 @@ const RegisterView: React.FC<RegisterViewProps> = ({
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
 
   const validatePassword = async (password: string) => {
     const lengthIsCorrect = password.trim().length >= 10;
@@ -74,96 +79,230 @@ const RegisterView: React.FC<RegisterViewProps> = ({
     return { isValid: true, error: null };
   };
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    onError(null); // Clear previous errors
-    setLoading(true);
-
+  const validateForm = async () => {
     const { name, phone, email, password } = formData;
 
-    // Validate email with RFC 5322 standard complaint regex
+    // Validate name
+    if (!name.trim()) {
+      onError("Name is required");
+      return false;
+    }
+
+    // Validate phone
+    if (!phone.trim()) {
+      onError("Phone number is required");
+      return false;
+    }
+
+    // Validate email
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailPattern.test(email.trim())) {
       onError("Invalid email address");
-      setLoading(false);
-      return;
+      return false;
     }
+
     // Validate password
     const { isValid, error } = await validatePassword(password);
     if (!isValid) {
       onError(error);
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    onError(null);
+    setLoading(true);
+
+    const isValid = await validateForm();
+    if (!isValid) {
       setLoading(false);
       return;
     }
-    const result = await registerUserAction({
-      email: email.trim(),
-      password: password.trim(),
-      name: name.trim(),
-      phone: phone.trim(),
-    });
 
-    const host =
-      window?.location.origin || "https://able-ai-mvp-able-ai-team.vercel.app";
-    const actionCodeSettings = {
-      // URL you want to redirect back to. The domain (www.example.com) for this
-      // URL must be in the authorized domains list in the Firebase Console.
-      url: host + "/usermgmt",
-      handleCodeInApp: true,
-    };
-
-    sendSignInLinkToEmail(authClient, email, actionCodeSettings)
-      .then(() => {
-        // The link was successfully sent. Inform the user.
-        // Save the email locally so you don't need to ask the user for it again
-        // if they open the link on the same device.
-        if (result.ok) {
-          window.localStorage.setItem("emailForSignIn", email);
-          toast.success(
-            "Registration successful! Please check your email to sign in."
-          );
-        }
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        console.error("Error sending email:", errorCode);
-        const errorMessage = error.message;
-        toast.error(`Error sending email: ${errorMessage}`);
+    // Register user with phone number
+    try {
+      const result = await registerUserAction({
+        email: formData.email.trim(),
+        password: formData.password.trim(),
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
       });
 
-    setLoading(false);
+      if (!result.ok) {
+        onError(result.error);
+        setLoading(false);
+        return;
+      }
 
-    if (!result.ok) {
-      console.log("Registration error:", result.error);
-      onError(result.error);
+      // Move to email verification step
+      setCurrentStep('email-verification');
       setLoading(false);
-      return;
-    } else {
-      // Assuming successful registration/sign-in should redirect
-      router.push("/select-role"); // Or your desired post-registration page
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      onError(error.message || 'Registration failed');
+      setLoading(false);
     }
   };
 
+
+  const handleEmailVerification = async () => {
+    try {
+      setLoading(true);
+      onError(null);
+
+      const host = window?.location.origin || "https://able-ai-mvp-able-ai-team.vercel.app";
+      const actionCodeSettings = {
+        url: host + "/usermgmt",
+        handleCodeInApp: true,
+      };
+
+      await sendSignInLinkToEmail(authClient, formData.email, actionCodeSettings);
+      
+      window.localStorage.setItem("emailForSignIn", formData.email);
+      setEmailSent(true);
+      toast.success("Verification email sent successfully!");
+      
+      // Reset success state after 3 seconds
+      setTimeout(() => {
+        setEmailSent(false);
+      }, 3000);
+
+    } catch (error: any) {
+      console.error("Error sending email:", error);
+      onError(`Error sending email: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToForm = () => {
+    setCurrentStep('form');
+    onError(null);
+  };
+
+  // Render different steps
+
+  if (currentStep === 'email-verification') {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Verify Your Email
+          </h2>
+          <p className="text-gray-600">
+            We've sent a verification link to
+          </p>
+          <p className="font-semibold text-gray-900">
+            {formData.email}
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 text-center">
+            Please check your email and click the verification link to complete your registration.
+          </p>
+
+          <button
+            onClick={handleEmailVerification}
+            disabled={loading}
+            className={`w-full py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:transform-none disabled:shadow-md flex items-center justify-center gap-2 font-semibold ${
+              emailSent 
+                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 focus:ring-green-500' 
+                : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 focus:ring-blue-500'
+            }`}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sending...
+              </>
+            ) : emailSent ? (
+              <>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Email Sent!
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Resend Verification Email
+              </>
+            )}
+          </button>
+
+          <div className="text-center">
+            <button
+              onClick={handleBackToForm}
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
+              ← Back to registration form
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
-      {registrationInputs.map((input) => (
-        <div className={styles.inputGroup} key={input.name}>
-          <label htmlFor={`${input.name}-register`} className={styles.label}>
-            {input.label}
-          </label>
-          <InputField
-            type={input.type as string}
-            id={`${input.name}-register`}
-            name={input.name}
-            placeholder={input.placeholder}
-            value={formData[input.name as keyof typeof formData]}
-            onChange={handleInputChange}
-            required={input.required}
-          />
-        </div>
-      ))}
+      <div className={styles.inputGroup}>
+        <label htmlFor="name-register" className={styles.label}>
+          Name
+        </label>
+        <InputField
+          type="text"
+          id="name-register"
+          name="name"
+          placeholder="Enter your name"
+          value={formData.name}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+
 
       <div className={styles.inputGroup}>
-        <label htmlFor={`password-register`} className={styles.label}>
+        <label htmlFor="email-register" className={styles.label}>
+          Email Address
+        </label>
+        <InputField
+          type="email"
+          id="email-register"
+          name="email"
+          placeholder="Enter your email"
+          value={formData.email}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+
+      <div className={styles.inputGroup}>
+        <label htmlFor="phone-register" className={styles.label}>
+          Phone Number
+        </label>
+        <InputField
+          type="tel"
+          id="phone-register"
+          name="phone"
+          placeholder="Enter your phone number"
+          value={formData.phone}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+
+      <div className={styles.inputGroup}>
+        <label htmlFor="password-register" className={styles.label}>
           Password
         </label>
         <PasswordInputField
@@ -171,15 +310,16 @@ const RegisterView: React.FC<RegisterViewProps> = ({
           setPassword={(value: string) =>
             setFormData((prev) => ({ ...prev, password: value }))
           }
-          id={`password-register`}
-          name={`password-register`}
-          placeholder={`Make it secure...`}
+          id="password-register"
+          name="password-register"
+          placeholder="Make it secure..."
           required
         />
-    </div>
+      </div>
+
       <div className={styles.submitWrapper}>
         <SubmitButton loading={loading} disabled={loading}>
-          Register
+          Register Account
         </SubmitButton>
       </div>
 

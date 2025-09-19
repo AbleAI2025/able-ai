@@ -7,7 +7,7 @@
 }
 
 .textareaInput {
-  width: 100%;
+  width: 68%;
   background-color: #3A3A3C;
   border: 1px solid #4A4A4A;
   border-radius: 8px;
@@ -53,6 +53,7 @@
 .detailItem {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.87rem;
   margin-bottom: 10px;
   line-height: 1.4;
