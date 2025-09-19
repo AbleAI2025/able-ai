@@ -66,6 +66,10 @@ export const getGigBuyerProfileAction = async (
       skillCountsArr.push({ name, value });
     }
 
+    const topSkills = skillCountsArr
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 4);
+
     // Calculate date 12 months ago
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -180,12 +184,10 @@ export const getGigBuyerProfileAction = async (
       badges: badgeDetails,
       averageRating,
       completedHires: completedHires?.length || 0,
-      skills:
-        completedHires?.flatMap((gig) =>
-          gig.skillsRequired.map((skill) => skill.skillName)
-        ) || [],
-      skillCounts: 100,
+      skills: skillCountsArr,
+      skillCounts: skillCounts,
       totalPayments: barData.reverse(),
+      topSkills
     };
 
     return { success: true, profile: data };
@@ -263,14 +265,13 @@ export const updateSocialLinkBuyerProfileAction = async (
   }
 };
 
-
 type BusinessInfo = {
   fullCompanyName: string;
   location: { formatted_address: string; lat?: number; lng?: number };
   companyRole: string;
 };
 
-export const updateBissinessInfoBuyerProfileAction = async (
+export const updateBusinessInfoBuyerProfileAction = async (
   { fullCompanyName, location, companyRole }: BusinessInfo,
   token?: string
 ): Promise<{ success: boolean; error?: string }> => {

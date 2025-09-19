@@ -93,7 +93,7 @@ export default function EditBusinessModal({
                   </button>
                 </div>
                 <LocationPickerBubble
-                  value={form.location.formatted_address}
+                  value={form.location}
                   onChange={(loc) =>
                     setForm({
                       ...form,

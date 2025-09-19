@@ -13,7 +13,7 @@ import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
 import {
   getGigBuyerProfileAction,
-  updateBissinessInfoBuyerProfileAction,
+  updateBusinessInfoBuyerProfileAction,
   updateSocialLinkBuyerProfileAction,
   updateVideoUrlBuyerProfileAction,
 } from "@/actions/user/gig-buyer-profile";
@@ -50,7 +50,9 @@ export default function BuyerProfilePage() {
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
@@ -173,20 +175,23 @@ export default function BuyerProfilePage() {
 
   const handleSave = async (updatedData: typeof businessInfo) => {
     try {
-      // Here you would typically call an action to update the backend
-      // For example: await updateBuyerBusinessInfoAction(updatedData, user?.token);
-      const {} = await updateBissinessInfoBuyerProfileAction(updatedData, user?.token);
+      const { success, error } = await updateBusinessInfoBuyerProfileAction(
+        updatedData,
+        user?.token
+      );
+      if (!success) {
+        throw new Error("Failed to update business info: ");
+      }
       toast.success("Business info updated successfully");
-          
-    setBusinessInfo(updatedData);
-    setIsModalOpen(false);
-    fetchUserProfile();
+
+      setBusinessInfo(updatedData);
+      setIsModalOpen(false);
+      fetchUserProfile();
     } catch (error) {
       console.error("Failed to update business info:", error);
       toast.error("Failed to update business info. Please try again.");
       return;
     }
-
   };
 
   if (!user || isLoadingData) {
@@ -268,7 +273,9 @@ export default function BuyerProfilePage() {
             <h4>Business:</h4>
             <p>{businessInfo.fullCompanyName}</p>
 
-            <span className={styles.location}>{businessInfo?.location?.formatted_address || "-"}</span>
+            <span className={styles.location}>
+              {businessInfo?.location?.formatted_address || "-"}
+            </span>
 
             <h4>Role:</h4>
             <p>{businessInfo.companyRole}</p>
@@ -315,8 +322,8 @@ export default function BuyerProfilePage() {
               Types of Staff Hired:
             </span>
             <ul>
-              {dashboardData?.skills?.map((type) => (
-                <li key={type}>{type}</li>
+              {dashboardData.topSkills.map((type, index) => (
+                <li key={index}>{type.name}</li>
               ))}
             </ul>
           </div>
@@ -326,7 +333,7 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
           <div className={styles.analyticsChartsContainer}>
-            <PieChartComponent skillCounts={dashboardData?.skillCounts} />
+            <PieChartComponent skills={dashboardData?.skills} />
             <BarChartComponent totalPayments={dashboardData?.totalPayments} />
           </div>
         </section>

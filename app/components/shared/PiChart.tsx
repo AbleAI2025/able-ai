@@ -104,9 +104,9 @@ const CustomTooltip = ({
 };
 
 export default function PieChartComponent({
-  skillCounts,
+  skills,
 }: {
-  skillCounts?: { name: string; value: number }[];
+  skills?: { name: string; value: number }[];
 }) {
   const [chartHeight, setChartHeight] = useState(220);
   const [tooltipActive, setTooltipActive] = useState(false);
@@ -172,17 +172,17 @@ export default function PieChartComponent({
   return (
     <div ref={chartRef} style={{ width: "100%", height: chartHeight }}>
       <ResponsiveContainer width="100%" height={chartHeight} minHeight={100}>
-        {skillCounts && skillCounts.length > 0 ? (
+        {skills && skills.length > 0 ? (
           <PieChart>
             <Pie
-              data={skillCounts}
+              data={skills}
               dataKey="value"
               outerRadius={outerRadius}
               stroke="none"
               label={renderCustomizedLabel}
               labelLine={false}
             >
-              {skillCounts?.map((entry, index) => (
+              {skills?.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}
