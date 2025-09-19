@@ -45,8 +45,8 @@ export default interface DashboardData {
   averageRating: number;
   responseRateInternal: number;
   completedHires: number;
-  skills: Array<{ name: string; value: number }>;
-  topSkills: Array<{ name: string; value: number }>;
+  skills?: Array<{ name: string; value: number }>;
+  topSkills?: Array<{ name: string; value: number }>;
   barChartData?: Array<{ name: string; hires: number; spend?: number }>;
   badgesEarnedByTheirWorkers: Badge[];
   reviews: Review[];

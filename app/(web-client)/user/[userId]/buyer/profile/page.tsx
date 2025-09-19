@@ -322,7 +322,7 @@ export default function BuyerProfilePage() {
               Types of Staff Hired:
             </span>
             <ul>
-              {dashboardData.topSkills.map((type, index) => (
+              {dashboardData?.topSkills?.map((type, index) => (
                 <li key={index}>{type.name}</li>
               ))}
             </ul>
