@@ -7,26 +7,10 @@ import {
   SkillsTable,
   UsersTable,
 } from "@/lib/drizzle/schema";
-import { ERROR_CODES } from "@/lib/responses/errors";
+import { ERROR_CODES, ERROR_MESSAGES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { and, eq } from "drizzle-orm";
 
-/**
- * Centralized error messages for consistency
- */
-const ERROR_MESSAGES = {
-  TOKEN_REQUIRED: "Authentication token is required",
-  USER_NOT_FOUND: "User not found",
-  WORKER_PROFILE_NOT_FOUND: "Worker profile not found",
-  UNAUTHORIZED: "Unauthorized access",
-  QUALIFICATION_NOT_FOUND: "Qualification not found",
-  EQUIPMENT_NOT_FOUND: "Equipment not found",
-  SKILL_NOT_FOUND: "Skill not found",
-  FAILED_TO_CREATE: "Error creating",
-  FAILED_TO_DELETE: "Error deleting",
-  FAILED_TO_EDIT: "Error editing",
-  SKILL_ID_REQUIRED: "Skill ID is required",
-} as const;
 
 /**
  * Standard response types
@@ -41,19 +25,19 @@ interface ActionResponse<T = any> {
  * Helper function to authenticate and fetch worker profile
  */
 async function authenticateAndGetWorkerProfile(token: string): Promise<{ user: typeof UsersTable.$inferSelect; workerProfile: typeof GigWorkerProfilesTable.$inferSelect }> {
-  if (!token) throw new Error(ERROR_MESSAGES.TOKEN_REQUIRED);
+  if (!token) throw new Error(ERROR_MESSAGES.TOKEN_REQUIRED.message);
   const { uid } = await isUserAuthenticated(token);
   if (!uid) throw new Error(ERROR_CODES.UNAUTHORIZED.message);
 
   const user = await db.query.UsersTable.findFirst({
     where: eq(UsersTable.firebaseUid, uid),
   });
-  if (!user) throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
+  if (!user) throw new Error(ERROR_MESSAGES.USER_NOT_FOUND.message);
 
   const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
     where: eq(GigWorkerProfilesTable.userId, user.id),
   });
-  if (!workerProfile) throw new Error(ERROR_MESSAGES.WORKER_PROFILE_NOT_FOUND);
+  if (!workerProfile) throw new Error(ERROR_MESSAGES.WORKER_PROFILE_NOT_FOUND.message);
 
   return { user, workerProfile };
 }
@@ -63,7 +47,7 @@ async function authenticateAndGetWorkerProfile(token: string): Promise<{ user: t
  */
 function validateOwnership(ownerId: string, resourceOwnerId: string): void {
   if (ownerId !== resourceOwnerId) {
-    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED.message);
   }
 }
 
@@ -79,7 +63,7 @@ export const addQualificationAction = async (
   documentUrl?: string
 ): Promise<ActionResponse<string>> => {
   try {
-    if (!skillId) throw new Error(ERROR_MESSAGES.SKILL_ID_REQUIRED);
+    if (!skillId) throw new Error(ERROR_MESSAGES.SKILL_ID_REQUIRED.message);
 
     const { workerProfile } = await authenticateAndGetWorkerProfile(token!);
 
@@ -96,14 +80,14 @@ export const addQualificationAction = async (
       })
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE.message);
 
     return { success: true, data: "Calificación creada exitosamente" };
   } catch (error) {
     console.error("Error al agregar calificación:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE.message,
     };
   }
 };
@@ -121,7 +105,7 @@ export const deleteQualificationAction = async (
     const qualification = await db.query.QualificationsTable.findFirst({
       where: eq(QualificationsTable.id, qualificationId),
     });
-    if (!qualification) throw new Error(ERROR_MESSAGES.QUALIFICATION_NOT_FOUND);
+    if (!qualification) throw new Error(ERROR_MESSAGES.QUALIFICATION_NOT_FOUND.message);
 
     validateOwnership(qualification.workerProfileId, workerProfile.id);
 
@@ -130,14 +114,14 @@ export const deleteQualificationAction = async (
       .where(eq(QualificationsTable.id, qualificationId))
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE.message);
 
     return { success: true, data: "Calificación eliminada exitosamente" };
   } catch (error) {
     console.error("Error al eliminar calificación:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE.message,
     };
   }
 };
@@ -159,7 +143,7 @@ export const editQualificationAction = async (
     const qualification = await db.query.QualificationsTable.findFirst({
       where: eq(QualificationsTable.id, qualificationId),
     });
-    if (!qualification) throw new Error(ERROR_MESSAGES.QUALIFICATION_NOT_FOUND);
+    if (!qualification) throw new Error(ERROR_MESSAGES.QUALIFICATION_NOT_FOUND.message);
 
     validateOwnership(qualification.workerProfileId, workerProfile.id);
 
@@ -174,14 +158,14 @@ export const editQualificationAction = async (
       .where(eq(QualificationsTable.id, qualificationId))
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT.message);
 
     return { success: true, data: "Calificación editada exitosamente" };
   } catch (error) {
     console.error("Error al editar calificación:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT.message,
     };
   }
 };
@@ -206,14 +190,14 @@ export const addEquipmentAction = async (
       })
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE.message);
 
     return { success: true, data: "Equipo creado exitosamente" };
   } catch (error) {
     console.error("Error al agregar equipo:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE.message,
     };
   }
 };
@@ -231,7 +215,7 @@ export const deleteEquipmentAction = async (
     const equipment = await db.query.EquipmentTable.findFirst({
       where: eq(EquipmentTable.id, equipmentId),
     });
-    if (!equipment) throw new Error(ERROR_MESSAGES.EQUIPMENT_NOT_FOUND);
+    if (!equipment) throw new Error(ERROR_MESSAGES.EQUIPMENT_NOT_FOUND.message);
 
     validateOwnership(equipment.workerProfileId, workerProfile.id);
 
@@ -240,14 +224,14 @@ export const deleteEquipmentAction = async (
       .where(eq(EquipmentTable.id, equipmentId))
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE.message);
 
     return { success: true, data: "Equipo eliminado exitosamente" };
   } catch (error) {
     console.error("Error al eliminar equipo:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE.message,
     };
   }
 };
@@ -267,7 +251,7 @@ export const editEquipmentAction = async (
     const equipment = await db.query.EquipmentTable.findFirst({
       where: eq(EquipmentTable.id, equipmentId),
     });
-    if (!equipment) throw new Error(ERROR_MESSAGES.EQUIPMENT_NOT_FOUND);
+    if (!equipment) throw new Error(ERROR_MESSAGES.EQUIPMENT_NOT_FOUND.message);
 
     validateOwnership(equipment.workerProfileId, workerProfile.id);
 
@@ -280,14 +264,14 @@ export const editEquipmentAction = async (
       .where(eq(EquipmentTable.id, equipmentId))
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT.message);
 
     return { success: true, data: "Equipo editado exitosamente" };
   } catch (error) {
     console.error("Error al editar equipo:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT,
+      error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT.message,
     };
   }
 };
@@ -327,7 +311,7 @@ export const deleteSkillWorker = async (skillId: string, token: string): Promise
       )
       .returning();
 
-    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE);
+    if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE.message);
 
     return { success: true, data: "Habilidad eliminada exitosamente" };
   } catch (error) {
