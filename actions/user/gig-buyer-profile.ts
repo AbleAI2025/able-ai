@@ -66,6 +66,10 @@ export const getGigBuyerProfileAction = async (
       skillCountsArr.push({ name, value });
     }
 
+    const topSkills = skillCountsArr
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 4);
+
     // Calculate date 12 months ago
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -180,12 +184,10 @@ export const getGigBuyerProfileAction = async (
       badges: badgeDetails,
       averageRating,
       completedHires: completedHires?.length || 0,
-      skills:
-        completedHires?.flatMap((gig) =>
-          gig.skillsRequired.map((skill) => skill.skillName)
-        ) || [],
-      skillCounts: skillCountsArr,
+      skills: skillCountsArr,
+      skillCounts: skillCounts,
       totalPayments: barData.reverse(),
+      topSkills
     };
 
     return { success: true, profile: data };
@@ -256,6 +258,49 @@ export const updateSocialLinkBuyerProfileAction = async (
     return { success: true };
   } catch (error) {
     console.error("Error saving social link", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
+
+type BusinessInfo = {
+  fullCompanyName: string;
+  location: { formatted_address: string; lat?: number; lng?: number };
+  companyRole: string;
+};
+
+export const updateBusinessInfoBuyerProfileAction = async (
+  { fullCompanyName, location, companyRole }: BusinessInfo,
+  token?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (!token) {
+      return { success: false, error: "User token is required" };
+    }
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) return { success: false, error: "Unauthorized" };
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+    if (!user) return { success: false, error: "User not found" };
+
+    await db
+      .update(BuyerProfilesTable)
+      .set({
+        fullCompanyName,
+        billingAddressJson: location,
+        companyRole,
+        updatedAt: new Date(),
+      })
+      .where(eq(BuyerProfilesTable.userId, user.id));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving business info", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

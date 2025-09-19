@@ -13,7 +13,7 @@ import { GigReviewDetailsData } from "@/app/types";
 // Mock data - replace with actual props or state
 const gigDetailsData = {
   location: {
-    formatted_address: "123 Main St, Cityville, Country"
+    formatted_address: "123 Main St, Cityville, Country",
   },
   date: "Saturday, 12th November 2023",
   time: "6:00 PM - 1:00 AM",
@@ -34,23 +34,18 @@ export default function CancelOrAmendGigDetailsPage() {
   const [editedGigDetails, setEditedGigDetails] = useState(gigDetailsData); // State for edited details
   const [isLoading, setIsLoading] = useState(false);
   const lastRoleUsed = getLastRoleUsed();
-  /*
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setEditedGigDetails((prevDetails) => ({
-      ...prevDetails,
-      [name]: value,
-    }));
-  };
-  */
 
   const handleSubmit = () => {
     // Logic for submitting the amendment/cancellation request
     console.log("Submit for Confirmation clicked. Message:", userMessage);
     console.log("Edited Gig Details:", editedGigDetails);
     localStorage.setItem(
-      'amendedGig',
-      JSON.stringify({ ...editedGigDetails, hourlyRate: editedGigDetails.payPerHour, estimatedEarnings: editedGigDetails.totalPay })
+      "amendedGig",
+      JSON.stringify({
+        ...editedGigDetails,
+        hourlyRate: editedGigDetails.payPerHour,
+        estimatedEarnings: editedGigDetails.totalPay,
+      })
     );
     router.push(`${path}/review`);
     // TODO: Call API to submit amendment request
@@ -60,24 +55,26 @@ export default function CancelOrAmendGigDetailsPage() {
     if (!user?.uid || !gigId || !lastRoleUsed) return;
 
     setIsLoading(true);
-    const role = lastRoleUsed.includes('BUYER') ? 'buyer' : 'worker';
-    await updateGigOfferStatus({ gigId, role, userId: user?.uid, action: 'cancel' });
-    setIsLoading(false)
+    const role = lastRoleUsed.includes("BUYER") ? "buyer" : "worker";
+    await updateGigOfferStatus({
+      gigId,
+      role,
+      userId: user?.uid,
+      action: "cancel",
+    });
+    setIsLoading(false);
   };
 
   return (
     <div className={styles.viewContainer}>
-      {/* <header className={styles.header}>
-        <h1 className={styles.headerTitle}>Cancel or Amend Gig Details</h1>
-      </header> */}
       <ScreenHeaderWithBack title="Cancel or Amend" />
 
       <main className={styles.contentWrapper}>
         {/* Instruction Block */}
         <section className={`${styles.card} ${styles.instructionBlock}`}>
           <p className={styles.instructionText}>
-            What changes would you like to make to the gig?{" "}
-            Tell me or edit using the icon below.
+            What changes would you like to make to the gig? Tell me or edit
+            using the icon below.
           </p>
         </section>
 
@@ -107,8 +104,6 @@ export default function CancelOrAmendGigDetailsPage() {
         </button>
       </div>
       </main>
-
-      
     </div>
   );
 }

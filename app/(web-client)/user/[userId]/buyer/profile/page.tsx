@@ -13,6 +13,7 @@ import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
 import {
   getGigBuyerProfileAction,
+  updateBusinessInfoBuyerProfileAction,
   updateSocialLinkBuyerProfileAction,
   updateVideoUrlBuyerProfileAction,
 } from "@/actions/user/gig-buyer-profile";
@@ -34,7 +35,11 @@ import SocialLinkModal from "./SocialLinkModal";
 
 interface BusinessInfo {
   fullCompanyName: string;
-  location: string;
+  location: {
+    formatted_address: string;
+    lat: number | undefined;
+    lng: number | undefined;
+  };
   companyRole: string;
 }
 
@@ -45,7 +50,9 @@ export default function BuyerProfilePage() {
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
@@ -57,7 +64,11 @@ export default function BuyerProfilePage() {
   // default empty state
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
     fullCompanyName: "",
-    location: "",
+    location: {
+      formatted_address: "",
+      lat: undefined,
+      lng: undefined,
+    },
     companyRole: "",
   });
 
@@ -92,7 +103,11 @@ export default function BuyerProfilePage() {
     if (dashboardData) {
       setBusinessInfo({
         fullCompanyName: dashboardData.fullCompanyName || "-",
-        location: dashboardData.billingAddressJson?.formatted_address || "-",
+        location: dashboardData.billingAddressJson || {
+          formatted_address: "",
+          lat: undefined,
+          lng: undefined,
+        },
         companyRole: dashboardData.companyRole || "-",
       });
     }
@@ -158,10 +173,25 @@ export default function BuyerProfilePage() {
     [user]
   );
 
-  const handleSave = (updatedData: typeof businessInfo) => {
-    // 🔹 TODO: call API to save updates
-    setBusinessInfo(updatedData);
-    setIsModalOpen(false);
+  const handleSave = async (updatedData: typeof businessInfo) => {
+    try {
+      const { success, error } = await updateBusinessInfoBuyerProfileAction(
+        updatedData,
+        user?.token
+      );
+      if (!success) {
+        throw new Error("Failed to update business info: ");
+      }
+      toast.success("Business info updated successfully");
+
+      setBusinessInfo(updatedData);
+      setIsModalOpen(false);
+      fetchUserProfile();
+    } catch (error) {
+      console.error("Failed to update business info:", error);
+      toast.error("Failed to update business info. Please try again.");
+      return;
+    }
   };
 
   if (!user || isLoadingData) {
@@ -243,20 +273,12 @@ export default function BuyerProfilePage() {
             <h4>Business:</h4>
             <p>{businessInfo.fullCompanyName}</p>
 
-            <span className={styles.location}>{businessInfo.location}</span>
+            <span className={styles.location}>
+              {businessInfo?.location?.formatted_address || "-"}
+            </span>
 
             <h4>Role:</h4>
             <p>{businessInfo.companyRole}</p>
-
-            {/*
-            <LocationPickerBubble
-              value={"location"}
-              onChange={(val) => console.log(val)}
-              showConfirm={false}
-              onConfirm={() => {}}
-              role="BUYER"
-            />
-*/}
           </div>
         </section>
 
@@ -300,8 +322,8 @@ export default function BuyerProfilePage() {
               Types of Staff Hired:
             </span>
             <ul>
-              {dashboardData?.skills?.map((type) => (
-                <li key={type}>{type}</li>
+              {dashboardData?.topSkills?.map((type, index) => (
+                <li key={index}>{type.name}</li>
               ))}
             </ul>
           </div>
@@ -311,7 +333,7 @@ export default function BuyerProfilePage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
           <div className={styles.analyticsChartsContainer}>
-            <PieChartComponent skillCounts={dashboardData?.skillCounts} />
+            <PieChartComponent skills={dashboardData?.skills} />
             <BarChartComponent totalPayments={dashboardData?.totalPayments} />
           </div>
         </section>

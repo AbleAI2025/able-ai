@@ -1,6 +1,4 @@
-/* eslint-disable max-lines */
-/* eslint-disable max-lines-per-function */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client";
 
 import React, { useState, useEffect, FormEvent } from "react";
@@ -14,7 +12,6 @@ import {
   sendEmailVerification,
 } from "firebase/auth";
 import InputField from "@/app/components/form/InputField";
-import styles2 from "@/app/components/shared/AiSuggestionBanner.module.css";
 import styles from "./SettingsPage.module.css";
 import {
   Shield,
@@ -27,7 +24,6 @@ import {
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { createAccountLink } from "@/app/actions/stripe/create-account-link";
-import { createPortalSession } from "@/app/actions/stripe/create-portal-session";
 import { FirebaseError } from "firebase/app";
 import SwitchControl from "@/app/components/shared/SwitchControl";
 import { toast } from "sonner";
