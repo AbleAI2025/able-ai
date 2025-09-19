@@ -11,7 +11,6 @@ import { ERROR_CODES, ERROR_MESSAGES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { and, eq } from "drizzle-orm";
 
-
 /**
  * Standard response types
  */
@@ -82,9 +81,9 @@ export const addQualificationAction = async (
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE.message);
 
-    return { success: true, data: "Calificación creada exitosamente" };
+    return { success: true, data: "Qualification created successfully" };
   } catch (error) {
-    console.error("Error al agregar calificación:", error);
+    console.error("Error adding qualification:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE.message,
@@ -116,9 +115,9 @@ export const deleteQualificationAction = async (
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE.message);
 
-    return { success: true, data: "Calificación eliminada exitosamente" };
+    return { success: true, data: "Qualification deleted successfully" };
   } catch (error) {
-    console.error("Error al eliminar calificación:", error);
+    console.error("Error deleting qualification:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE.message,
@@ -160,9 +159,9 @@ export const editQualificationAction = async (
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT.message);
 
-    return { success: true, data: "Calificación editada exitosamente" };
+    return { success: true, data: "Qualification edited successfully" };
   } catch (error) {
-    console.error("Error al editar calificación:", error);
+    console.error("Error editing qualification:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT.message,
@@ -192,9 +191,9 @@ export const addEquipmentAction = async (
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_CREATE.message);
 
-    return { success: true, data: "Equipo creado exitosamente" };
+    return { success: true, data: "Equipment created successfully" };
   } catch (error) {
-    console.error("Error al agregar equipo:", error);
+    console.error("Error adding equipment:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_CREATE.message,
@@ -226,9 +225,9 @@ export const deleteEquipmentAction = async (
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE.message);
 
-    return { success: true, data: "Equipo eliminado exitosamente" };
+    return { success: true, data: "Equipment deleted successfully" };
   } catch (error) {
-    console.error("Error al eliminar equipo:", error);
+    console.error("Error deleting equipment:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_DELETE.message,
@@ -266,9 +265,9 @@ export const editEquipmentAction = async (
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_EDIT.message);
 
-    return { success: true, data: "Equipo editado exitosamente" };
+    return { success: true, data: "Equipment edited successfully" };
   } catch (error) {
-    console.error("Error al editar equipo:", error);
+    console.error("Error editing equipment:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : ERROR_MESSAGES.FAILED_TO_EDIT.message,
@@ -286,10 +285,10 @@ export const getAllSkillsAction = async (workerId: string): Promise<ActionRespon
     });
     return { success: true, data: skills };
   } catch (error) {
-    console.error("Error al obtener habilidades:", error);
+    console.error("Error fetching skills:", error);
     return {
       success: false,
-      error: "Error inesperado al obtener habilidades.",
+      error: "Unexpected error fetching skills.",
     };
   }
 };
@@ -313,12 +312,12 @@ export const deleteSkillWorker = async (skillId: string, token: string): Promise
 
     if (result.length === 0) throw new Error(ERROR_MESSAGES.FAILED_TO_DELETE.message);
 
-    return { success: true, data: "Habilidad eliminada exitosamente" };
+    return { success: true, data: "Skill deleted successfully" };
   } catch (error) {
-    console.error("Error al eliminar habilidad:", error);
+    console.error("Error deleting skill:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error inesperado al eliminar habilidad",
+      error: error instanceof Error ? error.message : "Unexpected error deleting skill",
     };
   }
 };
@@ -343,7 +342,7 @@ export const updateWorkerLocationAction = async (
 
     return { success: true, data: updatedProfile[0] };
   } catch (error) {
-    console.error("Error al actualizar ubicación del trabajador:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Error al actualizar ubicación" };
+    console.error("Error updating worker location:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Error updating location" };
   }
 };
