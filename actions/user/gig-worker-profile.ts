@@ -816,8 +816,27 @@ export const saveWorkerProfileFromOnboardingAction = async (
 
       // Extract years of experience from experience field
       const experienceText = profileData.experience || "";
-      const yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
-      yearsOfExperience = yearsMatch ? parseFloat(yearsMatch[1]) : undefined;
+      
+      // Try multiple patterns to extract years of experience
+      let yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
+      
+      // If no explicit years found, try to extract any number that might represent years
+      if (!yearsMatch) {
+        yearsMatch = experienceText.match(/(\d+)/);
+      }
+      
+      // If still no number found, try to extract decimal numbers (e.g., "2.5 years")
+      if (!yearsMatch) {
+        yearsMatch = experienceText.match(/(\d+\.?\d*)/);
+      }
+      
+      if (yearsMatch) {
+        yearsOfExperience = parseFloat(yearsMatch[1]);
+      } else {
+        // If no number found at all, default to 0 (no experience)
+        yearsOfExperience = 0;
+        console.warn(`No years of experience found in: "${experienceText}"`);
+      }
 
       // Extract hourly rate from form data
       extractedHourlyRate = profileData.hourlyRate

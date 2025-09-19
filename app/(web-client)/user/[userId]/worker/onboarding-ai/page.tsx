@@ -94,7 +94,6 @@ import {
   buildSpecializedPrompt,
   CONTEXT_PROMPTS,
   SPECIALIZED_PROMPTS,
-  ROLE_SPECIFIC_PROMPTS,
   GIGFOLIO_COACH_CONTENT,
   GIGFOLIO_COACH_BEHAVIOR,
   ONBOARDING_STEPS,
@@ -117,19 +116,27 @@ import { firebaseApp } from "@/lib/firebase/clientApp";
 import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
 import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
+import { checkExistingProfileDataAction } from "@/actions/user/check-existing-profile-data-action";
+import type { ExistingProfileData } from "@/actions/user/check-existing-profile-data";
+import { validateUserInput, ValidationResult, ValidationContext } from "@/lib/validation/enhanced-validation";
+import ValidationConfirmationBubble from "@/app/components/onboarding/ValidationConfirmationBubble";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [
   { name: "about", type: "text", placeholder: "Tell us about yourself and your background...", defaultPrompt: "Tell me about yourself and what kind of work you can offer!", rows: 3 },
-  { name: "experience", type: "text", placeholder: "How many years of experience do you have?", defaultPrompt: "How many years of experience do you have in your field?", rows: 1 },
-  { name: "skills", type: "text", placeholder: "List your skills and certifications...", defaultPrompt: "What skills and certifications do you have?", rows: 3 },
+  { name: "experience", type: "text", placeholder: "e.g., '5', '3 years', '2'", defaultPrompt: "How many years of experience do you have in your field?", rows: 1 },
+  { name: "skills", type: "text", placeholder: "List your skills and certifications...", defaultPrompt: "What skills do you have?", rows: 3 },
   { name: "equipment", type: "text", placeholder: "List any equipment you have...", defaultPrompt: "What equipment do you have that you can use for your work?", rows: 3 },
   { name: "qualifications", type: "text", placeholder: "List your qualifications and certifications...", defaultPrompt: "What qualifications and certifications do you have?", rows: 3 },
   { name: "hourlyRate", type: "number", placeholder: "£15", defaultPrompt: "What's your preferred hourly rate?" },
-  { name: "location", type: "location", defaultPrompt: "Where are you based? This helps us find gigs near you!" },
-  { name: "availability", type: "availability", defaultPrompt: "When are you available to work? Let's set up your weekly schedule!" },
   { name: "videoIntro", type: "video", defaultPrompt: "Record a short video introduction to help clients get to know you!" },
   { name: "references", type: "text", placeholder: "Provide your references...", defaultPrompt: "Do you have any references or testimonials?", rows: 3 },
+];
+
+// Special fields that are only asked if not already present
+const specialFields: RequiredField[] = [
+  { name: "location", type: "location", defaultPrompt: "Where are you based? This helps us find gigs near you!" },
+  { name: "availability", type: "availability", defaultPrompt: "When are you available to work? Let's set up your weekly schedule!" },
 ];
 
 
@@ -1136,7 +1143,7 @@ Make it conversational and engaging with emojis.`;
   
   // Fallback using ChatAI system with field-specific prompts
   if (fieldName === 'experience') {
-    return `Great! Now, how many years have you been working as a ${aboutInfo ? aboutInfo.toLowerCase() : 'professional'}? 🕒`;
+    return `Great! How many years have you been working as a ${aboutInfo ? aboutInfo.toLowerCase() : 'professional'}? 🕒`;
   } else if (fieldName === 'skills') {
     return `Awesome! What skills and certifications do you have that you can offer to clients? 🛠️`;
   } else if (fieldName === 'hourlyRate') {
@@ -1183,7 +1190,7 @@ const AIVideoScriptDisplay = ({ formData, ai }: { formData: FormData, ai: any })
       marginBottom: '16px'
     }}>
       <div style={{
-        color: 'var(--primary-color)',
+        color: '#ffffff',
         fontWeight: 600,
         fontSize: '16px',
         marginBottom: '12px'
@@ -1231,21 +1238,10 @@ export default function OnboardWorkerPage() {
   const [formData, setFormData] = useState<FormData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentFocusedInputName, setCurrentFocusedInputName] = useState<string | null>(null);
-  const [chatSteps, setChatSteps] = useState<ChatStep[]>([{
-    id: 1,
-    type: "bot",
-    content: ROLE_SPECIFIC_PROMPTS.gigfolioCoach.welcome + " 🎉 I'm here to help you create the perfect worker profile so you can find gig opportunities! You're creating a profile to showcase your skills and availability to potential clients. Tell me about yourself and what kind of work you can offer - What's your background?",
-  }, {
-    id: 2,
-    type: "input",
-    inputConfig: {
-      type: requiredFields[0].type,
-      name: requiredFields[0].name,
-      placeholder: requiredFields[0].placeholder,
-      rows: requiredFields[0].rows,
-    },
-    isComplete: false,
-  }]);
+  const [existingProfileData, setExistingProfileData] = useState<ExistingProfileData | null>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [isCheckingExistingData, setIsCheckingExistingData] = useState(true);
+  const [chatSteps, setChatSteps] = useState<ChatStep[]>([]);
   const [expandedSummaryFields, setExpandedSummaryFields] = useState<Record<string, boolean>>({});
   const [isTyping, setIsTyping] = useState(false);
   const [reformulateField, setReformulateField] = useState<string | null>(null);
@@ -1259,6 +1255,266 @@ export default function OnboardWorkerPage() {
   const [unrelatedResponseCount, setUnrelatedResponseCount] = useState(0);
   const [showHumanSupport, setShowHumanSupport] = useState(false);
   const [supportCaseId, setSupportCaseId] = useState<string | null>(null);
+
+  // Check existing profile data on component mount
+  useEffect(() => {
+    const checkExistingData = async () => {
+      if (!user?.token) return;
+      
+      try {
+        setIsCheckingExistingData(true);
+        const result = await checkExistingProfileDataAction(user.token);
+        
+        if (result.success && result.data) {
+          setExistingProfileData(result.data);
+          
+          // Initialize form data with existing data
+          const existingFormData: FormData = {};
+          
+          if (result.data.hasLocation && result.data.profileData.location) {
+            existingFormData.location = result.data.profileData.location;
+          }
+          
+          setFormData(existingFormData);
+          
+          // Initialize chat steps based on existing data
+          initializeChatSteps(result.data);
+        } else {
+          // No existing data, start fresh
+          initializeChatSteps(null);
+        }
+      } catch (error) {
+        console.error('Error checking existing profile data:', error);
+        initializeChatSteps(null);
+      } finally {
+        setIsCheckingExistingData(false);
+      }
+    };
+
+    checkExistingData();
+  }, [user?.token]);
+
+  // AI-powered validation function using Gemini
+  async function simpleAICheck(field: string, value: any, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | any, naturalSummary?: string, extractedData?: any }> {
+    if (!value) {
+      return { 
+        sufficient: false, 
+        clarificationPrompt: 'Please provide some information so I can help you create your worker profile!' 
+      };
+    }
+
+    const trimmedValue = String(value).trim();
+    
+    // Use AI for all validation
+    try {
+      const validationSchema = Schema.object({
+        properties: {
+          isAppropriate: Schema.boolean(),
+          isWorkerRelated: Schema.boolean(),
+          isSufficient: Schema.boolean(),
+          clarificationPrompt: Schema.string(),
+          sanitizedValue: Schema.string(),
+          naturalSummary: Schema.string(),
+          extractedData: Schema.string(),
+        },
+      });
+
+      const prompt = `You are Able, a WORKER PROFILE ASSISTANT. Your ONLY job is to help users create their worker profiles on a gig platform. You are NOT a general assistant, therapist, or friend. You ONLY help with worker profile creation.
+
+CRITICAL: This is a WORKER PROFILE CREATION FLOW. The user is creating their profile to showcase their skills and find gig work. They are the WORKER/EMPLOYEE creating their profile. You are helping them create a worker profile.
+
+Previous context from this conversation:
+${Object.entries(formData).filter(([key, value]) => value && key !== field).map(([key, value]) => `${key}: ${value}`).join(', ')}
+
+Current field being validated: "${field}"
+User input: "${trimmedValue}"
+Input type: "${type}"
+
+Validation criteria:
+1. isAppropriate: Check if the content is appropriate for a professional worker profile (no offensive language, profanity, or inappropriate content)
+2. isWorkerRelated: Check if the content is related to work skills, experience, availability, or professional information (be lenient - most worker content is broad)
+3. isSufficient: Check if the content provides basic information (at least 3 characters for text, valid numbers for rates, coordinates for locations)
+   - For hourlyRate: MUST be at least £12.21 (London minimum wage). If less than £12.21, mark as insufficient.
+
+IMPORTANT: For location fields, coordinate objects with lat/lng properties are ALWAYS valid and sufficient. Do not ask for additional location details if coordinates are provided.
+
+Special handling:
+- For coordinates (lat/lng): Accept any valid coordinate format like "Lat: 14.7127059, Lng: 120.9341704" or coordinate objects
+- For location objects: If the input is an object with lat/lng properties, accept it as valid location data
+- For numbers (hourlyRate): CRITICAL - Must be at least £12.21 per hour (London minimum wage). Accept rates from £12.21-500 per hour. If user enters less than £12.21, mark as insufficient and ask them to increase the rate to meet legal requirements.
+- For text: Be lenient and accept most work-related content
+- For dates: Accept any valid date format
+- For location fields: Accept coordinates, addresses, venue names, or any location information
+- For time fields: Accept single times (12:00, 2:30 PM) or time ranges (12:00-14:30, 12:00 PM - 2:30 PM)
+
+If validation passes, respond with:
+- isAppropriate: true
+- isWorkerRelated: true
+- isSufficient: true
+- clarificationPrompt: ""
+- sanitizedValue: string (cleaned version of the input)
+- naturalSummary: string (a natural, conversational summary of what the user provided, like "You have certified baker awards and qualifications")
+- extractedData: string (JSON string of any structured data extracted from the input)
+
+If validation fails, respond with:
+- isAppropriate: boolean
+- isWorkerRelated: boolean
+- isSufficient: boolean
+- clarificationPrompt: string (provide a friendly, contextual response that references what they've already shared and guides them naturally)
+  - For hourlyRate below £12.21: "I understand you want to keep costs down, but we need to ensure all gigs meet the London minimum wage of £12.21 per hour. This is a legal requirement to protect workers. Could you please increase the hourly rate to at least £12.21?"
+- sanitizedValue: string
+- naturalSummary: string (a brief summary of what was provided, even if insufficient)
+- extractedData: string (JSON string of any structured data extracted from the input)
+
+WORKER PROFILE CONTEXT: Remember, this user is creating their worker profile to find gig work. They are the worker/employee. Keep responses focused on worker profile creation only.
+
+Be conversational and reference their previous inputs when possible, but AVOID REDUNDANCY. Don't repeat the same opening phrases.`;
+
+      const result = await geminiAIAgent(
+        "gemini-2.0-flash",
+        {
+          prompt,
+          responseSchema: validationSchema,
+          isStream: false,
+        },
+        ai,
+        "gemini-2.5-flash-preview-05-20"
+      );
+
+      if (result.ok) {
+        const validation = result.data as {
+          isAppropriate: boolean;
+          isWorkerRelated: boolean;
+          isSufficient: boolean;
+          clarificationPrompt: string;
+          sanitizedValue: string;
+          naturalSummary: string;
+          extractedData: string;
+        };
+        
+        // Fallback validation for hourly rate - if AI incorrectly rejects a valid rate
+        if (field === 'hourlyRate' && !validation.isSufficient) {
+          const rate = parseFloat(trimmedValue);
+          if (!isNaN(rate) && rate >= 12.21 && rate <= 500) {
+            console.log('🛡️ Fallback validation: AI incorrectly rejected valid rate, overriding');
+            return {
+              sufficient: true,
+              clarificationPrompt: "",
+              sanitized: trimmedValue,
+              naturalSummary: `You've set your hourly rate to £${trimmedValue}`,
+              extractedData: JSON.stringify({ hourlyRate: parseFloat(trimmedValue) })
+            };
+          }
+        }
+
+        if (!validation.isAppropriate || !validation.isWorkerRelated || !validation.isSufficient) {
+          return {
+            sufficient: false,
+            clarificationPrompt: validation.clarificationPrompt || 'Please provide appropriate work-related information.',
+            naturalSummary: validation.naturalSummary || 'Please provide more information',
+            extractedData: validation.extractedData || '{}'
+          };
+        }
+        
+        // For coordinate objects, preserve the original object
+        if (value && typeof value === 'object' && 'lat' in value && 'lng' in value) {
+          return {
+            sufficient: true,
+            sanitized: value, // Keep the original coordinate object
+            naturalSummary: `Location set to coordinates ${value.lat}, ${value.lng}`,
+            extractedData: JSON.stringify(value)
+          };
+        }
+        
+        return {
+          sufficient: true,
+          sanitized: validation.sanitizedValue || trimmedValue,
+          naturalSummary: validation.naturalSummary || validation.sanitizedValue || trimmedValue,
+          extractedData: validation.extractedData || '{}'
+        };
+      }
+    } catch (error) {
+      console.error('AI validation failed:', error);
+    }
+    
+    // Simple fallback - accept most inputs
+    return { 
+      sufficient: true, 
+      sanitized: trimmedValue, 
+      naturalSummary: trimmedValue, 
+      extractedData: JSON.stringify({}) 
+    };
+  }
+
+  // Initialize chat steps based on existing profile data
+  const initializeChatSteps = (existingData: ExistingProfileData | null) => {
+    const steps: ChatStep[] = [];
+    
+    // Check what data we already have and create appropriate welcome message
+    let welcomeMessage = "Hi! I'm here to help you create your worker profile. Tell me about yourself and what kind of work you can offer.";
+    
+    if (existingData) {
+      const existingFields = [];
+      if (existingData.hasLocation) existingFields.push('location');
+      if (existingData.hasAvailability) existingFields.push('availability');
+
+      if (existingFields.length > 0) {
+        welcomeMessage += `\n\nI can see you already have some profile information: ${existingFields.join(', ')}. Let me help you complete the remaining fields.`;
+      }
+    }
+
+    // Add welcome message
+    steps.push({
+      id: 1,
+      type: "bot",
+      content: welcomeMessage,
+      isComplete: true
+    });
+
+    // Find the first required field that doesn't have data
+    let firstMissingField = requiredFields.find(field => !formData[field.name as keyof FormData]);
+    
+    // If no required field is missing, check special fields
+    if (!firstMissingField) {
+      firstMissingField = specialFields.find(field => {
+        if (existingData) {
+          switch (field.name) {
+            case 'location': return !existingData.hasLocation;
+            case 'availability': return !existingData.hasAvailability;
+            default: return true;
+          }
+        }
+        return true;
+      });
+    }
+    
+    if (firstMissingField) {
+      // Add the question as a bot message first
+      steps.push({
+        id: steps.length + 1,
+        type: "bot",
+        content: firstMissingField.defaultPrompt,
+        isComplete: true
+      });
+      
+      // Then add the input field
+      steps.push({
+        id: steps.length + 2,
+        type: firstMissingField.type === "location" ? "location" : 
+              firstMissingField.type === "availability" ? "availability" : 
+              firstMissingField.type === "video" ? "video" : "input",
+        inputConfig: {
+          type: firstMissingField.type,
+          name: firstMissingField.name,
+          placeholder: firstMissingField.placeholder,
+          rows: firstMissingField.rows,
+        },
+        isComplete: false,
+      });
+    }
+
+    setChatSteps(steps);
+  };
   
   // Setup choice state management
   const [showSetupChoice, setShowSetupChoice] = useState(true);
@@ -1444,6 +1700,14 @@ Return 3 relevant hashtags like "#bartender", "#mixology", "#events" for hospita
 
   // Helper to get next required field not in formData - matching gig creation
   const getNextRequiredField = useCallback((formData: FormData) => {
+    // Check if user already has location and availability data
+    const hasLocationAndAvailability = !!(formData.location && formData.availability);
+    
+    if (hasLocationAndAvailability) {
+      // Skip location and availability fields if user already has them
+      return requiredFields.find(f => !formData[f.name] && f.name !== 'location' && f.name !== 'availability');
+    }
+    
     return requiredFields.find(f => !formData[f.name]);
   }, []);
 
@@ -1572,8 +1836,8 @@ Return 3 relevant hashtags like "#bartender", "#mixology", "#events" for hospita
     setManualFormData({});
   }, []);
 
-  // Enhanced AI validation function with improved context awareness
-  const simpleAICheck = useCallback(async (field: string, value: unknown, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | unknown, naturalSummary?: string, extractedData?: string }> => {
+  // Enhanced validation function using the new validation system
+  const enhancedValidation = useCallback(async (field: string, value: unknown, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | unknown, naturalSummary?: string, extractedData?: string }> => {
     if (!value) {
       return { 
         sufficient: false, 
@@ -3115,7 +3379,7 @@ Share this link to get your reference\n\nSend this link to get your reference: $
       setChatSteps([{
         id: 1,
         type: "bot",
-        content: ROLE_SPECIFIC_PROMPTS.gigfolioCoach.welcome + " 🎉 I'm here to help you create the perfect worker profile so you can find gig opportunities! You're creating a profile to showcase your skills and availability to potential clients. Tell me about yourself and what kind of work you can offer. What's your background?",
+        content: "Hi! I'm here to help you create your worker profile. Tell me about yourself and what kind of work you can offer.",
       }, {
         id: 2,
         type: "input",
@@ -3816,9 +4080,9 @@ Share this link to get your reference\n\nSend this link to get your reference: $
               text={
                 <div>
                   {typeof displayValue === 'string' ? (
-                    <div style={{ marginBottom: 16, color: 'var(--primary-color)', fontWeight: 600, fontSize: '16px', lineHeight: '1.4' }}>{naturalSummary}</div>
+                    <div style={{ marginBottom: 16, color: '#ffffff', fontWeight: 600, fontSize: '16px', lineHeight: '1.4' }}>{naturalSummary}</div>
                   ) : (
-                    <div style={{ marginBottom: 16, color: 'var(--primary-color)', fontWeight: 600, fontSize: '16px', lineHeight: '1.4' }}>{naturalSummary}</div>
+                    <div style={{ marginBottom: 16, color: '#ffffff', fontWeight: 600, fontSize: '16px', lineHeight: '1.4' }}>{naturalSummary}</div>
                   )}
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button
@@ -4222,7 +4486,12 @@ Share this link to get your reference\n\nSend this link to get your reference: $
           return (
             <MessageBubble
               key={key}
-              text={step.content as string}
+              text={typeof step.content === 'string' ? step.content.split('\n').map((line, index) => (
+                <React.Fragment key={index}>
+                  {line}
+                  {index < (step.content || '').split('\n').length - 1 && <br />}
+                </React.Fragment>
+              )) : step.content}
               senderType="bot"
               isNew={step.isNew}
               role="GIG_WORKER"

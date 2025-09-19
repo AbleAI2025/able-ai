@@ -10,6 +10,7 @@ type GigAmendmentActionsProps = {
   isSubmitting: boolean;
   isCancelling: boolean;
   existingAmendmentId: string | null;
+  isEdited: boolean;
 };
 
 type AmendmentReasonSectionProps = {
@@ -24,10 +25,10 @@ export const GigAmendmentActions = ({
   handleCancel,
   isSubmitting,
   isCancelling,
-  existingAmendmentId,
+  isEdited
 }: GigAmendmentActionsProps) => {
   const lastRoleUsed = getLastRoleUsed();
-
+  
   const isProcessing = isSubmitting || isCancelling;
 
   return (
@@ -36,7 +37,7 @@ export const GigAmendmentActions = ({
         type="button"
         className={`${styles.submitButton} ${lastRoleUsed === "GIG_WORKER" ? styles.workerBtn : styles.buyerBtn}`}
         onClick={handleSubmit}
-        disabled={isProcessing}
+        disabled={lastRoleUsed !== "BUYER" || isProcessing || !isEdited}
       >
         {isSubmitting ? 'Submitting...' : 'Submit for confirmation'}
       </button>
@@ -45,7 +46,7 @@ export const GigAmendmentActions = ({
         type="button"
         className={styles.cancelButton}
         onClick={handleCancel}
-        disabled={isProcessing}
+        disabled={lastRoleUsed !== "BUYER" || isProcessing}
       >
         Cancel gig
         <p>(This might incur charges or penalties)</p>

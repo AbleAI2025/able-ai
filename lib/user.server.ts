@@ -57,6 +57,7 @@ export async function findOrCreatePgUserAndUpdateRole(
         updates.phone = phone;
       }
 
+
       if (initialRoleContext === "BUYER" && !pgUser.isBuyer) {
         updates.isBuyer = true;
         if (!pgUser.lastRoleUsed) updates.lastRoleUsed = "BUYER";

@@ -9,6 +9,9 @@ import FormCard from "@/app/components/forms/FormCard";
 import LabelledSelectInput from "@/app/components/forms/LabelledSelectInput";
 import LabelledTextareaInput from "@/app/components/forms/LabelledTextareaInput";
 import LabelledFileUploadButton from "@/app/components/forms/LabelledFileUploadButton";
+import { useAuth } from "@/context/AuthContext";
+import { detectPageContext, getContextForURL } from "@/lib/context-detection";
+import Link from "next/link";
 
 const issueTypes = [
   { value: "payment_issue", label: "Payment Issue" },
@@ -20,6 +23,7 @@ const issueTypes = [
 export default function ReportIssuePage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const gigId = params.gigId as string;
 
   const [issueType, setIssueType] = useState<string>(issueTypes[0].value);
@@ -28,6 +32,23 @@ export default function ReportIssuePage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+
+  // Generate context-aware chat URL
+  const getChatUrl = () => {
+    if (!user?.uid) return '#';
+    
+    const baseUrl = `/user/${user.uid}/able-ai`;
+    
+    // Detect current page context
+    const context = detectPageContext(window.location.pathname);
+    
+    // Use simplified context parameter
+    if (context.contextId) {
+      return `${baseUrl}?context=${context.contextId}`;
+    }
+    
+    return baseUrl;
+  };
 
   const handleFileChange = (files: FileList | null) => {
     setAttachedFiles(files);
@@ -108,9 +129,12 @@ export default function ReportIssuePage() {
       <ScreenHeaderWithBack title="Report an Issue" />
       <div className={styles.chatBot}>
         <p>
-          Chat with Able or complete the form manually. A member of our team
-          will be in touch
+          Need help? Chat with Able for assistance or complete the form manually. A member of our team
+          will be in touch.
         </p>
+        <Link href={getChatUrl()} className={styles.chatButton}>
+          Chat with Able
+        </Link>
       </div>
       <form onSubmit={handleSubmit} className={styles.formCard}>
         <LabelledSelectInput

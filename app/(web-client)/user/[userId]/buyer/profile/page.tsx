@@ -91,9 +91,9 @@ export default function BuyerProfilePage() {
   useEffect(() => {
     if (dashboardData) {
       setBusinessInfo({
-        fullCompanyName: dashboardData.fullCompanyName || "",
-        location: dashboardData.billingAddressJson?.formatted_address || "",
-        companyRole: dashboardData.companyRole || "",
+        fullCompanyName: dashboardData.fullCompanyName || "-",
+        location: dashboardData.billingAddressJson?.formatted_address || "-",
+        companyRole: dashboardData.companyRole || "-",
       });
     }
   }, [dashboardData]);
