@@ -11,7 +11,7 @@ type Props = {
   isEditingDetails?: boolean; // Optional prop to control edit mode
 };
 
-const ConfirmAmendedGigDetailsDetails: React.FC<Props> = ({ gigDetailsData, isLoading, handleEditDetails, isEditingDetails }) => {
+const ConfirmAmendedGigDetailsDetails: React.FC<Props> = ({ gigDetailsData, isLoading }) => {
   const [editedGigDetails, setEditedGigDetails] = useState<GigReviewDetailsData>(
     gigDetailsData as GigReviewDetailsData
   );

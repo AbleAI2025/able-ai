@@ -25,9 +25,11 @@ export default function AddEquipmentModal({
   const handleSave = async () => {
     try {
       if (!equipmentName.trim()) throw "Equipment name is required";
+      if (!user?.token) throw "Authentication required";
+
       const { success, error } = await addEquipmentAction(
         equipmentName,
-        user?.token
+        user.token
       );
       if (!success) throw error;
 

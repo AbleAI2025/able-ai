@@ -38,8 +38,6 @@ export function ChatStepRenderer({
   onInputSubmit,
   onFocus,
   onBlur,
-  expandedSummaryFields,
-  onToggleExpand,
   onSanitizedConfirm,
   onSanitizedReformulate,
 }: ChatStepRendererProps) {

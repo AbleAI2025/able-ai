@@ -87,6 +87,55 @@ function extractLocationFromString(str: string): string | null {
   return null;
 }
 
+// Helper function to extract location from any data type (object or string)
+function extractLocationFromData(data: any): string | null {
+  if (!data) return null;
+  
+  if (typeof data === 'string') {
+    return extractLocationFromString(data);
+  }
+  
+  if (typeof data === 'object') {
+    return extractLocationFromObject(data);
+  }
+  
+  return null;
+}
+
+// Helper function to perform aggressive location extraction from an object
+function extractLocationAggressively(obj: any): string | null {
+  if (!obj || typeof obj !== 'object') return null;
+  
+  // Prioritize readable address text over coordinates
+  if (obj.formatted_address) {
+    return obj.formatted_address;
+  }
+  
+  if (obj.address) {
+    return obj.address;
+  }
+  
+  if (obj.street && obj.city) {
+    return `${obj.street}, ${obj.city}`;
+  }
+  
+  // Show any available string data (but not coordinates)
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string' && value.trim() && 
+        value !== 'null' && value !== 'undefined' && value !== '[object Object]' && 
+        !value.includes('[object Object]') && !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
+      return value.trim();
+    }
+  }
+  
+  // Only use coordinates as absolute last resort
+  if (obj.lat && obj.lng) {
+    return `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
+  }
+  
+  return null;
+}
+
 export async function getGigDetails({
   gigId,
   userId,

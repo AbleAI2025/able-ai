@@ -74,7 +74,7 @@ const QualificationModal = ({
       }
       const { success, error } = await addQualificationAction(
         title,
-        user?.token,
+        user.token,
         skillId,
         description
       );
@@ -92,11 +92,12 @@ const QualificationModal = ({
     try {
       if (!title.trim() || !description.trim())
         throw "Both title and description are required";
+      if (!user?.token) throw "Authentication required";
 
       const { success, error } = await editQualificationAction(
         initialValue?.id || "",
         title,
-        user?.token,
+        user.token,
         description
       );
       if (!success) throw error;
