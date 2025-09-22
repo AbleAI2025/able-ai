@@ -238,7 +238,12 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
     }
   } catch (error: unknown) {
     console.error("Error creating gig:", error);
-    return { status: 500, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      status: 500,
+      error: (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string')
+        ? error.message
+        : "Unknown error"
+    };
   }
 }
 

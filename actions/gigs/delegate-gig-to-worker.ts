@@ -177,9 +177,11 @@ export async function delegateGigToWorker(
 
   } catch (error: unknown) {
     console.error('Error delegating gig:', error);
-    return { 
-      error: error instanceof Error ? error.message : 'Failed to delegate gig', 
-      status: 500 
+    return {
+      error: (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string')
+        ? error.message
+        : 'Failed to delegate gig',
+      status: 500
     };
   }
 }
