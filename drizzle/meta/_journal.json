@@ -120,6 +120,13 @@
       "when": 1757625321888,
       "tag": "0015_confused_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1758581428467,
+      "tag": "0016_heavy_sunfire",
+      "breakpoints": true
     }
   ]
 }

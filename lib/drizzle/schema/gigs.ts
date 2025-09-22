@@ -126,6 +126,7 @@ export const GigsTable = pgTable("gigs", {
   finalRate: decimal("final_rate", { precision: 10, scale: 2 }),
   finalHours: decimal("final_hours", { precision: 5, scale: 2 }),
   finalAgreedPrice: decimal("final_agreed_price", { precision: 10, scale: 2 }),
+  tip: decimal("tip", { precision: 10, scale: 2 }),
 
   statusInternal: gigStatusEnum("status_internal")
     .default("PENDING_WORKER_ACCEPTANCE")

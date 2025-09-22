@@ -1,0 +1,1 @@
+ALTER TABLE "gigs" ADD COLUMN "tip" numeric(10, 2);
