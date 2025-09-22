@@ -315,7 +315,6 @@ const SkillSplashScreen = ({
         </div>
 
         {/* Image placeholders */}
-        {profile.supportingImages && profile.supportingImages.length > 0 && (
           <>
             <h4>Images</h4>
             <div className={styles.supportingImages}>
@@ -383,7 +382,7 @@ const SkillSplashScreen = ({
               fetchSkillData={fetchSkillData}
             />
           </>
-        )}
+
         {/* Badges */}
         {profile.badges && profile.badges.length > 0 && (
           <div className={styles.section}>
