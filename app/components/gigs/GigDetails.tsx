@@ -339,25 +339,24 @@ const GigDetailsComponent = ({
             <h2 className={styles.sectionTitle}>Gig Details</h2>
             <Calendar size={26} color="#ffffff" />
           </div>
-          <div className={styles.gigDetailsRow}>
+            <div className={styles.gigDetailsRow}>
             <span className={styles.label}>Location:</span>
             <span className={styles.detailValue}>
-              {gig?.location?.formatted_address}
-              {
-                gig?.location?.lat && gig?.location?.lng ? (
+              {gig?.location?.formatted_address
+              ? gig.location.formatted_address
+              : "Location not provided"}
+              {gig?.location?.lat && gig?.location?.lng && (
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${gig?.location?.lat},${gig?.location?.lng}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${gig.location.lat},${gig.location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginLeft: "0.5rem" }}
               >
                 (View Map)
               </a>
-                ) : "Location not provided"
-              }
-
+              )}
             </span>
-          </div>
+            </div>
           <div className={styles.gigDetailsRow}>
             <span className={styles.label}>Date:</span>
             <span className={styles.detailValue}>

@@ -33,8 +33,8 @@ export default function ProfileVideo({
       </div>
     ) : (
       <>
-      <p><VideoOff /></p>
-      <p className={styles.emptyMessage}>The user has not submitted the presentation</p>
+        <p><VideoOff /></p>
+        <p className={styles.emptyMessage}>The user has not submitted the presentation</p>
       </>
     );
   }
