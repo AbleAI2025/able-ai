@@ -6,7 +6,6 @@
 import { geminiAIAgent, SupportedGeminiModel } from '@/lib/firebase/ai';
 import { Schema } from '@firebase/ai';
 import { IncidentType, IncidentAIResponse, IncidentAIPrompt } from '@/app/types/incidentTypes';
-import { getIncidentSeverity } from '@/lib/incident-detection';
 
 export interface IncidentAIConfig {
   modelName: SupportedGeminiModel;
@@ -271,7 +270,6 @@ export function generateIncidentSummary(
  */
 export function getFollowUpQuestions(
   incidentType: IncidentType,
-  currentData: { [key: string]: any }
 ): string[] {
   const questions: { [key in IncidentType]: string[] } = {
     harassment: [

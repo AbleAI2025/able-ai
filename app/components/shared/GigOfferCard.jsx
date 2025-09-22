@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import styles from './GigOfferCard.module.css';
-import { MapPin, CalendarDays, Clock, DollarSign, CheckCircle, XCircle, Info, AlertTriangle } from 'lucide-react';
+import { MapPin, CalendarDays, Clock, DollarSign, AlertTriangle } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 const GigOfferCard = ({

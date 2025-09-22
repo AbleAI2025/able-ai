@@ -152,7 +152,7 @@ export default function PublicRecommendationPage() {
   }
 
   if (workerDetails?.skills.length === 0)
-    return <p>{workerDetails.name} doesn't have skills yet to showcase</p>;
+    return <p>{workerDetails.name} doesn&apos;t have skills yet to showcase</p>;
 
   return (
     <div className={styles.container}>

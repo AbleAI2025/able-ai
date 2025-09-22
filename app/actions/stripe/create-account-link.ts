@@ -59,8 +59,11 @@ export async function createAccountLink(firebaseUid: string) {
 
     return { url: accountLink.url, status: 200 }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating Stripe Account Link:', error);
-    return { error: error.message, status: 500 }
+    const message = (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string')
+      ? error.message
+      : String(error);
+    return { error: message, status: 500 }
   }
 }
