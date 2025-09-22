@@ -2,16 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
 
 // Using Lucide Icons
-import { Home, Filter, ArrowLeft, Loader2, Briefcase, Wine, Utensils, ExternalLink, ClipboardList } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
+import { Filter, ArrowLeft, Loader2, Briefcase, Wine, Utensils } from 'lucide-react';
 import styles from './EarningsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
-import Image from 'next/image';
 
 // Define interface for earning data
 interface Earning {

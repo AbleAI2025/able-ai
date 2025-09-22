@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq, and, isNull, ne } from "drizzle-orm";
+import { eq, and, isNull, ne, isNotNull } from "drizzle-orm";
 import {
   GigsTable,
   UsersTable,
@@ -161,7 +161,7 @@ async function getWorkerCalendarEvents(user: typeof UsersTable.$inferSelect): Pr
 // --- Buyer Events Helper ---
 async function getBuyerCalendarEvents(user: typeof UsersTable.$inferSelect): Promise<CalendarEvent[]> {
   const gigs = await db.query.GigsTable.findMany({
-    where: eq(GigsTable.buyerUserId, user.id),
+    where: and(eq(GigsTable.buyerUserId, user.id), isNotNull(GigsTable.workerUserId)),
     with: {
       buyer: { columns: { id: true, fullName: true } },
       worker: { columns: { id: true, fullName: true } },

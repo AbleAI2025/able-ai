@@ -46,10 +46,7 @@ useEffect(() => {
   async function fetchEvents() {
     if (typeof window !== 'undefined') {
       const isViewQA = localStorage.getItem('isViewQA') === 'true';
-      if (isViewQA) {
-        setEvents(filterEvents(MOCK_EVENTS, activeFilter));
-        return;
-      }
+
       // Replace with your API endpoint and auth logic
       const res = await fetch(`/api/calendar/events?role=worker&userId=${userId}`);
       const data = await res.json();

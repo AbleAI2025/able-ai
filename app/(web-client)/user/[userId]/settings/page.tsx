@@ -1,6 +1,4 @@
-/* eslint-disable max-lines */
-/* eslint-disable max-lines-per-function */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client";
 
 import React, { useState, useEffect, FormEvent } from "react";
@@ -14,7 +12,6 @@ import {
   sendEmailVerification,
 } from "firebase/auth";
 import InputField from "@/app/components/form/InputField";
-import styles2 from "@/app/components/shared/AiSuggestionBanner.module.css";
 import styles from "./SettingsPage.module.css";
 import {
   Shield,
@@ -27,7 +24,6 @@ import {
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { createAccountLink } from "@/app/actions/stripe/create-account-link";
-import { createPortalSession } from "@/app/actions/stripe/create-portal-session";
 import { FirebaseError } from "firebase/app";
 import SwitchControl from "@/app/components/shared/SwitchControl";
 import { toast } from "sonner";
@@ -434,7 +430,22 @@ export default function SettingsPage() {
                   className={styles.resendButton}
                   disabled={isResendingEmail}
                 >
-                {isResendingEmail ? 'Sending...' : 'Resend Verification Email'}
+                  {isResendingEmail ? (
+                    <>
+                      <svg className={styles.spinnerIcon} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className={styles.emailIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Resend Verification Email
+                    </>
+                  )}
                 </button>
               </div>
             </div>

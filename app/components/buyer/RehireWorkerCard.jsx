@@ -4,22 +4,6 @@ import Image from 'next/image'; // Or your Avatar component
 import styles from './RehireWorkerCard.module.css'; // Create this CSS module
 import { UserCircle, Loader2 } from 'lucide-react'; // Added UserCircle and Loader2
 
-// Interface for the data needed for this card
-// interface RehireWorkerData {
-//   workerId: string;
-//   name: string;
-//   avatarUrl?: string;
-//   role: string;
-//   ableGigs: number;
-//   experienceYears: string | number;
-//   reviewKeywords: string[];
-//   proposedHourlyRate: number;
-//   proposedHours: number; // For calculating total
-//   platformFeePercent: number;
-//   paymentProviderFeeFixed: number; // e.g., 0.20 for Stripe's 20p
-//   paymentProviderFeePercent: number; // e.g., 0.015 for Stripe's 1.5%
-// }
-
 const RehireWorkerCard = ({
   workerData, // : RehireWorkerData
   onBook,

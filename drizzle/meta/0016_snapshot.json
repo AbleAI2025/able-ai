@@ -1,5 +1,5 @@
 {
-  "id": "8a184718-4501-4509-8af4-4230099f8773",
+  "id": "69a1fd84-40f5-4799-b351-b70e19393acc",
   "prevId": "ea5c91a6-dbab-450f-b125-7b5a07315676",
   "version": "7",
   "dialect": "postgresql",
@@ -985,12 +985,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "tip": {
-          "name": "tip",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "status_internal": {
           "name": "status_internal",
           "type": "gig_status_enum",
@@ -1406,6 +1400,12 @@
         "company_role": {
           "name": "company_role",
           "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "social_link": {
+          "name": "social_link",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

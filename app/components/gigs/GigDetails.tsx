@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { Calendar, Check, Info } from "lucide-react";
+import { Calendar, Check, Info, VideoOff } from "lucide-react";
 import styles from "./GigDetails.module.css";
 import { usePathname, useRouter } from "next/navigation";
 import GigActionButton from "../shared/GigActionButton";
@@ -287,45 +287,6 @@ const GigDetailsComponent = ({
     }
   };
 
-  /**
- // Handler for negotiating gig details
-   const handleNegotiateGig = () => {
-    if (!user?.uid || !gig.id) return;
-
-    // Navigate to the amend page - need to get the current user's profile ID
-    const currentUserId = userId; // This should be the worker's profile ID from props
-    router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/amend`);
-  
-    };
-    
-
-  // Handler for reporting an issue
-  const handleReportIssue = () => {
-    if (!user?.uid || !gig.id) return;
-
-    // Navigate to the report issue page
-    const currentUserId = userId; // This should be the worker's profile ID from props
-    router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/report-issue`);
-  };
-
-  // Handler for delegating gig
-  const handleDelegateGig = () => {
-    if (!user?.uid || !gig.id) return;
-
-    // Navigate to the delegate gig page
-    const currentUserId = userId; // This should be the worker's profile ID from props
-    router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/delegate`);
-  };
-
-  // Handler for viewing terms of agreement
-  const handleViewTerms = () => {
-    // Navigate to the existing terms page
-    router.push("/legal/terms");
-  };
-
- */
-
-
   return (
     <div className={styles.container}>
       <ScreenHeaderWithBack
@@ -339,20 +300,24 @@ const GigDetailsComponent = ({
             <h2 className={styles.sectionTitle}>Gig Details</h2>
             <Calendar size={26} color="#ffffff" />
           </div>
-          <div className={styles.gigDetailsRow}>
+            <div className={styles.gigDetailsRow}>
             <span className={styles.label}>Location:</span>
             <span className={styles.detailValue}>
-              {gig?.location?.formatted_address}
+              {gig?.location?.formatted_address
+              ? gig.location.formatted_address
+              : "Location not provided"}
+              {gig?.location?.lat && gig?.location?.lng && (
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${gig?.location?.lat},${gig?.location?.lng}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${gig.location.lat},${gig.location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginLeft: "0.5rem" }}
               >
                 (View Map)
               </a>
+              )}
             </span>
-          </div>
+            </div>
           <div className={styles.gigDetailsRow}>
             <span className={styles.label}>Date:</span>
             <span className={styles.detailValue}>
@@ -390,7 +355,7 @@ const GigDetailsComponent = ({
           )}
         </section>
 
-        {lastRoleUsed === "GIG_WORKER" && (
+        {gig?.worker ? (
           <section
             className={`${styles.gigDetailsSection} ${styles.workerSection}`}
           >
@@ -416,6 +381,15 @@ const GigDetailsComponent = ({
                   height={50}
                 />
               )}
+            </div>
+          </section>
+        ): (
+          <section
+            className={`${styles.gigDetailsSection} ${styles.noWorkerSection}`}
+          >
+              <p><VideoOff /></p>
+            <div className={styles.noWorkerAssigned}>
+              <p>No worker assigned yet</p>
             </div>
           </section>
         )}
@@ -500,29 +474,33 @@ const GigDetailsComponent = ({
         <section className={`${styles.secondaryActionsSection}`}>
           {" "}
           {/* Using secondaryActionsSection class */}
+          <div className={styles.secondaryButtonsContainer}>
+            <button
+              onClick={() => handleGigAction("reportIssue")}
+              className={styles.secondaryActionButton}
+              disabled={isActionLoading}
+            >
+              Report an Issue
+            </button>
+            <button
+              onClick={() => handleGigAction("delegate")}
+              className={styles.secondaryActionButton}
+              disabled={isActionLoading}
+            >
+              Delegate gig
+            </button> 
+          </div>
+          
           <Link
             href="/terms-of-service"
             target="_blank"
             rel="noopener noreferrer"
-            className={styles.secondaryActionButton}
+            className={styles.termsLink}
           >
             Terms of agreement
           </Link>
-          <button
-            onClick={() => handleGigAction("reportIssue")}
-            className={styles.secondaryActionButton}
-            disabled={isActionLoading}
-          >
-            Report an Issue
-          </button>
-          <button
-            onClick={() => handleGigAction("delegate")}
-            className={styles.secondaryActionButton}
-            disabled={isActionLoading}
-          >
-            Delegate gig
-          </button>
         </section>
+        
       </main>
     </div>
   );

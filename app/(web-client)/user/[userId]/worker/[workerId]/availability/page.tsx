@@ -28,7 +28,7 @@ const AvailabilityPage = () => {
 
     const fetchAvailability = async () => {
       try {
-        const availabilityRes = await getWorkerAvailability(workerIdStr, true); // set isViewQA as needed
+        const availabilityRes = await getWorkerAvailability(workerIdStr); // set isViewQA as needed
         const availabilityEvents = convertAvailabilitySlotsToEvents(
           availabilityRes.availability || [],
           new Date(date.getFullYear(), date.getMonth(), 1),

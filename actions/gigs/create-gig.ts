@@ -28,7 +28,6 @@ function coerceNumber(value: number | string | undefined, fallback = 0): number 
 }
 
 function buildDateTime(gigDate: string, gigTime?: string): { startTime: Date; endTime: Date; duration: number } {
-  console.log('buildDateTime debug - gigDate:', gigDate, 'gigTime:', gigTime);
   
   // Check if gigTime is a time range with " to " (AI formatted)
   if (gigTime && gigTime.includes(' to ')) {
@@ -45,8 +44,7 @@ function buildDateTime(gigDate: string, gigTime?: string): { startTime: Date; en
       // Calculate duration in hours
       const durationMs = endTime.getTime() - startTime.getTime();
       const duration = durationMs / (1000 * 60 * 60);
-      
-      console.log('buildDateTime debug - parsed time range:', { startTime, endTime, duration });
+
       return { startTime, endTime, duration };
     }
   }
@@ -66,8 +64,7 @@ function buildDateTime(gigDate: string, gigTime?: string): { startTime: Date; en
       // Calculate duration in hours
       const durationMs = endTime.getTime() - startTime.getTime();
       const duration = durationMs / (1000 * 60 * 60);
-      
-      console.log('buildDateTime debug - parsed dash time range:', { startTime, endTime, duration });
+
       return { startTime, endTime, duration };
     }
   }
@@ -79,12 +76,10 @@ function buildDateTime(gigDate: string, gigTime?: string): { startTime: Date; en
     const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // default 2h
     const duration = 2; // default 2 hours
     
-    console.log('buildDateTime debug - parsed single time:', { startTime, endTime, duration });
     return { startTime, endTime, duration };
   }
   
   // Fallback to default time
-  console.log('buildDateTime debug - using default time 09:00-11:00');
   const startTime = new Date(`${gigDate}T09:00:00`);
   const endTime = new Date(`${gigDate}T11:00:00`);
   const duration = 2; // default 2 hours
@@ -114,12 +109,8 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
     let addressJsonData: any = null;
 
     if (gigLocation) {
-      console.log('Create gig debug - received gigLocation:', gigLocation);
-      console.log('Create gig debug - gigLocation type:', typeof gigLocation);
-      
       if (typeof gigLocation === 'object' && gigLocation !== null) {
         const locationObj = gigLocation as any;
-        console.log('Create gig debug - processing location object:', locationObj);
         
         // Store the full object in addressJson for future reference
         addressJsonData = locationObj;
@@ -128,15 +119,12 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
         if (locationObj.lat && locationObj.lng && typeof locationObj.lat === 'number' && typeof locationObj.lng === 'number') {
           // Priority 1: Coordinates (most precise) - store in addressJson, show readable format
           processedLocation = `Coordinates: ${locationObj.lat.toFixed(6)}, ${locationObj.lng.toFixed(6)}`;
-          console.log('Create gig debug - extracted coordinates:', processedLocation);
         } else if (locationObj.formatted_address) {
           // Priority 2: Formatted address
           processedLocation = locationObj.formatted_address;
-          console.log('Create gig debug - extracted formatted_address:', processedLocation);
         } else if (locationObj.address) {
           // Priority 3: Address field
           processedLocation = locationObj.address;
-          console.log('Create gig debug - extracted address:', processedLocation);
         } else {
           // Priority 4: Build from components
           const parts = [];
@@ -153,29 +141,21 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
           }
         }
       } else if (typeof gigLocation === 'string') {
-        console.log('Create gig debug - processing location string:', gigLocation);
         
         // Check if it's already a formatted location string
         if (gigLocation.includes(',') && !gigLocation.includes('[object Object]')) {
           processedLocation = gigLocation;
-          console.log('Create gig debug - using string as-is:', processedLocation);
         } else if (gigLocation.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
           // It's coordinates, format them nicely
           processedLocation = `Coordinates: ${gigLocation}`;
-          console.log('Create gig debug - formatted coordinates:', processedLocation);
         } else if (gigLocation.startsWith('http')) {
           // It's a URL, store as-is
           processedLocation = gigLocation;
-          console.log('Create gig debug - using URL as-is:', processedLocation);
         } else {
           // Generic string, use as-is
           processedLocation = gigLocation;
-          console.log('Create gig debug - using generic string:', processedLocation);
         }
       }
-      
-      console.log('Create gig debug - final processedLocation:', processedLocation);
-      console.log('Create gig debug - final addressJsonData:', addressJsonData);
     } else {
       console.log('Create gig debug - no gigLocation provided');
     }
@@ -188,12 +168,8 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
 
     // Additional safety check - ensure we always have a valid location string
     if (!processedLocation || processedLocation.trim() === '') {
-      processedLocation = 'Location details provided';
+      processedLocation = 'Location details not provided';
     }
-
-    console.log('CreateGig debug - original gigLocation:', gigLocation);
-    console.log('CreateGig debug - processed location:', processedLocation);
-    console.log('CreateGig debug - addressJson data:', addressJsonData);
 
     const insertData = {
       buyerUserId: user.id,
@@ -212,33 +188,27 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
       // Leave totals/fees null for now; can be computed later
     };
 
-    console.log('CreateGig debug - insert data:', insertData);
-
     try {
       const [inserted] = await db
         .insert(GigsTable)
         .values(insertData)
         .returning({ id: GigsTable.id });
 
-      console.log('CreateGig debug - inserted result:', inserted);
-
       if (!inserted?.id) return { status: 500, error: "Failed to create gig" };
 
       return { status: 200, gigId: inserted.id };
     } catch (dbError: any) {
       console.error('CreateGig database error:', dbError);
-      console.error('CreateGig database error details:', {
-        message: dbError.message,
-        code: dbError.code,
-        detail: dbError.detail,
-        hint: dbError.hint,
-        constraint: dbError.constraint
-      });
       return { status: 500, error: `Database error: ${dbError.message}` };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating gig:", error);
-    return { status: 500, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      status: 500,
+      error: (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string')
+        ? error.message
+        : "Unknown error"
+    };
   }
 }
 

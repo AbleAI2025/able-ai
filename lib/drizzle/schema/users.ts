@@ -124,9 +124,10 @@ export const BuyerProfilesTable = pgTable("buyer_profiles", {
     length: 100,
   }),
   responseRateInternal: numeric("response_rate_internal", { precision: 5, scale:  2 }),
-  billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON
+  billingAddressJson: jsonb("billing_address_json"), // Store structured address as JSON: {location: string, address: string, latitude: number, longitude: number}
   videoUrl: text("video_url"),
   companyRole: varchar("company_role", { length: 100 }),
+  socialLink: text("social_link"),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

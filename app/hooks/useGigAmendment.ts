@@ -1,13 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { useGigAmendContext } from '@/context/GigAmendContext';
-import { createGigAmendment, cancelGigAmendment, findExistingGigAmendment, getGigAmendmentDetails } from "@/actions/gigs/manage-amendment";
+import { useState, useEffect } from "react";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { useGigAmendContext } from "@/context/GigAmendContext";
+import {
+  createGigAmendment,
+  cancelGigAmendment,
+  findExistingGigAmendment,
+  getGigAmendmentDetails,
+} from "@/actions/gigs/manage-amendment";
 import { initialGigState, formatGigDataForEditing } from "@/utils/gig-utils";
-import type { GigReviewDetailsData } from '@/app/types/GigDetailsTypes';
-import { toast } from 'sonner';
+import type { GigReviewDetailsData } from "@/app/types/GigDetailsTypes";
+import { toast } from "sonner";
 
 export function useGigAmendment() {
   const params = useParams();
@@ -20,9 +25,12 @@ export function useGigAmendment() {
   const amendId = params.amendId as string;
 
   const [isLoading, setIsLoading] = useState(true);
-  const [editedGigDetails, setEditedGigDetails] = useState<GigReviewDetailsData>(initialGigState);
+  const [editedGigDetails, setEditedGigDetails] =
+    useState<GigReviewDetailsData>(initialGigState);
   const [reason, setReason] = useState("");
-  const [existingAmendmentId, setExistingAmendmentId] = useState<string | null>(null);
+  const [existingAmendmentId, setExistingAmendmentId] = useState<string | null>(
+    null
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -39,26 +47,35 @@ export function useGigAmendment() {
           // Creating a new amendment
           const formattedData = formatGigDataForEditing(gig);
           setEditedGigDetails(formattedData);
-          const amendmentResult = await findExistingGigAmendment({ gigId, userId: user.uid });
+          const amendmentResult = await findExistingGigAmendment({
+            gigId,
+            userId: user.uid,
+          });
           if (amendmentResult.amendId) {
             setExistingAmendmentId(amendmentResult.amendId);
           }
         } else {
           // Loading an existing amendment
-          const amendmentResult = await getGigAmendmentDetails({ amendmentId: amendId });
+          const amendmentResult = await getGigAmendmentDetails({
+            amendmentId: amendId,
+          });
           if (amendmentResult.amendment) {
             const { newValues, reason, id } = amendmentResult.amendment;
             setEditedGigDetails(newValues as GigReviewDetailsData);
             setReason(reason || "");
             setExistingAmendmentId(id);
           } else {
-            toast.error(amendmentResult.error || "Could not load amendment details.");
+            toast.error(
+              amendmentResult.error || "Could not load amendment details."
+            );
             router.back();
           }
         }
       } catch (error) {
-        console.error('Error fetching amendment data:', error);
-        toast.error("An unexpected error occurred while loading amendment details.");
+        console.error("Error fetching amendment data:", error);
+        toast.error(
+          "An unexpected error occurred while loading amendment details."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -68,8 +85,7 @@ export function useGigAmendment() {
   }, [gig, isGigContextLoading, gigId, user, userId, amendId, router]);
 
   const handleSubmit = async () => {
-    if (!user?.uid || !gigId || !reason.trim() || !gig) {
-      toast.error("Please provide a reason for the changes.");
+    if (!user?.uid || !gigId || !gig) {
       return;
     }
     setIsSubmitting(true);
@@ -80,14 +96,20 @@ export function useGigAmendment() {
       requestType: "GENERAL",
       oldValues: formatGigDataForEditing(gig),
       newValues: editedGigDetails,
-      reason
+      reason,
     });
     setIsSubmitting(false);
-    
+
     if (result.success && result.amendmentId) {
-      toast.success(amendId === "new" ? "Submitted amendment request" : "Amendment request updated");
+      toast.success(
+        amendId === "new"
+          ? "Submitted amendment request"
+          : "Amendment request updated"
+      );
       if (amendId === "new") {
-        router.push(`/user/${userId}/${userRole}/gigs/${gigId}/amend/${result.amendmentId}`);
+        router.push(
+          `/user/${userId}/${userRole}/gigs/${gigId}/amend/${result.amendmentId}`
+        );
       } else {
         router.back();
       }
@@ -97,9 +119,14 @@ export function useGigAmendment() {
   };
 
   const handleCancel = async () => {
+    // this method is not for cancelling the gig amendement, it should be for canceling the gig itself, 
+    // so it should be updated to reflect that
     if (existingAmendmentId && user?.uid) {
       setIsCancelling(true);
-      const result = await cancelGigAmendment({ amendmentId: existingAmendmentId, userId: user.uid });
+      const result = await cancelGigAmendment({
+        amendmentId: existingAmendmentId,
+        userId: user.uid,
+      });
       setIsCancelling(false);
       if (result.success) {
         toast.success("Your pending amendment has been withdrawn.");
@@ -112,7 +139,20 @@ export function useGigAmendment() {
     }
   };
 
-  const handleBackClick = () => router.push(`/user/${userId}/${userRole}/gigs/${gigId}`);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+
+    const handleBackClick = () => {
+    setShowLeaveDialog(true);
+  };
+
+  const confirmLeave = () => {
+    setShowLeaveDialog(false);
+    router.push(`/user/${userId}/${userRole}/gigs/${gigId}`);
+  };
+
+  const cancelLeave = () => {
+    setShowLeaveDialog(false);
+  };
 
   return {
     isLoading: isLoading || isGigContextLoading,
@@ -126,7 +166,10 @@ export function useGigAmendment() {
     gig,
     router,
     handleSubmit,
+    handleBackClick,
     handleCancel,
-    handleBackClick
+    confirmLeave,
+    cancelLeave,
+    showLeaveDialog
   };
 }

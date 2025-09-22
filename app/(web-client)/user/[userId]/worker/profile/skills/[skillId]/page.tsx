@@ -18,10 +18,6 @@ export default function WorkerSkillDetailPage() {
 
   const fetchSkillData = async () => {
     if (!skillId) return;
-    if (isViewQA) {
-      setProfile(mockSkillProfile);
-      return;
-    }
     try {
       const { success, data } = await getSkillDetailsWorker(skillId);
       if (success && data) {

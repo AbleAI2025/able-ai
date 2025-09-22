@@ -135,62 +135,6 @@ function extractLocationAggressively(obj: any): string | null {
   
   return null;
 }
-/**
- * Helper function to parse location from gig data
-  function parseGigLocation(gig: any): string {
-  // Try to extract location from addressJson first (prioritize formatted addresses)
-  if (gig.addressJson) {
-    if (typeof gig.addressJson === 'string') {
-      try {
-        const parsed = JSON.parse(gig.addressJson);
-        const extracted = extractLocationFromObject(parsed);
-        if (extracted) {
-          return extracted;
-        }
-      } catch (e) {
-        // If JSON parsing fails, try as string
-        const extracted = extractLocationFromString(gig.addressJson);
-        if (extracted) {
-          return extracted;
-        }
-      }
-    } else if (typeof gig.addressJson === 'object') {
-      const extracted = extractLocationFromObject(gig.addressJson);
-      if (extracted) {
-        return extracted;
-      }
-    }
-  }
-  
-  // If addressJson didn't work, try exactLocation
-  if (gig.exactLocation) {
-    const extracted = extractLocationFromData(gig.exactLocation);
-    if (extracted) {
-      return extracted;
-    }
-  }
-
-  // If still no location, try aggressive extraction
-  if (gig.addressJson && typeof gig.addressJson === 'object') {
-    const extracted = extractLocationAggressively(gig.addressJson);
-    if (extracted) {
-      return extracted;
-    }
-  }
-  
-  if (gig.exactLocation && typeof gig.exactLocation === 'object') {
-    const extracted = extractLocationAggressively(gig.exactLocation);
-    if (extracted) {
-      return extracted;
-    }
-  }
-
-  // Return fallback location if no valid location found
-  return 'Location details available';
-}
- */
-
-
 
 export async function getGigDetails({
   gigId,
@@ -207,7 +151,6 @@ export async function getGigDetails({
 
   
   if (!userId) {
-    console.log('🔍 DEBUG: No userId provided');
     return { error: 'User id is required', gig: {} as GigDetails, status: 404 };
   }
 
@@ -215,8 +158,6 @@ export async function getGigDetails({
     let user;
     
     if (isDatabaseUserId) {
-      // Look up by database user ID directly
-      console.log('🔍 DEBUG: Looking up user with database user ID:', userId);
       user = await db.query.UsersTable.findFirst({
         where: eq(UsersTable.id, userId),
         columns: {
@@ -226,8 +167,6 @@ export async function getGigDetails({
         }
       });
     } else {
-      // Look up by Firebase UID (original behavior)
-      console.log('🔍 DEBUG: Looking up user with Firebase UID:', userId);
       user = await db.query.UsersTable.findFirst({
         where: eq(UsersTable.firebaseUid, userId),
         columns: {
@@ -238,19 +177,7 @@ export async function getGigDetails({
       });
     }
 
-    console.log('🔍 DEBUG: User lookup result:', { 
-      found: !!user, 
-      userId: user?.id, 
-      firebaseUid: user?.firebaseUid,
-      fullName: user?.fullName,
-      searchedFor: userId,
-      isDatabaseUserId
-    });
-
-    console.log('🔍 DEBUG: User lookup result:', { found: !!user, userId: user?.id });
-
     if (!user) {
-      console.log('🔍 DEBUG: User not found in database for ID:', userId);
       return { error: 'User is not found', gig: {} as GigDetails, status: 404 };
     }
 
@@ -277,8 +204,6 @@ export async function getGigDetails({
         },
       });
     } else if (role === 'worker') {
-      // For workers, show both assigned gigs and available offers
-      console.log('🔍 DEBUG: Querying gig for worker with user ID:', user.id);
       gig = await db.query.GigsTable.findFirst({
         where: and(
           eq(GigsTable.id, gigId),
@@ -307,8 +232,7 @@ export async function getGigDetails({
             },
           },
         },
-      });
-      console.log('🔍 DEBUG: Gig query result for worker:', { found: !!gig, gigId: gig?.id });
+      })
     } else {
       // Fallback to original logic for other roles
       const columnConditionId = role === 'buyer' ? GigsTable.buyerUserId : GigsTable.workerUserId;
@@ -337,7 +261,6 @@ export async function getGigDetails({
     })
 
     if (!gig) {
-      console.log('🔍 DEBUG: Gig not found in database');
       return { error: 'gig not found', gig: {} as GigDetails, status: 404 };
     }
 

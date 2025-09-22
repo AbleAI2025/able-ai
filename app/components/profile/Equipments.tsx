@@ -25,7 +25,11 @@ export default function Equipments({ workerProfileId, equipments, isSelfView, fe
   };
 
   const handleRemove = async (id: string) => {
-    await deleteEquipmentAction(id, user?.token);
+    if (!user?.token) {
+      toast.error("Authentication required");
+      return;
+    }
+    await deleteEquipmentAction(id, user.token);
     toast.success("Equipment removed successfully");
     fetchUserProfile(user?.token || workerProfileId);
     setIsEditing(false);

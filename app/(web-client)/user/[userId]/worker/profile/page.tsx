@@ -12,7 +12,6 @@ import PublicWorkerProfile from "@/app/types/workerProfileTypes";
 import {
   getPrivateWorkerProfileAction,
 } from "@/actions/user/gig-worker-profile";
-import { mockWorkerProfile } from "./mockedprofile";
 
 export default function WorkerOwnedProfilePage() {
   const router = useRouter();
@@ -29,14 +28,7 @@ export default function WorkerOwnedProfilePage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isViewQA = false;
-
   const fetchUserProfile = async (token: string) => {
-    if (isViewQA) {
-      setProfile(mockWorkerProfile)
-      setLoadingProfile(false);
-      return;
-    } 
     const { data } = await getPrivateWorkerProfileAction(token);
     if (data) {
       const updatedReviews = (data.reviews ?? []).map(

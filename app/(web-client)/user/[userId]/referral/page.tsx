@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from 'react';
@@ -6,8 +5,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
 // Shared InputField, or use direct styling with .input class
-import InputField from '@/app/components/form/InputField'; // Assuming general input style
-import { UploadCloud, Loader2 } from 'lucide-react'; // Icon for upload
+import { Loader2 } from 'lucide-react'; // Icon for upload
 
 import styles from './ReferralPage.module.css';
 import { useAuth } from '@/context/AuthContext';

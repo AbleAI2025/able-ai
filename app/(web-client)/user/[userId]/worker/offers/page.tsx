@@ -12,8 +12,6 @@ import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import
 import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
 import { Loader2, Inbox, Calendar } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
-import Logo from "@/app/components/brand/Logo";
-import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 
