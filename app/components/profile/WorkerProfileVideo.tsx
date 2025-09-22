@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import VideoRecorderBubble from "@/app/components/onboarding/VideoRecorderBubble";
 import styles from "./WorkerProfileVideo.module.css";
-import { MonitorPlay, Pencil } from "lucide-react";
+import { MonitorPlay, Pencil, VideoOff } from "lucide-react";
 
 interface ProfileVideoProps {
   videoUrl?: string | null;
@@ -32,7 +32,10 @@ export default function ProfileVideo({
         />
       </div>
     ) : (
-      <p className={styles.emptyMessage}>User has not uploaded a presentation</p>
+      <>
+      <p><VideoOff /></p>
+      <p className={styles.emptyMessage}>The user has not submitted the presentation</p>
+      </>
     );
   }
 

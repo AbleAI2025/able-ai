@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { Calendar, Check, Info } from "lucide-react";
+import { Calendar, Check, Info, VideoOff } from "lucide-react";
 import styles from "./GigDetails.module.css";
 import { usePathname, useRouter } from "next/navigation";
 import GigActionButton from "../shared/GigActionButton";
@@ -343,6 +343,8 @@ const GigDetailsComponent = ({
             <span className={styles.label}>Location:</span>
             <span className={styles.detailValue}>
               {gig?.location?.formatted_address}
+              {
+                gig?.location?.lat && gig?.location?.lng ? (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${gig?.location?.lat},${gig?.location?.lng}`}
                 target="_blank"
@@ -351,6 +353,9 @@ const GigDetailsComponent = ({
               >
                 (View Map)
               </a>
+                ) : "Location not provided"
+              }
+
             </span>
           </div>
           <div className={styles.gigDetailsRow}>
@@ -390,7 +395,7 @@ const GigDetailsComponent = ({
           )}
         </section>
 
-        {lastRoleUsed === "GIG_WORKER" && (
+        {gig?.worker ? (
           <section
             className={`${styles.gigDetailsSection} ${styles.workerSection}`}
           >
@@ -416,6 +421,15 @@ const GigDetailsComponent = ({
                   height={50}
                 />
               )}
+            </div>
+          </section>
+        ): (
+          <section
+            className={`${styles.gigDetailsSection} ${styles.noWorkerSection}`}
+          >
+              <p><VideoOff /></p>
+            <div className={styles.noWorkerAssigned}>
+              <p>No worker assigned yet</p>
             </div>
           </section>
         )}
