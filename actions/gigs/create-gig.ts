@@ -236,7 +236,7 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
       });
       return { status: 500, error: `Database error: ${dbError.message}` };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating gig:", error);
     return { status: 500, error: error instanceof Error ? error.message : "Unknown error" };
   }

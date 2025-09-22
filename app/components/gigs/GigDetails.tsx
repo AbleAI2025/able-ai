@@ -287,45 +287,6 @@ const GigDetailsComponent = ({
     }
   };
 
-  /**
- // Handler for negotiating gig details
-   const handleNegotiateGig = () => {
-    if (!user?.uid || !gig.id) return;
-
-    // Navigate to the amend page - need to get the current user's profile ID
-    const currentUserId = userId; // This should be the worker's profile ID from props
-    router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/amend`);
-  
-    };
-    
-
-  // Handler for reporting an issue
-  const handleReportIssue = () => {
-    if (!user?.uid || !gig.id) return;
-
-    // Navigate to the report issue page
-    const currentUserId = userId; // This should be the worker's profile ID from props
-    router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/report-issue`);
-  };
-
-  // Handler for delegating gig
-  const handleDelegateGig = () => {
-    if (!user?.uid || !gig.id) return;
-
-    // Navigate to the delegate gig page
-    const currentUserId = userId; // This should be the worker's profile ID from props
-    router.push(`/user/${currentUserId}/worker/gigs/${gig.id}/delegate`);
-  };
-
-  // Handler for viewing terms of agreement
-  const handleViewTerms = () => {
-    // Navigate to the existing terms page
-    router.push("/legal/terms");
-  };
-
- */
-
-
   return (
     <div className={styles.container}>
       <ScreenHeaderWithBack

@@ -2,17 +2,12 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 import ChatBotLayout from "@/app/components/onboarding/ChatBotLayout";
 import MessageBubble from "@/app/components/onboarding/MessageBubble";
-import CalendarPickerBubble from "@/app/components/onboarding/CalendarPickerBubble";
 import VideoRecorderOnboarding from "@/app/components/onboarding/VideoRecorderOnboarding";
 import LocationPickerBubble from '@/app/components/onboarding/LocationPickerBubble';
-import ShareLinkBubble from "@/app/components/onboarding/ShareLinkBubble";
-import SanitizedConfirmationBubble from "@/app/components/onboarding/SanitizedConfirmationBubble";
-import SetupChoiceModal from "@/app/components/onboarding/SetupChoiceModal";
-import ManualProfileForm, { validateWorkerProfileData } from "@/app/components/onboarding/ManualProfileForm";
+import ManualProfileForm from "@/app/components/onboarding/ManualProfileForm";
 import Loader from "@/app/components/shared/Loader";
 
 // Typing indicator component with bouncing animation
@@ -73,15 +68,10 @@ const TypingIndicator: React.FC = () => (
 
 TypingIndicator.displayName = 'TypingIndicator';
 
-import pageStyles from "./OnboardingAIPage.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { useFirebase } from '@/context/FirebaseContext';
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { Schema } from '@firebase/ai';
-import { FormInputType } from "@/app/types/form";
-import { createEscalatedIssueClient } from '@/utils/client-escalation';
-import { detectEscalationTriggers, generateEscalationDescription } from '@/utils/escalation-detection';
-import { detectIncident } from '@/lib/incident-detection';
 
 // Type assertion for Schema to resolve TypeScript errors
 const TypedSchema = Schema as any;
@@ -90,20 +80,7 @@ const TypedSchema = Schema as any;
 import {
   buildContextPrompt,
   buildRolePrompt,
-  buildSpecializedPrompt,
-  CONTEXT_PROMPTS,
-  SPECIALIZED_PROMPTS,
-  ROLE_SPECIFIC_PROMPTS,
-  GIGFOLIO_COACH_CONTENT,
-  GIGFOLIO_COACH_BEHAVIOR,
-  ONBOARDING_STEPS,
-  COACHING_TECHNIQUES
-} from '@/app/components/shared/ChatAI';
-
-import {
-  findClosestJobTitle,
-  findStandardizedJobTitleWithAIFallback,
-  ALL_JOB_TITLES
+  buildSpecializedPrompt
 } from '@/app/components/shared/ChatAI';
 
 import {
@@ -113,8 +90,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
-import { updateVideoUrlProfileAction, saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
-import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
+import { saveWorkerProfileFromOnboardingAction } from "@/actions/user/gig-worker-profile";
 import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
 
 // AI Video Script Generation Function (from onboarding-ai)

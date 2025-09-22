@@ -175,10 +175,10 @@ export async function delegateGigToWorker(
       }
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error delegating gig:', error);
     return { 
-      error: error.message || 'Failed to delegate gig', 
+      error: error instanceof Error ? error.message : 'Failed to delegate gig', 
       status: 500 
     };
   }

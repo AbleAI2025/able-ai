@@ -3,11 +3,7 @@ import React, { useState } from "react";
 import styles from "./GigAmendmentPage.module.css";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import UpdateGig from "@/app/components/gigs/UpdateGig";
-import {
-  GigAmendmentActions,
-  AmendmentReasonSection,
-  AmendmentDummyChatbot,
-} from "@/app/components/gigs/GigAmendmentSections";
+import { GigAmendmentActions } from "@/app/components/gigs/GigAmendmentSections";
 import { useGigAmendment } from "@/app/hooks/useGigAmendment";
 import LeavePageDialog from "@/app/hooks/LeavePageDialog";
 
@@ -18,8 +14,6 @@ export default function GigAmendmentPage() {
     isCancelling,
     editedGigDetails,
     setEditedGigDetails,
-    reason,
-    setReason,
     existingAmendmentId,
     gig,
     handleSubmit,

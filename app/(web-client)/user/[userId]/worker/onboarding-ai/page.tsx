@@ -11,7 +11,6 @@ import CalendarPickerBubble from "@/app/components/onboarding/CalendarPickerBubb
 import VideoRecorderOnboarding from "@/app/components/onboarding/VideoRecorderOnboarding";
 import LocationPickerBubble from '@/app/components/onboarding/LocationPickerBubble';
 import ShareLinkBubble from "@/app/components/onboarding/ShareLinkBubble";
-import SanitizedConfirmationBubble from "@/app/components/onboarding/SanitizedConfirmationBubble";
 import SetupChoiceModal from "@/app/components/onboarding/SetupChoiceModal";
 import ManualProfileForm, { validateWorkerProfileData } from "@/app/components/onboarding/ManualProfileForm";
 import Loader from "@/app/components/shared/Loader";
@@ -91,20 +90,10 @@ const TypedSchema = Schema as any;
 import {
   buildContextPrompt,
   buildRolePrompt,
-  buildSpecializedPrompt,
-  CONTEXT_PROMPTS,
-  SPECIALIZED_PROMPTS,
-  GIGFOLIO_COACH_CONTENT,
-  GIGFOLIO_COACH_BEHAVIOR,
-  ONBOARDING_STEPS,
-  COACHING_TECHNIQUES
+  buildSpecializedPrompt
 } from '@/app/components/shared/ChatAI';
 
-import {
-  findClosestJobTitle,
-  findStandardizedJobTitleWithAIFallback,
-  ALL_JOB_TITLES
-} from '@/app/components/shared/ChatAI';
+import { findStandardizedJobTitleWithAIFallback } from '@/app/components/shared/ChatAI';
 
 import {
   getStorage,
@@ -118,8 +107,7 @@ import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
 import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
 import { checkExistingProfileDataAction } from "@/actions/user/check-existing-profile-data-action";
 import type { ExistingProfileData } from "@/actions/user/check-existing-profile-data";
-import { validateUserInput, ValidationResult, ValidationContext } from "@/lib/validation/enhanced-validation";
-import ValidationConfirmationBubble from "@/app/components/onboarding/ValidationConfirmationBubble";
+import { ValidationResult } from "@/lib/validation/enhanced-validation";
 
 // Define required fields and their configs - matching gig creation pattern
 const requiredFields: RequiredField[] = [

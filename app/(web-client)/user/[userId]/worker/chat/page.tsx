@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Send, ArrowLeft, User, Briefcase, X, Calendar, Clock, MapPin, DollarSign } from "lucide-react";
 
-import ChatBotLayout from "@/app/components/onboarding/ChatBotLayout";
-import MessageBubble from "@/app/components/onboarding/MessageBubble";
 import Loader from "@/app/components/shared/Loader";
 
 import pageStyles from "./WorkerChatPage.module.css";

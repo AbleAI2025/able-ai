@@ -1,5 +1,5 @@
 import { db } from "@/lib/drizzle/db";
-import { UsersTable, GigWorkerProfilesTable } from "@/lib/drizzle/schema/users";
+import { UsersTable } from "@/lib/drizzle/schema/users";
 import { eq } from "drizzle-orm";
 import { isUserAuthenticated } from "@/lib/user.server";
 

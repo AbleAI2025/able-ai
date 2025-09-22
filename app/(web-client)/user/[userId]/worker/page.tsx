@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useParams } from "next/navigation";
 
 // Import shared components
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
@@ -10,7 +9,6 @@ import IconGrid from "@/app/components/shared/IconGrid";
 import ReferralBanner from "@/app/components/shared/ReferralBanner";
 import RoleToggle from "@/app/components/shared/RoleToggle";
 import SettingsButton from "@/app/components/shared/SettingsButton";
-import WorkerGigRequestAICard from "@/app/components/shared/WorkerGigRequestAICard";
 
 // Import Lucide icons as needed for the specific dashboard
 import {
@@ -18,13 +16,10 @@ import {
   Briefcase,
   CalendarCheck2,
   DollarSign,
-  MessageCircle,
 } from "lucide-react";
 
 import styles from "./HomePage.module.css";
-import Image from "next/image";
 import Loader from "@/app/components/shared/Loader";
-import Logo from "@/app/components/brand/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
 import {
@@ -32,7 +27,6 @@ import {
 } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
-import Notification from "@/app/components/shared/Notification";
 
 
 export default function WorkerDashboardPage() {
@@ -42,7 +36,6 @@ export default function WorkerDashboardPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { user } = useAuth();
   const authUserToken = user?.token;
-  const router = useRouter();
 
   async function fetchNotifications(token: string) {
     const { notifications, unreadCount } = await getAllNotificationsAction(token);
