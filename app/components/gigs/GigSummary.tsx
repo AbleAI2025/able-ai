@@ -20,7 +20,7 @@ const GigSummary: React.FC<GigSummaryProps> = ({ gigDetails, role }) => (
     {gigDetails?.earnings !== undefined && (
       <div className={stylesFeed.earnings}>
         <span className="font-medium">{role === "GIG_WORKER" ? "Earnings:" : "Payments:"}</span>
-        <span className="font-bold">£{gigDetails.earnings.toFixed(2)}</span>
+        <span className="font-bold">£{gigDetails.earnings}</span>
       </div>
     )}
   </div>

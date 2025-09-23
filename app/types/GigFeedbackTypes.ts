@@ -1,17 +1,17 @@
 
 export interface GigDetails {
   id: string;
-  role: string;
-  workerName: string;
+  role?: string;
+  workerName?: string;
   workerAvatarUrl?: string;
-  workerId: string;
+  workerId?: string;
   date: string;
-  hourlyRate: number;
-  hoursWorked: number;
-  totalPayment: number;
-  duration?: string;
-  details?: string;
-  earnings?: number;
+  hourlyRate?: string | number | null;
+  hoursWorked?: string | number | null;
+  totalPayment?: string | number | null;
+  duration?: string | number | null;
+  details?: string | number | null;
+  earnings?: string | number | null;
 }
 
 export interface WorkerFeedbackFormData {

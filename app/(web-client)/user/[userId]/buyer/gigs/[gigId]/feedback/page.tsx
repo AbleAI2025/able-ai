@@ -8,26 +8,25 @@ import FeedbackContainer from "@/app/components/gigs/FeedbackContainer";
 import { BuyerFeedbackFormData, GigDetails, WorkerFeedbackFormData } from "@/app/types/GigFeedbackTypes";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import { processGigPayment } from "@/app/actions/stripe/pay-gig-work";
+import { getGigForBuyerFeedback } from "@/actions/gigs/get-gig-details";
+import { toast } from "sonner";
 
 async function fetchGigForBuyerFeedback(
   gigId: string
-): Promise<GigDetails | null> {
+) {
+ try {
+  const {success, data, error} = await getGigForBuyerFeedback(gigId);
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-      id: gigId,
-      role: "Bartender",
-      workerName: "Benji Asamoah",
-      workerAvatarUrl: "/images/benji.jpeg",
-      workerId: "benji-asamoah-id",
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      hourlyRate: 25,
-      hoursWorked: 8,
-      totalPayment: 200,
-      duration: "4 hours",
-      details: "Completed gig on Monday, 9:00 am. Location: Central Train station",
-      earnings: 80,
-    };
+  if (success) {
+    return data;
+  } else {
+    throw new Error(error || "Failed to fetch gig details");
+  }
+ } catch (error) {
+  toast.error("Error fetching gig details: " + (error instanceof Error ? error.message : String(error)));
+  return null;
+ }
+
 }
 
 export default function BuyerFeedbackPage() {
@@ -62,7 +61,7 @@ export default function BuyerFeedbackPage() {
           }
         })
         .catch((err) => {
-          setError("Could not load gig information for feedback." + JSON.stringify(err));
+          setError("Could not load gig information for feedback.");
         })
         .finally(() => setIsLoadingGig(false));
     }
