@@ -56,6 +56,7 @@ export const paymentStatusEnum = pgEnum("payment_status_enum", [
   "PENDING", // Payment initiated, awaiting action from user (e.g. Stripe checkout)
   "PROCESSING", // Payment submitted to Stripe, awaiting confirmation
   "COMPLETED", // Payment successful
+  "CANCELLED", // Payment cancelled
   "FAILED", // Payment failed
   "REFUNDED", // Payment was refunded
   "REQUIRES_ACTION", // Stripe requires further action from the user
