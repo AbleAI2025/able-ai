@@ -13,6 +13,8 @@ export async function getPaymentAccountDetailsForGig(gigId: string, receiverUser
       finalAgreedPrice: true,
       totalAgreedPrice: true,
       promoCodeApplied: true,
+      ableFeePercent: true,
+      tip: true,
     }
   });
 
