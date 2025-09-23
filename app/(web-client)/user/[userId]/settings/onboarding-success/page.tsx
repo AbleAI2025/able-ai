@@ -29,7 +29,7 @@ export default function OnboardingSuccessPage() {
         return () => clearTimeout(timer);
 
       } catch (error: unknown) {
-        setStatusMessage((error as Error)?.message);
+        setStatusMessage((error as Error)?.message || 'An unknown error occurred.');
         setLoading(false);
       }
     };

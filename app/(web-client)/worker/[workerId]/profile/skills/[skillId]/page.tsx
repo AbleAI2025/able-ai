@@ -31,7 +31,7 @@ export default function PublicSkillProfilePage() {
 
   useEffect(() => {
     fetchSkillData();
-  }, [skillId, fetchSkillData]);
+  }, [fetchSkillData]);
 
   if (!profile) return <Loader />;
 

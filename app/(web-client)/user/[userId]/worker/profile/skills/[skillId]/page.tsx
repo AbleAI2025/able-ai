@@ -27,7 +27,7 @@ export default function WorkerSkillDetailPage() {
 
   useEffect(() => {
     fetchSkillData();
-  }, [skillId, fetchSkillData]);
+  }, [fetchSkillData]);
 
   if (!profile) return <Loader />;
 
