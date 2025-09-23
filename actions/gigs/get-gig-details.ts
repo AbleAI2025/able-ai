@@ -103,49 +103,55 @@ function extractLocationFromString(str: string): string | null {
 // Helper function to extract location from any data type (object or string)
 function extractLocationFromData(data: any): string | null {
   if (!data) return null;
-  
-  if (typeof data === 'string') {
+
+  if (typeof data === "string") {
     return extractLocationFromString(data);
   }
-  
-  if (typeof data === 'object') {
+
+  if (typeof data === "object") {
     return extractLocationFromObject(data);
   }
-  
+
   return null;
 }
 
 // Helper function to perform aggressive location extraction from an object
 function extractLocationAggressively(obj: any): string | null {
-  if (!obj || typeof obj !== 'object') return null;
-  
+  if (!obj || typeof obj !== "object") return null;
+
   // Prioritize readable address text over coordinates
   if (obj.formatted_address) {
     return obj.formatted_address;
   }
-  
+
   if (obj.address) {
     return obj.address;
   }
-  
+
   if (obj.street && obj.city) {
     return `${obj.street}, ${obj.city}`;
   }
-  
+
   // Show any available string data (but not coordinates)
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'string' && value.trim() && 
-        value !== 'null' && value !== 'undefined' && value !== '[object Object]' && 
-        !value.includes('[object Object]') && !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
+    if (
+      typeof value === "string" &&
+      value.trim() &&
+      value !== "null" &&
+      value !== "undefined" &&
+      value !== "[object Object]" &&
+      !value.includes("[object Object]") &&
+      !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)
+    ) {
       return value.trim();
     }
   }
-  
+
   // Only use coordinates as absolute last resort
   if (obj.lat && obj.lng) {
     return `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
   }
-  
+
   return null;
 }
 
@@ -377,6 +383,8 @@ export const getGigForBuyerFeedback = async (gigId: string) => {
             appRole: true,
           },
         },
+        skillsRequired: { columns: { skillName: true } },
+        payments: { columns: { paidAt: true } },
       },
     });
 
@@ -384,17 +392,39 @@ export const getGigForBuyerFeedback = async (gigId: string) => {
       throw new Error("Gig not found");
     }
 
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, gig.worker?.id || ""),
+    });
+
+    if (!workerProfile) {
+      throw new Error("Gig has no assigned worker");
+    }
+
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    };
+
     const data = {
       id: gigId,
-      role: gig.worker?.appRole,
+      role: gig.skillsRequired[0]?.skillName || gig.worker?.fullName,
       workerName: gig.worker?.fullName,
-      workerAvatarUrl: "gig?.worker.videoUrl",
+      workerAvatarUrl: workerProfile.videoUrl,
       workerId: gig.worker?.id,
       date: gig.createdAt.toISOString(),
       hourlyRate: gig.agreedRate,
       hoursWorked: gig.finalHours,
       totalPayment: gig.finalAgreedPrice,
       duration: gig.estimatedHours,
+      location:
+        extractLocationFromData(gig?.addressJson) ||
+        extractLocationFromData(gig?.exactLocation) ||
+        "Location not provided",
+      completedAt:
+        gig.payments[0]?.paidAt?.toLocaleString("en-US", options) ||
+        gig.updatedAt?.toLocaleString("en-US", options),
       details: gig.fullDescription,
       earnings: gig.totalAgreedPrice,
     };

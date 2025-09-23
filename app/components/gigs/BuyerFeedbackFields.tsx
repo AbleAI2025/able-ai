@@ -39,7 +39,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
       </div>
       <div className={`${stylesFeed.textareaContainer} ${styles.stepContent}`}>
         <label htmlFor="publicComment" className={styles.label}>
-          Public Comment (visible on {gigDetails.workerName.split(" ")[0]}
+          Public Comment (visible on {gigDetails?.workerName?.split(" ")[0]}
           &apos;s profile):
         </label>
         <textarea
@@ -79,7 +79,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
       </div>
       <div className={styles.stepContent}>
         <label className={`${stylesFeed.workAgainText} ${styles.label}`}>
-          Would you hire {gigDetails.workerName.split(" ")[0]} again?{" "}
+          Would you hire {gigDetails?.workerName?.split(" ")[0]} again?{" "}
           <span className="text-primary">*</span>
         </label>
         <div className={styles.hireAgainOptions}>
@@ -146,7 +146,7 @@ const BuyerFeedbackFields: React.FC<BuyerFeedbackFieldsProps> = ({
           <h3 className={stylesFeed.awardTitle}>
             Would you like to award{" "}
             <span className={stylesFeed.workerName}>
-              {gigDetails.workerName.split(" ")[0]}
+              {gigDetails?.workerName?.split(" ")[0]}
             </span>
             ?
           </h3>

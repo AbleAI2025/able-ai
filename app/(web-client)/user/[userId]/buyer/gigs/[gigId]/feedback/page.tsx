@@ -60,7 +60,7 @@ export default function BuyerFeedbackPage() {
             );
           }
         })
-        .catch((err) => {
+        .catch(() => {
           setError("Could not load gig information for feedback.");
         })
         .finally(() => setIsLoadingGig(false));

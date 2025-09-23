@@ -14,16 +14,28 @@ const GigSummary: React.FC<GigSummaryProps> = ({ gigDetails, role }) => (
       <p>
         <strong>{gigDetails?.role}</strong>
       </p>
-      {gigDetails?.duration && <p className={stylesFeed.duration}>Duration: {gigDetails.duration}</p>}
+      {gigDetails?.duration && (
+        <p className={stylesFeed.duration}>Duration: {gigDetails.duration}</p>
+      )}
       {gigDetails?.details && <p className="text-sm">{gigDetails.details}</p>}
+      {(gigDetails?.completedAt || gigDetails?.location) && (
+        <p className="text-sm">
+          {gigDetails?.completedAt &&
+            `Completed gig on ${gigDetails.completedAt}`}
+          {gigDetails?.completedAt && gigDetails?.location && " "}
+          {gigDetails?.location && `Location: ${gigDetails.location}`}
+        </p>
+      )}
     </div>
     {gigDetails?.earnings !== undefined && (
       <div className={stylesFeed.earnings}>
-        <span className="font-medium">{role === "GIG_WORKER" ? "Earnings:" : "Payments:"}</span>
+        <span className="font-medium">
+          {role === "GIG_WORKER" ? "Earnings:" : "Payments:"}
+        </span>
         <span className="font-bold">£{gigDetails.earnings}</span>
       </div>
     )}
   </div>
 );
 
-export default GigSummary; 
+export default GigSummary;

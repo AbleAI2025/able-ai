@@ -3,9 +3,11 @@ export interface GigDetails {
   id: string;
   role?: string;
   workerName?: string;
-  workerAvatarUrl?: string;
+  workerAvatarUrl?: string | null;
   workerId?: string;
   date: string;
+  completedAt?: string | null;
+  location?: string | null;
   hourlyRate?: string | number | null;
   hoursWorked?: string | number | null;
   totalPayment?: string | number | null;
