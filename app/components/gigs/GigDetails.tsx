@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { Calendar, Check, Info } from "lucide-react";
+import { Calendar, Check, Info, VideoOff } from "lucide-react";
 import styles from "./GigDetails.module.css";
 import { usePathname, useRouter } from "next/navigation";
 import GigActionButton from "../shared/GigActionButton";
@@ -300,20 +300,24 @@ const GigDetailsComponent = ({
             <h2 className={styles.sectionTitle}>Gig Details</h2>
             <Calendar size={26} color="#ffffff" />
           </div>
-          <div className={styles.gigDetailsRow}>
+            <div className={styles.gigDetailsRow}>
             <span className={styles.label}>Location:</span>
             <span className={styles.detailValue}>
-              {gig?.location?.formatted_address}
+              {gig?.location?.formatted_address
+              ? gig.location.formatted_address
+              : "Location not provided"}
+              {gig?.location?.lat && gig?.location?.lng && (
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${gig?.location?.lat},${gig?.location?.lng}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${gig.location.lat},${gig.location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginLeft: "0.5rem" }}
               >
                 (View Map)
               </a>
+              )}
             </span>
-          </div>
+            </div>
           <div className={styles.gigDetailsRow}>
             <span className={styles.label}>Date:</span>
             <span className={styles.detailValue}>
@@ -351,7 +355,7 @@ const GigDetailsComponent = ({
           )}
         </section>
 
-        {lastRoleUsed === "GIG_WORKER" && (
+        {gig?.worker ? (
           <section
             className={`${styles.gigDetailsSection} ${styles.workerSection}`}
           >
@@ -377,6 +381,15 @@ const GigDetailsComponent = ({
                   height={50}
                 />
               )}
+            </div>
+          </section>
+        ): (
+          <section
+            className={`${styles.gigDetailsSection} ${styles.noWorkerSection}`}
+          >
+              <p><VideoOff /></p>
+            <div className={styles.noWorkerAssigned}>
+              <p>No worker assigned yet</p>
             </div>
           </section>
         )}

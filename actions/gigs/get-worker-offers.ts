@@ -154,7 +154,6 @@ export async function getWorkerOffers(userId: string) {
       const lng = parseFloat(workerProfile.longitude.toString());
       if (!isNaN(lat) && !isNaN(lng)) {
         workerCoords = { lat, lon: lng };
-        console.log(`🔍 DEBUG: Worker coordinates from lat/lng: ${lat}, ${lng}`);
       }
     }
     
@@ -205,16 +204,13 @@ export async function getWorkerOffers(userId: string) {
             );
             
             const withinRange = distance <= DEFAULT_GIG_SEARCH_RADIUS_KM;
-            console.log(`🔍 DEBUG: Gig ${gig.id} - Distance: ${distance.toFixed(2)}km, Within range: ${withinRange}`);
             return withinRange;
           } else {
-            console.log(`🔍 DEBUG: Gig ${gig.id} - No valid gig coordinates, including anyway`);
             return true; // Include gigs without coordinates
           }
         }
         
         // If no worker coordinates, include all gigs (fallback)
-        console.log(`🔍 DEBUG: No worker coordinates, including all gigs`);
         return true;
       }
     );
