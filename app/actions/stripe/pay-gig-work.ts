@@ -6,43 +6,10 @@ import { db } from "@/lib/drizzle/db";
 import { and, eq } from 'drizzle-orm';
 import { GigsTable, PaymentsTable } from '@/lib/drizzle/schema';
 import { InternalGigStatusEnumType } from '@/app/types';
+import { DirectPaymentParams, ExpandedPaymentIntent, GigPendingPaymentFields, ProcessGigPaymentParams } from './types';
+import { createTipPayment } from '@/lib/stripe/create-tip-payment';
 
 const stripeApi: Stripe = stripeApiServer;
-
-interface DirectPaymentParams {
-  currency: string;
-  buyerStripeCustomerId: string;
-  customerPaymentMethodId: string;
-  destinationAccountId: string;
-  serviceAmountInCents: number;
-  description: string;
-  metadata?: Record<string, string | number>;
-  gigPaymentInfo: {
-    gigId: string;
-    payerUserId: string;
-    receiverUserId: string;
-  };
-}
-
-interface GigPendingPaymentFields {
-  id: string;
-  amountGross: string;
-  stripePaymentIntentId: string | null;
-}
-
-interface ProcessGigPaymentParams {
-  gigId: string;
-  currency?: string;
-}
-
-type ExpandedLatestCharge = Stripe.Charge & {
-  balance_transaction: Stripe.BalanceTransaction;
-};
-
-type ExpandedPaymentIntent = Stripe.PaymentIntent & {
-  latest_charge: ExpandedLatestCharge | null;
-};
-
 
 const findOriginalPaymentIntent = async (stripePaymentIntentId: string) => {
   const originalPaymentIntent = await stripeApi.paymentIntents.retrieve(
@@ -181,6 +148,8 @@ async function createDirectPayment(params: DirectPaymentParams) {
         paidAt: new Date(),
       });
 
+    console.log(`Payment created for gig ${gigId}. Total payed: ${serviceAmountInCents} cents.`);
+
     return newPaymentResult.object;
   } catch (error) {
     console.error(`Failed to create direct payment for gig ${gigId}:`, error);
@@ -209,6 +178,9 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
 
     const paymentIntentId = gigPayment.stripePaymentIntentId as string;
     const originalPaymentIntent = await findOriginalPaymentIntent(paymentIntentId);
+    const customerPaymentMethodId = originalPaymentIntent.payment_method as string;
+    const customerId = originalPaymentIntent.customer as string;
+    const receiverId = originalPaymentIntent.on_behalf_of as string;
 
     if (finalPrice <= originalAgreedPrice) {
       const priceToPay = finalPrice === 0 ? originalAgreedPrice : finalPrice;
@@ -217,10 +189,6 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
     }
 
     if (finalPrice > originalAgreedPrice) {
-      const customerPaymentMethodId = originalPaymentIntent.payment_method as string;
-      const customerId = originalPaymentIntent.customer as string;
-      const receiverId = originalPaymentIntent.on_behalf_of as string;
-
       await createDirectPayment({
         currency: currency || 'usd',
         serviceAmountInCents: finalPrice,
@@ -240,6 +208,19 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
         status: 'FAILED',
       }).where(eq(PaymentsTable.id, gigPayment.id,));
     }
+
+    if (gigDetails.tip)
+      await createTipPayment({
+        currency: currency || 'usd',
+        tipAmountCents: Math.round(Number(gigDetails.tip) * 100),
+        buyerStripeCustomerId: customerId,
+        destinationAccountId: receiverId,
+        savedPaymentMethodId: customerPaymentMethodId,
+        description: `Tip for service provided by worker in Gig: ${gigId}`,
+        gigPaymentTipInfo: {
+          gigId,
+        },
+      });
 
     await updateGigStatus(gigId, 'PAID');
 
