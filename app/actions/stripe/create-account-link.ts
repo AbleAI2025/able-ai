@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { stripeApi } from '@/lib/stripe-server';
 import { db } from "@/lib/drizzle/db";
 import { UsersTable } from "@/lib/drizzle/schema";
+import { getErrorMessage } from '@/lib/utils/errors';
 
 export async function createAccountLink(firebaseUid: string) {
   const requestHeaders = await headers();
@@ -61,9 +62,6 @@ export async function createAccountLink(firebaseUid: string) {
 
   } catch (error: unknown) {
     console.error('Error creating Stripe Account Link:', error);
-    const message = (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string')
-      ? error.message
-      : String(error);
-    return { error: message, status: 500 }
+    return { error: getErrorMessage(error), status: 500 }
   }
 }

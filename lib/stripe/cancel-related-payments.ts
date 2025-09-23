@@ -4,6 +4,7 @@ import { stripeApi as stripeApiServer } from "@/lib/stripe-server";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/drizzle/db";
 import { PaymentsTable } from "@/lib/drizzle/schema";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 const stripeApi: Stripe = stripeApiServer;
 
@@ -33,9 +34,6 @@ export async function cancelRelatedPayments(gigId: string) {
       .where(inArray(PaymentsTable.id, payments.map(payment => payment.id)));
 
   } catch (error: unknown) {
-    const message = (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string')
-      ? error.message
-      : String(error);
-    throw new Error(`Error cancelling payments for ${gigId}: ${message}`)
+    throw new Error(`Error cancelling payments for ${gigId}: ${getErrorMessage(error)}`)
   }
 };
