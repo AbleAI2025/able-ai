@@ -13,6 +13,8 @@ import { calculateAmountWithDiscount } from '@/lib/utils/calculate-amount-with-d
 
 const stripeApi: Stripe = stripeApiServer;
 
+const defaultFeePercent = 0.065;
+
 const findOriginalPaymentIntent = async (stripePaymentIntentId: string) => {
   const originalPaymentIntent = await stripeApi.paymentIntents.retrieve(
     stripePaymentIntentId,
@@ -20,7 +22,7 @@ const findOriginalPaymentIntent = async (stripePaymentIntentId: string) => {
   );
 
   if (!originalPaymentIntent || originalPaymentIntent.status !== 'requires_capture') {
-    throw new Error(`Payment Intent ${stripePaymentIntentId} is no in status 'requires_capture' (current: ${originalPaymentIntent?.status}).`);
+    throw new Error(`Payment Intent ${stripePaymentIntentId} is not in status 'requires_capture' (current: ${originalPaymentIntent?.status}).`);
   }
 
   return originalPaymentIntent as ExpandedPaymentIntent;
@@ -62,7 +64,7 @@ async function processPendingPayment(gigPayment: GigPendingPaymentFields, origin
   try {
     const paymentAmountGross = Number(gigPayment.amountGross);
     const amountToCapture = Math.min(finalPrice, paymentAmountGross);
-    const ableFee = Math.round(amountToCapture * (ableFeePercent || 0.065));
+    const ableFee = Math.round(amountToCapture * (ableFeePercent || defaultFeePercent));
 
     const captureResult = await stripeApi.paymentIntents.capture(
       originalPaymentIntentId,
@@ -86,6 +88,7 @@ async function processPendingPayment(gigPayment: GigPendingPaymentFields, origin
     console.log(`Captured ${amountToCapture} cents from PaymentIntent ${originalPaymentIntentId}.`);
   } catch (error) {
     console.error(`Failed to finalize payment for payment ${originalPaymentIntentId}:`, error);
+    throw error;
   }
 }
 
@@ -95,6 +98,7 @@ async function createDirectPayment(params: DirectPaymentParams) {
     metadata,
     description,
     serviceAmountInCents,
+    ableFeePercent,
     destinationAccountId,
     buyerStripeCustomerId,
     customerPaymentMethodId,
@@ -110,7 +114,7 @@ async function createDirectPayment(params: DirectPaymentParams) {
       on_behalf_of: destinationAccountId,
       payment_method: customerPaymentMethodId,
       confirm: true,
-      application_fee_amount: Math.round(serviceAmountInCents * 0.065),
+      application_fee_amount: Math.round(serviceAmountInCents * (ableFeePercent || defaultFeePercent)),
       metadata: {
         gigId: gigId,
         type: 'gig_direct_payment',
@@ -164,9 +168,6 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
 
   try {
     const { receiverAccountId, gig: gigDetails, discount } = await getPaymentAccountDetailsForGig(gigId);
-
-    if (!gigDetails) return;
-
     const finalPrice = Number(gigDetails.finalAgreedPrice) * 100;
     const ableFeePercent = Number(gigDetails.ableFeePercent);
     const originalAgreedPrice = Number(gigDetails.totalAgreedPrice) * 100;
@@ -177,23 +178,37 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
     }
 
     const paymentIntentId = gigPayment.stripePaymentIntentId as string;
+
+    if (!paymentIntentId) {
+      throw new Error(`Gig payment ${gigPayment.id} is missing a Stripe Payment Intent ID.`);
+    }
+
     const originalPaymentIntent = await findOriginalPaymentIntent(paymentIntentId);
-    const customerPaymentMethodId = originalPaymentIntent.payment_method as string;
-    const customerId = originalPaymentIntent.customer as string;
+    const customerPaymentMethodId = originalPaymentIntent.payment_method;
+
+    if (typeof customerPaymentMethodId !== 'string') {
+      throw new Error(`Payment Intent ${paymentIntentId} is missing a payment method ID.`);
+    }
+
+    const customerId = originalPaymentIntent.customer;
+
+    if (typeof customerId !== 'string') {
+      throw new Error(`Payment Intent ${paymentIntentId} is missing a customer ID.`);
+    }
 
     if (finalPrice <= originalAgreedPrice) {
       const priceToPay = finalPrice === 0 ? originalAgreedPrice : finalPrice;
-      const priceToPaylWithDiscount = calculateAmountWithDiscount(priceToPay, discount);
-      await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPaylWithDiscount, ableFeePercent);
+      const priceToPayWithDiscount = calculateAmountWithDiscount(priceToPay, discount);
+      await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPayWithDiscount, ableFeePercent);
       console.log(`Payment finalized for gig ${gigId}. Total captured: ${finalPrice} cents.`);
     }
-
-    if (finalPrice > originalAgreedPrice) {
-      const priceToPaylWithDiscount = calculateAmountWithDiscount(finalPrice, discount);
+    else if (finalPrice > originalAgreedPrice) {
+      const priceToPayWithDiscount = calculateAmountWithDiscount(finalPrice, discount);
 
       await createDirectPayment({
         currency: currency || 'usd',
-        serviceAmountInCents: priceToPaylWithDiscount,
+        serviceAmountInCents: priceToPayWithDiscount,
+        ableFeePercent: Number(gigDetails.ableFeePercent),
         buyerStripeCustomerId: customerId,
         destinationAccountId: receiverAccountId,
         customerPaymentMethodId: customerPaymentMethodId,
@@ -206,9 +221,10 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
       });
 
       // cancel old payment created
+      await stripeApi.paymentIntents.cancel(originalPaymentIntent.id);
       await db.update(PaymentsTable).set({
-        status: 'FAILED',
-      }).where(eq(PaymentsTable.id, gigPayment.id,));
+        status: 'CANCELLED',
+      }).where(eq(PaymentsTable.id, gigPayment.id));
     }
 
     if (gigDetails.tip)

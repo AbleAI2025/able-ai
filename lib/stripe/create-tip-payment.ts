@@ -1,21 +1,9 @@
 
 import type Stripe from 'stripe';
 import { stripeApi as stripeApiServer } from '@/lib/stripe-server';
+import { PaymentTipParams } from '@/app/actions/stripe/types';
 
 const stripeApi: Stripe = stripeApiServer;
-
-interface PaymentTipParams {
-  buyerStripeCustomerId: string;
-  destinationAccountId: string;
-  gigPaymentTipInfo: {
-    gigId: string;
-  };
-  tipAmountCents: number;
-  currency?: string;
-  description?: string;
-  savedPaymentMethodId: string;
-  metadata?: Record<string, string | number>
-}
 
 export async function createTipPayment(params: PaymentTipParams) {
   const {
@@ -54,7 +42,7 @@ export async function createTipPayment(params: PaymentTipParams) {
       },
     });
 
-    console.log(`Tip sended for worker ${destinationAccountId}. Total payed: ${tipAmountCents} cents.`);
+    console.log(`Tip sent for worker ${destinationAccountId}. Total paid: ${tipAmountCents} cents.`);
 
     return tipIntent.object;
   } catch (error) {

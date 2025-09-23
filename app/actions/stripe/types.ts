@@ -6,6 +6,7 @@ export interface DirectPaymentParams {
   customerPaymentMethodId: string;
   destinationAccountId: string;
   serviceAmountInCents: number;
+  ableFeePercent: number;
   description: string;
   metadata?: Record<string, string | number>;
   gigPaymentInfo: {
@@ -13,6 +14,19 @@ export interface DirectPaymentParams {
     payerUserId: string;
     receiverUserId: string;
   };
+}
+
+export interface PaymentTipParams {
+  buyerStripeCustomerId: string;
+  destinationAccountId: string;
+  gigPaymentTipInfo: {
+    gigId: string;
+  };
+  tipAmountCents: number;
+  currency?: string;
+  description?: string;
+  savedPaymentMethodId: string;
+  metadata?: Record<string, string | number>
 }
 
 export interface GigPendingPaymentFields {
