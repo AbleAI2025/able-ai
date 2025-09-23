@@ -113,16 +113,6 @@ export default function GigLayout({ children }: GigLayoutProps) {
     );
   }
 
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.pageWrapper}>
-          <p className={styles.errorMessage}>{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <GigAmendContext.Provider value={{ gig, setGig, isLoading, error }}>
       {children}

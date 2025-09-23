@@ -1,10 +1,13 @@
 
 export interface GigDetails {
   id: string;
-  role?: string;
+  role?: string | null;
   workerName?: string;
   workerAvatarUrl?: string | null;
   workerId?: string;
+  buyerName?: string;
+  buyerAvatarUrl?: string | null;
+  buyerId?: string;
   date: string;
   completedAt?: string | null;
   location?: string | null;

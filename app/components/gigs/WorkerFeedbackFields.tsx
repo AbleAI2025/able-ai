@@ -62,7 +62,7 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
       </div>
       <div className={`${styles.stepContent} ${stylesFeed.workAgainContainer}`}>
         <h3 className={stylesFeed.workAgainText}>
-          Would you work with {gigDetails?.workerName?.split(" ")[0]} again?
+          Would you work with {gigDetails?.buyerName?.split(" ")[0]} again?
         </h3>
         <div className={stylesFeed.thumbsContainer}>
           <button
@@ -94,7 +94,7 @@ const WorkerFeedbackFields: React.FC<WorkerFeedbackFieldsProps> = ({
         <h3 className={stylesFeed.awardTitle}>
           Would you like to award{" "}
           <span className={stylesFeed.workerName}>
-            {gigDetails?.workerName?.split(" ")[0]}
+            {gigDetails?.buyerName?.split(" ")[0]}
           </span>
           ?
         </h3>

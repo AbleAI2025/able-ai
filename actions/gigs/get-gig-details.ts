@@ -7,6 +7,7 @@ import {
   GigWorkerProfilesTable,
   UsersTable,
   gigStatusEnum,
+  BuyerProfilesTable,
 } from "@/lib/drizzle/schema";
 import moment from "moment";
 import GigDetails from "@/app/types/GigDetailsTypes";
@@ -413,6 +414,89 @@ export const getGigForBuyerFeedback = async (gigId: string) => {
       workerName: gig.worker?.fullName,
       workerAvatarUrl: workerProfile.videoUrl,
       workerId: gig.worker?.id,
+      date: gig.createdAt.toISOString(),
+      hourlyRate: gig.agreedRate,
+      hoursWorked: gig.finalHours,
+      totalPayment: gig.finalAgreedPrice,
+      duration: gig.estimatedHours,
+      location:
+        extractLocationFromData(gig?.addressJson) ||
+        extractLocationFromData(gig?.exactLocation) ||
+        "Location not provided",
+      completedAt:
+        gig.payments[0]?.paidAt?.toLocaleString("en-US", options) ||
+        gig.updatedAt?.toLocaleString("en-US", options),
+      details: gig.fullDescription,
+      earnings: gig.totalAgreedPrice,
+    };
+
+    return { success: true, data, status: 200 };
+  } catch (error: unknown) {
+    console.error("Error fetching gig:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown error fetching gig",
+      gig: {} as GigDetails,
+      status: 500,
+    };
+  }
+};
+
+export const getGigForWorkerFeedback = async (gigId: string) => {
+  try {
+    const gig = await db.query.GigsTable.findFirst({
+      where: eq(GigsTable.id, gigId),
+      with: {
+        buyer: {
+          columns: {
+            id: true,
+            fullName: true,
+            email: true,
+            appRole: true,
+          },
+        },
+        worker: {
+          columns: {
+            id: true,
+            fullName: true,
+            appRole: true,
+          },
+        },
+        skillsRequired: { columns: { skillName: true } },
+        payments: { columns: { paidAt: true } },
+      },
+    });
+
+    if (!gig) {
+      throw new Error("Gig not found");
+    }
+
+    if (!gig.worker) {
+      throw new Error("Gig has no assigned worker");
+    }
+
+    const BuyerProfile = await db.query.BuyerProfilesTable.findFirst({
+      where: eq(BuyerProfilesTable.userId, gig.buyer?.id || ""),
+    });
+
+    if (!BuyerProfile) {
+      throw new Error("Gig has no assigned buyer profile");
+    }
+
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    };
+
+    const data = {
+      id: gigId,
+      role: BuyerProfile?.companyRole,
+      buyerName: gig.buyer?.fullName,
+      buyerAvatarUrl: BuyerProfile?.videoUrl,
+      buyerId: gig.buyer?.id,
       date: gig.createdAt.toISOString(),
       hourlyRate: gig.agreedRate,
       hoursWorked: gig.finalHours,

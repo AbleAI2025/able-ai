@@ -10,27 +10,25 @@ import {
   WorkerFeedbackFormData,
 } from "@/app/types/GigFeedbackTypes";
 import { useAuth } from "@/context/AuthContext";
+import { getGigForWorkerFeedback } from "@/actions/gigs/get-gig-details";
+import { toast } from "sonner";
 
 async function getGigData(
-  workerUserId: string,
   gigId: string
-): Promise<GigDetails | null> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return {
-    id: gigId,
-    role: "Bartender",
-    workerName: "Benji Asamoah",
-    workerAvatarUrl: "/images/benji.jpeg",
-    workerId: workerUserId,
-    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    hourlyRate: 25,
-    hoursWorked: 8,
-    totalPayment: 200,
-    duration: "4 hours",
-    details:
-      "Completed gig on Monday, 9:00 am. Location: Central Train station",
-    earnings: 80.0,
-  };
+) {
+ try {
+  const {success, data, error} = await getGigForWorkerFeedback(gigId);
+
+  if (success) {
+    return data;
+  } else {
+    throw new Error(error || "Failed to fetch gig details");
+  }
+ } catch (error) {
+  toast.error("Error fetching gig details: " + (error instanceof Error ? error.message : String(error)));
+  return null;
+ }
+
 }
 
 export default function WorkerFeedbackPage() {
@@ -54,7 +52,7 @@ export default function WorkerFeedbackPage() {
       (user && authUserId === pageUserId && gigId);
     if (shouldFetch) {
       setIsLoadingGig(true);
-      getGigData(authUserId!, gigId)
+      getGigData(gigId)
         .then((data) => {
           if (data) {
             setGigData(data);
