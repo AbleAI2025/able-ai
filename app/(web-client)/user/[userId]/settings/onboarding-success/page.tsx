@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import styles from "../SettingsPage.module.css";
 import onboardingSuccessStyles from "./onboarding-success.module.css";
-import { stripeStatus } from '@/app/actions/stripe/stripe-status';
 
 export default function OnboardingSuccessPage() {
   const router = useRouter();
@@ -20,7 +19,6 @@ export default function OnboardingSuccessPage() {
       try {
         if (!accountId) throw new Error('Error: No Stripe account ID found in the URL.');
 
-        const response = await stripeStatus(accountId);
         setStatusMessage('Stripe account connected successfully!');
         setLoading(false);
 
@@ -30,8 +28,8 @@ export default function OnboardingSuccessPage() {
 
         return () => clearTimeout(timer);
 
-      } catch (error: any) {
-        setStatusMessage(error?.message);
+      } catch (error: unknown) {
+        setStatusMessage((error as Error)?.message);
         setLoading(false);
       }
     };

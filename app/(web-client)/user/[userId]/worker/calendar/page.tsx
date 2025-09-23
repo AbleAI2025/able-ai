@@ -61,7 +61,6 @@ type GigOffer = WorkerGigOffer;
 
 async function fetchWorkerData(
   userId: string,
-  filters?: string[]
 ): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
   const result = await getWorkerOffers(userId);
 
@@ -197,7 +196,6 @@ const WorkerCalendarPage = () => {
     };
 
     fetchEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeFilter, date]);
 
   useEffect(() => {

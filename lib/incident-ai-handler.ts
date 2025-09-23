@@ -6,7 +6,6 @@
 import { geminiAIAgent, SupportedGeminiModel } from '@/lib/firebase/ai';
 import { Schema } from '@firebase/ai';
 import { IncidentType, IncidentAIResponse, IncidentAIPrompt } from '@/app/types/incidentTypes';
-import { getIncidentSeverity } from '@/lib/incident-detection';
 
 export interface IncidentAIConfig {
   modelName: SupportedGeminiModel;

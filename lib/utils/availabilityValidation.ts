@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle/db";
 import { WorkerAvailabilityTable, GigsTable } from "@/lib/drizzle/schema";
-import { eq, and, or, lt, gt } from "drizzle-orm";
+import { eq, and, lt, gt } from "drizzle-orm";
 
 export interface AvailabilityTimeRange {
   startTime: Date;
@@ -57,8 +57,7 @@ export async function checkAvailabilityOverlap({
 export async function checkGigOverlap({
   startTime,
   endTime,
-  userId,
-  excludeId
+  userId
 }: AvailabilityTimeRange): Promise<boolean> {
   const conditions = [
     eq(GigsTable.workerUserId, userId),

@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import styles from "./SkillSpecificPage.module.css";
 import SkillSplashScreen from "@/app/components/profile/SkillSplashScreen";
 import CloseButton from "@/app/components/profile/CloseButton";
 import HireButton from "@/app/components/profile/HireButton";
 import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
-import { Star as DefaultBadgeIcon, Router } from "lucide-react";
 import { SkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/schemas/skillProfile";
-import { mockSkillProfile } from "@/app/(web-client)/user/[userId]/worker/profile/skills/[skillId]/mockSkillProfile";
 import Loader from "@/app/components/shared/Loader";
 
 // --- COMPONENT ---
@@ -19,7 +17,7 @@ export default function PublicSkillProfilePage() {
   const [profile, setProfile] = useState<SkillProfile | null>(null);
   const router = useRouter();
 
-  const fetchSkillData = async () => {
+  const fetchSkillData = useCallback(async () => {
     if (!skillId) return;
     try {
       const { success, data } = await getSkillDetailsWorker(skillId);
@@ -29,11 +27,11 @@ export default function PublicSkillProfilePage() {
     } catch (error) {
       console.error("Error fetching skill profile:", error);
     }
-  };
+  }, [skillId]);
 
   useEffect(() => {
     fetchSkillData();
-  }, [skillId]);
+  }, [skillId, fetchSkillData]);
 
   if (!profile) return <Loader />;
 

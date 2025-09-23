@@ -2,7 +2,6 @@
 
 import { createAccountLink } from '@/app/actions/stripe/create-account-link';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter, useParams } from 'next/navigation';
 import React, { useState } from 'react';
 import styles from "../SettingsPage.module.css";
 import onboardingRetryStyles from "./onboarding-retry.module.css";
@@ -12,9 +11,6 @@ export default function OnboardingRetryPage() {
     user,
     loading: isLoading,
   } = useAuth();
-  const router = useRouter();
-  const params = useParams();
-  const userId = params.userId;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +28,8 @@ export default function OnboardingRetryPage() {
         window.location.href = response.url;
 
 
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err: unknown) {
+      setError((err as Error)?.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }

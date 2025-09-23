@@ -14,7 +14,6 @@ import HireButton from '@/app/components/profile/HireButton';
 import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import { getPublicWorkerProfileAction } from '@/actions/user/gig-worker-profile';
-import { mockWorkerProfile } from '@/app/(web-client)/user/[userId]/worker/profile/mockedprofile';
 
 // --- COMPONENT ---
 export default function PublicWorkerProfilePage() {
@@ -34,8 +33,6 @@ export default function PublicWorkerProfilePage() {
 
     const userId = user?.uid;
     const lastRoleUsed = getLastRoleUsed();
-
-    const isViewQA = false;
   
     const fetchUserProfile = async (workerId: string) => {
       const { data } = await getPublicWorkerProfileAction(workerId);

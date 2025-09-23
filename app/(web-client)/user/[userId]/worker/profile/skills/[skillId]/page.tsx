@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SkillSplashScreen from "@/app/components/profile/SkillSplashScreen";
 import { getSkillDetailsWorker } from "@/actions/user/gig-worker-profile";
 import { SkillProfile } from "./schemas/skillProfile";
-import { mockSkillProfile } from "./mockSkillProfile";
 import Loader from "@/app/components/shared/Loader";
 
 export default function WorkerSkillDetailPage() {
@@ -14,9 +13,7 @@ export default function WorkerSkillDetailPage() {
   const [profile, setProfile] = useState<SkillProfile | null>(null);
   const router = useRouter();
 
-  const isViewQA = false;
-
-  const fetchSkillData = async () => {
+  const fetchSkillData = useCallback(async () => {
     if (!skillId) return;
     try {
       const { success, data } = await getSkillDetailsWorker(skillId);
@@ -26,11 +23,11 @@ export default function WorkerSkillDetailPage() {
     } catch (error) {
       console.error("Error fetching skill profile:", error);
     }
-  };
+  }, [skillId]);
 
   useEffect(() => {
     fetchSkillData();
-  }, [skillId]);
+  }, [skillId, fetchSkillData]);
 
   if (!profile) return <Loader />;
 
