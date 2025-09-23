@@ -8,6 +8,8 @@ import { GigsTable, PaymentsTable } from '@/lib/drizzle/schema';
 import { InternalGigStatusEnumType } from '@/app/types';
 import { DirectPaymentParams, ExpandedPaymentIntent, GigPendingPaymentFields, ProcessGigPaymentParams } from './types';
 import { createTipPayment } from '@/lib/stripe/create-tip-payment';
+import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
+import { calculateAmountWithDiscount } from '@/lib/utils/calculate-amount-with-discount';
 
 const stripeApi: Stripe = stripeApiServer;
 
@@ -161,9 +163,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
   const { gigId, currency } = params;
 
   try {
-    const gigDetails = await db.query.GigsTable.findFirst({
-      where: eq(GigsTable.id, gigId),
-    });
+    const { receiverAccountId, gig: gigDetails, discount } = await getPaymentAccountDetailsForGig(gigId);
 
     if (!gigDetails) return;
 
@@ -180,20 +180,22 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
     const originalPaymentIntent = await findOriginalPaymentIntent(paymentIntentId);
     const customerPaymentMethodId = originalPaymentIntent.payment_method as string;
     const customerId = originalPaymentIntent.customer as string;
-    const receiverId = originalPaymentIntent.on_behalf_of as string;
 
     if (finalPrice <= originalAgreedPrice) {
       const priceToPay = finalPrice === 0 ? originalAgreedPrice : finalPrice;
-      await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPay, ableFeePercent);
+      const priceToPaylWithDiscount = calculateAmountWithDiscount(priceToPay, discount);
+      await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPaylWithDiscount, ableFeePercent);
       console.log(`Payment finalized for gig ${gigId}. Total captured: ${finalPrice} cents.`);
     }
 
     if (finalPrice > originalAgreedPrice) {
+      const priceToPaylWithDiscount = calculateAmountWithDiscount(finalPrice, discount);
+
       await createDirectPayment({
         currency: currency || 'usd',
-        serviceAmountInCents: finalPrice,
+        serviceAmountInCents: priceToPaylWithDiscount,
         buyerStripeCustomerId: customerId,
-        destinationAccountId: receiverId,
+        destinationAccountId: receiverAccountId,
         customerPaymentMethodId: customerPaymentMethodId,
         description: `Direct payment to Gig ID: ${gigId}`,
         gigPaymentInfo: {
@@ -214,7 +216,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
         currency: currency || 'usd',
         tipAmountCents: Math.round(Number(gigDetails.tip) * 100),
         buyerStripeCustomerId: customerId,
-        destinationAccountId: receiverId,
+        destinationAccountId: receiverAccountId,
         savedPaymentMethodId: customerPaymentMethodId,
         description: `Tip for service provided by worker in Gig: ${gigId}`,
         gigPaymentTipInfo: {
