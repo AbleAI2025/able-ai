@@ -14,57 +14,32 @@ const MIN_GIGS_FOR_STAR_WORKER = 5;
 
 // Helper to get user by ID
 export async function getUserById(userId: string, isDatabaseUserId: boolean) {
-  if (isDatabaseUserId) {
-    return await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.id, userId),
-      columns: {
-        id: true,
-        firebaseUid: true,
-        fullName: true,
-      },
-    });
-  } else {
-    return await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, userId),
-      columns: {
-        id: true,
-        firebaseUid: true,
-        fullName: true,
-      },
-    });
-  }
+  const whereCondition = isDatabaseUserId
+    ? eq(UsersTable.id, userId)
+    : eq(UsersTable.firebaseUid, userId);
+
+  return await db.query.UsersTable.findFirst({
+    where: whereCondition,
+    columns: {
+      id: true,
+      firebaseUid: true,
+      fullName: true,
+    },
+  });
 }
 
 // Helper to fetch gig based on role
 export async function fetchGigForRole(gigId: string, userId: string, role?: "buyer" | "worker") {
-  if (role === "buyer") {
-    return await db.query.GigsTable.findFirst({
-      where: and(eq(GigsTable.buyerUserId, userId), eq(GigsTable.id, gigId)),
-      with: {
-        buyer: {
-          columns: {
-            id: true,
-            fullName: true,
-            email: true,
-          },
-        },
-        worker: {
-          columns: {
-            id: true,
-            fullName: true,
-          },
-        },
-      },
-    });
-  } else if (role === "worker") {
+  if (role === "worker") {
+    // Worker access: Allow if assigned to the gig or if gig is pending worker acceptance and unassigned
     return await db.query.GigsTable.findFirst({
       where: and(
         eq(GigsTable.id, gigId),
         or(
-          eq(GigsTable.workerUserId, userId),
+          eq(GigsTable.workerUserId, userId), // Assigned worker
           and(
-            eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]),
-            isNull(GigsTable.workerUserId)
+            eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]), // Pending worker acceptance
+            isNull(GigsTable.workerUserId) // No worker assigned yet
           )
         )
       ),
@@ -73,7 +48,7 @@ export async function fetchGigForRole(gigId: string, userId: string, role?: "buy
           columns: {
             id: true,
             fullName: true,
-            email: true,
+            email: true, // Include buyer's email for notifications
           },
         },
         worker: {
@@ -85,6 +60,7 @@ export async function fetchGigForRole(gigId: string, userId: string, role?: "buy
       },
     });
   } else {
+    // Buyer or fallback access: Check if user is the buyer or worker for the gig
     const columnConditionId = role === "buyer" ? GigsTable.buyerUserId : GigsTable.workerUserId;
     return await db.query.GigsTable.findFirst({
       where: and(eq(columnConditionId, userId), eq(GigsTable.id, gigId)),
@@ -93,7 +69,7 @@ export async function fetchGigForRole(gigId: string, userId: string, role?: "buy
           columns: {
             id: true,
             fullName: true,
-            email: true,
+            email: true, // Essential for buyer communication
           },
         },
         worker: {
@@ -183,7 +159,7 @@ export function handleGigError(error: unknown) {
   return {
     success: false,
     error: error instanceof Error ? error.message : "Unknown error fetching gig",
-    gig: {} as any, // Assuming GigDetails type
+    gig: {} as GigDetails,
     status: 500,
   };
 }
