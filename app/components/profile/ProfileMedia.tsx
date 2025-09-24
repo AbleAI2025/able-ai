@@ -86,6 +86,7 @@ export default function ProfileMedia({
 
       <div className={styles.profileHeaderRightCol}>
         {workerLink && <QRCodeDisplay url={workerLink} />}
+
         <div className={styles.locationShareContainer}>
           <div className={styles.locationInfo}>
             <button
@@ -110,6 +111,53 @@ export default function ProfileMedia({
                 : "Location not provided"}
             </span>
           </div>
+
+          {/* Location Picker Bubble */}
+          {isPicking && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modalContent}>
+                <button
+                  className={styles.closeLocationPicker}
+                  onClick={() => setIsPicking(false)}
+                >
+                  ✕
+                </button>
+
+                <LocationPickerBubble
+                  value={tempLocation}
+                  onChange={(newLocation) => {
+                    const updated =
+                      typeof newLocation === "string"
+                        ? newLocation
+                        : newLocation.formatted_address;
+                    setTempLocation(updated);
+                  }}
+                  showConfirm
+                  onConfirm={(address, coord) =>
+                    updateWorkerLocation(address, coord)
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          <button
+            className={styles.shareProfileButton}
+            aria-label="Share profile"
+            onClick={async () => {
+              if (workerLink) {
+                try {
+                  await navigator.clipboard.writeText(workerLink);
+                  toast.success("Profile link copied to clipboard!");
+                } catch (err) {
+                  console.error("Failed to copy link:", err);
+                  toast.error("Failed to copy link. Please try manually.");
+                }
+              }
+            }}
+          >
+            <Share2 size={24} color="#ffffff" />
+          </button>
         </div>
       </div>
     </div>
