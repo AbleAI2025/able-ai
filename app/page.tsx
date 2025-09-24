@@ -1,34 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import Logo from "@/app/components/brand/Logo";
 import styles from "./SignInPage.module.css";
 import SignInView from "@/app/components/signin/SignInView";
 import RegisterView from "@/app/components/signin/RegisterView";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { getLastRoleUsed } from "@/lib/last-role-used";
 
 export default function SignInPage() {
   const router = useRouter();
-  const { user, loading: loadingAuth} = useAuth();
+  const { user, loading: loadingAuth } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState<React.ReactNode | null>(null);
 
   useEffect(() => {
     if (!loadingAuth && user) {
-      toast.success(`Welcome back ${user?.displayName || user?.email || 'user'}!`);
-      router.push("/select-role");
+      const lastRole = getLastRoleUsed();
+
+      toast.success(
+        `Welcome back ${user?.displayName || user?.email || "user"}!`
+      );
+
+      let redirectPath: string | null = null;
+
+      if (lastRole === "GIG_WORKER") {
+        redirectPath = localStorage.getItem("lastPathGigWorker");
+      } else if (lastRole === "BUYER") {
+        redirectPath = localStorage.getItem("lastPathBuyer");
+      }
+
+      router.push(redirectPath || "/select-role");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loadingAuth]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const referralCode = params.get('code');
+    const referralCode = params.get("code");
 
     if (referralCode) {
-      sessionStorage.setItem('referralCode', referralCode);
+      sessionStorage.setItem("referralCode", referralCode);
       toast.info(`Referral code "${referralCode}" has been saved!`);
     }
   }, []);
@@ -83,7 +97,6 @@ export default function SignInPage() {
             </span>
           </div>
         )}
-
       </div>
     </div>
   );

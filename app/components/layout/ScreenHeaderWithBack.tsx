@@ -76,7 +76,7 @@ const ScreenHeaderWithBack: React.FC<ScreenHeaderWithBackProps> = (props) => {
           <ArrowLeft size={20}/>
         </button>
       ) : (
-        <Image src="/images/home.svg" alt="Back" width={40} height={40} />
+        <span className={styles.spacer}></span>
       )}
       {title && <h1 className={styles.title}>{title}</h1>}
       <Link href={getChatUrl()} className={styles.chat}>

@@ -4,19 +4,23 @@ import { useState } from "react";
 import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
 import styles from "@/app/SignInPage.module.css";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signInWithFirebaseAction } from "@/actions/auth/singin";
 import { useFirebase } from "@/context/FirebaseContext";
 import PasswordInputField from "@/app/components/form/PasswodInputField";
 import Link from "next/link";
+import { getLastRoleUsed } from "@/lib/last-role-used";
 
 interface SignInViewProps {
   onToggleRegister: () => void;
   onError: (error: React.ReactNode | null) => void;
 }
 
-const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) => {
+const SignInView: React.FC<SignInViewProps> = ({
+  onToggleRegister,
+  onError,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,9 +33,13 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
     onError(null);
 
     try {
-      let userCredential
+      let userCredential;
       if (authClient) {
-        userCredential = await signInWithEmailAndPassword(authClient, email, password);
+        userCredential = await signInWithEmailAndPassword(
+          authClient,
+          email,
+          password
+        );
       }
       const user = userCredential?.user;
 
@@ -52,7 +60,17 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
         await user.getIdToken(true);
         await user.getIdTokenResult();
 
-        router.push("/select-role");
+        const lastRole = getLastRoleUsed();
+
+        let redirectPath: string | null = null;
+
+        if (lastRole === "GIG_WORKER") {
+          redirectPath = localStorage.getItem("lastPathGigWorker");
+        } else if (lastRole === "BUYER") {
+          redirectPath = localStorage.getItem("lastPathBuyer");
+        }
+
+        router.push(redirectPath || "/select-role");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -130,4 +148,4 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
   );
 };
 
-export default SignInView; 
+export default SignInView;
