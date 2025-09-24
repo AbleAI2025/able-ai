@@ -271,14 +271,14 @@ export default function BuyerProfilePage() {
             </div>
 
             <h4>Business:</h4>
-            <p>{businessInfo.fullCompanyName}</p>
+            <p>{businessInfo?.fullCompanyName || "Not provided"}</p>
 
             <span className={styles.location}>
-              {businessInfo?.location?.formatted_address || "-"}
+              {businessInfo?.location?.formatted_address || "Not provided"}
             </span>
 
             <h4>Role:</h4>
-            <p>{businessInfo.companyRole}</p>
+            <p>{businessInfo?.companyRole || "Not provided"}</p>
           </div>
         </section>
 
@@ -321,11 +321,15 @@ export default function BuyerProfilePage() {
             <span className={styles.staffTypesTitle}>
               Types of Staff Hired:
             </span>
-            <ul>
-              {dashboardData?.topSkills?.map((type, index) => (
-                <li key={index}>{type.name}</li>
-              ))}
-            </ul>
+            {dashboardData?.topSkills && dashboardData.topSkills.length > 0 ? (
+              <ul>
+                {dashboardData.topSkills.map((type, index) => (
+                  <li key={index}>{type.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <span className={styles.emptyMessage}>No staff types yet</span>
+            )}
           </div>
         </div>
 

@@ -4,7 +4,6 @@ import { Pencil } from "lucide-react";
 import styles from "./QualificationItem.module.css";
 import { Qualification } from "@/app/types";
 
-
 interface QualificationItemProps {
   qualification: Qualification;
   isEditMode: boolean;
@@ -19,7 +18,8 @@ const QualificationItem = ({
   return (
     <li className={styles.item}>
       <div className={styles.itemContent}>
-        <strong>{qualification.title}</strong>: {qualification.description}
+        <strong>{qualification.title}</strong>
+        {qualification?.description ? `: ${qualification.description}` : ""}
       </div>
       {isEditMode && (
         <button onClick={onEdit} className={styles.editIcon}>

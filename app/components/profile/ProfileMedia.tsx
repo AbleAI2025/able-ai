@@ -86,74 +86,30 @@ export default function ProfileMedia({
 
       <div className={styles.profileHeaderRightCol}>
         {workerLink && <QRCodeDisplay url={workerLink} />}
-
         <div className={styles.locationShareContainer}>
-          {location && (
-            <div className={styles.locationInfo}>
-              <button
-                className={styles.editLocationButton}
-                onClick={() => setIsPicking(true)}
-                disabled={!isSelfView}
-              >
-                <MapPin size={16} color="#ffffff" className={styles.mapPin} />
-              </button>
+          <div className={styles.locationInfo}>
+            <button
+              className={styles.editLocationButton}
+              onClick={() => setIsPicking(true)}
+              disabled={!isSelfView}
+            >
+              <MapPin size={16} color="#ffffff" className={styles.mapPin} />
+            </button>
 
-              <span
-                className={styles.addressText}
-                onClick={() => setExpanded(!expanded)}
-                style={{ cursor: "pointer" }}
-              >
-                {expanded ? location : shortAddress}
-              </span>
-            </div>
-          )}
-
-          {/* Location Picker Bubble */}
-          {isPicking && (
-            <div className={styles.modalOverlay}>
-              <div className={styles.modalContent}>
-                <button
-                  className={styles.closeLocationPicker}
-                  onClick={() => setIsPicking(false)}
-                >
-                  ✕
-                </button>
-
-                <LocationPickerBubble
-                  value={tempLocation}
-                  onChange={(newLocation) => {
-                    const updated =
-                      typeof newLocation === "string"
-                        ? newLocation
-                        : newLocation.formatted_address;
-                    setTempLocation(updated);
-                  }}
-                  showConfirm
-                  onConfirm={(address, coord) =>
-                    updateWorkerLocation(address, coord)
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          <button
-            className={styles.shareProfileButton}
-            aria-label="Share profile"
-            onClick={async () => {
-              if (workerLink) {
-                try {
-                  await navigator.clipboard.writeText(workerLink);
-                  toast.success("Profile link copied to clipboard!");
-                } catch (err) {
-                  console.error("Failed to copy link:", err);
-                  toast.error("Failed to copy link. Please try manually.");
-                }
-              }
-            }}
-          >
-            <Share2 size={24} color="#ffffff" />
-          </button>
+            <span
+              className={styles.addressText}
+              onClick={() => location && setExpanded(!expanded)}
+              style={{ cursor: location ? "pointer" : "default" }}
+            >
+              {location
+                ? expanded
+                  ? location
+                  : shortAddress
+                : isSelfView
+                ? "Add location"
+                : "Location not provided"}
+            </span>
+          </div>
         </div>
       </div>
     </div>

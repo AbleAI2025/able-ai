@@ -192,7 +192,7 @@ export default function PieChartComponent({
             <Tooltip content={<ControlledTooltip />} />
           </PieChart>
         ) : (
-          <p> No skills data available </p>
+          <p style={{color: "#fff"}}> No skills data available </p>
         )}
       </ResponsiveContainer>
     </div>
