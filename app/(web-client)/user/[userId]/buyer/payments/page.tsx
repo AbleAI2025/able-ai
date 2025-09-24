@@ -11,6 +11,7 @@ import { Filter, FileText, ArrowLeft, Loader2, Wine, Utensils, Briefcase } from 
 import styles from './PaymentsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { BuyerPayment, getBuyerPayments } from '@/actions/payments/get-buyer-payments';
+import BarChartComponent from '@/app/components/shared/BarChart';
 
 // Define interfaces for payment data
 interface Payment {
@@ -272,7 +273,7 @@ export default function BuyerPaymentsPage() {
                     </div>
                   </div>
 
-                  {payment.status === 'PAID' && (
+                  {payment.status === 'PAID' && payment.invoiceUrl && (
                     <Link
                       href={payment.invoiceUrl || '/'}
                       className={styles.generateInvoice}
@@ -296,6 +297,12 @@ export default function BuyerPaymentsPage() {
             ))}
           </div>
         )}
+
+        <div className={styles.barChartContainer}>
+          {!isLoadingPayments &&
+            <BarChartComponent totalPayments={chartData} />
+          }
+        </div>
       </div>
     </div>
   );

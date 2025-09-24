@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import styles from './AmendGigConfirmationPage.module.css';
 import { getGigAmendmentDetails } from '@/actions/gigs/manage-amendment';
+import { useGigAmendContext } from '@/context/GigAmendContext';
+import { toast } from 'sonner';
 
 interface Gig {
   id: string;
@@ -31,10 +33,10 @@ export default function AmendGigConfirmationPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [gig, setGig] = useState<Gig | null>(null);
   const [amendmentRequest, setAmendmentRequest] = useState<AmendmentRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
+  const { gig, isLoading: isGigContextLoading } = useGigAmendContext();
 
   const gigId = params.gigId as string;
   const userId = params.userId as string;
@@ -42,20 +44,19 @@ export default function AmendGigConfirmationPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
-      
-      try {
-        // Fetch gig details
-        const gigResponse = await fetch(`/api/gigs/${gigId}`);
-        if (gigResponse.ok) {
-          const gigData = await gigResponse.json();
-          setGig(gigData);
-        }
+      if (!user || !gigId || isGigContextLoading || !gig) return;
 
+      try {
+        // Loading an existing amendment
         const amendmentResult = await getGigAmendmentDetails({ amendmentId: amendId });
+        console.log({amendmentResult})
 
         if (amendmentResult.amendment) {
-
+          const { id, gigId, requesterId, createdAt, status } = amendmentResult.amendment;
+          setAmendmentRequest({ id, gigId, requestedBy: requesterId, requestedAt: createdAt.toLocaleString(), status, changes: '' });
+        } else {
+          toast.error(amendmentResult.error || "Could not load amendment details.");
+          router.back();
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -84,13 +85,13 @@ export default function AmendGigConfirmationPage() {
       const startMin = timeMatch[2];
       const endHour = parseInt(timeMatch[3]);
       const endMin = timeMatch[4];
-      
+
       const startPeriod = startHour >= 12 ? 'PM' : 'AM';
       const endPeriod = endHour >= 12 ? 'PM' : 'AM';
-      
+
       const startDisplayHour = startHour > 12 ? startHour - 12 : startHour === 0 ? 12 : startHour;
       const endDisplayHour = endHour > 12 ? endHour - 12 : endHour === 0 ? 12 : endHour;
-      
+
       return `${startDisplayHour}:${startMin} ${startPeriod} - ${endDisplayHour}:${endMin} ${endPeriod}`;
     }
     return timeStr;
@@ -113,7 +114,7 @@ export default function AmendGigConfirmationPage() {
 
   const handleConfirmChanges = async () => {
     if (!gig || !amendmentRequest || !user) return;
-    
+
     setIsConfirming(true);
     try {
       const response = await fetch(`/api/gigs/${gigId}/confirm-amendment`, {
@@ -142,7 +143,7 @@ export default function AmendGigConfirmationPage() {
 
   const handleDeclineChanges = async () => {
     if (!gig || !amendmentRequest || !user) return;
-    
+
     if (window.confirm('Are you sure you want to decline these changes?')) {
       try {
         const response = await fetch(`/api/gigs/${gigId}/decline-amendment`, {
@@ -183,9 +184,11 @@ export default function AmendGigConfirmationPage() {
       </div>
     );
   }
+  console.log({gig})
+  console.log({amendmentRequest})
 
-  const duration = calculateDuration(gig.gigTime);
-  const totalPay = calculateTotalPay(gig.hourlyRate, duration);
+  const duration = gig.duration.split(' ')[0];
+  const totalPay = calculateTotalPay(gig.hourlyRate, Number(duration));
 
   return (
     <div className={styles.container}>
@@ -201,19 +204,19 @@ export default function AmendGigConfirmationPage() {
 
       <div className={styles.updatedDetailsSection}>
         <h3>Updated gig details:</h3>
-        
+
         <div className={styles.detailsGrid}>
           <div className={styles.detailRow}>
             <span className={styles.label}>Location:</span>
-            <span className={styles.value}>{gig.location}</span>
+            <span className={styles.value}>{gig.location?.formatted_address}</span>
           </div>
           <div className={styles.detailRow}>
             <span className={styles.label}>Date:</span>
-            <span className={styles.value}>{formatDate(gig.gigDate)}</span>
+            <span className={styles.value}>{formatDate(gig?.gigDate || (new Date()).toString())}</span>
           </div>
           <div className={styles.detailRow}>
             <span className={styles.label}>Time:</span>
-            <span className={styles.value}>{formatTime(gig.gigTime)}</span>
+            <span className={styles.value}>{formatTime(gig?.gigTime || (new Date()).toString())}</span>
           </div>
           <div className={styles.detailRow}>
             <span className={styles.label}>Pay per hour:</span>
@@ -228,19 +231,19 @@ export default function AmendGigConfirmationPage() {
         <div className={styles.changesSummary}>
           <p><strong>Requested Changes:</strong> {amendmentRequest.changes}</p>
           <p><strong>Requested by:</strong> {amendmentRequest.requestedBy === 'buyer' ? 'Buyer' : 'Worker'}</p>
-          <p><strong>Requested on:</strong> {formatDate(amendmentRequest.requestedAt)}</p>
+          <p><strong>Requested on:</strong> {amendmentRequest.requestedAt.toString()}</p>
         </div>
       </div>
 
       <div className={styles.actionButtons}>
-        <button 
+        <button
           className={styles.confirmButton}
           onClick={handleConfirmChanges}
           disabled={isConfirming}
         >
           {isConfirming ? 'Confirming...' : 'Confirm changes'}
         </button>
-        <button 
+        <button
           className={styles.declineButton}
           onClick={handleDeclineChanges}
           disabled={isConfirming}

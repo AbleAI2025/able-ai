@@ -8,6 +8,7 @@ import { Filter, ArrowLeft, Loader2, Briefcase, Wine, Utensils } from 'lucide-re
 import styles from './EarningsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
+import BarChartComponent from '@/app/components/shared/BarChart';
 
 // Define interface for earning data
 interface Earning {
@@ -31,7 +32,7 @@ async function fetchWorkerEarnings(userId: string, filterType?: string): Promise
     { id: 'e1', gigType: 'Bartender', gigTitle: 'Weekend Bar Shift', buyerName: 'The Grand Cafe', date: '2023-12-15T00:00:00Z', amount: 150.00, status: 'Cleared', gigId: 'gig101' },
     { id: 'e2', gigType: 'Waiter', gigTitle: 'Private Dinner Party', buyerName: 'Alice Wonderland', date: '2023-12-11T00:00:00Z', amount: 120.00, status: 'Cleared', gigId: 'gig102' },
     { id: 'e3', gigType: 'Bartender', gigTitle: 'Corporate Event Cocktails', buyerName: 'Innovate Corp', date: '2023-12-09T00:00:00Z', amount: 180.00, status: 'Pending', gigId: 'gig103' },
-    { id: 'e4', gigType: 'Chef', gigTitle: 'Pop-up Kitchen Lead', buyerName: 'Foodie Fest', date: '2023-11-22T00:00:00Z', amount: 230.00, status: 'Cleared', gigId: 'gig104'},
+    { id: 'e4', gigType: 'Chef', gigTitle: 'Pop-up Kitchen Lead', buyerName: 'Foodie Fest', date: '2023-11-22T00:00:00Z', amount: 230.00, status: 'Cleared', gigId: 'gig104' },
   ];
   if (filterType && filterType !== "All") {
     return allEarnings.filter(e => e.gigType === filterType);
@@ -73,16 +74,14 @@ export default function WorkerEarningsPage() {
   const router = useRouter();
   const params = useParams();
   const pageUserId = params.userId as string;
-  const lastRoleUsed = getLastRoleUsed()
-  
-  
+  const lastRoleUsed = getLastRoleUsed();
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
 
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [isLoadingEarnings, setIsLoadingEarnings] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [filterGigType, setFilterGigType] = useState<'All' | string>('All');
   const [showFilterModal, setShowFilterModal] = useState(false);
 
@@ -105,10 +104,10 @@ export default function WorkerEarningsPage() {
           setEarnings([]); // Clear earnings on error
         })
         .finally(() => setIsLoadingEarnings(false));
-    } else if (!loadingAuth && user && authUserId === pageUserId && !(lastRoleUsed === "GIG_WORKER" || user?.claims.role === "QA")){
+    } else if (!loadingAuth && user && authUserId === pageUserId && !(lastRoleUsed === "GIG_WORKER" || user?.claims.role === "QA")) {
       // If user is auth'd for page, but no role, don't attempt fetch, auth useEffect handles redirect
       // Set loading to false as fetch won't occur.
-      setIsLoadingEarnings(false); 
+      setIsLoadingEarnings(false);
       setEarnings([]); // Ensure earnings are cleared if roles are missing
       setError("Access denied: You do not have the required role to view earnings."); // Optional: set an error message
     } else if (!loadingAuth && (!user || authUserId !== pageUserId)) {
@@ -117,9 +116,9 @@ export default function WorkerEarningsPage() {
       setEarnings([]);
       // Error message or redirect is handled by the primary auth useEffect
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loadingAuth, authUserId, pageUserId, filterGigType]);
-  
+
   const chartData = useMemo(() => getEarningsChartData(earnings), [earnings]);
 
   const getGigIcon = (gigType: string) => {
@@ -147,34 +146,34 @@ export default function WorkerEarningsPage() {
         </header>
 
         {/* Filter Options - Simplified for this example, could be a modal */}
-        
+
         {showFilterModal && (
-            <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
-                <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                    <h3 className={styles.modalHeader}>Filter Earnings</h3>
-                    <div className={styles.filterOptions} style={{flexDirection: 'column'}}>
-                        {gigTypes.map(type => (
-                            <label key={type} className={styles.filterOptionLabel} style={{padding: '0.5rem 0'}}>
-                            <input
-                                type="radio"
-                                name="gigTypeModalEarningsFilter"
-                                value={type}
-                                checked={filterGigType === type}
-                                onChange={() => { setFilterGigType(type); setShowFilterModal(false);}}
-                            />
-                            {type}
-                            </label>
-                        ))}
-                    </div>
-                     <div className={styles.modalActions}>
-                        <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
-                    </div>
-                </div>
+          <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <h3 className={styles.modalHeader}>Filter Earnings</h3>
+              <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                {gigTypes.map(type => (
+                  <label key={type} className={styles.filterOptionLabel} style={{ padding: '0.5rem 0' }}>
+                    <input
+                      type="radio"
+                      name="gigTypeModalEarningsFilter"
+                      value={type}
+                      checked={filterGigType === type}
+                      onChange={() => { setFilterGigType(type); setShowFilterModal(false); }}
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
+              <div className={styles.modalActions}>
+                <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
+              </div>
             </div>
+          </div>
         )}
 
         {isLoadingEarnings ? (
-          <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28}/> Loading earnings...</div>
+          <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28} /> Loading earnings...</div>
         ) : error ? (
           <div className={styles.emptyState}>{error}</div>
         ) : earnings.length === 0 ? (
@@ -188,14 +187,19 @@ export default function WorkerEarningsPage() {
                   <div className={styles.earningHeader}>
                     <span className={styles.earningGigInfo}>{earning.gigType}</span>
                     <span className={styles.earningDate}>{new Date(earning.date).toLocaleDateString()}</span>
-                  </div>                  
+                  </div>
                 </div>
                 <span className={styles.amount}>£{earning.amount.toFixed(2)}</span>
               </div>
             ))}
           </div>
         )}
-{/* 
+        <div className={styles.barChartContainer}>
+          {!isLoadingEarnings &&
+            <BarChartComponent totalPayments={chartData} />
+          }
+        </div>
+        {/* 
         <div className={styles.barChartContainer}>
           {isLoadingEarnings ? "Loading chart data..." : earnings.length > 0 && chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
