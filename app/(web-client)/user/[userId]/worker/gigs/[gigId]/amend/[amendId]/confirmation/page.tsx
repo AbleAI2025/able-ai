@@ -29,6 +29,20 @@ interface AmendmentRequest {
   status: string;
 }
 
+function formatDateTime(date: Date) {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: true,
+  });
+
+  return formatter.format(date);
+}
+
 export default function AmendGigConfirmationPage() {
   const params = useParams();
   const router = useRouter();
@@ -52,7 +66,7 @@ export default function AmendGigConfirmationPage() {
 
         if (amendmentResult.amendment) {
           const { id, gigId, requesterId, createdAt, status } = amendmentResult.amendment;
-          setAmendmentRequest({ id, gigId, requestedBy: requesterId, requestedAt: createdAt.toLocaleString(), status, changes: '' });
+          setAmendmentRequest({ id, gigId, requestedBy: requesterId, requestedAt: formatDateTime(createdAt), status, changes: '' });
         } else {
           toast.error(amendmentResult.error || "Could not load amendment details.");
           router.back();
@@ -184,7 +198,7 @@ export default function AmendGigConfirmationPage() {
     );
   }
 
-  const duration = gig.duration.split(' ')[0];
+  const duration = (gig.duration || '0 hours').split(' ')[0];
   const totalPay = calculateTotalPay(gig.hourlyRate, Number(duration));
 
   return (
