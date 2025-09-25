@@ -116,12 +116,10 @@ export class GigWorkerProfileService {
    * Processes reviews data with author information
    */
   static async processReviewsData(reviews: any[]) {
-    // 1. Obtener todos los IDs únicos de autores
     const authorIds = [
       ...new Set(reviews.map((review) => review.authorUserId).filter(Boolean)),
     ];
 
-    // 2. Si no hay IDs, procesar directamente
     if (authorIds.length === 0) {
       return reviews.map((review) => ({
         name: "Unknown",
@@ -130,7 +128,6 @@ export class GigWorkerProfileService {
       }));
     }
 
-    // 3. Hacer múltiples consultas en paralelo (mejor que secuencial)
     const authors = await Promise.all(
       authorIds.map((id) =>
         db.query.UsersTable.findFirst({
@@ -139,7 +136,6 @@ export class GigWorkerProfileService {
       )
     );
 
-    // 4. Crear mapa para acceso rápido
     const authorsMap = new Map();
     authors.forEach((author, index) => {
       if (author) {
@@ -147,7 +143,6 @@ export class GigWorkerProfileService {
       }
     });
 
-    // 5. Procesar reviews
     return reviews.map((review) => {
       const author = authorsMap.get(review.authorUserId);
       return {

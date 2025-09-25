@@ -107,7 +107,6 @@ const HashtagsModal = ({
         </div>
 
         <div className={styles.modalBody}>
-          {/* Input para agregar nuevo hashtag */}
           <div className={styles.tagInputRow}>
             <input
               type="text"
@@ -127,7 +126,6 @@ const HashtagsModal = ({
             </button>
           </div>
 
-          {/* Lista de hashtags editables */}
           <div className={styles.tagsList}>
             {hashtags.map((tag, index) => (
               <div key={index} className={styles.tagItem}>
