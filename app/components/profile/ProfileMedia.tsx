@@ -88,25 +88,29 @@ export default function ProfileMedia({
         {workerLink && <QRCodeDisplay url={workerLink} />}
 
         <div className={styles.locationShareContainer}>
-          {location && (
-            <div className={styles.locationInfo}>
-              <button
-                className={styles.editLocationButton}
-                onClick={() => setIsPicking(true)}
-                disabled={!isSelfView}
-              >
-                <MapPin size={16} color="#ffffff" className={styles.mapPin} />
-              </button>
+          <div className={styles.locationInfo}>
+            <button
+              className={styles.editLocationButton}
+              onClick={() => setIsPicking(true)}
+              disabled={!isSelfView}
+            >
+              <MapPin size={16} color="#ffffff" className={styles.mapPin} />
+            </button>
 
-              <span
-                className={styles.addressText}
-                onClick={() => setExpanded(!expanded)}
-                style={{ cursor: "pointer" }}
-              >
-                {expanded ? location : shortAddress}
-              </span>
-            </div>
-          )}
+            <span
+              className={styles.addressText}
+              onClick={() => location && setExpanded(!expanded)}
+              style={{ cursor: location ? "pointer" : "default" }}
+            >
+              {location
+                ? expanded
+                  ? location
+                  : shortAddress
+                : isSelfView
+                ? "Add location"
+                : "Location not provided"}
+            </span>
+          </div>
 
           {/* Location Picker Bubble */}
           {isPicking && (

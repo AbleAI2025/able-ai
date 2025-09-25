@@ -78,8 +78,8 @@ const SkillSplashScreen = ({
   skillId,
   fetchSkillData,
   isSelfView,
-  // onBackClick,
-}: {
+}: // onBackClick,
+{
   profile: SkillProfile | null;
   skillId: string;
   fetchSkillData: () => void;
@@ -252,12 +252,14 @@ const SkillSplashScreen = ({
         )}
 
         {/* Customer reviews */}
-        {profile.customerReviewsText && (
+        {
           <p>
             <span>Customer reviews:</span>
+            profile.customerReviewsText && (
             <span className={styles.review}>{profile.customerReviewsText}</span>
+            )
           </p>
-        )}
+        }
 
         <table className={styles.skillDisplayTable}>
           <thead>
@@ -315,92 +317,89 @@ const SkillSplashScreen = ({
         </div>
 
         {/* Image placeholders */}
-          <>
-            <h4>Images</h4>
-            <div className={styles.supportingImages}>
-              <div className={styles.images}>
-                {profile.supportingImages?.length ? (
-                  profile.supportingImages.map((img, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedImage(img)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <Image
-                        src={img}
-                        alt={`Img ${i}`}
-                        width={109}
-                        height={68}
+        <>
+          <h4>Images</h4>
+          <div className={styles.supportingImages}>
+            <div className={styles.images}>
+              {profile.supportingImages?.length ? (
+                profile.supportingImages.map((img, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedImage(img)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Image src={img} alt={`Img ${i}`} width={109} height={68} />
+                  </div>
+                ))
+              ) : (
+                <p>No images available</p>
+              )}
+
+              {isSelfView && (
+                <>
+                  <button
+                    className={styles.attachButton}
+                    onClick={handleAddImageClick}
+                  >
+                    {!isUploadImage ? (
+                      <Paperclip size={29} color="#ffffff" />
+                    ) : (
+                      <Loader
+                        customClass={styles.loaderCustom}
+                        customStyle={{
+                          width: "auto",
+                          height: "auto",
+                          minHeight: 0,
+                          backgroundColor: "#121212",
+                        }}
                       />
-                    </div>
-                  ))
-                ) : (
-                  <p>No images available</p>
-                )}
+                    )}
+                  </button>
 
-                {isSelfView && (
-                  <>
-                    <button
-                      className={styles.attachButton}
-                      onClick={handleAddImageClick}
-                    >
-                      {!isUploadImage ? (
-                        <Paperclip size={29} color="#ffffff" />
-                      ) : (
-                        <Loader
-                          customClass={styles.loaderCustom}
-                          customStyle={{
-                            width: "auto",
-                            height: "auto",
-                            minHeight: 0,
-                            backgroundColor: "#121212",
-                          }}
-                        />
-                      )}
-                    </button>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className={styles.hiddenInput}
-                      onChange={handleSupportingImageUpload}
-                    />
-                  </>
-                )}
-              </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className={styles.hiddenInput}
+                    onChange={handleSupportingImageUpload}
+                  />
+                </>
+              )}
             </div>
+          </div>
 
-            {/* Modal para ver las imágenes en grande */}
-            <ViewImageModal
-              isOpen={!!selectedImage}
-              onClose={() => setSelectedImage(null)}
-              imageUrl={selectedImage!}
-              userToken={user?.token || ""}
-              skillId={skillId}
-              isSelfView={isSelfView}
-              fetchSkillData={fetchSkillData}
-            />
-          </>
+          {/* Modal para ver las imágenes en grande */}
+          <ViewImageModal
+            isOpen={!!selectedImage}
+            onClose={() => setSelectedImage(null)}
+            imageUrl={selectedImage!}
+            userToken={user?.token || ""}
+            skillId={skillId}
+            isSelfView={isSelfView}
+            fetchSkillData={fetchSkillData}
+          />
+        </>
 
         {/* Badges */}
-        {profile.badges && profile.badges.length > 0 && (
+        {
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Badges Awarded</h3>
             <div className={styles.badges}>
-              {profile.badges.map((badge) => (
-                <div className={styles.badge} key={badge.id}>
-                  <AwardDisplayBadge
-                    icon={badge.icon as BadgeIcon}
-                    title={badge.name}
-                    role="buyer"
-                    type={badge.type}
-                  />
-                </div>
-              ))}
+              {profile.badges && profile.badges.length > 0
+                ? profile.badges.map((badge) => (
+                    <div className={styles.badge} key={badge.id}>
+                      <AwardDisplayBadge
+                        icon={badge.icon as BadgeIcon}
+                        title={badge.name}
+                        role="buyer"
+                        type={badge.type}
+                      />
+                    </div>
+                  ))
+                : "No badges yet."}
             </div>
           </div>
-        )}
+        }
 
         {/* Qualifications */}
         <Qualifications
@@ -434,7 +433,11 @@ const SkillSplashScreen = ({
             profile.recommendations.map((recommendation, index) => (
               <RecommendationCardItem
                 key={index}
-                recommenderName={recommendation?.author?.fullName || recommendation?.recommenderName || "Unknown"}
+                recommenderName={
+                  recommendation?.author?.fullName ||
+                  recommendation?.recommenderName ||
+                  "Unknown"
+                }
                 date={recommendation?.createdAt?.toString()}
                 comment={recommendation?.comment}
               />

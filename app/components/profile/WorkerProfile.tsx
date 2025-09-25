@@ -180,7 +180,13 @@ const WorkerProfile = ({
           )}
         </div>
         <h3 className={styles.workerName}>
-          <span>{workerProfile?.socialLink ?? ""}</span>
+          <span>
+            {workerProfile?.socialLink
+              ? workerProfile.socialLink
+              : isSelfView
+              ? "Add social link"
+              : "Social link not provided"}
+          </span>
           {isSelfView && (
             <button
               className={styles.editButton}
@@ -192,6 +198,7 @@ const WorkerProfile = ({
             </button>
           )}
         </h3>
+
         <div className={styles.workerInfo}>
           {true && (
             <Link
@@ -350,7 +357,7 @@ const WorkerProfile = ({
           onClose={() => setIsOpen(false)}
         />
       )}
-            {isSocialModalOpen && (
+      {isSocialModalOpen && (
         <SocialLinkModal
           initialValue={workerProfile.socialLink ?? ""}
           onClose={() => setIsSocialModalOpen(false)}
