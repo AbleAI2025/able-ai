@@ -2160,7 +2160,7 @@ Make the conversation feel natural and build on what they've already told you, b
         firebaseUid: user?.uid || '',
         workerId: selectedWorker.workerId,
         gigId: gigResult.gigId,
-        currency: 'usd',
+        currency: 'gbp',
         serviceAmountInCents: ((selectedWorker.hourlyRate * totalHours) * 100)
       });
 

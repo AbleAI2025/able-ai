@@ -21,7 +21,7 @@ export async function createTipPayment(params: PaymentTipParams) {
   try {
     const tipIntent = await stripeApi.paymentIntents.create({
       amount: tipAmountCents,
-      currency: currency || 'usd',
+      currency: currency || 'gbp',
       customer: buyerStripeCustomerId,
       payment_method: savedPaymentMethodId,
       on_behalf_of: destinationAccountId,
