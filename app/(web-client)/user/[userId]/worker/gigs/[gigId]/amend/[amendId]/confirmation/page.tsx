@@ -79,7 +79,7 @@ export default function AmendGigConfirmationPage() {
     };
 
     fetchData();
-  }, [gigId, user]);
+  }, [gigId, user, amendId, isGigContextLoading, gig, router]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
