@@ -1308,13 +1308,9 @@ export const updateWorkerHashtagsAction = async (
 
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, uid),
+      with: { gigWorkerProfile: true },
     });
-    if (!user) throw "User not found";
-
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-    if (!workerProfile) throw "Worker profile not found";
+    if (!user || !user?.gigWorkerProfile) throw "User worker profile not found";
 
     await db
       .update(GigWorkerProfilesTable)
@@ -1322,7 +1318,7 @@ export const updateWorkerHashtagsAction = async (
         hashtags,
         updatedAt: new Date(),
       })
-      .where(eq(GigWorkerProfilesTable.id, workerProfile.id));
+      .where(eq(GigWorkerProfilesTable.id, user.gigWorkerProfile.id));
 
     return { success: true, data: hashtags };
   } catch (error) {
