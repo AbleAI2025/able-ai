@@ -334,7 +334,7 @@ export default function BuyerProfilePage() {
           <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
           <div className={styles.analyticsChartsContainer}>
             <PieChartComponent skills={dashboardData?.skills} />
-            <BarChartComponent totalPayments={dashboardData?.totalPayments} />
+            <BarChartComponent data={dashboardData?.totalPayments} />
           </div>
         </section>
 
