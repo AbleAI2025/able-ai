@@ -251,11 +251,7 @@ const SkillSplashScreen = ({
               </span>
             ))}
             <button
-              style={{
-                color: "white",
-                backgroundColor: "#121212",
-                border: "none",
-              }}
+              className={styles.editHashtagsBtn}
               onClick={() => setShowHashtagsModal(true)}
             >
               <Pencil size={18} />

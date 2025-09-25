@@ -46,11 +46,16 @@ const HashtagsModal = ({
   const saveEdit = (index: number) => {
     const cleanTag = normalizeTag(editingValue);
     if (!cleanTag) return;
+    if (hashtags.some((tag, i) => i !== index && tag === cleanTag)) {
+      setError("This hashtag already exists");
+      return;
+    }
     const updated = [...hashtags];
     updated[index] = cleanTag;
     setHashtags(updated);
     setEditingIndex(null);
     setEditingValue("");
+    setError(null);
   };
 
   const handleRemoveTag = (index: number) => {
@@ -75,7 +80,7 @@ const HashtagsModal = ({
         throw new Error("Authentication required");
       }
       const { success: updateSuccess, error: updateError } =
-        await updateWorkerHashtagsAction(user?.token, hashtags);
+        await updateWorkerHashtagsAction(user.token, hashtags);
 
       if (!updateSuccess) throw updateError;
 

@@ -816,20 +816,20 @@ export const saveWorkerProfileFromOnboardingAction = async (
 
       // Extract years of experience from experience field
       const experienceText = profileData.experience || "";
-      
+
       // Try multiple patterns to extract years of experience
       let yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
-      
+
       // If no explicit years found, try to extract any number that might represent years
       if (!yearsMatch) {
         yearsMatch = experienceText.match(/(\d+)/);
       }
-      
+
       // If still no number found, try to extract decimal numbers (e.g., "2.5 years")
       if (!yearsMatch) {
         yearsMatch = experienceText.match(/(\d+\.?\d*)/);
       }
-      
+
       if (yearsMatch) {
         yearsOfExperience = parseFloat(yearsMatch[1]);
       } else {
@@ -1295,7 +1295,6 @@ export const updateSocialLinkWorkerProfileAction = async (
   }
 };
 
-
 export const updateWorkerHashtagsAction = async (
   token: string,
   hashtags: string[]
@@ -1322,6 +1321,11 @@ export const updateWorkerHashtagsAction = async (
 
     return { success: true, data: hashtags };
   } catch (error) {
-    return { success: false, data: null, error };
+    console.error("Failed to update worker hashtags:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while updating hashtags.";
+    return { success: false, data: null, error: message };
   }
-}
+};
