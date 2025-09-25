@@ -266,7 +266,7 @@ export default function BuyerProfilePage() {
                 onClick={() => setIsModalOpen(true)}
                 className={styles.editInfoBtn}
               >
-                <Pencil size={20} />
+                <Pencil color="#ffffff" size={16} className={styles.icon} />
               </button>
             </div>
 

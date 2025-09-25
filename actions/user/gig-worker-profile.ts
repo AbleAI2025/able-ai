@@ -1294,3 +1294,38 @@ export const updateSocialLinkWorkerProfileAction = async (
     };
   }
 };
+
+
+export const updateWorkerHashtagsAction = async (
+  token: string,
+  hashtags: string[]
+) => {
+  try {
+    if (!token) throw new Error("User ID is required");
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+    });
+    if (!user) throw "User not found";
+
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+    if (!workerProfile) throw "Worker profile not found";
+
+    await db
+      .update(GigWorkerProfilesTable)
+      .set({
+        hashtags,
+        updatedAt: new Date(),
+      })
+      .where(eq(GigWorkerProfilesTable.id, workerProfile.id));
+
+    return { success: true, data: hashtags };
+  } catch (error) {
+    return { success: false, data: null, error };
+  }
+}

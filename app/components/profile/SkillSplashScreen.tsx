@@ -3,7 +3,7 @@
 "use client";
 
 import Image from "next/image";
-import { Paperclip, CheckCircle, Copy } from "lucide-react";
+import { Paperclip, CheckCircle, Copy, Pencil } from "lucide-react";
 import styles from "./SkillSplashScreen.module.css";
 import AwardDisplayBadge from "./AwardDisplayBadge";
 import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
@@ -30,6 +30,7 @@ import ProfileVideo from "./WorkerProfileVideo";
 import ScreenHeaderWithBack from "../layout/ScreenHeaderWithBack";
 import { BadgeIcon } from "./GetBadgeIcon";
 import Qualifications from "./Qualifications";
+import HashtagsModal from "./HashtagsModal";
 
 async function uploadImageToFirestore(
   file: Blob,
@@ -97,6 +98,7 @@ const SkillSplashScreen = ({
   const [onCopy, setOnCopy] = useState<(copiedText: string) => void>(
     () => () => {}
   );
+  const [showHashtagsModal, setShowHashtagsModal] = useState(false);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -248,10 +250,20 @@ const SkillSplashScreen = ({
                 {tag}
               </span>
             ))}
+            <button
+              style={{
+                color: "white",
+                backgroundColor: "#121212",
+                border: "none",
+              }}
+              onClick={() => setShowHashtagsModal(true)}
+            >
+              <Pencil size={18} />
+            </button>
           </div>
         )}
 
-        {/* Customer reviews */}
+        {/* 
         {
           <p>
             <span>Customer reviews:</span>
@@ -260,6 +272,7 @@ const SkillSplashScreen = ({
             )
           </p>
         }
+            */}
 
         <table className={styles.skillDisplayTable}>
           <thead>
@@ -446,6 +459,14 @@ const SkillSplashScreen = ({
             <p className={styles.emptyMessage}>No recommendations yet.</p>
           )}
         </div>
+
+        {showHashtagsModal && (
+          <HashtagsModal
+            initialValue={profile.hashtags || []}
+            fetchSkillData={() => fetchSkillData()}
+            onClose={() => setShowHashtagsModal(false)}
+          />
+        )}
 
         {isSelfView && linkUrl && navigator.clipboard && (
           <div className={styles.footerAction}>

@@ -1,0 +1,1 @@
+ALTER TABLE "skills" ADD COLUMN "customer_reviews_summary" text;

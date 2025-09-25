@@ -1,0 +1,285 @@
+/* Full-screen overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal box */
+.modalContent {
+  background-color: #121212;
+  padding: 20px 24px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Modal header */
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+}
+
+/* Close button (X icon) */
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.closeButton:hover {
+  color: red;
+}
+
+/* Modal body */
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Input field */
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4f46e5; /* primary color */
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Modal footer */
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Save button */
+.saveButton {
+  background-color: var(--primary-color); /* primary color */
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+  background-color: #005bb5;
+}
+
+.errorText {
+  color: #ff0000;
+}
+
+.tagInputRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.addButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.addButton:hover {
+  background-color: #005bb5;
+}
+
+.tagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagItem {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.hashtag {
+  margin-right: 6px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #e11d48;
+}
+
+.removeButton:hover {
+  color: #b91c1c;
+}
+
+.editButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4f46e5;
+  margin-left: 4px;
+}
+
+.editButton:hover {
+  color: #3730a3;
+}
+
+.saveEditButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 4px;
+}
+
+.saveEditButton:hover {
+  background-color: #005bb5;
+}
+
+
+/* Input + botón agregar */
+.tagInputRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.addButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 999px; /* pill */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+}
+
+.addButton:hover {
+  background-color: #005bb5;
+}
+
+/* Lista de hashtags */
+.tagsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tagItem {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  padding: 8px 12px;
+  border-radius: 10px;
+  gap: 8px;
+}
+
+.hashtag {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+  flex-grow: 1;
+}
+
+/* Botones */
+.editButton,
+.removeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.editButton {
+  color: #4f46e5;
+}
+
+.editButton:hover {
+  background: rgba(79, 70, 229, 0.1);
+}
+
+.removeButton {
+  color: #e11d48;
+}
+
+.removeButton:hover {
+  background: rgba(225, 29, 72, 0.1);
+}
+
+/* Inline editing */
+.inlineButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.saveEditButton,
+.cancelEditButton {
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.saveEditButton {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.saveEditButton:hover {
+  background-color: #005bb5;
+}
+
+.cancelEditButton {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cancelEditButton:hover {
+  background: #d1d5db;
+}
