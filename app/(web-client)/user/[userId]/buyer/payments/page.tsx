@@ -300,7 +300,7 @@ export default function BuyerPaymentsPage() {
 
         <div className={styles.barChartContainer}>
           {!isLoadingPayments &&
-            <BarChartComponent totalPayments={chartData} />
+            <BarChartComponent data={chartData} />
           }
         </div>
       </div>

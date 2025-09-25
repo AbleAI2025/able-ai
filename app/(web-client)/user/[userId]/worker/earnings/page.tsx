@@ -196,7 +196,7 @@ export default function WorkerEarningsPage() {
         )}
         <div className={styles.barChartContainer}>
           {!isLoadingEarnings &&
-            <BarChartComponent totalPayments={chartData} />
+            <BarChartComponent data={chartData} />
           }
         </div>
         {/* 
