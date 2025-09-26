@@ -13,18 +13,6 @@ import { useAuth } from '@/context/AuthContext';
 import { BuyerPayment, getBuyerPayments } from '@/actions/payments/get-buyer-payments';
 import BarChartComponent from '@/app/components/shared/BarChart';
 
-// Define interfaces for payment data
-interface Payment {
-  id: string;
-  // gigType: 'Bartender' | 'Waiter' | 'Chef' | 'Event Staff' | string; // Allow other types
-  workerName: string;
-  date: string; // ISO date string
-  amount: number;
-  status: 'Paid' | 'Pending' | 'Failed'; // Example statuses
-  invoiceUrl?: string;
-  gigId?: string; // To link to gig for rehire
-}
-
 interface FilterState {
   staffType: 'All' | string;
   dateFrom?: string;
@@ -74,7 +62,7 @@ export default function BuyerPaymentsPage() {
     dateTo: '',
     priceFrom: '',
     priceTo: '',
-  })
+  });
   const [showFilterModal, setShowFilterModal] = useState(false); // For a potential filter modal
 
   // Available gig types for filtering (could be fetched or predefined)
@@ -92,7 +80,7 @@ export default function BuyerPaymentsPage() {
         setError("Could not load payment history. Please try again.");
       })
       .finally(() => setIsLoadingPayments(false));
-  }
+  };
 
   // Auth check and data load
   useEffect(() => {
