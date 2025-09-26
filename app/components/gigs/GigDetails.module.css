@@ -621,3 +621,18 @@
     transform: rotate(360deg);
   }
 }
+
+.timerContainer {
+    display: flex;
+  }
+
+.timerIcon {
+  margin-right: 0.5rem;
+}
+.timerText {
+  color: #ffffff;
+  font-family: var(--font-family);
+  line-height: 16px;
+  font-size: 0.8rem;
+}
+

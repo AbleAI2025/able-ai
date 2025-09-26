@@ -335,6 +335,7 @@ export async function getGigDetails({
       workerFullBio: worker?.fullBio,
       hourlyRate: hourlyRate,
       worker: gig?.worker,
+      expiresAt: gig.expiresAt ? new Date(gig.expiresAt).toISOString() : undefined,
       estimatedEarnings: estimatedEarnings,
       specialInstructions: gig.notesForWorker || undefined,
       status: getMappedStatus(gig.statusInternal),

@@ -1,10 +1,10 @@
 /* eslint-disable max-lines-per-function */
-import { Calendar, Check, Info, VideoOff } from "lucide-react";
+import { Calendar, Check, Clock, Info, VideoOff } from "lucide-react";
 import styles from "./GigDetails.module.css";
 import { usePathname, useRouter } from "next/navigation";
 import GigActionButton from "../shared/GigActionButton";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type GigDetails from "@/app/types/GigDetailsTypes";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
@@ -77,6 +77,45 @@ const GigDetailsComponent = ({
   const { user } = useAuth();
   const lastRoleUsed = getLastRoleUsed();
   const pathname = usePathname();
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    if (!gig.expiresAt) {
+      setTimeLeft("");
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      if (!gig.expiresAt) {
+        setTimeLeft("");
+        return;
+      }
+      const expirationDate = new Date(gig.expiresAt);
+      const now = new Date();
+      const difference = expirationDate.getTime() - now.getTime();
+
+      if (difference <= 0) {
+        setTimeLeft("Expired");
+        return;
+      }
+
+      const hours = Math.floor((difference / 1000 / 60 / 60) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      let timeLeftString = "";
+      if (hours > 0) timeLeftString += `${hours}h `;
+      if (minutes > 0) timeLeftString += `${minutes}m `;
+      timeLeftString += `${seconds}s`;
+
+      setTimeLeft(timeLeftString.trim());
+    };
+
+    calculateTimeLeft();
+    const intervalId = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [gig.expiresAt]);
 
   // Get worker name from gig data if available, otherwise use a placeholder
   const getWorkerName = () => {
@@ -371,6 +410,15 @@ const GigDetailsComponent = ({
               <span className={styles.label}>Hiring manager:</span>
               <span className={styles.detailValue}>
                 {gig.hiringManager} <br /> {gig.hiringManagerUsername}
+              </span>
+            </div>
+          )}
+
+          {timeLeft && (
+            <div className={styles.timerContainer}>
+              <Clock size={30} color="#fff" className={styles.timerIcon} />
+              <span className={styles.timerText}>
+                {timeLeft} <br /> to accept
               </span>
             </div>
           )}

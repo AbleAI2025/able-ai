@@ -8,14 +8,15 @@ import { parseCoordinates, calculateDistance } from "@/lib/utils/distance";
 // Constants
 const DEFAULT_GIG_SEARCH_RADIUS_KM = 30;
 
-// Gig statuses for accepted gigs
-const ACCEPTED = "ACCEPTED";
-const IN_PROGRESS = "IN_PROGRESS";
-const PENDING_COMPLETION_WORKER = "PENDING_COMPLETION_WORKER";
-const PENDING_COMPLETION_BUYER = "PENDING_COMPLETION_BUYER";
-const COMPLETED = "COMPLETED";
-const AWAITING_PAYMENT = "AWAITING_PAYMENT";
-const PAID = "PAID";
+const ACCEPTED_GIG_STATUSES = [
+  "ACCEPTED",
+  "IN_PROGRESS",
+  "PENDING_COMPLETION_WORKER",
+  "PENDING_COMPLETION_BUYER",
+  "COMPLETED",
+  "AWAITING_PAYMENT",
+  "PAID",
+] as const;
 
 export interface WorkerGigOffer {
   id: string;
@@ -215,15 +216,7 @@ export async function getWorkerOffers(userId: string) {
       },
       where: and(
         eq(GigsTable.workerUserId, user.id),
-        inArray(GigsTable.statusInternal, [
-          ACCEPTED,
-          IN_PROGRESS,
-          PENDING_COMPLETION_WORKER,
-          PENDING_COMPLETION_BUYER,
-          COMPLETED,
-          AWAITING_PAYMENT,
-          PAID,
-        ])
+        inArray(GigsTable.statusInternal, ACCEPTED_GIG_STATUSES)
       ),
     });
 
