@@ -8,54 +8,83 @@ import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
 // Use the exact string value for declined status
 const DECLINED_BY_WORKER = "DECLINED_BY_WORKER";
 
-export async function declineGigOffer({ gigId, userId }: { gigId: string; userId: string }) {
+export async function declineGigOffer({
+  gigId,
+  userId,
+}: {
+  gigId: string;
+  userId: string;
+}) {
   try {
-    // First, verify the user exists and get their ID
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, userId),
       columns: {
         id: true,
-      }
+      },
     });
 
     if (!user) {
-      return { error: 'User not found', status: 404 };
+      return { success: false, error: "User not found", status: 404 };
     }
 
-    // Check if the gig exists and is available for declining
     const gig = await db.query.GigsTable.findFirst({
       where: and(
         eq(GigsTable.id, gigId),
-        eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]), // PENDING_WORKER_ACCEPTANCE
-        isNull(GigsTable.workerUserId) // Ensure no worker is assigned yet
+        eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]),
+        isNull(GigsTable.workerUserId)
       ),
+      columns: {
+        id: true,
+        expiresAt: true,
+      },
     });
 
     if (!gig) {
-      return { error: 'Gig not found or not available for declining', status: 404 };
+      return {
+        success: false,
+        error: "Gig not found or not available for declining",
+        status: 404,
+      };
     }
 
-    // Update the gig status to declined
-    await db.update(GigsTable)
-      .set({ 
+    if (gig.expiresAt && new Date(gig.expiresAt) < new Date()) {
+      return {
+        success: false,
+        error: "This gig offer has expired",
+        status: 400,
+      };
+    }
+
+    const result = await db
+      .update(GigsTable)
+      .set({
         statusInternal: DECLINED_BY_WORKER,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(GigsTable.id, gigId));
 
+    if (result.rowCount === 0) {
+      return {
+        success: false,
+        error: "Failed to decline gig offer",
+        status: 500,
+      };
+    }
+
     await cancelRelatedPayments(gig.id);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       status: 200,
-      message: 'Gig offer declined successfully'
+      message: "Gig offer declined successfully",
     };
-
   } catch (error: unknown) {
-    console.error('Error declining gig offer:', error);
-    return { 
-      error: error instanceof Error ? error.message : 'Failed to decline gig offer', 
-      status: 500 
+    console.error("Error declining gig offer:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to decline gig offer",
+      status: 500,
     };
   }
 }

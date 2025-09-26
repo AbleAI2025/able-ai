@@ -1,8 +1,14 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import styles from './GigOfferCard.module.css';
-import { MapPin, CalendarDays, Clock, DollarSign, AlertTriangle } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import styles from "./GigOfferCard.module.css";
+import {
+  MapPin,
+  CalendarDays,
+  Clock,
+  DollarSign,
+  AlertTriangle,
+} from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const GigOfferCard = ({
   offer,
@@ -12,11 +18,11 @@ const GigOfferCard = ({
   isProcessingAccept = false,
   isProcessingDecline = false,
 }) => {
-  const [timeLeft, setTimeLeft] = useState('');
+  const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
     if (!offer.expiresAt) {
-      setTimeLeft('');
+      setTimeLeft("");
       return;
     }
 
@@ -30,14 +36,16 @@ const GigOfferCard = ({
         return;
       }
 
+      const hours = Math.floor((difference / 1000 / 60 / 60) % 24);
       const minutes = Math.floor((difference / 1000 / 60) % 60);
       const seconds = Math.floor((difference / 1000) % 60);
 
       let timeLeftString = "";
-      if (minutes > 0) timeLeftString += `${minutes} mins `;
-      timeLeftString += `${seconds} secs`;
+      if (hours > 0) timeLeftString += `${hours}h `;
+      if (minutes > 0) timeLeftString += `${minutes}m `;
+      timeLeftString += `${seconds}s`;
 
-      setTimeLeft(timeLeftString);
+      setTimeLeft(timeLeftString.trim());
     };
 
     calculateTimeLeft();
@@ -49,40 +57,56 @@ const GigOfferCard = ({
   const totalPayDisplay = offer.totalPay
     ? `£${offer.totalPay.toFixed(2)} + tips`
     : offer.estimatedHours
-      ? `Est. £${(offer.hourlyRate * offer.estimatedHours).toFixed(2)} + tips`
-      : null;
+    ? `Est. £${(offer.hourlyRate * offer.estimatedHours).toFixed(2)} + tips`
+    : null;
 
-  const isExpired = timeLeft === "Expired" || offer.status === 'expired';
+  const isExpired = timeLeft === "Expired" || offer.status === "expired";
 
   return (
-    <div role="button"tabIndex={0} className={`${styles.card} ${isExpired ? styles.expired : ''}`} onClick={() => onViewDetails(offer.id)}>
+    <div
+      role="button"
+      tabIndex={0}
+      className={`${styles.card} ${isExpired ? styles.expired : ""}`}
+      onClick={() => onViewDetails(offer.id)}
+    >
       <div className={styles.cardHeader}>
         <h3 className={styles.role}>{offer.role}</h3>
         {timeLeft && !isExpired && (
-            <div className={styles.timerContainer}>
-              <Clock size={30} color="#fff" className={styles.timerIcon} />
-              <span className={styles.timerText}>{timeLeft} <br/> to accept</span>
-            </div>
+          <div className={styles.timerContainer}>
+            <Clock size={30} color="#fff" className={styles.timerIcon} />
+            <span className={styles.timerText}>
+              {timeLeft} <br /> to accept
+            </span>
+          </div>
         )}
       </div>
       <div className={styles.gigDetails}>
-          <p className={styles.gigLocation}>
-            <span className={styles.detailIcon}><MapPin size={12} /></span>
-            {offer.locationSnippet}
-          </p>
-          <p className={styles.gigTime}>
-            <span className={styles.detailIcon}><Clock size={12} /></span>
-            {offer.timeString}
-          </p>
-          <p className={styles.gigDate}>
-            <span className={styles.detailIcon}><CalendarDays size={12} /></span>
-            {offer.dateString}
-          </p>
-          <p className={styles.gigPay}>
-            <span className={styles.detailIcon}><DollarSign size={12} /></span>
-            {totalPayDisplay ? totalPayDisplay : `£${offer.hourlyRate.toFixed(2)}/hr + tips`}
-          </p>
-        
+        <p className={styles.gigLocation}>
+          <span className={styles.detailIcon}>
+            <MapPin size={12} />
+          </span>
+          {offer.locationSnippet}
+        </p>
+        <p className={styles.gigTime}>
+          <span className={styles.detailIcon}>
+            <Clock size={12} />
+          </span>
+          {offer.timeString}
+        </p>
+        <p className={styles.gigDate}>
+          <span className={styles.detailIcon}>
+            <CalendarDays size={12} />
+          </span>
+          {offer.dateString}
+        </p>
+        <p className={styles.gigPay}>
+          <span className={styles.detailIcon}>
+            <DollarSign size={12} />
+          </span>
+          {totalPayDisplay
+            ? totalPayDisplay
+            : `£${offer.hourlyRate.toFixed(2)}/hr + tips`}
+        </p>
       </div>
       <div className={styles.buttons}>
         <button
@@ -90,20 +114,32 @@ const GigOfferCard = ({
             e.stopPropagation();
             onAccept(offer.id);
           }}
-          className={`${styles.button} ${styles.acceptButton} ${isProcessingAccept ? styles.processing : ''}`}
+          className={`${styles.button} ${styles.acceptButton} ${
+            isProcessingAccept ? styles.processing : ""
+          }`}
           disabled={isProcessingAccept || isProcessingDecline || isExpired}
         >
-             {isProcessingAccept ? <Loader2 size={16} className="animate-spin"/> : 'Accept'}
+          {isProcessingAccept ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            "Accept"
+          )}
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onDecline(offer.id);
           }}
-          className={`${styles.button} ${styles.declineButton} ${isProcessingDecline ? styles.processing : ''}`}
+          className={`${styles.button} ${styles.declineButton} ${
+            isProcessingDecline ? styles.processing : ""
+          }`}
           disabled={isProcessingDecline || isProcessingAccept || isExpired}
         >
-            {isProcessingDecline ? <Loader2 size={16} className="animate-spin"/> : 'Decline'}
+          {isProcessingDecline ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            "Decline"
+          )}
         </button>
       </div>
       {isExpired && (
@@ -116,4 +152,4 @@ const GigOfferCard = ({
   );
 };
 
-export default GigOfferCard; 
+export default GigOfferCard;

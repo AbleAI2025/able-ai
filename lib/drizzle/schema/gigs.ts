@@ -147,6 +147,7 @@ export const GigsTable = pgTable("gigs", {
   notesForBuyer: text("notes_for_buyer"),
   adjustmentNotes: text("adjustment_notes"),
 
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
   adjustedAt: timestamp("adjusted_at", { mode: "date", withTimezone: true }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)

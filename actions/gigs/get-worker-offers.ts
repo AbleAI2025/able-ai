@@ -1,24 +1,21 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull, ne, or, inArray } from "drizzle-orm";
 import { UsersTable, GigsTable } from "@/lib/drizzle/schema";
 import { parseCoordinates, calculateDistance } from "@/lib/utils/distance";
 
 // Constants
 const DEFAULT_GIG_SEARCH_RADIUS_KM = 30;
 
-// Gig statuses for offers (pending worker acceptance)
-const PENDING_WORKER_ACCEPTANCE = 'PENDING_WORKER_ACCEPTANCE';
-
 // Gig statuses for accepted gigs
-const ACCEPTED = 'ACCEPTED';
-const IN_PROGRESS = 'IN_PROGRESS';
-const PENDING_COMPLETION_WORKER = 'PENDING_COMPLETION_WORKER';
-const PENDING_COMPLETION_BUYER = 'PENDING_COMPLETION_BUYER';
-const COMPLETED = 'COMPLETED';
-const AWAITING_PAYMENT = 'AWAITING_PAYMENT';
-const PAID = 'PAID';
+const ACCEPTED = "ACCEPTED";
+const IN_PROGRESS = "IN_PROGRESS";
+const PENDING_COMPLETION_WORKER = "PENDING_COMPLETION_WORKER";
+const PENDING_COMPLETION_BUYER = "PENDING_COMPLETION_BUYER";
+const COMPLETED = "COMPLETED";
+const AWAITING_PAYMENT = "AWAITING_PAYMENT";
+const PAID = "PAID";
 
 export interface WorkerGigOffer {
   id: string;
@@ -60,9 +57,9 @@ type MinimalGig = Pick<
   | "agreedRate"
   | "statusInternal"
   | "notesForWorker"
+  | "expiresAt"
 >;
 
-// Use MinimalGig in your function
 function transformGigToWorkerOffer(
   gig: MinimalGig,
   userId: string,
@@ -117,6 +114,7 @@ function transformGigToWorkerOffer(
     estimatedHours,
     totalPay: Math.round(totalPay * 100) / 100,
     tipsExpected: false,
+    expiresAt: gig?.expiresAt ? new Date(gig.expiresAt).toISOString() : undefined,
     status: statusOverride ?? gig.statusInternal,
     fullDescriptionLink: `/user/${userId}/worker/gigs/${gig.id}`,
     gigDescription: gig.fullDescription || undefined,
@@ -131,24 +129,23 @@ export async function getWorkerOffers(userId: string) {
       columns: { id: true },
       with: {
         gigWorkerProfile: {
-          columns: { 
+          columns: {
+            id: true,
             location: true,
             latitude: true,
-            longitude: true
-          }
-        }
-      }
+            longitude: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       return { error: "User not found", status: 404 };
     }
 
-    // Get worker's location for distance filtering
     const workerProfile = user.gigWorkerProfile;
     let workerCoords = null;
-    
-    // Try to get coordinates from latitude/longitude fields first
+
     if (workerProfile?.latitude && workerProfile?.longitude) {
       const lat = parseFloat(workerProfile.latitude.toString());
       const lng = parseFloat(workerProfile.longitude.toString());
@@ -156,16 +153,12 @@ export async function getWorkerOffers(userId: string) {
         workerCoords = { lat, lon: lng };
       }
     }
-    
-    // Fallback to parsing location string
+
     if (!workerCoords && workerProfile?.location) {
       workerCoords = parseCoordinates(workerProfile.location);
-      console.log(`🔍 DEBUG: Worker coordinates from location string:`, workerCoords);
     }
-    
-    console.log(`🔍 DEBUG: Final worker coordinates:`, workerCoords);
 
-    const allGigs = await db.query.GigsTable.findMany({
+    const offerGigs = await db.query.GigsTable.findMany({
       columns: {
         id: true,
         titleInternal: true,
@@ -179,59 +172,62 @@ export async function getWorkerOffers(userId: string) {
         notesForWorker: true,
         addressJson: true,
         exactLocation: true,
+        expiresAt: true,
       },
+      where: and(
+        eq(GigsTable.statusInternal, "PENDING_WORKER_ACCEPTANCE"),
+        isNull(GigsTable.workerUserId),
+        ne(GigsTable.buyerUserId, user.id),
+        or(isNull(GigsTable.expiresAt), gt(GigsTable.expiresAt, new Date()))
+      ),
     });
 
-    const offerGigs = allGigs.filter(
-      (gig) => {
-        const basicFilter = gig.statusInternal === PENDING_WORKER_ACCEPTANCE &&
-          !gig.workerUserId &&
-          gig.buyerUserId !== user.id;
-        
-        if (!basicFilter) return false;
-        
-        // If worker has coordinates, filter by distance
-        if (workerCoords) {
+    const filteredByDistance = workerCoords
+      ? offerGigs.filter((gig) => {
           const gigLocation = gig.exactLocation || gig.addressJson;
           const gigCoords = parseCoordinates(gigLocation);
-          
-          if (gigCoords) {
-            const distance = calculateDistance(
-              workerCoords.lat,
-              workerCoords.lon,
-              gigCoords.lat,
-              gigCoords.lon
-            );
-            
-            const withinRange = distance <= DEFAULT_GIG_SEARCH_RADIUS_KM;
-            return withinRange;
-          } else {
-            return true; // Include gigs without coordinates
-          }
-        }
-        
-        // If no worker coordinates, include all gigs (fallback)
-        return true;
-      }
-    );
+          if (!gigCoords) return true;
+          const distance = calculateDistance(
+            workerCoords.lat,
+            workerCoords.lon,
+            gigCoords.lat,
+            gigCoords.lon
+          );
+          return distance <= DEFAULT_GIG_SEARCH_RADIUS_KM;
+        })
+      : offerGigs;
 
-    const acceptedGigs = allGigs.filter(
-      (gig) =>
-        gig.workerUserId === user.id &&
-        (
-          [
-            ACCEPTED,
-            IN_PROGRESS,
-            PENDING_COMPLETION_WORKER,
-            PENDING_COMPLETION_BUYER,
-            COMPLETED,
-            AWAITING_PAYMENT,
-            PAID,
-          ] as string[]
-        ).includes(gig.statusInternal)
-    );
+    const acceptedGigs = await db.query.GigsTable.findMany({
+      columns: {
+        id: true,
+        titleInternal: true,
+        statusInternal: true,
+        workerUserId: true,
+        buyerUserId: true,
+        startTime: true,
+        endTime: true,
+        agreedRate: true,
+        fullDescription: true,
+        notesForWorker: true,
+        addressJson: true,
+        exactLocation: true,
+        expiresAt: true,
+      },
+      where: and(
+        eq(GigsTable.workerUserId, user.id),
+        inArray(GigsTable.statusInternal, [
+          ACCEPTED,
+          IN_PROGRESS,
+          PENDING_COMPLETION_WORKER,
+          PENDING_COMPLETION_BUYER,
+          COMPLETED,
+          AWAITING_PAYMENT,
+          PAID,
+        ])
+      ),
+    });
 
-    const offers: WorkerGigOffer[] = offerGigs.map((gig) =>
+    const offers: WorkerGigOffer[] = filteredByDistance.map((gig) =>
       transformGigToWorkerOffer(gig, userId, "pending")
     );
 
@@ -244,13 +240,18 @@ export async function getWorkerOffers(userId: string) {
       data: {
         offers,
         acceptedGigs: accepted,
+        workerId: user.gigWorkerProfile.id,
       },
     };
   } catch (error: unknown) {
     console.error("Error fetching worker offers:", error);
     return {
-       error: error instanceof Error ? error.message : "Failed to fetch worker offers",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch worker offers",
       status: 500,
     };
   }
 }
+
