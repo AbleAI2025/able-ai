@@ -48,7 +48,7 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
       firebaseUid: user.uid,
       newFinalRate: gigDetails.hourlyRate,
       newFinalHours: gigDetails.estimatedEarnings,
-      currency: 'usd'
+      currency: 'gbp'
     });
     setIsLoadingConfirm(false);
     toast.success('Suggested changes confirmed!');

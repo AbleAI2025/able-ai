@@ -11,18 +11,7 @@ import { Filter, FileText, ArrowLeft, Loader2, Wine, Utensils, Briefcase } from 
 import styles from './PaymentsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { BuyerPayment, getBuyerPayments } from '@/actions/payments/get-buyer-payments';
-
-// Define interfaces for payment data
-interface Payment {
-  id: string;
-  // gigType: 'Bartender' | 'Waiter' | 'Chef' | 'Event Staff' | string; // Allow other types
-  workerName: string;
-  date: string; // ISO date string
-  amount: number;
-  status: 'Paid' | 'Pending' | 'Failed'; // Example statuses
-  invoiceUrl?: string;
-  gigId?: string; // To link to gig for rehire
-}
+import BarChartComponent from '@/app/components/shared/BarChart';
 
 interface FilterState {
   staffType: 'All' | string;
@@ -73,7 +62,7 @@ export default function BuyerPaymentsPage() {
     dateTo: '',
     priceFrom: '',
     priceTo: '',
-  })
+  });
   const [showFilterModal, setShowFilterModal] = useState(false); // For a potential filter modal
 
   // Available gig types for filtering (could be fetched or predefined)
@@ -91,7 +80,7 @@ export default function BuyerPaymentsPage() {
         setError("Could not load payment history. Please try again.");
       })
       .finally(() => setIsLoadingPayments(false));
-  }
+  };
 
   // Auth check and data load
   useEffect(() => {
@@ -272,7 +261,7 @@ export default function BuyerPaymentsPage() {
                     </div>
                   </div>
 
-                  {payment.status === 'PAID' && (
+                  {payment.status === 'PAID' && payment.invoiceUrl && (
                     <Link
                       href={payment.invoiceUrl || '/'}
                       className={styles.generateInvoice}
@@ -296,6 +285,12 @@ export default function BuyerPaymentsPage() {
             ))}
           </div>
         )}
+
+        <div className={styles.barChartContainer}>
+          {!isLoadingPayments &&
+            <BarChartComponent data={chartData} />
+          }
+        </div>
       </div>
     </div>
   );
