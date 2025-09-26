@@ -81,7 +81,7 @@ export default function GigLayout({ children }: GigLayoutProps) {
       try {
         const { actualUserId, isDatabaseUserId } = await resolveUserId(userId);
         
-        const { gig: fetchedGig, status, error: fetchError } = await getGigDetails({ 
+        const { data: fetchedGig, status, error: fetchError } = await getGigDetails({ 
           gigId, 
           userId: actualUserId, 
           role: userRole,

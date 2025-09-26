@@ -160,7 +160,7 @@ export async function getGigDetails({
       roleDisplay
     );
 
-    return { success: true, gig: gigDetails, status: CODES_SUCCESS.QUERY_OK.code };
+    return { success: true, data: gigDetails, status: CODES_SUCCESS.QUERY_OK.code };
   } catch (error: unknown) {
     return handleError(error);
   }

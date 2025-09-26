@@ -15,12 +15,12 @@ async function fetchGigForBuyerFeedback(
   gigId: string
 ) {
  try {
-  const {success, data, error} = await getGigForBuyerFeedback(gigId);
+  const res = await getGigForBuyerFeedback(gigId);
 
-  if (success) {
-    return data;
+  if (res.success) {
+    return res.data;
   } else {
-    throw new Error(error || "Failed to fetch gig details");
+    throw new Error(res.data || "Failed to fetch gig details");
   }
  } catch (error) {
   toast.error("Error fetching gig details: " + (error instanceof Error ? error.message : String(error)));
