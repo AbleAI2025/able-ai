@@ -816,20 +816,20 @@ export const saveWorkerProfileFromOnboardingAction = async (
 
       // Extract years of experience from experience field
       const experienceText = profileData.experience || "";
-      
+
       // Try multiple patterns to extract years of experience
       let yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
-      
+
       // If no explicit years found, try to extract any number that might represent years
       if (!yearsMatch) {
         yearsMatch = experienceText.match(/(\d+)/);
       }
-      
+
       // If still no number found, try to extract decimal numbers (e.g., "2.5 years")
       if (!yearsMatch) {
         yearsMatch = experienceText.match(/(\d+\.?\d*)/);
       }
-      
+
       if (yearsMatch) {
         yearsOfExperience = parseFloat(yearsMatch[1]);
       } else {
@@ -1292,5 +1292,40 @@ export const updateSocialLinkWorkerProfileAction = async (
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     };
+  }
+};
+
+export const updateWorkerHashtagsAction = async (
+  token: string,
+  hashtags: string[]
+) => {
+  try {
+    if (!token) throw new Error("User ID is required");
+
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, uid),
+      with: { gigWorkerProfile: true },
+    });
+    if (!user || !user?.gigWorkerProfile) throw "User worker profile not found";
+
+    await db
+      .update(GigWorkerProfilesTable)
+      .set({
+        hashtags,
+        updatedAt: new Date(),
+      })
+      .where(eq(GigWorkerProfilesTable.id, user.gigWorkerProfile.id));
+
+    return { success: true, data: hashtags };
+  } catch (error) {
+    console.error("Failed to update worker hashtags:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while updating hashtags.";
+    return { success: false, data: null, error: message };
   }
 };

@@ -729,7 +729,7 @@ export default function SettingsPage() {
             <>
               <StripeElementsProvider options={{
                 mode: 'setup',
-                currency: 'usd',
+                currency: 'gbp',
                 appearance: {
                   theme: 'night',
                   labels: 'floating',

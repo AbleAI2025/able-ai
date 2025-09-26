@@ -206,7 +206,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
       const priceToPayWithDiscount = calculateAmountWithDiscount(finalPrice, discount);
 
       await createDirectPayment({
-        currency: currency || 'usd',
+        currency: currency || 'gbp',
         serviceAmountInCents: priceToPayWithDiscount,
         ableFeePercent: Number(gigDetails.ableFeePercent),
         buyerStripeCustomerId: customerId,
@@ -229,7 +229,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
 
     if (gigDetails.tip)
       await createTipPayment({
-        currency: currency || 'usd',
+        currency: currency || 'gbp',
         tipAmountCents: Math.round(Number(gigDetails.tip) * 100),
         buyerStripeCustomerId: customerId,
         destinationAccountId: receiverAccountId,

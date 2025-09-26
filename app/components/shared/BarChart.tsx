@@ -1,5 +1,5 @@
 "use client";
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, LabelList, Label } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, LabelList, Label, YAxis, CartesianGrid } from 'recharts';
 import { useEffect, useState, useMemo } from 'react';
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
@@ -38,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null;
 };
 
-export default function BarChartComponent({totalPayments}: {totalPayments?: { name: string; a: number }[]}) {
+export default function BarChartComponent({ data }: { data?: { name: string; total: number }[] }) {
   const [chartHeight, setChartHeight] = useState(220);
 
   const isWindowDefined = typeof window !== 'undefined';
@@ -72,21 +72,26 @@ export default function BarChartComponent({totalPayments}: {totalPayments?: { na
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight} minHeight={120}>
-      <BarChart data={totalPayments} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
-        <XAxis 
-            dataKey="name" 
-            tick={{ fontSize, fill: '#fff' }}
-            axisLine={{ stroke: '#fff' }}
+      <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
+        <XAxis
+          dataKey="name"
+          type="category"
+          tick={{ fontSize, fill: '#fff' }}
+          axisLine={{ stroke: '#fff' }}
         >
           <Label value="Quarter" offset={-10} position="insideBottom" style={{ fill: '#fff', fontSize: fontSize + 1 }} />
         </XAxis>
-        {/* <YAxis /> */}
+        <YAxis
+          padding={{ top: 15 }}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: "#fff", fontSize: fontSize + 1 }}
+          tickFormatter={(value) => `£${value}`}
+        />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(250,204,21,0.08)' }} />
-        <Bar dataKey="b" stackId="a" fill="#0f766e">
-          <LabelList dataKey="b" position="top" style={{ fill: '#0f766e', fontSize: fontSize - 1, fontWeight: 600 }} />
-        </Bar>
-        <Bar dataKey="a" stackId="a" fill="#facc15">
-          <LabelList dataKey="a" position="top" style={{ fill: '#facc15', fontSize: fontSize - 1, fontWeight: 600 }} />
+        <CartesianGrid stroke="#fff" strokeDasharray="5" />
+        <Bar dataKey="total" stackId="total" fill="var(--success-color)" radius={[4, 4, 0, 0]}>
+          <LabelList dataKey="total" position="top" style={{ fill: '#facc15', fontSize: fontSize - 1, fontWeight: 600 }} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>

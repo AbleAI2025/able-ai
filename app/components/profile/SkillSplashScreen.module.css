@@ -197,5 +197,11 @@
   color: var(--primary-color);
 }
 
-
-
+.editHashtagsBtn {
+  background-color: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+}

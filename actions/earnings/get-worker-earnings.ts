@@ -3,17 +3,16 @@
 import { db } from "@/lib/drizzle/db";
 import { UsersTable, PaymentsTable, GigsTable } from "@/lib/drizzle/schema";
 import { InternalGigStatusEnumType } from "@/app/types";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 
-export interface BuyerPayment {
+export interface WorkerEarning {
   id: string;
   gigId: string | null;
   gigType: string | null;
-  workerName: string | null;
-  date: Date | null;
+  paidAt: Date | null;
   status: InternalGigStatusEnumType | null;
   invoiceUrl: string | null;
-  amount: string | null;
+  totalEarnings: number | null;
 }
 
 interface FilterState {
@@ -24,26 +23,16 @@ interface FilterState {
   priceTo?: string;
 }
 
-export async function getBuyerPayments(buyerId: string, filters: FilterState): Promise<{
+export async function getWorkerEarnings(workerId: string, filters: FilterState): Promise<{
   success: boolean;
-  data?: BuyerPayment[];
+  data?: WorkerEarning[];
   error?: string;
 }> {
   try {
-    if (!buyerId) {
+    if (!workerId) {
       return {
         success: false,
-        error: "Buyer ID is required"
-      };
-    }
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, buyerId),
-    });
-
-    if (!user) {
-      return {
-        success: false,
-        error: "Buyer not found"
+        error: "Worker ID is required"
       };
     }
 
@@ -54,6 +43,7 @@ export async function getBuyerPayments(buyerId: string, filters: FilterState): P
     if (dateFrom) {
       conditions.push(gte(PaymentsTable.paidAt, new Date(dateFrom)));
     }
+
     if (dateTo) {
       conditions.push(lte(PaymentsTable.paidAt, new Date(dateTo)));
     }
@@ -61,44 +51,54 @@ export async function getBuyerPayments(buyerId: string, filters: FilterState): P
     if (priceFrom) {
       conditions.push(gte(sql`CAST(${PaymentsTable.amountGross} AS numeric)`, Number(priceFrom)));
     }
+
     if (priceTo) {
       conditions.push(lte(sql`CAST(${PaymentsTable.amountGross} AS numeric)`, Number(priceTo)));
     }
 
-    // Get buyer user details
-    const userPayments: BuyerPayment[] = await db
+    // Get worker user details
+    const workerEarnings: WorkerEarning[] = await db
       .select({
         id: PaymentsTable.id,
         gigId: GigsTable.id,
         gigType: GigsTable.titleInternal,
-        workerName: UsersTable.fullName,
-        date: PaymentsTable.paidAt,
         status: GigsTable.statusInternal,
         invoiceUrl: PaymentsTable.invoiceUrl,
-        amount: PaymentsTable.amountGross,
-        createdAt: PaymentsTable.createdAt,
+        totalEarnings: sql<number>`sum(${PaymentsTable.amountNetToWorker} + coalesce(${GigsTable.tip}, 0))`.as('total_earnings'),
+        paidAt: PaymentsTable.paidAt,
       })
       .from(PaymentsTable)
       .leftJoin(GigsTable, eq(PaymentsTable.gigId, GigsTable.id))
       .leftJoin(UsersTable, eq(PaymentsTable.receiverUserId, UsersTable.id))
-      .where(and(eq(PaymentsTable.payerUserId, user.id), conditions.length > 0 ? and(...conditions) : undefined))
+      .where(
+        and(
+          eq(UsersTable.firebaseUid, workerId),
+          eq(PaymentsTable.status, 'COMPLETED'),
+          isNotNull(PaymentsTable.paidAt),
+          eq(GigsTable.statusInternal, 'PAID'),
+          conditions.length > 0 ? and(...conditions) : undefined
+        )
+      )
+      .groupBy(
+        PaymentsTable.id,
+        GigsTable.id,
+      )
       .orderBy(desc(PaymentsTable.createdAt));
 
-    console.log({userPayments})
-    if (!userPayments) {
+    if (workerEarnings.length === 0) {
       return {
         success: false,
-        error: "Buyer payments not found"
+        error: "Worker earnings not found"
       };
     }
 
     return {
       success: true,
-      data: userPayments
+      data: workerEarnings
     };
 
   } catch (error) {
-    console.error('Error fetching buyer payments:', error);
+    console.error('Error fetching worker earnings:', error);
     return {
       success: false,
       error: 'Internal server error'

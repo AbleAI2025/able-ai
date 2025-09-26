@@ -44,6 +44,7 @@ export const SkillsTable = pgTable("skills", {
   skillVideoUrl: text("skill_video_url"),
   adminTags: text("admin_tags").array(),
   ableGigs: integer("able_gigs"),
+  customerReviewsSummary: text("customer_reviews_summary"),
   images: jsonb("images")
     .$type<string[]>()
     .default(sql`'[]'::jsonb`),

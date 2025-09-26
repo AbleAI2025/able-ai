@@ -1,5 +1,5 @@
 {
-  "id": "5cd7ff0c-21e6-4ea0-a789-855c7c28d223",
+  "id": "05b9983b-179c-4d74-855f-816773d873b8",
   "prevId": "707d8e25-32cc-4dd4-84fb-751c0b5d533b",
   "version": "7",
   "dialect": "postgresql",
@@ -1309,6 +1309,12 @@
         "able_gigs": {
           "name": "able_gigs",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_reviews_summary": {
+          "name": "customer_reviews_summary",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
