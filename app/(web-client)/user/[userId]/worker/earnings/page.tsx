@@ -66,11 +66,10 @@ export default function WorkerEarningsPage() {
   const pageUserId = params.userId as string;
   const lastRoleUsed = getLastRoleUsed();
   const { user, loading: loadingAuth } = useAuth();
-  const authUserId = user?.uid;
-
   const [earnings, setEarnings] = useState<WorkerEarning[]>([]);
   const [isLoadingEarnings, setIsLoadingEarnings] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const authUserId = user?.uid;
 
   const [filters, setFilters] = useState<FilterState>({
     staffType: 'All',
@@ -170,7 +169,7 @@ export default function WorkerEarningsPage() {
                       name="gigTypeModalEarningsFilter"
                       value={type}
                       checked={filters.staffType === type}
-                      onChange={() => handleFilterChange('staffType', type)}
+                      onChange={() => { handleFilterChange('staffType', type); setShowFilterModal(false); }}
                     />
                     {type}
                   </label>

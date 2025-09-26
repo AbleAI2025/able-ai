@@ -86,7 +86,7 @@ export default function BarChartComponent({ data }: { data?: { name: string; tot
           axisLine={false}
           tickLine={false}
           tick={{ fill: "#fff", fontSize: fontSize + 1 }}
-          tickFormatter={(value) => value === 0 ? '£0' : `£${value / 1000}K`}
+          tickFormatter={(value) => `£${value}`}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(250,204,21,0.08)' }} />
         <CartesianGrid stroke="#fff" strokeDasharray="5" />

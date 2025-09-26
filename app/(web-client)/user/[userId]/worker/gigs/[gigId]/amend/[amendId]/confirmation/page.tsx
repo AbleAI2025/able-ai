@@ -66,7 +66,7 @@ export default function AmendGigConfirmationPage() {
 
         if (amendmentResult.amendment) {
           const { id, gigId, requesterId, createdAt, status } = amendmentResult.amendment;
-          setAmendmentRequest({ id, gigId, requestedBy: requesterId, requestedAt: formatDateTime(createdAt), status, changes: '' });
+          setAmendmentRequest({ id, gigId, requestedBy: requesterId, requestedAt: formatDateTime(createdAt), status, changes: 'TODO: Populate with actual changes' });
         } else {
           toast.error(amendmentResult.error || "Could not load amendment details.");
           router.back();
@@ -223,7 +223,7 @@ export default function AmendGigConfirmationPage() {
           </div>
           <div className={styles.detailRow}>
             <span className={styles.label}>Date:</span>
-            <span className={styles.value}>{formatDate(gig?.date || (new Date()).toString())}</span>
+            <span className={styles.value}>{gig?.date ? formatDate(gig.date) : 'Date not available'}</span>
           </div>
           <div className={styles.detailRow}>
             <span className={styles.label}>Time:</span>

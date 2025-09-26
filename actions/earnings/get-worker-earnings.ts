@@ -9,7 +9,6 @@ export interface WorkerEarning {
   id: string;
   gigId: string | null;
   gigType: string | null;
-  workerName: string | null;
   paidAt: Date | null;
   status: InternalGigStatusEnumType | null;
   invoiceUrl: string | null;
@@ -24,26 +23,29 @@ interface FilterState {
   priceTo?: string;
 }
 
-export async function getWorkerEarnings(buyerId: string, filters: FilterState): Promise<{
+export async function getWorkerEarnings(workerId: string, filters: FilterState): Promise<{
   success: boolean;
   data?: WorkerEarning[];
   error?: string;
 }> {
   try {
-    if (!buyerId) {
+    if (!workerId) {
       return {
         success: false,
-        error: "Buyer ID is required"
+        error: "Worker ID is required"
       };
     }
     const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, buyerId),
+      where: eq(UsersTable.firebaseUid, workerId),
+      columns: {
+        id: true,
+      }
     });
 
     if (!user) {
       return {
         success: false,
-        error: "Buyer not found"
+        error: "Worker not found"
       };
     }
 
@@ -73,7 +75,6 @@ export async function getWorkerEarnings(buyerId: string, filters: FilterState): 
         id: PaymentsTable.id,
         gigId: GigsTable.id,
         gigType: GigsTable.titleInternal,
-        workerName: UsersTable.fullName,
         status: GigsTable.statusInternal,
         invoiceUrl: PaymentsTable.invoiceUrl,
         totalEarnings: sql<number>`sum(${PaymentsTable.amountNetToWorker} + coalesce(${GigsTable.tip}, 0))`.as('total_earnings'),
@@ -98,10 +99,10 @@ export async function getWorkerEarnings(buyerId: string, filters: FilterState): 
       )
       .orderBy(desc(PaymentsTable.createdAt));
 
-    if (!workerEarnings) {
+    if (workerEarnings.length === 0) {
       return {
         success: false,
-        error: "Buyer payments not found"
+        error: "Worker earnings not found"
       };
     }
 
@@ -111,7 +112,7 @@ export async function getWorkerEarnings(buyerId: string, filters: FilterState): 
     };
 
   } catch (error) {
-    console.error('Error fetching buyer payments:', error);
+    console.error('Error fetching worker earnings:', error);
     return {
       success: false,
       error: 'Internal server error'
