@@ -35,19 +35,6 @@ export async function getWorkerEarnings(workerId: string, filters: FilterState):
         error: "Worker ID is required"
       };
     }
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, workerId),
-      columns: {
-        id: true,
-      }
-    });
-
-    if (!user) {
-      return {
-        success: false,
-        error: "Worker not found"
-      };
-    }
 
     const { dateFrom, dateTo, priceFrom, priceTo } = filters;
 
@@ -85,7 +72,7 @@ export async function getWorkerEarnings(workerId: string, filters: FilterState):
       .leftJoin(UsersTable, eq(PaymentsTable.receiverUserId, UsersTable.id))
       .where(
         and(
-          eq(PaymentsTable.receiverUserId, user.id),
+          eq(UsersTable.firebaseUid, workerId),
           eq(PaymentsTable.status, 'COMPLETED'),
           isNotNull(PaymentsTable.paidAt),
           eq(GigsTable.statusInternal, 'PAID'),
@@ -95,7 +82,6 @@ export async function getWorkerEarnings(workerId: string, filters: FilterState):
       .groupBy(
         PaymentsTable.id,
         GigsTable.id,
-        UsersTable.fullName,
       )
       .orderBy(desc(PaymentsTable.createdAt));
 
