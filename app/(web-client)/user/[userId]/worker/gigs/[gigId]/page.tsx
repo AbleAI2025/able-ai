@@ -29,7 +29,7 @@ async function fetchWorkerGigDetails(user: User | WorkerUser, gigId: string): Pr
     isDatabaseUserId = false;
   }
   
-  const { gig, status } = await getGigDetails({ 
+  const { data, status } = await getGigDetails({ 
     gigId, 
     userId, 
     role: 'worker', 
@@ -37,9 +37,9 @@ async function fetchWorkerGigDetails(user: User | WorkerUser, gigId: string): Pr
     isDatabaseUserId 
   });
 
-  if (!gig || status !== 200) return null;
+  if (!data || status !== 200) return null;
 
-  return gig;
+  return data;
 }
 
 async function checkIfGigIsAvailableOffer(user: User | WorkerUser, gigId: string): Promise<boolean> {
