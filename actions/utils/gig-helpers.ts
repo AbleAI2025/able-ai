@@ -30,57 +30,44 @@ export async function getUserById(userId: string, isDatabaseUserId: boolean) {
 
 // Helper to fetch gig based on role
 export async function fetchGigForRole(gigId: string, userId: string, role?: "buyer" | "worker") {
+  let whereCondition;
+
   if (role === "worker") {
-    // Worker access: Allow if assigned to the gig or if gig is pending worker acceptance and unassigned
-    return await db.query.GigsTable.findFirst({
-      where: and(
-        eq(GigsTable.id, gigId),
-        or(
-          eq(GigsTable.workerUserId, userId), // Assigned worker
-          and(
-            eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]), // Pending worker acceptance
-            isNull(GigsTable.workerUserId) // No worker assigned yet
-          )
+    whereCondition = and(
+      eq(GigsTable.id, gigId),
+      or(
+        eq(GigsTable.workerUserId, userId), // Assigned worker
+        and(
+          eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]), // Pending worker acceptance
+          isNull(GigsTable.workerUserId) // No worker assigned yet
         )
-      ),
-      with: {
-        buyer: {
-          columns: {
-            id: true,
-            fullName: true,
-            email: true, // Include buyer's email for notifications
-          },
-        },
-        worker: {
-          columns: {
-            id: true,
-            fullName: true,
-          },
-        },
-      },
-    });
+      )
+    );
   } else {
-    // Buyer or fallback access: Check if user is the buyer or worker for the gig
-    const columnConditionId = role === "buyer" ? GigsTable.buyerUserId : GigsTable.workerUserId;
-    return await db.query.GigsTable.findFirst({
-      where: and(eq(columnConditionId, userId), eq(GigsTable.id, gigId)),
-      with: {
-        buyer: {
-          columns: {
-            id: true,
-            fullName: true,
-            email: true, // Essential for buyer communication
-          },
-        },
-        worker: {
-          columns: {
-            id: true,
-            fullName: true,
-          },
+    const columnConditionId =
+      role === "buyer" ? GigsTable.buyerUserId : GigsTable.workerUserId;
+
+    whereCondition = and(eq(columnConditionId, userId), eq(GigsTable.id, gigId));
+  }
+
+  return await db.query.GigsTable.findFirst({
+    where: whereCondition,
+    with: {
+      buyer: {
+        columns: {
+          id: true,
+          fullName: true,
+          email: true, // buyer’s email for notifications
         },
       },
-    });
-  }
+      worker: {
+        columns: {
+          id: true,
+          fullName: true,
+        },
+      },
+    },
+  });
 }
 
 // Helper to fetch worker profile
