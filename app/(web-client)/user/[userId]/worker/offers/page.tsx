@@ -19,7 +19,6 @@ import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { declineGigOffer } from "@/actions/gigs/decline-gig-offer";
-import { getWorkerProfileIdFromFirebaseUid } from "@/actions/user/get-worker-user";
 
 type GigOffer = WorkerGigOffer;
 
@@ -27,13 +26,7 @@ type GigOffer = WorkerGigOffer;
 async function fetchWorkerData(
   userId: string,
   filters?: string[],
-): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
-  console.log(
-    "Fetching worker data for workerId:",
-    userId,
-    "with filters:",
-    filters
-  );
+): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[]; workerId: string }> {
 
   const result = await getWorkerOffers(userId);
   
@@ -73,48 +66,16 @@ export default function WorkerOffersPage() {
   const [workerProfileId, setWorkerProfileId] = useState<string | null>(null);
   const uid = authUserId;
 
-  // Fetch worker profile ID when component mounts
-  useEffect(() => {
-    const fetchWorkerProfileId = async () => {
-      if (!uid) return;
-      
-      try {
-        const result = await getWorkerProfileIdFromFirebaseUid(uid);
-        if (result.success && result.data) {
-          setWorkerProfileId(result.data);
-        } else {
-          console.error("Failed to get worker profile ID:", result.error);
-        }
-      } catch (error) {
-        console.error("Error fetching worker profile ID:", error);
-      }
-    };
-
-    fetchWorkerProfileId();
-  }, [uid]);
-
-  
-
   // Fetch worker data (offers and accepted gigs)
   useEffect(() => {
-    // Debug logging to see what's happening
-    console.log("Debug - loadingAuth:", loadingAuth);
-    console.log("Debug - user:", user);
-    console.log("Debug - authUserId:", authUserId);
-    console.log("Debug - pageUserId:", pageUserId);
-    console.log("Debug - lastRoleUsed:", lastRoleUsed);
-    console.log("Debug - user?.claims.role:", user?.claims?.role);
-    console.log("Debug - uid variable:", uid);
-
     // Check if user is authorized to view this page
     if (!loadingAuth && user && authUserId === pageUserId) {
-      console.log("Debug - User authorized, fetching worker data...");
       setIsLoadingData(true);
       fetchWorkerData(pageUserId)
         .then((data) => {
-          console.log("Debug - offer received:", data);
           setOffers(data.offers);
           setAcceptedGigs(data.acceptedGigs);
+          setWorkerProfileId(data.workerId);
           setError(null);
         })
         .catch((err) => {
@@ -125,7 +86,6 @@ export default function WorkerOffersPage() {
         })
         .finally(() => setIsLoadingData(false));
     } else if (!loadingAuth && user && authUserId !== pageUserId) {
-      console.log("Debug - User not authorized for this page");
       setError("You are not authorized to view this page. Please sign in with the correct account.");
       setIsLoadingData(false);
       // Redirect to signin after a short delay
@@ -133,7 +93,6 @@ export default function WorkerOffersPage() {
         router.push(`/?redirect=${pathname}`);
       }, 2000);
     } else if (!loadingAuth && !user) {
-      console.log("Debug - No user authenticated");
       setError("Please sign in to view this page.");
       setIsLoadingData(false);
       // Redirect to signin after a short delay
@@ -148,20 +107,13 @@ export default function WorkerOffersPage() {
       console.error("User not authenticated");
       return;
     }
-
-    console.log("Debug - handleAcceptOffer called with:", { offerId, uid, authUserId, pageUserId });
     
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
-    console.log("Accepting offer:", offerId);
     
     try {
-      console.log("Debug - About to call acceptGigOffer with:", { gigId: offerId, userId: uid });
-      
       // Use the Firebase UID directly, not the page user ID
-      const result = await acceptGigOffer({ gigId: offerId, userId: uid });
-      
-      console.log("Debug - acceptGigOffer result:", result);
+      const result = await acceptGigOffer({ gigId: offerId, userUid: uid });
       
       if (result.error) {
         console.error("Debug - Server returned error:", result.error);
@@ -177,13 +129,6 @@ export default function WorkerOffersPage() {
         const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
       }
-
-      // Show success message (you can add toast here)
-      console.log("Offer accepted successfully!");
-      
-      // Optionally navigate to the accepted gig details
-      // router.push(`/user/${uid}/worker/gigs/${offerId}`);
-      
     } catch (err) {
       console.error("Error accepting offer:", err);
       // Show error message (you can add toast here)
@@ -201,16 +146,12 @@ export default function WorkerOffersPage() {
 
     setProcessingOfferId(offerId);
     setProcessingAction("decline");
-    console.log("Declining offer:", offerId);
-    
     try {
       // Call the declineGigOffer action to properly decline the offer
       const result = await declineGigOffer({ 
         gigId: offerId, 
         userId: uid
       });
-      
-      console.log("Debug - declineGigOffer result:", result);
       
       if (result.error) {
         console.error("Debug - Server returned error:", result.error);
@@ -219,10 +160,6 @@ export default function WorkerOffersPage() {
 
       // On success: remove from offers list
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
-      // Show success message (you can add toast here)
-      console.log("Offer declined successfully!");
-      
     } catch (err) {
       console.error("Error declining offer:", err);
       // Show error message (you can add toast here)
@@ -233,12 +170,10 @@ export default function WorkerOffersPage() {
   };
 
  const handleViewDetails = (gigId: string) => {
-  // Search in offers first, then in acceptedGigs
   const gig = offers.find(o => o.id === gigId) || acceptedGigs.find(g => g.id === gigId);
   if (gig && workerProfileId) {
     setSelectedGig(gig);
     router.push(`/user/${workerProfileId}/worker/gigs/${gigId}`);
-    // setIsModalOpen(true);
     } else if (!workerProfileId) {
       console.error("Worker profile ID not available yet");
   }
