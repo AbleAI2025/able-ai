@@ -11,11 +11,12 @@ import GigDetails from "@/app/types/GigDetailsTypes";
 import {
   getUserById,
   fetchGigForRole,
-  fetchWorkerProfile,
   calculateWorkerStats,
   buildGigDetails,
-  handleGigError,
 } from "../utils/gig-helpers";
+import { handleError } from "@/utils/handle-errors";
+import { ERROR_CODES } from "@/lib/responses/errors";
+import { CODES_SUCCESS } from "@/lib/responses/success";
 // Helper function to extract location from an object
 function extractLocationFromObject(obj: any): string | null {
   if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
@@ -100,46 +101,6 @@ function extractLocationFromData(data: any): string | null {
   return null;
 }
 
-// Helper function to perform aggressive location extraction from an object
-function extractLocationAggressively(obj: any): string | null {
-  if (!obj || typeof obj !== "object") return null;
-
-  // Prioritize readable address text over coordinates
-  if (obj.formatted_address) {
-    return obj.formatted_address;
-  }
-
-  if (obj.address) {
-    return obj.address;
-  }
-
-  if (obj.street && obj.city) {
-    return `${obj.street}, ${obj.city}`;
-  }
-
-  // Show any available string data (but not coordinates)
-  for (const [key, value] of Object.entries(obj)) {
-    if (
-      typeof value === "string" &&
-      value.trim() &&
-      value !== "null" &&
-      value !== "undefined" &&
-      value !== "[object Object]" &&
-      !value.includes("[object Object]") &&
-      !value.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)
-    ) {
-      return value.trim();
-    }
-  }
-
-  // Only use coordinates as absolute last resort
-  if (obj.lat && obj.lng) {
-    return `Coordinates: ${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}`;
-  }
-
-  return null;
-}
-
 export async function getGigDetails({
   gigId,
   userId,
@@ -152,22 +113,24 @@ export async function getGigDetails({
   isViewQA?: boolean;
   isDatabaseUserId?: boolean;
 }) {
-  if (!userId) {
-    return { error: "User id is required", gig: {} as GigDetails, status: 404 };
-  }
-
   try {
+    if (!userId) {
+      return {
+        error: "User id is required",
+        gig: {} as GigDetails,
+        status: ERROR_CODES.BAD_REQUEST.code,
+      };
+    }
+
     const user = await getUserById(userId, isDatabaseUserId);
     if (!user) {
-      return { error: "User is not found", gig: {} as GigDetails, status: 404 };
+      return { error: "User is not found", gig: {} as GigDetails, status: ERROR_CODES.USER_NOT_FOUND.code };
     }
 
     const gig = await fetchGigForRole(gigId, user.id, role);
     if (!gig) {
-      return { error: "Gig not found", gig: {} as GigDetails, status: 404 };
+      return { error: "Gig not found", gig: {} as GigDetails, status: ERROR_CODES.NOT_FOUND.code };
     }
-
-    const worker = await fetchWorkerProfile(gig.worker?.id || "");
 
     const startDate = moment(gig.startTime);
     const endDate = moment(gig.endTime);
@@ -182,9 +145,12 @@ export async function getGigDetails({
       ? await calculateWorkerStats(gig.worker.id)
       : { workerGigs: 0, workerExperience: 0, isWorkerStar: false };
 
+    if (!user.gigWorkerProfile) {
+      throw new Error("Gig has no associated worker profile");
+    }
     const gigDetails = buildGigDetails(
       gig,
-      worker,
+      user.gigWorkerProfile.id,
       workerStats,
       startDate,
       endDate,
@@ -194,9 +160,9 @@ export async function getGigDetails({
       roleDisplay
     );
 
-    return { success: true, gig: gigDetails, status: 200 };
+    return { success: true, gig: gigDetails, status: CODES_SUCCESS.QUERY_OK.code };
   } catch (error: unknown) {
-    return handleGigError(error);
+    return handleError(error);
   }
 }
 
@@ -266,16 +232,9 @@ export const getGigForBuyerFeedback = async (gigId: string) => {
       earnings: gig.totalAgreedPrice,
     };
 
-    return { success: true, data, status: 200 };
+    return { success: true, data, status: CODES_SUCCESS.QUERY_OK.code };
   } catch (error: unknown) {
-    console.error("Error fetching gig:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Unknown error fetching gig",
-      gig: {} as GigDetails,
-      status: 500,
-    };
+    return handleError(error);
   }
 };
 
@@ -349,15 +308,8 @@ export const getGigForWorkerFeedback = async (gigId: string) => {
       earnings: gig.totalAgreedPrice,
     };
 
-    return { success: true, data, status: 200 };
+    return { success: true, data, status: CODES_SUCCESS.QUERY_OK.code };
   } catch (error: unknown) {
-    console.error("Error fetching gig:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Unknown error fetching gig",
-      gig: {} as GigDetails,
-      status: 500,
-    };
+    return handleError(error);
   }
 };

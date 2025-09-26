@@ -2,7 +2,6 @@ import { db } from "@/lib/drizzle/db";
 import { and, eq, isNull, or } from "drizzle-orm";
 import {
   GigsTable,
-  GigWorkerProfilesTable,
   UsersTable,
   gigStatusEnum,
 } from "@/lib/drizzle/schema";
@@ -25,6 +24,9 @@ export async function getUserById(userId: string, isDatabaseUserId: boolean) {
       firebaseUid: true,
       fullName: true,
     },
+    with: {
+      gigWorkerProfile: true,
+    },
   });
 }
 
@@ -36,10 +38,10 @@ export async function fetchGigForRole(gigId: string, userId: string, role?: "buy
     whereCondition = and(
       eq(GigsTable.id, gigId),
       or(
-        eq(GigsTable.workerUserId, userId), // Assigned worker
+        eq(GigsTable.workerUserId, userId),
         and(
-          eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]), // Pending worker acceptance
-          isNull(GigsTable.workerUserId) // No worker assigned yet
+          eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]),
+          isNull(GigsTable.workerUserId)
         )
       )
     );
@@ -57,7 +59,7 @@ export async function fetchGigForRole(gigId: string, userId: string, role?: "buy
         columns: {
           id: true,
           fullName: true,
-          email: true, // buyer’s email for notifications
+          email: true,
         },
       },
       worker: {
@@ -67,13 +69,6 @@ export async function fetchGigForRole(gigId: string, userId: string, role?: "buy
         },
       },
     },
-  });
-}
-
-// Helper to fetch worker profile
-export async function fetchWorkerProfile(workerId: string) {
-  return await db.query.GigWorkerProfilesTable.findFirst({
-    where: eq(GigWorkerProfilesTable.userId, workerId),
   });
 }
 
@@ -138,15 +133,4 @@ export async function calculateWorkerStats(workerId: string) {
   const workerExperience = Math.min(workerGigs, MAX_EXPERIENCE_YEARS);
   const isWorkerStar = workerGigs >= MIN_GIGS_FOR_STAR_WORKER;
   return { workerGigs, workerExperience, isWorkerStar };
-}
-
-// Helper for error handling
-export function handleGigError(error: unknown) {
-  console.error("Error fetching gig:", error);
-  return {
-    success: false,
-    error: error instanceof Error ? error.message : "Unknown error fetching gig",
-    gig: {} as GigDetails,
-    status: 500,
-  };
 }
