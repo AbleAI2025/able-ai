@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { and, eq, gt, isNull, ne, or, inArray } from "drizzle-orm";
+import { and, eq, gt, isNull, ne, or, inArray, isNotNull, lt } from "drizzle-orm";
 import { UsersTable, GigsTable } from "@/lib/drizzle/schema";
 import { parseCoordinates, calculateDistance } from "@/lib/utils/distance";
 
@@ -117,7 +117,9 @@ function transformGigToWorkerOffer(
     estimatedHours,
     totalPay: Math.round(totalPay * 100) / 100,
     tipsExpected: false,
-    expiresAt: gig?.expiresAt ? new Date(gig.expiresAt).toISOString() : undefined,
+    expiresAt: gig?.expiresAt
+      ? new Date(gig.expiresAt).toISOString()
+      : undefined,
     status: statusOverride ?? gig.statusInternal,
     fullDescriptionLink: `/user/${userId}/worker/gigs/${gig.id}`,
     gigDescription: gig.fullDescription || undefined,
@@ -181,7 +183,8 @@ export async function getWorkerOffers(userId: string) {
         eq(GigsTable.statusInternal, PENDING_WORKER_ACCEPTANCE),
         isNull(GigsTable.workerUserId),
         ne(GigsTable.buyerUserId, user.id),
-        or(isNull(GigsTable.expiresAt), gt(GigsTable.expiresAt, new Date()))
+        isNotNull(GigsTable.expiresAt),
+        gt(GigsTable.expiresAt, new Date())
       ),
     });
 
@@ -218,9 +221,13 @@ export async function getWorkerOffers(userId: string) {
       },
       where: and(
         eq(GigsTable.workerUserId, user.id),
-        inArray(GigsTable.statusInternal, ACCEPTED_GIG_STATUSES)
+        inArray(GigsTable.statusInternal, ACCEPTED_GIG_STATUSES),
+        gt(GigsTable.endTime, new Date())
       ),
     });
+
+    console.log("acceptedGigs", acceptedGigs);
+    
 
     const offers: WorkerGigOffer[] = filteredByDistance.map((gig) =>
       transformGigToWorkerOffer(gig, userId, "pending")
@@ -249,4 +256,3 @@ export async function getWorkerOffers(userId: string) {
     };
   }
 }
-

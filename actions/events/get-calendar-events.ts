@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq, and, isNull, ne, isNotNull } from "drizzle-orm";
+import { eq, and, isNull, ne, isNotNull, gt } from "drizzle-orm";
 import {
   GigsTable,
   UsersTable,
@@ -33,10 +33,15 @@ const mapEventStatus = (status: string): EventStatusEnumType => {
 };
 
 // --- Worker Events Helper ---
-async function getWorkerCalendarEvents(user: typeof UsersTable.$inferSelect): Promise<CalendarEvent[]> {
+async function getWorkerCalendarEvents(
+  user: typeof UsersTable.$inferSelect
+): Promise<CalendarEvent[]> {
   // 1. Accepted/assigned gigs
   const acceptedGigs = await db.query.GigsTable.findMany({
-    where: eq(GigsTable.workerUserId, user.id),
+    where: and(
+      eq(GigsTable.workerUserId, user.id),
+      gt(GigsTable.endTime, new Date())
+    ),
     with: {
       buyer: { columns: { id: true, fullName: true } },
       worker: { columns: { id: true, fullName: true } },
@@ -47,7 +52,9 @@ async function getWorkerCalendarEvents(user: typeof UsersTable.$inferSelect): Pr
     where: and(
       eq(GigsTable.statusInternal, "PENDING_WORKER_ACCEPTANCE"),
       isNull(GigsTable.workerUserId),
-      ne(GigsTable.buyerUserId, user.id)
+      ne(GigsTable.buyerUserId, user.id),
+      isNotNull(GigsTable.expiresAt),
+      gt(GigsTable.expiresAt, new Date()),
     ),
     columns: {
       id: true,
@@ -123,7 +130,10 @@ async function getWorkerCalendarEvents(user: typeof UsersTable.$inferSelect): Pr
       buyerId: gig.buyerUserId,
       workerId: null,
       agreedRate: gig.agreedRate,
-      totalAgreedPrice: ((new Date(gig.endTime).getTime() - new Date(gig.startTime).getTime()) / 3600000) * Number(gig.agreedRate),
+      totalAgreedPrice:
+        ((new Date(gig.endTime).getTime() - new Date(gig.startTime).getTime()) /
+          3600000) *
+        Number(gig.agreedRate),
       moderationStatus: "PENDING",
       isOffer: true,
       notesForWorker: gig.notesForWorker,
@@ -159,9 +169,15 @@ async function getWorkerCalendarEvents(user: typeof UsersTable.$inferSelect): Pr
 }
 
 // --- Buyer Events Helper ---
-async function getBuyerCalendarEvents(user: typeof UsersTable.$inferSelect): Promise<CalendarEvent[]> {
+async function getBuyerCalendarEvents(
+  user: typeof UsersTable.$inferSelect
+): Promise<CalendarEvent[]> {
   const gigs = await db.query.GigsTable.findMany({
-    where: and(eq(GigsTable.buyerUserId, user.id), isNotNull(GigsTable.workerUserId)),
+    where: and(
+      eq(GigsTable.buyerUserId, user.id),
+      isNotNull(GigsTable.workerUserId),
+      gt(GigsTable.endTime, new Date())
+    ),
     with: {
       buyer: { columns: { id: true, fullName: true } },
       worker: { columns: { id: true, fullName: true } },
@@ -201,8 +217,8 @@ async function getBuyerCalendarEvents(user: typeof UsersTable.$inferSelect): Pro
 export async function getCalendarEvents({
   userId,
   role,
-  // isViewQA,
-}: {
+}: // isViewQA,
+{
   userId: string;
   role?: "buyer" | "worker";
   isViewQA?: boolean;

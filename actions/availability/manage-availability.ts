@@ -53,8 +53,6 @@ export async function getWorkerAvailability(
       updatedAt: slot.updatedAt,
     }));
 
-    console.log("getWorkerAvailability: converted availability:", availability);
-
     return { availability };
   } catch (error) {
     console.error("Error fetching availability:", error);

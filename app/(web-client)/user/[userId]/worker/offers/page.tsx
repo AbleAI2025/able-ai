@@ -10,13 +10,16 @@ import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming sha
 import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import new component
 
 import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
-import { Loader2, Inbox, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
-import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
+import {
+  getWorkerOffers,
+  WorkerGigOffer,
+} from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { declineGigOffer } from "@/actions/gigs/decline-gig-offer";
 
@@ -25,17 +28,16 @@ type GigOffer = WorkerGigOffer;
 // Database function to fetch worker offers and accepted gigs
 async function fetchWorkerData(
   userId: string,
-  filters?: string[],
+  filters?: string[]
 ): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[]; workerId: string }> {
-
   const result = await getWorkerOffers(userId);
-  
+
   if (result.error) {
     throw new Error(result.error);
   }
 
   if (!result.data) {
-    throw new Error('No data received from server');
+    throw new Error("No data received from server");
   }
 
   return result.data;
@@ -86,7 +88,9 @@ export default function WorkerOffersPage() {
         })
         .finally(() => setIsLoadingData(false));
     } else if (!loadingAuth && user && authUserId !== pageUserId) {
-      setError("You are not authorized to view this page. Please sign in with the correct account.");
+      setError(
+        "You are not authorized to view this page. Please sign in with the correct account."
+      );
       setIsLoadingData(false);
       // Redirect to signin after a short delay
       setTimeout(() => {
@@ -107,14 +111,14 @@ export default function WorkerOffersPage() {
       console.error("User not authenticated");
       return;
     }
-    
+
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
-    
+
     try {
       // Use the Firebase UID directly, not the page user ID
       const result = await acceptGigOffer({ gigId: offerId, userUid: uid });
-      
+
       if (result.error) {
         console.error("Debug - Server returned error:", result.error);
         throw new Error(result.error);
@@ -122,11 +126,11 @@ export default function WorkerOffersPage() {
 
       // On success: remove from offers list and add to accepted gigs
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
+
       // Find the accepted offer to add to accepted gigs
-      const acceptedOffer = offers.find(o => o.id === offerId);
+      const acceptedOffer = offers.find((o) => o.id === offerId);
       if (acceptedOffer) {
-        const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
+        const acceptedGig = { ...acceptedOffer, status: "ACCEPTED" };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
       }
     } catch (err) {
@@ -148,11 +152,11 @@ export default function WorkerOffersPage() {
     setProcessingAction("decline");
     try {
       // Call the declineGigOffer action to properly decline the offer
-      const result = await declineGigOffer({ 
-        gigId: offerId, 
-        userUid: uid
+      const result = await declineGigOffer({
+        gigId: offerId,
+        userUid: uid,
       });
-      
+
       if (result.error) {
         console.error("Debug - Server returned error:", result.error);
         throw new Error(result.error);
@@ -169,15 +173,17 @@ export default function WorkerOffersPage() {
     }
   };
 
- const handleViewDetails = (gigId: string) => {
-  const gig = offers.find(o => o.id === gigId) || acceptedGigs.find(g => g.id === gigId);
-  if (gig && workerProfileId) {
-    setSelectedGig(gig);
-    router.push(`/user/${workerProfileId}/worker/gigs/${gigId}`);
+  const handleViewDetails = (gigId: string) => {
+    const gig =
+      offers.find((o) => o.id === gigId) ||
+      acceptedGigs.find((g) => g.id === gigId);
+    if (gig && workerProfileId) {
+      setSelectedGig(gig);
+      router.push(`/user/${workerProfileId}/worker/gigs/${gigId}`);
     } else if (!workerProfileId) {
       console.error("Worker profile ID not available yet");
-  }
-};
+    }
+  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -186,7 +192,7 @@ export default function WorkerOffersPage() {
 
   const handleModalAccept = (gigId: string) => {
     // Find the offer and accept it
-    const offer = offers.find(o => o.id === gigId);
+    const offer = offers.find((o) => o.id === gigId);
     if (offer) {
       handleAcceptOffer(gigId);
       handleModalClose();
@@ -195,111 +201,81 @@ export default function WorkerOffersPage() {
 
   const handleModalDecline = (gigId: string) => {
     // Find the offer and decline it
-    const offer = offers.find(o => o.id === gigId);
+    const offer = offers.find((o) => o.id === gigId);
     if (offer) {
       handleDeclineOffer(gigId);
       handleModalClose();
     }
   };
 
-
-
   return (
     <div className={styles.container}>
       <ScreenHeaderWithBack title="Gig Offers" />
-    
+
       <div className={styles.pageWrapper}>
-        {offers.filter((o) => o.status !== "expired").length > 0 && (
+        {/* Pending Offers Section */}
+        <div className={styles.offersSection}>
           <div className={styles.pageHeader}>
-            <h1 className={styles.sectionTitle}>Pending Gigs</h1>
+            <h1 className={styles.sectionTitle}>Pending Offers</h1>
             <button
               onClick={() => router.push(`/user/${pageUserId}/worker/calendar`)}
               className={styles.calendarNavButton}
               title="View Calendar"
-          >
-            <Calendar size={24} />
-            <span>Calendar</span>
-          </button>
+            >
+              <Calendar size={24} />
+              <span>Calendar</span>
+            </button>
+          </div>
+
+          {offers.filter((o) => o.status !== "expired").length > 0 ? (
+            offers
+              .filter((o) => o.status !== "expired")
+              .map((offer) => (
+                <GigOfferCard
+                  key={offer.id}
+                  offer={offer}
+                  onAccept={(offerId: string) => handleAcceptOffer(offerId)}
+                  onDecline={(offerId: string) => handleDeclineOffer(offerId)}
+                  onViewDetails={handleViewDetails}
+                  isProcessingAccept={
+                    processingOfferId === offer.id &&
+                    processingAction === "accept"
+                  }
+                  isProcessingDecline={
+                    processingOfferId === offer.id &&
+                    processingAction === "decline"
+                  }
+                />
+              ))
+          ) : (
+            <p className={styles.emptySectionMsg}>
+              No pending offers available right now.
+            </p>
+          )}
         </div>
-        )}
-        {isLoadingData ? ( // Use renamed loading state
-          <div className={styles.loadingContainer}>
-            <div className={styles.loadingContent}>
-              <Loader2 className={styles.loadingSpinner} size={32} />
-              <p className={styles.loadingText}>Loading offers...</p>
-            </div>
-          </div> // Use styles
-        ) : error ? (
-          <div className={styles.emptyState}>{error}</div> // Use styles
-        ) : offers.filter(
-            (o) =>
-              o.status !==
-              "expired" /* && timeLeft !== "Expired" Re-check expiry with timeLeft state */
-          ).length === 0 && acceptedGigs.length === 0 ? ( // Check both lists
-          <div className={styles.emptyState}>
-            {" "}
-            {/* Use styles */}
-            <Inbox
-              size={48}
-              style={{ marginBottom: "1rem", color: "#525252" }}
-            />
-            No new gig offers or upcoming accepted gigs available right now.
-            Make sure your Gigfolio and availability are up to date!
+
+        {/* Accepted Upcoming Gigs Section */}
+        <div className={styles.acceptedSection}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Accepted Upcoming Gigs</h2>
+            <Link href={`/user/${pageUserId}/worker/calendar`} passHref>
+              <Calendar size={24} color="#ffffff" />
+            </Link>
           </div>
-        ) : (
-          <div className={styles.offerList}>
-            {" "}
-            {/* Use styles */}
-            {/* Pending Offers Section */}
-            {offers.filter((o) => o.status !== "expired").length > 0 && (
-              <div className={styles.offersSection}>
-                {" "}
-                {/* New div for offers section */}
-                {offers
-                  .filter((o) => o.status !== "expired")
-                  .map((offer) => (
-                    <GigOfferCard
-                      key={offer.id}
-                      offer={offer}
-                      onAccept={(offerId: string) => handleAcceptOffer(offerId)}
-                      onDecline={(offerId: string) => handleDeclineOffer(offerId)}
-                      onViewDetails={handleViewDetails}
-                      isProcessingAccept={
-                        processingOfferId === offer.id &&
-                        processingAction === "accept"
-                      }
-                      isProcessingDecline={
-                        processingOfferId === offer.id &&
-                        processingAction === "decline"
-                      }
-                    />
-                  ))}
-              </div>
-            )}
-            {/* Accepted Upcoming Gigs Section */}
-            {acceptedGigs.length > 0 && (
-              <div className={styles.acceptedSection}>
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>
-                    Accepted Upcoming Gigs
-                  </h2>{" "}
-                  {/* Title for accepted */}
-                  <Link href={`/user/${pageUserId}/worker/calendar`} passHref>
-                    <Calendar size={24} color="#ffffff" />
-                  </Link>
-                </div>
-                {acceptedGigs.map((gig) => (
-                  <AcceptedGigCard // Use the new component
-                    key={gig.id}
-                    gig={gig} // Pass the gig data
-                    onViewDetails={handleViewDetails} // Only view details for accepted
-                    // Removed onAccept and onDecline as they are not needed here
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          {acceptedGigs.length > 0 ? (
+            acceptedGigs.map((gig) => (
+              <AcceptedGigCard
+                key={gig.id}
+                gig={gig}
+                onViewDetails={handleViewDetails}
+              />
+            ))
+          ) : (
+            <p className={styles.emptySectionMsg}>
+              You don’t have any upcoming accepted gigs yet.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Gig Details Modal */}

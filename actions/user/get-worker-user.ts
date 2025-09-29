@@ -19,8 +19,6 @@ export async function getWorkerUserFromProfileId(profileId: string): Promise<{
   try {
     if (!profileId) throw new Error("Worker profile ID is required");
 
-    console.log('🔍 DEBUG: getWorkerUserFromProfileId - Looking up worker profile with ID:', profileId);
-
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.id, profileId),
       with: {
@@ -34,18 +32,8 @@ export async function getWorkerUserFromProfileId(profileId: string): Promise<{
         },
       },
     });
-    
-    console.log('🔍 DEBUG: getWorkerUserFromProfileId - Worker profile query result:', {
-      found: !!workerProfile,
-      hasUser: !!workerProfile?.user,
-      userId: workerProfile?.user?.id,
-      firebaseUid: workerProfile?.user?.firebaseUid,
-      fullName: workerProfile?.user?.fullName,
-      searchedFor: profileId
-    });
 
     if (!workerProfile?.user) {
-      console.log('🔍 DEBUG: getWorkerUserFromProfileId - No worker profile or user found');
       throw new Error("Worker profile or user not found");
     }
 
@@ -55,15 +43,6 @@ export async function getWorkerUserFromProfileId(profileId: string): Promise<{
       email: workerProfile.user.email || undefined,
       id: workerProfile.user.id,
     };
-
-    console.log('🔍 DEBUG: getWorkerUserFromProfileId - Created WorkerUser object:', {
-      uid: workerUser.uid,
-      id: workerUser.id,
-      displayName: workerUser.displayName,
-      email: workerUser.email,
-      originalFirebaseUid: workerProfile.user.firebaseUid,
-      originalUserId: workerProfile.user.id
-    });
 
     return {
       success: true,
@@ -90,8 +69,6 @@ export async function getWorkerUserFromFirebaseId(firebaseUid: string): Promise<
         error: "Firebase UID is required",
       };
     }
-
-    console.log(`🔍 Looking up worker user for Firebase UID: ${firebaseUid}`);
 
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, firebaseUid),
@@ -143,8 +120,6 @@ export async function getWorkerProfileIdFromFirebaseUid(firebaseUid: string): Pr
       };
     }
 
-    console.log('🔍 DEBUG: getWorkerProfileIdFromFirebaseUid called with:', firebaseUid);
-
     // Get user first
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, firebaseUid),
@@ -153,14 +128,6 @@ export async function getWorkerProfileIdFromFirebaseUid(firebaseUid: string): Pr
         firebaseUid: true,
         fullName: true,
       }
-    });
-
-    console.log('🔍 DEBUG: User lookup result:', {
-      found: !!user,
-      userId: user?.id,
-      firebaseUid: user?.firebaseUid,
-      fullName: user?.fullName,
-      searchedFor: firebaseUid
     });
 
     if (!user) {
@@ -177,13 +144,6 @@ export async function getWorkerProfileIdFromFirebaseUid(firebaseUid: string): Pr
         id: true,
         userId: true,
       }
-    });
-
-    console.log('🔍 DEBUG: Worker profile lookup result:', {
-      found: !!workerProfile,
-      profileId: workerProfile?.id,
-      userId: workerProfile?.userId,
-      searchedForUserId: user.id
     });
 
     if (!workerProfile) {
@@ -219,8 +179,6 @@ export async function getWorkerProfileIdFromUserId(userId: string): Promise<{
       };
     }
 
-    console.log('🔍 DEBUG: getWorkerProfileIdFromUserId called with:', userId);
-
     // Get user first by database ID
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.id, userId),
@@ -229,14 +187,6 @@ export async function getWorkerProfileIdFromUserId(userId: string): Promise<{
         firebaseUid: true,
         fullName: true,
       }
-    });
-
-    console.log('🔍 DEBUG: User lookup by ID result:', {
-      found: !!user,
-      userId: user?.id,
-      firebaseUid: user?.firebaseUid,
-      fullName: user?.fullName,
-      searchedFor: userId
     });
 
     if (!user) {
@@ -253,13 +203,6 @@ export async function getWorkerProfileIdFromUserId(userId: string): Promise<{
         id: true,
         userId: true,
       }
-    });
-
-    console.log('🔍 DEBUG: Worker profile lookup result:', {
-      found: !!workerProfile,
-      profileId: workerProfile?.id,
-      userId: workerProfile?.userId,
-      searchedForUserId: user.id
     });
 
     if (!workerProfile) {
