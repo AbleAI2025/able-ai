@@ -1,13 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { db } from '@/lib/drizzle/db';
-import { UsersTable, GigWorkerProfilesTable, SkillsTable } from '@/lib/drizzle/schema';
+import { GigWorkerProfilesTable } from '@/lib/drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { isUserAuthenticated } from '@/lib/user.server';
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ workerId: string }> }
 ) {
   try {
+    // Get token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    const token = authHeader.substring(7);
+
+    // Verify token
+    const { uid } = await isUserAuthenticated(token);
+    if (!uid) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { workerId } = await params;
 
     if (!workerId) {
@@ -17,44 +37,42 @@ export async function GET(
       );
     }
 
-    // Get worker user details
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.id, workerId),
-      columns: {
-        id: true,
-        fullName: true,
-        email: true,
-      }
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.id, workerId),
+      with: {
+        user: {
+          columns: {
+            fullName: true,
+          },
+        },
+        skills: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
-    if (!user) {
+    if (!workerProfile) {
       return NextResponse.json(
-        { error: 'Worker not found' },
+        { error: 'Worker profile not found' },
         { status: 404 }
       );
     }
 
-    // Get worker profile
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
-
-    // Get primary skill (first skill or default)
-    const skills = await db.query.SkillsTable.findMany({
-      where: eq(SkillsTable.workerProfileId, workerProfile?.id || ''),
-      limit: 1,
-    });
-
-    const primarySkill = skills[0]?.name || 'Professional';
+    if (!workerProfile.user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       data: {
-        id: user.id,
-        name: user.fullName || 'Unknown Worker',
-        email: user.email,
-        primarySkill,
-        bio: workerProfile?.fullBio,
+        name: workerProfile.user.fullName,
+        skills: workerProfile.skills,
       }
     });
 

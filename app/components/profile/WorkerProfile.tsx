@@ -16,7 +16,6 @@ import {
   Edit2,
 } from "lucide-react";
 import {
-  getPrivateWorkerProfileAction,
   updateSocialLinkWorkerProfileAction,
   updateVideoUrlProfileAction,
 } from "@/actions/user/gig-worker-profile";
@@ -109,7 +108,6 @@ const WorkerProfile = ({
               .then((downloadURL) => {
                 updateVideoUrlProfileAction(downloadURL, user.token);
                 toast.success("Video upload successfully");
-                getPrivateWorkerProfileAction(user.token);
               })
               .catch((error) => {
                 console.error("Failed to get download URL:", error);
