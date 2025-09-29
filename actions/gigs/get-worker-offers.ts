@@ -18,6 +18,8 @@ const ACCEPTED_GIG_STATUSES = [
   "PAID",
 ] as const;
 
+const PENDING_WORKER_ACCEPTANCE = "PENDING_WORKER_ACCEPTANCE";
+
 export interface WorkerGigOffer {
   id: string;
   role: string;
@@ -176,7 +178,7 @@ export async function getWorkerOffers(userId: string) {
         expiresAt: true,
       },
       where: and(
-        eq(GigsTable.statusInternal, "PENDING_WORKER_ACCEPTANCE"),
+        eq(GigsTable.statusInternal, PENDING_WORKER_ACCEPTANCE),
         isNull(GigsTable.workerUserId),
         ne(GigsTable.buyerUserId, user.id),
         or(isNull(GigsTable.expiresAt), gt(GigsTable.expiresAt, new Date()))

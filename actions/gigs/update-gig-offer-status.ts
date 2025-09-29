@@ -19,19 +19,19 @@ const getNewStatus = (
 
 export async function updateGigOfferStatus({
   gigId,
-  userId,
+  userUid,
   role,
   action,
 }: {
   gigId: string;
-  userId: string;
+  userUid: string;
   role: "buyer" | "worker";
   action: "accept" | "cancel" | "start" | "complete";
   isViewQA?: boolean;
 }) {
   try {
     const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, userId),
+      where: eq(UsersTable.firebaseUid, userUid),
       columns: {
         id: true,
         firebaseUid: true,

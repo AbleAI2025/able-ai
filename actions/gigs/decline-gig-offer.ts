@@ -10,14 +10,14 @@ const DECLINED_BY_WORKER = "DECLINED_BY_WORKER";
 
 export async function declineGigOffer({
   gigId,
-  userId,
+  userUid,
 }: {
   gigId: string;
-  userId: string;
+  userUid: string;
 }) {
   try {
     const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, userId),
+      where: eq(UsersTable.firebaseUid, userUid),
       columns: {
         id: true,
       },

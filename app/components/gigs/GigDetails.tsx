@@ -228,7 +228,7 @@ const GigDetailsComponent = ({
           if (lastRoleUsed === "GIG_WORKER") {
             const result = await updateGigOfferStatus({
               gigId: gig.id,
-              userId,
+              userUid: user?.uid || "",
               role,
               action: "accept",
             });
@@ -246,7 +246,7 @@ const GigDetailsComponent = ({
         case "start": {
           const result = await updateGigOfferStatus({
             gigId: gig.id,
-            userId,
+            userUid: user?.uid || "",
             role,
             action: "start",
           });
@@ -264,7 +264,7 @@ const GigDetailsComponent = ({
           {
             const result = await updateGigOfferStatus({
               gigId: gig.id,
-              userId,
+              userUid: user?.uid || "",
               role,
               action: "complete",
             });
