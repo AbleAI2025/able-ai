@@ -150,7 +150,7 @@ export default function WorkerOffersPage() {
       // Call the declineGigOffer action to properly decline the offer
       const result = await declineGigOffer({ 
         gigId: offerId, 
-        userId: uid
+        userUid: uid
       });
       
       if (result.error) {

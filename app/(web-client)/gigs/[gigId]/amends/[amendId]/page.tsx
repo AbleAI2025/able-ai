@@ -60,7 +60,7 @@ export default function CancelOrAmendGigDetailsPage() {
     const  result = await updateGigOfferStatus({
       gigId,
       role,
-      userId: user?.uid,
+      userUid: user?.uid,
       action: "cancel",
     });
 

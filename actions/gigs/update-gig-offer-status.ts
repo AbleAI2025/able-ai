@@ -8,13 +8,19 @@ import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
 const ACCEPTED = gigStatusEnum.enumValues[2];
 const CANCELLED_BY_BUYER = gigStatusEnum.enumValues[10];
 const CANCELLED_BY_WORKER = gigStatusEnum.enumValues[11];
+const COMPLETED = gigStatusEnum.enumValues[7];
+const STARTED = gigStatusEnum.enumValues[3];
 
 const getNewStatus = (
   action: "accept" | "cancel" | "start" | "complete",
   role: "buyer" | "worker"
 ) => {
   if (action === "accept") return ACCEPTED;
-  return role === "buyer" ? CANCELLED_BY_BUYER : CANCELLED_BY_WORKER;
+  if (action === "cancel" && role === "buyer") return CANCELLED_BY_BUYER;
+  if (action === "cancel" && role === "worker") return CANCELLED_BY_WORKER;
+  if (action === "start") return STARTED;
+  if (action === "complete") return COMPLETED;
+  throw new Error("Invalid action or role");
 };
 
 export async function updateGigOfferStatus({

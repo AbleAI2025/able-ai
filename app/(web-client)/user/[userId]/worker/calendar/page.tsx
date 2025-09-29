@@ -554,7 +554,7 @@ const WorkerCalendarPage = () => {
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
       const result = await updateGigOfferStatus({
         gigId: offerId,
-        userId: authUserUid,
+        userUid: authUserUid,
         role: "worker",
         action: "cancel",
       });
