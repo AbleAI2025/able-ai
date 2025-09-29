@@ -41,36 +41,6 @@ export const getPublicWorkerProfileAction = async (
   return data;
 };
 
-export const getPrivateWorkerProfileAction = async (token: string) => {
-  if (!token) {
-    throw new Error("User ID is required to fetch buyer profile");
-  }
-
-  const { uid } = await isUserAuthenticated(token);
-  if (!uid) throw ERROR_CODES.UNAUTHORIZED;
-
-  const user = await db.query.UsersTable.findFirst({
-    where: eq(UsersTable.firebaseUid, uid),
-  });
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-    where: eq(GigWorkerProfilesTable.userId, user.id),
-    with: {
-      user: { columns: { fullName: true, rtwStatus: true } },
-      skills: true,
-      qualifications: true,
-      equipment: true,
-    },
-  });
-
-  const data = await getGigWorkerProfile(workerProfile);
-
-  return data;
-};
 export const getGigWorkerProfile = async (
   workerProfile:
     | (typeof GigWorkerProfilesTable.$inferSelect & {

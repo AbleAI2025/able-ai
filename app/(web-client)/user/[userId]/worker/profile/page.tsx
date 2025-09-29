@@ -9,9 +9,6 @@ import CloseButton from "@/app/components/profile/CloseButton";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import PublicWorkerProfile from "@/app/types/workerProfileTypes";
-import {
-  getPrivateWorkerProfileAction,
-} from "@/actions/user/gig-worker-profile";
 
 export default function WorkerOwnedProfilePage() {
   const router = useRouter();
@@ -29,21 +26,42 @@ export default function WorkerOwnedProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserProfile = async (token: string) => {
-    const { data } = await getPrivateWorkerProfileAction(token);
-    if (data) {
-      const updatedReviews = (data.reviews ?? []).map(
-        (rev: any) => ({
-          ...rev,
-          date: rev.date
-            ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-            : null,
-        })
-      );
+    try {
+      const response = await fetch('/api/worker/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-      setProfile({ ...data, reviews: updatedReviews });
-      setError(null);
-    } else {
-      setError("Could not load your profile.");
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch profile');
+      }
+
+      const data = result.data;
+      if (data) {
+        const updatedReviews = (data.reviews ?? []).map(
+          (rev: any) => ({
+            ...rev,
+            date: rev.date
+              ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
+              : null,
+          })
+        );
+
+        setProfile({ ...data, reviews: updatedReviews });
+        setError(null);
+      } else {
+        setError("Could not load your profile.");
+        setProfile(null);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not load your profile.");
       setProfile(null);
     }
     setLoadingProfile(false);

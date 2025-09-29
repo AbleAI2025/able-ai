@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getPrivateWorkerProfileAction } from '@/actions/user/gig-worker-profile';
 import { useAuth } from '@/context/AuthContext';
 import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
 import styles from './ManualProfileForm.module.css';
@@ -362,8 +361,13 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     const fetchExistingProfile = async () => {
       if (user?.claims?.role === "GIG_WORKER" && user?.token && !formData.references) {
         try {
-          const result = await getPrivateWorkerProfileAction(user.token);
-          if (result.success && result.data?.id) {
+          const response = await fetch('/api/worker/profile', {
+            headers: {
+              'Authorization': `Bearer ${user.token}`,
+            },
+          });
+          const result = await response.json();
+          if (response.ok && result.success && result.data?.id) {
             // User already has a worker profile, build the recommendation link
             setFormData(prev => ({
               ...prev,
