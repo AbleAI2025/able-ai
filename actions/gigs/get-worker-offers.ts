@@ -226,9 +226,6 @@ export async function getWorkerOffers(userId: string) {
       ),
     });
 
-    console.log("acceptedGigs", acceptedGigs);
-    
-
     const offers: WorkerGigOffer[] = filteredByDistance.map((gig) =>
       transformGigToWorkerOffer(gig, userId, "pending")
     );

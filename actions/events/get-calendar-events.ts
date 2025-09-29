@@ -36,12 +36,10 @@ const mapEventStatus = (status: string): EventStatusEnumType => {
 async function getWorkerCalendarEvents(
   user: typeof UsersTable.$inferSelect
 ): Promise<CalendarEvent[]> {
+  const now = new Date();
   // 1. Accepted/assigned gigs
   const acceptedGigs = await db.query.GigsTable.findMany({
-    where: and(
-      eq(GigsTable.workerUserId, user.id),
-      gt(GigsTable.endTime, new Date())
-    ),
+    where: and(eq(GigsTable.workerUserId, user.id), gt(GigsTable.endTime, now)),
     with: {
       buyer: { columns: { id: true, fullName: true } },
       worker: { columns: { id: true, fullName: true } },
@@ -54,7 +52,7 @@ async function getWorkerCalendarEvents(
       isNull(GigsTable.workerUserId),
       ne(GigsTable.buyerUserId, user.id),
       isNotNull(GigsTable.expiresAt),
-      gt(GigsTable.expiresAt, new Date()),
+      gt(GigsTable.expiresAt, now)
     ),
     columns: {
       id: true,
@@ -172,11 +170,13 @@ async function getWorkerCalendarEvents(
 async function getBuyerCalendarEvents(
   user: typeof UsersTable.$inferSelect
 ): Promise<CalendarEvent[]> {
+  const now = new Date();
+
   const gigs = await db.query.GigsTable.findMany({
     where: and(
       eq(GigsTable.buyerUserId, user.id),
       isNotNull(GigsTable.workerUserId),
-      gt(GigsTable.endTime, new Date())
+      gt(GigsTable.endTime, now)
     ),
     with: {
       buyer: { columns: { id: true, fullName: true } },

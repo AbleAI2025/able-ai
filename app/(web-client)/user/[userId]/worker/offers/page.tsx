@@ -10,7 +10,7 @@ import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming sha
 import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import new component
 
 import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
-import { Calendar } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
@@ -213,69 +213,82 @@ export default function WorkerOffersPage() {
       <ScreenHeaderWithBack title="Gig Offers" />
 
       <div className={styles.pageWrapper}>
-        {/* Pending Offers Section */}
-        <div className={styles.offersSection}>
-          <div className={styles.pageHeader}>
-            <h1 className={styles.sectionTitle}>Pending Offers</h1>
-            <button
-              onClick={() => router.push(`/user/${pageUserId}/worker/calendar`)}
-              className={styles.calendarNavButton}
-              title="View Calendar"
-            >
-              <Calendar size={24} />
-              <span>Calendar</span>
-            </button>
+        {isLoadingData ? (
+          <div className={styles.loadingContainer}>
+            <Loader2 className={styles.spinner} size={32} />
+            <span>Loading your gigs...</span>
           </div>
-
-          {offers.filter((o) => o.status !== "expired").length > 0 ? (
-            offers
-              .filter((o) => o.status !== "expired")
-              .map((offer) => (
-                <GigOfferCard
-                  key={offer.id}
-                  offer={offer}
-                  onAccept={(offerId: string) => handleAcceptOffer(offerId)}
-                  onDecline={(offerId: string) => handleDeclineOffer(offerId)}
-                  onViewDetails={handleViewDetails}
-                  isProcessingAccept={
-                    processingOfferId === offer.id &&
-                    processingAction === "accept"
-                  }
-                  isProcessingDecline={
-                    processingOfferId === offer.id &&
-                    processingAction === "decline"
-                  }
-                />
-              ))
-          ) : (
-            <p className={styles.emptySectionMsg}>
-              No pending offers available right now.
-            </p>
-          )}
-        </div>
-
-        {/* Accepted Upcoming Gigs Section */}
-        <div className={styles.acceptedSection}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Accepted Upcoming Gigs</h2>
-            <Link href={`/user/${pageUserId}/worker/calendar`} passHref>
-              <Calendar size={24} color="#ffffff" />
-            </Link>
+        ) : error ? (
+          <div className={styles.emptyState}>
+            <p>{error}</p>
           </div>
-          {acceptedGigs.length > 0 ? (
-            acceptedGigs.map((gig) => (
-              <AcceptedGigCard
-                key={gig.id}
-                gig={gig}
-                onViewDetails={handleViewDetails}
-              />
-            ))
-          ) : (
-            <p className={styles.emptySectionMsg}>
-              You don’t have any upcoming accepted gigs yet.
-            </p>
-          )}
-        </div>
+        ) : (
+          <>
+            {/* Pending Offers Section */}
+            <div className={styles.offersSection}>
+              <div className={styles.pageHeader}>
+                <h1 className={styles.sectionTitle}>Pending Offers</h1>
+                <button
+                  onClick={() =>
+                    router.push(`/user/${pageUserId}/worker/calendar`)
+                  }
+                  className={styles.calendarNavButton}
+                  title="View Calendar"
+                >
+                  <Calendar size={24} />
+                  <span>Calendar</span>
+                </button>
+              </div>
+
+              {offers.length > 0 ? (
+                offers.map((offer) => (
+                  <GigOfferCard
+                    key={offer.id}
+                    offer={offer}
+                    onAccept={(offerId: string) => handleAcceptOffer(offerId)}
+                    onDecline={(offerId: string) => handleDeclineOffer(offerId)}
+                    onViewDetails={handleViewDetails}
+                    isProcessingAccept={
+                      processingOfferId === offer.id &&
+                      processingAction === "accept"
+                    }
+                    isProcessingDecline={
+                      processingOfferId === offer.id &&
+                      processingAction === "decline"
+                    }
+                  />
+                ))
+              ) : (
+                <p className={styles.emptySectionMsg}>
+                  No pending offers available right now.
+                </p>
+              )}
+            </div>
+
+            {/* Accepted Upcoming Gigs Section */}
+            <div className={styles.acceptedSection}>
+              <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>Accepted Upcoming Gigs</h2>
+                <Link href={`/user/${pageUserId}/worker/calendar`} passHref>
+                  <Calendar size={24} color="#ffffff" />
+                </Link>
+              </div>
+              {acceptedGigs.length > 0 ? (
+                acceptedGigs.map((gig) => (
+                  <AcceptedGigCard
+                    key={gig.id}
+                    gig={gig}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))
+              ) : (
+                <p className={styles.emptySectionMsg}>
+                  You don’t have any upcoming accepted gigs yet.
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Gig Details Modal */}
