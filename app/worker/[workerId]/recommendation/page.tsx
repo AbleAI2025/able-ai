@@ -8,10 +8,7 @@ import InputField from "@/app/components/form/InputField"; // Reusing shared Inp
 import { Send, Loader2, Star } from "lucide-react"; // Lucide icons
 
 import styles from "./RecommendationPage.module.css";
-import {
-  getWorkerForRecommendationAction,
-  submitExternalRecommendationAction,
-} from "@/actions/user/recommendation";
+import { submitExternalRecommendationAction } from "@/actions/user/recommendation";
 import Loader from "@/app/components/shared/Loader";
 
 interface RecommendationFormData {
@@ -29,11 +26,19 @@ interface SkillsProps {
 async function getWorkerDetails(
   workerId: string
 ): Promise<{ name: string; skills: SkillsProps[] } | null> {
-  const { data } = await getWorkerForRecommendationAction(workerId);
+  const response = await fetch(`/api/workers/${workerId}`);
 
-  if (!data) throw new Error("worker not found");
+  if (!response.ok) {
+    throw new Error("Failed to fetch worker details");
+  }
 
-  return { name: data.userName, skills: data.skills };
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to fetch worker details");
+  }
+
+  return result.data;
 }
 
 export default function PublicRecommendationPage() {
