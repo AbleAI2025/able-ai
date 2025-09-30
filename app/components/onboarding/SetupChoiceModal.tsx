@@ -5,12 +5,16 @@ interface SetupChoiceModalProps {
   isOpen: boolean;
   onChoice: (choice: 'ai' | 'manual') => void;
   onClose?: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
 const SetupChoiceModal: React.FC<SetupChoiceModalProps> = ({ 
   isOpen, 
   onChoice, 
-  onClose 
+  onClose,
+  title = "How would you like to set up your profile?",
+  subtitle = "Choose the method that works best for you"
 }) => {
   if (!isOpen) return null;
 
@@ -18,9 +22,9 @@ const SetupChoiceModal: React.FC<SetupChoiceModalProps> = ({
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>How would you like to set up your profile?</h2>
+          <h2 className={styles.modalTitle}>{title}</h2>
           <p className={styles.modalSubtitle}>
-            Choose the method that works best for you
+            {subtitle}
           </p>
         </div>
 

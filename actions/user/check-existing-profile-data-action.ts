@@ -15,6 +15,8 @@ export async function checkExistingProfileDataAction(token: string): Promise<{
         data: {
           hasLocation: false,
           hasAvailability: false,
+          hasSkills: false,
+          hasFullBio: false,
           profileData: {}
         }
       };

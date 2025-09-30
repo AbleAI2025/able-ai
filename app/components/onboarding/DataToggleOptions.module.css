@@ -1,0 +1,355 @@
+/**
+ * DataToggleOptions.module.css
+ * 
+ * Styles for the data toggle options component that allows users to choose
+ * between existing profile data or new data for each field.
+ */
+
+.container {
+
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.toggleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.toggleItem {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.toggleItem:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.fieldHeader {
+  margin-bottom: 12px;
+}
+
+.fieldLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.fieldDescription {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.existingDataPreview {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.existingDataLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.existingDataValue {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.toggleContainer {
+  margin-top: 8px;
+}
+
+.toggleOptions {
+  display: flex;
+  gap: 8px;
+}
+
+.toggleOption {
+  flex: 1;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.toggleOption:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.toggleOption:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.toggleOptionActive {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.toggleOptionActive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #3b82f6;
+}
+
+.toggleOptionDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+}
+
+.toggleOptionContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggleOptionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toggleOptionActive .toggleOptionIcon {
+  color: #3b82f6;
+}
+
+.toggleOptionDisabled .toggleOptionIcon {
+  color: #9ca3af;
+}
+
+.toggleOptionText {
+  flex: 1;
+  text-align: left;
+}
+
+.toggleOptionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.toggleOptionActive .toggleOptionTitle {
+  color: #3b82f6;
+}
+
+.toggleOptionDisabled .toggleOptionTitle {
+  color: #9ca3af;
+}
+
+.toggleOptionSubtitle {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.3;
+}
+
+.toggleOptionDisabled .toggleOptionSubtitle {
+  color: #9ca3af;
+}
+
+.summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.summaryTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.summaryStats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.summaryStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.summaryStatNumber {
+  font-size: 20px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.summaryStatLabel {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .toggleGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .toggleItem {
+    padding: 12px;
+  }
+
+  .toggleOptions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .toggleOption {
+    padding: 10px;
+  }
+
+  .summaryStats {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 18px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .fieldLabel {
+    font-size: 15px;
+  }
+
+  .toggleOptionContent {
+    gap: 6px;
+  }
+
+  .toggleOptionIcon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toggleOptionTitle {
+    font-size: 12px;
+  }
+
+  .toggleOptionSubtitle {
+    font-size: 10px;
+  }
+}
+
+/* Animation for smooth transitions */
+.toggleOption {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus states for accessibility */
+.toggleOption:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .toggleOption {
+    border-width: 3px;
+  }
+
+  .toggleOptionActive {
+    border-color: #000000;
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .toggleOptionActive .toggleOptionTitle {
+    color: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .toggleOption {
+    transition: none;
+    animation: none;
+  }
+
+  .toggleItem {
+    transition: none;
+  }
+}

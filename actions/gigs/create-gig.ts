@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { GigsTable, UsersTable, gigStatusEnum, moderationStatusEnum } from "@/lib/drizzle/schema";
 
 type CreateGigInput = {
@@ -179,6 +179,7 @@ export async function createGig(input: CreateGigInput): Promise<CreateGigResult>
       addressJson: addressJsonData,
       startTime,
       endTime,
+      expiresAt: sql`NOW() + interval '12 hours'`,
       agreedRate: rate.toString(), // Convert to string as expected by the schema
       estimatedHours: duration.toString(), // Convert to string as expected by the schema
       promoCodeApplied: discountCode || null, // Add discount code if provided

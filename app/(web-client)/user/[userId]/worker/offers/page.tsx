@@ -10,39 +10,34 @@ import GigOfferCard from "@/app/components/shared/GigOfferCard"; // Assuming sha
 import AcceptedGigCard from "@/app/components/shared/AcceptedGigCard"; // Import new component
 
 import GigDetailsModal from "@/app/components/shared/GigDetailsModal";
-import { Loader2, Inbox, Calendar } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import styles from "./OffersPage.module.css"; // Import styles
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
-import { getWorkerOffers, WorkerGigOffer } from "@/actions/gigs/get-worker-offers";
+import {
+  getWorkerOffers,
+  WorkerGigOffer,
+} from "@/actions/gigs/get-worker-offers";
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { declineGigOffer } from "@/actions/gigs/decline-gig-offer";
-import { getWorkerProfileIdFromFirebaseUid } from "@/actions/user/get-worker-user";
 
 type GigOffer = WorkerGigOffer;
 
 // Database function to fetch worker offers and accepted gigs
 async function fetchWorkerData(
   userId: string,
-  filters?: string[],
-): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
-  console.log(
-    "Fetching worker data for workerId:",
-    userId,
-    "with filters:",
-    filters
-  );
-
+  filters?: string[]
+): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[]; workerId: string }> {
   const result = await getWorkerOffers(userId);
-  
+
   if (result.error) {
     throw new Error(result.error);
   }
 
   if (!result.data) {
-    throw new Error('No data received from server');
+    throw new Error("No data received from server");
   }
 
   return result.data;
@@ -73,48 +68,16 @@ export default function WorkerOffersPage() {
   const [workerProfileId, setWorkerProfileId] = useState<string | null>(null);
   const uid = authUserId;
 
-  // Fetch worker profile ID when component mounts
-  useEffect(() => {
-    const fetchWorkerProfileId = async () => {
-      if (!uid) return;
-      
-      try {
-        const result = await getWorkerProfileIdFromFirebaseUid(uid);
-        if (result.success && result.data) {
-          setWorkerProfileId(result.data);
-        } else {
-          console.error("Failed to get worker profile ID:", result.error);
-        }
-      } catch (error) {
-        console.error("Error fetching worker profile ID:", error);
-      }
-    };
-
-    fetchWorkerProfileId();
-  }, [uid]);
-
-  
-
   // Fetch worker data (offers and accepted gigs)
   useEffect(() => {
-    // Debug logging to see what's happening
-    console.log("Debug - loadingAuth:", loadingAuth);
-    console.log("Debug - user:", user);
-    console.log("Debug - authUserId:", authUserId);
-    console.log("Debug - pageUserId:", pageUserId);
-    console.log("Debug - lastRoleUsed:", lastRoleUsed);
-    console.log("Debug - user?.claims.role:", user?.claims?.role);
-    console.log("Debug - uid variable:", uid);
-
     // Check if user is authorized to view this page
     if (!loadingAuth && user && authUserId === pageUserId) {
-      console.log("Debug - User authorized, fetching worker data...");
       setIsLoadingData(true);
       fetchWorkerData(pageUserId)
         .then((data) => {
-          console.log("Debug - offer received:", data);
           setOffers(data.offers);
           setAcceptedGigs(data.acceptedGigs);
+          setWorkerProfileId(data.workerId);
           setError(null);
         })
         .catch((err) => {
@@ -125,15 +88,15 @@ export default function WorkerOffersPage() {
         })
         .finally(() => setIsLoadingData(false));
     } else if (!loadingAuth && user && authUserId !== pageUserId) {
-      console.log("Debug - User not authorized for this page");
-      setError("You are not authorized to view this page. Please sign in with the correct account.");
+      setError(
+        "You are not authorized to view this page. Please sign in with the correct account."
+      );
       setIsLoadingData(false);
       // Redirect to signin after a short delay
       setTimeout(() => {
         router.push(`/?redirect=${pathname}`);
       }, 2000);
     } else if (!loadingAuth && !user) {
-      console.log("Debug - No user authenticated");
       setError("Please sign in to view this page.");
       setIsLoadingData(false);
       // Redirect to signin after a short delay
@@ -149,20 +112,13 @@ export default function WorkerOffersPage() {
       return;
     }
 
-    console.log("Debug - handleAcceptOffer called with:", { offerId, uid, authUserId, pageUserId });
-    
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
-    console.log("Accepting offer:", offerId);
-    
+
     try {
-      console.log("Debug - About to call acceptGigOffer with:", { gigId: offerId, userId: uid });
-      
       // Use the Firebase UID directly, not the page user ID
-      const result = await acceptGigOffer({ gigId: offerId, userId: uid });
-      
-      console.log("Debug - acceptGigOffer result:", result);
-      
+      const result = await acceptGigOffer({ gigId: offerId, userUid: uid });
+
       if (result.error) {
         console.error("Debug - Server returned error:", result.error);
         throw new Error(result.error);
@@ -170,20 +126,13 @@ export default function WorkerOffersPage() {
 
       // On success: remove from offers list and add to accepted gigs
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
+
       // Find the accepted offer to add to accepted gigs
-      const acceptedOffer = offers.find(o => o.id === offerId);
+      const acceptedOffer = offers.find((o) => o.id === offerId);
       if (acceptedOffer) {
-        const acceptedGig = { ...acceptedOffer, status: 'ACCEPTED' };
+        const acceptedGig = { ...acceptedOffer, status: "ACCEPTED" };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
       }
-
-      // Show success message (you can add toast here)
-      console.log("Offer accepted successfully!");
-      
-      // Optionally navigate to the accepted gig details
-      // router.push(`/user/${uid}/worker/gigs/${offerId}`);
-      
     } catch (err) {
       console.error("Error accepting offer:", err);
       // Show error message (you can add toast here)
@@ -201,17 +150,13 @@ export default function WorkerOffersPage() {
 
     setProcessingOfferId(offerId);
     setProcessingAction("decline");
-    console.log("Declining offer:", offerId);
-    
     try {
       // Call the declineGigOffer action to properly decline the offer
-      const result = await declineGigOffer({ 
-        gigId: offerId, 
-        userId: uid
+      const result = await declineGigOffer({
+        gigId: offerId,
+        userUid: uid,
       });
-      
-      console.log("Debug - declineGigOffer result:", result);
-      
+
       if (result.error) {
         console.error("Debug - Server returned error:", result.error);
         throw new Error(result.error);
@@ -219,10 +164,6 @@ export default function WorkerOffersPage() {
 
       // On success: remove from offers list
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      
-      // Show success message (you can add toast here)
-      console.log("Offer declined successfully!");
-      
     } catch (err) {
       console.error("Error declining offer:", err);
       // Show error message (you can add toast here)
@@ -232,17 +173,17 @@ export default function WorkerOffersPage() {
     }
   };
 
- const handleViewDetails = (gigId: string) => {
-  // Search in offers first, then in acceptedGigs
-  const gig = offers.find(o => o.id === gigId) || acceptedGigs.find(g => g.id === gigId);
-  if (gig && workerProfileId) {
-    setSelectedGig(gig);
-    router.push(`/user/${workerProfileId}/worker/gigs/${gigId}`);
-    // setIsModalOpen(true);
+  const handleViewDetails = (gigId: string) => {
+    const gig =
+      offers.find((o) => o.id === gigId) ||
+      acceptedGigs.find((g) => g.id === gigId);
+    if (gig && workerProfileId) {
+      setSelectedGig(gig);
+      router.push(`/user/${workerProfileId}/worker/gigs/${gigId}`);
     } else if (!workerProfileId) {
       console.error("Worker profile ID not available yet");
-  }
-};
+    }
+  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -251,7 +192,7 @@ export default function WorkerOffersPage() {
 
   const handleModalAccept = (gigId: string) => {
     // Find the offer and accept it
-    const offer = offers.find(o => o.id === gigId);
+    const offer = offers.find((o) => o.id === gigId);
     if (offer) {
       handleAcceptOffer(gigId);
       handleModalClose();
@@ -260,110 +201,93 @@ export default function WorkerOffersPage() {
 
   const handleModalDecline = (gigId: string) => {
     // Find the offer and decline it
-    const offer = offers.find(o => o.id === gigId);
+    const offer = offers.find((o) => o.id === gigId);
     if (offer) {
       handleDeclineOffer(gigId);
       handleModalClose();
     }
   };
 
-
-
   return (
     <div className={styles.container}>
       <ScreenHeaderWithBack title="Gig Offers" />
-    
+
       <div className={styles.pageWrapper}>
-        {offers.filter((o) => o.status !== "expired").length > 0 && (
-          <div className={styles.pageHeader}>
-            <h1 className={styles.sectionTitle}>Pending Gigs</h1>
-            <button
-              onClick={() => router.push(`/user/${pageUserId}/worker/calendar`)}
-              className={styles.calendarNavButton}
-              title="View Calendar"
-          >
-            <Calendar size={24} />
-            <span>Calendar</span>
-          </button>
-        </div>
-        )}
-        {isLoadingData ? ( // Use renamed loading state
+        {isLoadingData ? (
           <div className={styles.loadingContainer}>
-            <div className={styles.loadingContent}>
-              <Loader2 className={styles.loadingSpinner} size={32} />
-              <p className={styles.loadingText}>Loading offers...</p>
-            </div>
-          </div> // Use styles
+            <Loader2 className={styles.spinner} size={32} />
+            <span>Loading your gigs...</span>
+          </div>
         ) : error ? (
-          <div className={styles.emptyState}>{error}</div> // Use styles
-        ) : offers.filter(
-            (o) =>
-              o.status !==
-              "expired" /* && timeLeft !== "Expired" Re-check expiry with timeLeft state */
-          ).length === 0 && acceptedGigs.length === 0 ? ( // Check both lists
           <div className={styles.emptyState}>
-            {" "}
-            {/* Use styles */}
-            <Inbox
-              size={48}
-              style={{ marginBottom: "1rem", color: "#525252" }}
-            />
-            No new gig offers or upcoming accepted gigs available right now.
-            Make sure your Gigfolio and availability are up to date!
+            <p>{error}</p>
           </div>
         ) : (
-          <div className={styles.offerList}>
-            {" "}
-            {/* Use styles */}
+          <>
             {/* Pending Offers Section */}
-            {offers.filter((o) => o.status !== "expired").length > 0 && (
-              <div className={styles.offersSection}>
-                {" "}
-                {/* New div for offers section */}
-                {offers
-                  .filter((o) => o.status !== "expired")
-                  .map((offer) => (
-                    <GigOfferCard
-                      key={offer.id}
-                      offer={offer}
-                      onAccept={(offerId: string) => handleAcceptOffer(offerId)}
-                      onDecline={(offerId: string) => handleDeclineOffer(offerId)}
-                      onViewDetails={handleViewDetails}
-                      isProcessingAccept={
-                        processingOfferId === offer.id &&
-                        processingAction === "accept"
-                      }
-                      isProcessingDecline={
-                        processingOfferId === offer.id &&
-                        processingAction === "decline"
-                      }
-                    />
-                  ))}
+            <div className={styles.offersSection}>
+              <div className={styles.pageHeader}>
+                <h1 className={styles.sectionTitle}>Pending Offers</h1>
+                <button
+                  onClick={() =>
+                    router.push(`/user/${pageUserId}/worker/calendar`)
+                  }
+                  className={styles.calendarNavButton}
+                  title="View Calendar"
+                >
+                  <Calendar size={24} />
+                  <span>Calendar</span>
+                </button>
               </div>
-            )}
-            {/* Accepted Upcoming Gigs Section */}
-            {acceptedGigs.length > 0 && (
-              <div className={styles.acceptedSection}>
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>
-                    Accepted Upcoming Gigs
-                  </h2>{" "}
-                  {/* Title for accepted */}
-                  <Link href={`/user/${pageUserId}/worker/calendar`} passHref>
-                    <Calendar size={24} color="#ffffff" />
-                  </Link>
-                </div>
-                {acceptedGigs.map((gig) => (
-                  <AcceptedGigCard // Use the new component
-                    key={gig.id}
-                    gig={gig} // Pass the gig data
-                    onViewDetails={handleViewDetails} // Only view details for accepted
-                    // Removed onAccept and onDecline as they are not needed here
+
+              {offers.length > 0 ? (
+                offers.map((offer) => (
+                  <GigOfferCard
+                    key={offer.id}
+                    offer={offer}
+                    onAccept={(offerId: string) => handleAcceptOffer(offerId)}
+                    onDecline={(offerId: string) => handleDeclineOffer(offerId)}
+                    onViewDetails={handleViewDetails}
+                    isProcessingAccept={
+                      processingOfferId === offer.id &&
+                      processingAction === "accept"
+                    }
+                    isProcessingDecline={
+                      processingOfferId === offer.id &&
+                      processingAction === "decline"
+                    }
                   />
-                ))}
+                ))
+              ) : (
+                <p className={styles.emptySectionMsg}>
+                  No pending offers available right now.
+                </p>
+              )}
+            </div>
+
+            {/* Accepted Upcoming Gigs Section */}
+            <div className={styles.acceptedSection}>
+              <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>Accepted Upcoming Gigs</h2>
+                <Link href={`/user/${pageUserId}/worker/calendar`} passHref>
+                  <Calendar size={24} color="#ffffff" />
+                </Link>
               </div>
-            )}
-          </div>
+              {acceptedGigs.length > 0 ? (
+                acceptedGigs.map((gig) => (
+                  <AcceptedGigCard
+                    key={gig.id}
+                    gig={gig}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))
+              ) : (
+                <p className={styles.emptySectionMsg}>
+                  You don’t have any upcoming accepted gigs yet.
+                </p>
+              )}
+            </div>
+          </>
         )}
       </div>
 

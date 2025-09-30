@@ -71,6 +71,7 @@ export default interface GigDetails {
   isWorkerStar?: boolean; // Whether the worker is a star worker
   workerViderUrl?: string | null;
   workerFullBio?: string | null;
+  expiresAt?: string; // ISO string for gig offer expiration
 }
 
 export interface GigReviewDetailsData {

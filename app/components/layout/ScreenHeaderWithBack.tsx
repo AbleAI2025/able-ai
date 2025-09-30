@@ -7,7 +7,9 @@ import Logo from '../brand/Logo';
 import { usePathname, useRouter } from 'next/navigation';
 import Notification from '../shared/Notification';
 import Image from 'next/image';
-import { detectPageContext } from '@/lib/context-detection';
+import { detectPageContext, getContextForURL } from '@/lib/context-detection';
+
+
 
 type OtherpageProps = {
   isHomePage?: boolean;
@@ -49,7 +51,18 @@ const ScreenHeaderWithBack: React.FC<ScreenHeaderWithBackProps> = (props) => {
     
     // Use simplified context parameter
     if (context.contextId) {
-      return `${baseUrl}?context=${context.contextId}`;
+      const contextParams = getContextForURL(context);
+      const queryParams = new URLSearchParams();
+      
+      // Add context ID
+      queryParams.set('context', context.contextId);
+      
+      // Add gigId if present
+      if (contextParams.gigId) {
+        queryParams.set('gigId', contextParams.gigId);
+      }
+      
+      return `${baseUrl}?${queryParams.toString()}`;
     }
     
     return baseUrl;

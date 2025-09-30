@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { sendSignInLinkToEmail } from "firebase/auth";
+import { useState, FormEvent, useEffect } from "react";
+import { sendSignInLinkToEmail, onAuthStateChanged, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { StepInputConfig } from "@/app/types/form";
 import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
@@ -12,35 +12,16 @@ import { isPasswordCommon } from "@/app/actions/password-check";
 import { authClient } from "@/lib/firebase/clientApp";
 import { toast } from "sonner";
 import PasswordInputField from "@/app/components/form/PasswodInputField";
+import { checkEmailVerificationStatus } from "@/lib/utils/emailVerification";
+import EmailVerificationModal from "./EmailVerificationModal";
 
 interface RegisterViewProps {
   onToggleRegister: () => void;
   onError: (error: React.ReactNode | null) => void;
 }
 
-const registrationInputs: StepInputConfig[] = [
-  {
-    type: "text",
-    name: "name",
-    label: "Name",
-    placeholder: "Enter your name",
-  },
-  {
-    type: "text",
-    name: "phone",
-    label: "Phone Number",
-    placeholder: "Enter your phone number",
-  },
-  {
-    type: "email",
-    name: "email",
-    label: "Email Address",
-    placeholder: "Enter your email",
-    required: true,
-  },
-];
 
-type RegistrationStep = 'form' | 'email-verification';
+type RegistrationStep = 'form' | 'email-verification' | 'verification-complete';
 
 const RegisterView: React.FC<RegisterViewProps> = ({
   onToggleRegister,
@@ -55,12 +36,76 @@ const RegisterView: React.FC<RegisterViewProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationComplete, setVerificationComplete] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [unverifiedUserEmail, setUnverifiedUserEmail] = useState("");
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  // Handle email verification when user returns from email link
+  useEffect(() => {
+    const handleEmailVerificationReturn = async () => {
+      if (isSignInWithEmailLink(authClient, window.location.href)) {
+        try {
+          let email = window.localStorage.getItem("emailForSignIn");
+          if (!email) {
+            email = formData.email;
+          }
+          
+          if (email) {
+            await signInWithEmailLink(authClient, email, window.location.href);
+            window.localStorage.removeItem("emailForSignIn");
+            
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Set verification complete
+            setVerificationComplete(true);
+            setCurrentStep('verification-complete');
+            toast.success("Email verified successfully! Redirecting to role selection...");
+            
+            // Redirect to role selection after a short delay
+            setTimeout(() => {
+              router.push('/select-role');
+            }, 2000);
+          }
+        } catch (error) {
+          console.error("Error handling email verification:", error);
+          onError("Failed to verify email. Please try again.");
+        }
+      }
+    };
+
+    handleEmailVerificationReturn();
+  }, [authClient, formData.email, router, onError]);
+
+  // Monitor email verification status
+  useEffect(() => {
+    if (currentStep === 'email-verification' && !verificationComplete) {
+      setIsVerifying(true);
+      
+      const unsubscribe = onAuthStateChanged(authClient, (user) => {
+        if (user && user.emailVerified) {
+          setVerificationComplete(true);
+          setIsVerifying(false);
+          setCurrentStep('verification-complete');
+          toast.success("Email verified successfully! Redirecting to role selection...");
+          
+          // Redirect to role selection after a short delay
+          setTimeout(() => {
+            router.push('/select-role');
+          }, 2000);
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [currentStep, verificationComplete, authClient, router]);
 
 
   const validatePassword = async (password: string) => {
@@ -137,9 +182,29 @@ const RegisterView: React.FC<RegisterViewProps> = ({
         return;
       }
 
-      // Move to email verification step
+      // Check if user is authenticated and get their verification status
+      if (authClient?.currentUser) {
+        const verificationStatus = checkEmailVerificationStatus(authClient.currentUser);
+        
+        if (verificationStatus.needsVerification) {
+          // Show verification modal instead of proceeding
+          setUnverifiedUserEmail(verificationStatus.email || formData.email);
+          setShowVerificationModal(true);
+          setLoading(false);
+          return;
+        } else if (verificationStatus.isVerified) {
+          // Email is already verified, proceed to role selection
+          toast.success("Registration successful! Redirecting...");
+          router.push('/select-role');
+          return;
+        }
+      }
+
+      // Fallback: Move to email verification step if no user found
       setCurrentStep('email-verification');
-      setLoading(false);
+      
+      // Automatically send verification email after successful registration
+      await handleEmailVerification();
 
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -156,7 +221,7 @@ const RegisterView: React.FC<RegisterViewProps> = ({
 
       const host = window?.location.origin || "https://able-ai-mvp-able-ai-team.vercel.app";
       const actionCodeSettings = {
-        url: host + "/usermgmt",
+        url: host + "/?verified=true",
         handleCodeInApp: true,
       };
 
@@ -184,55 +249,91 @@ const RegisterView: React.FC<RegisterViewProps> = ({
     onError(null);
   };
 
+  const handleCloseVerificationModal = () => {
+    setShowVerificationModal(false);
+    setUnverifiedUserEmail("");
+  };
+
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    setUnverifiedUserEmail("");
+    // The user will be automatically redirected by the auth state change
+    toast.success("Email verified successfully! Redirecting...");
+    router.push('/select-role');
+  };
+
   // Render different steps
+
+  if (currentStep === 'verification-complete') {
+    return (
+      <div className={styles.emailVerificationContainer}>
+        <div className={styles.emailVerificationHeader}>
+          <h2 className={styles.emailVerificationTitle}>
+            Email Verified! 🎉
+          </h2>
+          <p className={styles.emailVerificationSubtitle}>
+            Your email has been successfully verified
+          </p>
+        </div>
+
+        <div>
+          <p className={styles.emailInstructions}>
+            Redirecting you to role selection...
+          </p>
+
+          <div className={styles.loadingSpinner} style={{ margin: '20px auto', width: '32px', height: '32px' }}></div>
+        </div>
+      </div>
+    );
+  }
 
   if (currentStep === 'email-verification') {
     return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className={styles.emailVerificationContainer}>
+        <div className={styles.emailVerificationHeader}>
+          <h2 className={styles.emailVerificationTitle}>
             Verify Your Email
           </h2>
-          <p className="text-gray-600">
+          <p className={styles.emailVerificationSubtitle}>
             We've sent a verification link to
           </p>
-          <p className="font-semibold text-gray-900">
+          <p className={styles.emailAddress}>
             {formData.email}
           </p>
         </div>
 
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600 text-center">
+        <div>
+          <p className={styles.emailInstructions}>
             Please check your email and click the verification link to complete your registration.
           </p>
 
+          {isVerifying && (
+            <div style={{ textAlign: 'center', margin: '20px 0' }}>
+              <div className={styles.loadingSpinner} style={{ margin: '0 auto 10px', width: '24px', height: '24px' }}></div>
+              <p style={{ color: '#a0a0a0', fontSize: '14px' }}>Waiting for email verification...</p>
+            </div>
+          )}
+
           <button
             onClick={handleEmailVerification}
-            disabled={loading}
-            className={`w-full py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:transform-none disabled:shadow-md flex items-center justify-center gap-2 font-semibold ${
-              emailSent 
-                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 focus:ring-green-500' 
-                : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 focus:ring-blue-500'
-            }`}
+            disabled={loading || isVerifying}
+            className={`${styles.resendButton} ${emailSent ? styles.success : ''}`}
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <div className={styles.loadingSpinner}></div>
                 Sending...
               </>
             ) : emailSent ? (
               <>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={styles.emailIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Email Sent!
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={styles.emailIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 Resend Verification Email
@@ -240,20 +341,20 @@ const RegisterView: React.FC<RegisterViewProps> = ({
             )}
           </button>
 
-          <div className="text-center">
-            <button
-              onClick={handleBackToForm}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              ← Back to registration form
-            </button>
-          </div>
+          <button
+            onClick={handleBackToForm}
+            className={styles.backToFormButton}
+            disabled={isVerifying}
+          >
+            ← Back to registration form
+          </button>
         </div>
       </div>
     );
   }
 
   return (
+    <>
     <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.inputGroup}>
         <label htmlFor="name-register" className={styles.label}>
@@ -332,6 +433,14 @@ const RegisterView: React.FC<RegisterViewProps> = ({
         <span className={styles.linkText}>Sign In</span>
       </button>
     </form>
+
+    <EmailVerificationModal
+      isOpen={showVerificationModal}
+      onClose={handleCloseVerificationModal}
+      userEmail={unverifiedUserEmail}
+      onVerificationComplete={handleVerificationComplete}
+    />
+    </>
   );
 };
 

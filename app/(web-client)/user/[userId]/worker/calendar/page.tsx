@@ -60,7 +60,7 @@ function filterEvents(
 type GigOffer = WorkerGigOffer;
 
 async function fetchWorkerData(
-  userId: string,
+  userId: string
 ): Promise<{ offers: GigOffer[]; acceptedGigs: GigOffer[] }> {
   const result = await getWorkerOffers(userId);
 
@@ -81,7 +81,7 @@ const WorkerCalendarPage = () => {
   const params = useParams();
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
-  const authUserId = user?.uid;
+  const authUserUid = user?.uid;
 
   // Set default view based on screen size
   const [view, setView] = useState<View>(() => {
@@ -130,7 +130,7 @@ const WorkerCalendarPage = () => {
       return;
     }
 
-    if (authUserId !== pageUserId) {
+    if (authUserUid !== pageUserId) {
       router.push(`/?error=unauthorized`);
       return;
     }
@@ -200,7 +200,7 @@ const WorkerCalendarPage = () => {
 
   useEffect(() => {
     // Check if user is authorized to view this page
-    if (!loadingAuth && user && authUserId === pageUserId) {
+    if (!loadingAuth && user && authUserUid === pageUserId) {
       fetchWorkerData(pageUserId)
         .then((data) => {
           setOffers(data.offers);
@@ -211,7 +211,7 @@ const WorkerCalendarPage = () => {
           setAcceptedGigs([]);
         });
     }
-  }, [user, loadingAuth, authUserId, pageUserId]);
+  }, [user, loadingAuth, authUserUid, pageUserId]);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -290,7 +290,6 @@ const WorkerCalendarPage = () => {
       if (!user) throw new Error("No user found");
       if (selectedAvailabilitySlot) {
         if (isEditingSingleOccurrence) {
-
           const { success, error } = await createAvailabilitySlot(
             user.uid,
             data
@@ -510,17 +509,16 @@ const WorkerCalendarPage = () => {
   };
 
   const handleAcceptOffer = async (offerId: string) => {
-    if (!authUserId) {
-      return;
-    }
-
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
     try {
       // Use the Firebase UID directly, not the page user ID
+      if (!authUserUid) {
+        return;
+      }
       const result = await acceptGigOffer({
         gigId: offerId,
-        userId: authUserId,
+        userUid: authUserUid,
       });
       if (result.error) {
         throw new Error(result.error);
@@ -544,7 +542,7 @@ const WorkerCalendarPage = () => {
   };
 
   const handleDeclineOffer = async (offerId: string) => {
-    if (!authUserId) {
+    if (!authUserUid) {
       return;
     }
 
@@ -554,15 +552,20 @@ const WorkerCalendarPage = () => {
       // For declining, we can just remove it from the offers list
       // since the worker is not assigned to the gig yet
       setOffers((prev) => prev.filter((o) => o.id !== offerId));
-      updateGigOfferStatus({
+      const result = await updateGigOfferStatus({
         gigId: offerId,
-        userId: authUserId,
+        userUid: authUserUid,
         role: "worker",
         action: "cancel",
       });
+
+      if (!result?.success) {
+        toast.error(`Error cancelling gig: ${result.error || "Unknown error"}`);
+        return;
+      }
     } catch (err) {
       console.error("Error declining offer:", err);
-      // Show error message (you can add toast here)
+      toast.error("Error declining offer");
     } finally {
       setProcessingOfferId(null);
       setProcessingAction(null);

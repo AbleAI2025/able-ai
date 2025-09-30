@@ -10,6 +10,7 @@ interface SanitizedConfirmationBubbleProps {
   showReformulate?: boolean;
   isProcessing?: boolean;
   role?: 'BUYER' | 'GIG_WORKER';
+  naturalSummary?: string;
 }
 
 const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = ({
@@ -20,7 +21,8 @@ const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = 
   onReformulate,
   // showReformulate = false,
   isProcessing: externalIsProcessing = false,
-  role = 'BUYER'
+  role = 'BUYER',
+  naturalSummary
 }) => {
   const [internalIsProcessing, setInternalIsProcessing] = React.useState(false);
   const isProcessing = externalIsProcessing || internalIsProcessing;
@@ -189,7 +191,7 @@ const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = 
           lineHeight: 1.4,
           fontWeight: 600
         }}>
-          {formatSanitizedValue(sanitizedValue)}
+          {naturalSummary || formatSanitizedValue(sanitizedValue)}
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <button
@@ -218,7 +220,7 @@ const SanitizedConfirmationBubble: React.FC<SanitizedConfirmationBubbleProps> = 
               }
             }}
           >
-            {isProcessing ? 'Processing...' : 'Confirm'}
+            {isProcessing ? 'Confirmed' : 'Confirm'}
           </button>
           {onReformulate && (
             <button

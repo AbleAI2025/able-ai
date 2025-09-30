@@ -8,6 +8,7 @@ import {
   User as FirebaseUser,
 } from "firebase/auth";
 import { useFirebase } from "./FirebaseContext";
+import { checkEmailVerificationStatus, EmailVerificationStatus } from "@/lib/utils/emailVerification";
 
 type Claims = {
   role: string;
@@ -17,6 +18,7 @@ type Claims = {
 export type User = FirebaseUser & {
   token: string;
   claims: Claims;
+  emailVerification: EmailVerificationStatus;
 };
 
 type AuthContextType = {
@@ -60,9 +62,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         const tokenResult = await fetchTokenResultWithPolling(firebaseUser);
         if (tokenResult) {
+          const emailVerification = checkEmailVerificationStatus(firebaseUser);
           const enrichedUser = Object.assign(firebaseUser, {
             token: tokenResult.token,
             claims: tokenResult.claims as Claims,
+            emailVerification,
           });
           setUser(enrichedUser);
         } else {

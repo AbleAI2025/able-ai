@@ -64,6 +64,14 @@ const ESCALATION_KEYWORDS: EscalationKeywords = {
     issueType: 'safety_concern',
     priority: 'high'
   },
+  profanity: {
+    keywords: [
+      'fuck', 'shit', 'damn', 'bitch', 'asshole', 'crap', 'piss', 'hell',
+      'bloody', 'bugger', 'sod', 'twat', 'wanker', 'nigga', 'nigger'
+    ],
+    issueType: 'inappropriate_content',
+    priority: 'high'
+  },
   urgent_requests: {
     keywords: [
       'urgent', 'emergency', 'asap', 'immediately', 'right now',

@@ -23,6 +23,17 @@ export const parseExperienceToNumeric = (experienceText: string): ExperienceData
   let years = 0;
   let months = 0;
 
+  // Pattern 0: Experience levels (beginner, intermediate, senior)
+  if (text.includes('beginner') || text.includes('novice') || text.includes('entry')) {
+    return { years: 2, months: 0 };
+  }
+  if (text.includes('intermediate') || text.includes('mid') || text.includes('mid level')) {
+    return { years: 5, months: 0 };
+  }
+  if (text.includes('senior') || text.includes('advanced') || text.includes('expert') || text.includes('lead') || text.includes('manager') || text.includes('director')) {
+    return { years: 7, months: 0 };
+  }
+
   // Pattern 0: Simple number only (e.g., "5", "2.5") - most lenient
   const simpleNumberMatch = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
   if (simpleNumberMatch) {

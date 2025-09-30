@@ -9,6 +9,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { GigReviewDetailsData } from "@/app/types";
+import { toast } from "sonner";
 
 // Mock data - replace with actual props or state
 const gigDetailsData = {
@@ -56,12 +57,18 @@ export default function CancelOrAmendGigDetailsPage() {
 
     setIsLoading(true);
     const role = lastRoleUsed.includes("BUYER") ? "buyer" : "worker";
-    await updateGigOfferStatus({
+    const  result = await updateGigOfferStatus({
       gigId,
       role,
-      userId: user?.uid,
+      userUid: user?.uid,
       action: "cancel",
     });
+
+    if (!result.success) {
+      toast.error(`Error cancelling gig: ${result.error || 'Unknown error'}`);
+      setIsLoading(false);
+      return;
+    } 
     setIsLoading(false);
   };
 

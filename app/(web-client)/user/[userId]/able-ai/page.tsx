@@ -10,6 +10,7 @@ import MessageBubble from "@/app/components/onboarding/MessageBubble";
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { getWorkerOffers } from "@/actions/gigs/get-worker-offers";
+import { getGigDetails } from "@/actions/gigs/get-gig-details";
 import pageStyles from "./AbleAIPage.module.css";
 import { useFirebase } from '@/context/FirebaseContext';
 import { geminiAIAgent } from '@/lib/firebase/ai';
@@ -17,6 +18,7 @@ import { Schema } from '@firebase/ai';
 import { detectIncidentEnhanced } from '@/lib/ai-incident-detection';
 import { createEscalatedIssueClient } from '@/utils/client-escalation';
 import { parseContextFromURL, generateContextAwarePrompt, PageContext } from '@/lib/context-detection';
+import type GigDetails from '@/app/types/GigDetailsTypes';
 
 // Constants
 const MIN_INCIDENT_DETAILS_LENGTH_FOR_SUBMISSION = 100;
@@ -179,13 +181,55 @@ export default function AbleAIPage() {
   // Context state
   const [pageContext, setPageContext] = useState<PageContext | null>(null);
   
+  // Gig data state
+  const [gigData, setGigData] = useState<GigDetails | null>(null);
+  const [isLoadingGig, setIsLoadingGig] = useState(false);
+  const [gigLoadError, setGigLoadError] = useState<string | null>(null);
+  
+  // Load gig data when gigId is present in context
+  const loadGigData = async (gigId: string) => {
+    if (!user?.uid) return;
+    
+    setIsLoadingGig(true);
+    setGigLoadError(null);
+    
+    try {
+      // Determine role based on context or user claims
+      const role = pageContext?.data?.gigContext?.type?.includes('buyer') ? 'buyer' : 'worker';
+      
+      const { gig, status, error } = await getGigDetails({
+        gigId,
+        userId: user.uid,
+        role,
+        isViewQA: false,
+        isDatabaseUserId: false
+      });
+      
+      if (gig && status === 200) {
+        setGigData(gig);
+      } else {
+        setGigLoadError(error || 'Failed to load gig details');
+      }
+    } catch (err) {
+      console.error('Error loading gig data:', err);
+      setGigLoadError('Failed to load gig details');
+    } finally {
+      setIsLoadingGig(false);
+    }
+  };
+
   // Initialize context from URL parameters
   useEffect(() => {
     if (searchParams) {
       const context = parseContextFromURL(searchParams);
       setPageContext(context);
+      
+      // Load gig data if gigId is present
+      if (context.data?.gigId) {
+        loadGigData(context.data.gigId);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, user?.uid]);
   
   // Generate context-aware welcome message
   const getWelcomeMessage = useCallback(() => {
@@ -193,15 +237,54 @@ export default function AbleAIPage() {
       return "Hello! I'm Able, your AI assistant! 🤖 I'm here to help you find gigs, answer questions, and provide support. You can ask me about available gigs, how the platform works, or request help with anything else. What can I help you with today?";
     }
     
-    return `Hello! I'm Able, your AI assistant! 🤖 
+    // Create simple, natural context messages
+    let contextMessage = '';
+    if (pageContext.pageType === 'gigs' && pageContext.data?.gigId) {
+      contextMessage = `I can help you with this gig. `;
+    } else if (pageContext.pageType === 'profile') {
+      contextMessage = `I can help you with your profile. `;
+    } else if (pageContext.pageType === 'settings') {
+      contextMessage = `I can help you with your settings. `;
+    } else if (pageContext.pageType === 'calendar' || pageContext.pageType === 'worker-calendar') {
+      contextMessage = `I can help you with your schedule. `;
+    } else if (pageContext.pageType === 'notifications') {
+      contextMessage = `I can help you with your notifications. `;
+    } else if (pageContext.pageType === 'offers') {
+      contextMessage = `I can help you with your gig offers. `;
+    } else {
+      contextMessage = `I can help you here. `;
+    }
+    
+    let message = `Hello! I'm Able, your AI assistant! 🤖 
 
-I can see you're currently ${pageContext.action} on the ${pageContext.pageType} page. ${pageContext.description}
+${contextMessage}What would you like to know?`;
+
+    // Add gig details if available
+    if (gigData && pageContext.data?.gigId) {
+      const gigInfo = `
+      
+📋 **Gig Details:**
+• **Title:** ${gigData.gigTitle}
+• **Role:** ${gigData.role}
+• **Date:** ${gigData.date}
+• **Time:** ${gigData.duration}
+• **Location:** ${typeof gigData.location === 'string' ? gigData.location : 'Location details available'}
+• **Rate:** $${gigData.hourlyRate}/hour
+• **Status:** ${gigData.status}
+${gigData.specialInstructions ? `• **Special Instructions:** ${gigData.specialInstructions}` : ''}`;
+      
+      message += gigInfo;
+    }
+
+    message += `
 
 I'm here to help you with tasks related to this page, such as:
 ${pageContext.data?.availableActions?.map((action: string) => `• ${action}`).join('\n') || '• General platform assistance'}
 
 What would you like help with?`;
-  }, [pageContext]);
+
+    return message;
+  }, [pageContext, gigData]);
   
   const [chatSteps, setChatSteps] = useState<ChatStep[]>([]);
   
@@ -213,6 +296,22 @@ What would you like help with?`;
       content: getWelcomeMessage(),
     }]);
   }, [getWelcomeMessage]);
+
+  // Update welcome message when gig data loads
+  useEffect(() => {
+    if (gigData && pageContext?.data?.gigId) {
+      setChatSteps(prev => {
+        const newSteps = [...prev];
+        if (newSteps.length > 0 && newSteps[0].type === 'bot') {
+          newSteps[0] = {
+            ...newSteps[0],
+            content: getWelcomeMessage()
+          };
+        }
+        return newSteps;
+      });
+    }
+  }, [gigData, getWelcomeMessage, pageContext?.data?.gigId]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedbackTargetId, setFeedbackTargetId] = useState<number | null>(null);

@@ -1062,6 +1062,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "adjusted_at": {
           "name": "adjusted_at",
           "type": "timestamp with time zone",

@@ -74,59 +74,60 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
     }
   };
 
+
   if (firebaseLoading) {
     return <div className={styles.loading}>Loading...</div>;
   }
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <div className={styles.inputGroup}>
-        <label htmlFor="email" className={styles.label}>
-          Email Address
-        </label>
-        <InputField
-          type="email"
-          id="email-signin"
-          name="email-signin"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-          required
-        />
-      </div>
-      <div className={styles.inputGroup}>
-        <label htmlFor="password" className={styles.label}>
-          Password
-        </label>
-        <PasswordInputField
-          password={password}
-          setPassword={setPassword}
-          id="password-signin"
-          name="password-signin"
-          placeholder="Enter your password"
-          required
-        />
-        <Link href="/reset-password" className={styles.forgotPassword}>
-          Forgot Password?
-        </Link>
-      </div>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <div className={styles.inputGroup}>
+          <label htmlFor="email" className={styles.label}>
+            Email Address
+          </label>
+          <InputField
+            type="email"
+            id="email-signin"
+            name="email-signin"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setEmail(e.target.value)
+            }
+            required
+          />
+        </div>
+        <div className={styles.inputGroup}>
+          <label htmlFor="password" className={styles.label}>
+            Password
+          </label>
+          <PasswordInputField
+            password={password}
+            setPassword={setPassword}
+            id="password-signin"
+            name="password-signin"
+            placeholder="Enter your password"
+            required
+          />
+          <Link href="/reset-password" className={styles.forgotPassword}>
+            Forgot Password?
+          </Link>
+        </div>
 
-      <div className={styles.submitWrapper}>
-        <SubmitButton loading={loading} disabled={loading}>
-          Sign In
-        </SubmitButton>
-      </div>
+        <div className={styles.submitWrapper}>
+          <SubmitButton loading={loading} disabled={loading}>
+            Sign In
+          </SubmitButton>
+        </div>
 
-      <button
-        type="button"
-        className={styles.toggleButton}
-        onClick={onToggleRegister}
-      >
-        Need an account? <span className={styles.linkText}>Create one</span>
-      </button>
-    </form>
+        <button
+          type="button"
+          className={styles.toggleButton}
+          onClick={onToggleRegister}
+        >
+          Need an account? <span className={styles.linkText}>Create one</span>
+        </button>
+      </form>
   );
 };
 
