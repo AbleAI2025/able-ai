@@ -197,16 +197,16 @@ export default function AbleAIPage() {
       // Determine role based on context or user claims
       const role = pageContext?.data?.gigContext?.type?.includes('buyer') ? 'buyer' : 'worker';
       
-      const { gig, status, error } = await getGigDetails({
+      const { data, status, error } = await getGigDetails({
         gigId,
         userId: user.uid,
         role,
         isViewQA: false,
         isDatabaseUserId: false
       });
-      
-      if (gig && status === 200) {
-        setGigData(gig);
+
+      if (data && status === 200) {
+        setGigData(data);
       } else {
         setGigLoadError(error || 'Failed to load gig details');
       }
