@@ -108,7 +108,7 @@ async function delegateGigToWorkerAPI(gigId: string, workerId: string, token: st
 
 interface SearchSectionProps {
   filters: SearchFilters;
-  updateFilter: (key: keyof SearchFilters, value: any) => void;
+  updateFilter: <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => void;
   showFilters: boolean;
   setShowFilters: (value: boolean) => void;
 }
@@ -143,11 +143,12 @@ function AdvancedFilters({ filters, updateFilter, clearFilters }: AdvancedFilter
     <div className={styles.filtersSection}>
       <div className={styles.filterRow}>
         <div className={styles.filterGroup}>
-          <label>Min Experience (years)</label>
+          <label htmlFor="min-experience">Min Experience (years)</label>
           <input
+            id="min-experience"
             type="number"
             min="0"
-            value={filters.minExperience || ''}
+            value={filters.minExperience ?? ''}
             onChange={(e) => updateFilter('minExperience', e.target.value ? parseInt(e.target.value) : undefined)}
             placeholder="0"
           />
@@ -177,8 +178,9 @@ function AdvancedFilters({ filters, updateFilter, clearFilters }: AdvancedFilter
 
       <div className={styles.filterRow}>
         <div className={styles.filterGroup}>
-          <label>Sort By</label>
+          <label htmlFor="sort-by">Sort By</label>
           <select
+            id="sort-by"
             value={filters.sortBy}
             onChange={(e) => updateFilter('sortBy', e.target.value)}
           >
