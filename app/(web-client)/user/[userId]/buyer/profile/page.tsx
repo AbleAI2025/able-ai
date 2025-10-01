@@ -291,9 +291,8 @@ export default function BuyerProfilePage() {
                 id: 1,
                 icon: ThumbsUp,
                 value: dashboardData?.responseRateInternal || 0,
-                label: `Would work with ${
-                  user?.displayName?.split(" ")?.[0] ?? ""
-                } again`,
+                label: `Would work with ${user?.displayName?.split(" ")?.[0] ?? ""
+                  } again`,
                 iconColor: "#7eeef9",
               }}
             />
@@ -338,7 +337,7 @@ export default function BuyerProfilePage() {
           <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
           <div className={styles.analyticsChartsContainer}>
             <PieChartComponent skills={dashboardData?.skills} />
-            <BarChartComponent data={dashboardData?.totalPayments} />
+            <BarChartComponent data={dashboardData?.totalPayments || []} emptyMessage="You don't have payments yet" />
           </div>
         </section>
 
