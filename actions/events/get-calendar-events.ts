@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { eq, and, isNull, ne, isNotNull, gt } from "drizzle-orm";
+import { eq, and, ne, isNotNull, gt } from "drizzle-orm";
 import {
   GigsTable,
   UsersTable,
@@ -39,7 +39,7 @@ async function getWorkerCalendarEvents(
   const now = new Date();
   // 1. Accepted/assigned gigs
   const acceptedGigs = await db.query.GigsTable.findMany({
-    where: and(eq(GigsTable.workerUserId, user.id), gt(GigsTable.endTime, now)),
+    where: and(eq(GigsTable.workerUserId, user.id), gt(GigsTable.expiresAt, now)),
     with: {
       buyer: { columns: { id: true, fullName: true } },
       worker: { columns: { id: true, fullName: true } },
@@ -49,7 +49,7 @@ async function getWorkerCalendarEvents(
   const availableOffers = await db.query.GigsTable.findMany({
     where: and(
       eq(GigsTable.statusInternal, "PENDING_WORKER_ACCEPTANCE"),
-      isNull(GigsTable.workerUserId),
+      isNotNull(GigsTable.workerUserId),
       ne(GigsTable.buyerUserId, user.id),
       isNotNull(GigsTable.expiresAt),
       gt(GigsTable.expiresAt, now)

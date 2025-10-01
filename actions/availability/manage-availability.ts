@@ -28,11 +28,6 @@ export async function getWorkerAvailability(
       where: eq(WorkerAvailabilityTable.userId, user.id),
     });
 
-    console.log(
-      "getWorkerAvailability: availabilitySlots from WorkerAvailabilityTable:",
-      availabilitySlots
-    );
-
     // Convert the database records to AvailabilitySlot format
     const availability: AvailabilitySlot[] = availabilitySlots.map((slot) => ({
       id: slot.id,

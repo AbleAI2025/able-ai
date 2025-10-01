@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
 
 // Use the exact string value instead of accessing by index
@@ -30,7 +30,8 @@ export async function acceptGigOffer({
       where: and(
         eq(GigsTable.id, gigId),
         eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]),
-        isNull(GigsTable.workerUserId)
+        isNotNull(GigsTable.workerUserId),
+        eq(GigsTable.workerUserId, user.id)
       ),
       columns: {
         id: true,
@@ -61,7 +62,7 @@ export async function acceptGigOffer({
         statusInternal: ACCEPTED,
         updatedAt: new Date(),
       })
-      .where(eq(GigsTable.id, gigId));
+      .where(eq(GigsTable.id, gig.id));
 
     if (result.rowCount === 0) {
       return {

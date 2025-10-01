@@ -201,7 +201,7 @@ const WorkerCalendarPage = () => {
   useEffect(() => {
     // Check if user is authorized to view this page
     if (!loadingAuth && user && authUserUid === pageUserId) {
-      fetchWorkerData(pageUserId)
+      fetchWorkerData(user.uid)
         .then((data) => {
           setOffers(data.offers);
           setAcceptedGigs(data.acceptedGigs);
@@ -533,8 +533,11 @@ const WorkerCalendarPage = () => {
         const acceptedGig = { ...acceptedOffer, status: "ACCEPTED" };
         setAcceptedGigs((prev) => [...prev, acceptedGig]);
       }
+      toast.success("Gig offer accepted successfully");
+      setIsModalOpen(false);
     } catch (err) {
       console.error("Error accepting offer:", err);
+      toast.error(`Error accepting gig: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setProcessingOfferId(null);
       setProcessingAction(null);
