@@ -38,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null;
 };
 
-export default function BarChartComponent({ data }: { data?: { name: string; total: number }[] }) {
+export default function BarChartComponent({ data, emptyMessage }: { data?: { name: string; total: number }[], emptyMessage: string }) {
   const [chartHeight, setChartHeight] = useState(220);
 
   const isWindowDefined = typeof window !== 'undefined';
@@ -72,28 +72,35 @@ export default function BarChartComponent({ data }: { data?: { name: string; tot
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight} minHeight={120}>
-      <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
-        <XAxis
-          dataKey="name"
-          type="category"
-          tick={{ fontSize, fill: '#fff' }}
-          axisLine={{ stroke: '#fff' }}
+      {data && data?.length > 0 ?
+        <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
+          <XAxis
+            dataKey="name"
+            type="category"
+            tick={{ fontSize, fill: '#fff' }}
+            axisLine={{ stroke: '#fff' }}
+          >
+            <Label value="Quarter" offset={-10} position="insideBottom" style={{ fill: '#fff', fontSize: fontSize + 1 }} />
+          </XAxis>
+          <YAxis
+            padding={{ top: 15 }}
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: "#fff", fontSize: fontSize + 1 }}
+            tickFormatter={(value) => `£${value}`}
+          />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(250,204,21,0.08)' }} />
+          <CartesianGrid stroke="#fff" strokeDasharray="5" />
+          <Bar dataKey="total" stackId="total" fill="var(--success-color)" radius={[4, 4, 0, 0]}>
+            <LabelList dataKey="total" position="top" style={{ fill: '#facc15', fontSize: fontSize - 1, fontWeight: 600 }} />
+          </Bar>
+        </BarChart> :
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%'}}
         >
-          <Label value="Quarter" offset={-10} position="insideBottom" style={{ fill: '#fff', fontSize: fontSize + 1 }} />
-        </XAxis>
-        <YAxis
-          padding={{ top: 15 }}
-          axisLine={false}
-          tickLine={false}
-          tick={{ fill: "#fff", fontSize: fontSize + 1 }}
-          tickFormatter={(value) => `£${value}`}
-        />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(250,204,21,0.08)' }} />
-        <CartesianGrid stroke="#fff" strokeDasharray="5" />
-        <Bar dataKey="total" stackId="total" fill="var(--success-color)" radius={[4, 4, 0, 0]}>
-          <LabelList dataKey="total" position="top" style={{ fill: '#facc15', fontSize: fontSize - 1, fontWeight: 600 }} />
-        </Bar>
-      </BarChart>
+          {emptyMessage}
+        </div>
+      }
     </ResponsiveContainer>
   );
 }
