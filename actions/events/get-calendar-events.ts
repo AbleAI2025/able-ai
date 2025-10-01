@@ -39,7 +39,11 @@ async function getWorkerCalendarEvents(
   const now = new Date();
   // 1. Accepted/assigned gigs
   const acceptedGigs = await db.query.GigsTable.findMany({
-    where: and(eq(GigsTable.workerUserId, user.id), gt(GigsTable.expiresAt, now)),
+    where: and(
+      eq(GigsTable.workerUserId, user.id),
+      gt(GigsTable.expiresAt, now),
+      gt(GigsTable.endTime, now)
+    ),
     with: {
       buyer: { columns: { id: true, fullName: true } },
       worker: { columns: { id: true, fullName: true } },
@@ -49,8 +53,7 @@ async function getWorkerCalendarEvents(
   const availableOffers = await db.query.GigsTable.findMany({
     where: and(
       eq(GigsTable.statusInternal, "PENDING_WORKER_ACCEPTANCE"),
-      isNotNull(GigsTable.workerUserId),
-      ne(GigsTable.buyerUserId, user.id),
+      eq(GigsTable.workerUserId, user.id),
       isNotNull(GigsTable.expiresAt),
       gt(GigsTable.expiresAt, now)
     ),
