@@ -145,7 +145,7 @@ const UserMgmtContainer: React.FC<UserMgmtContainerProps> = ({
       newPassword={newPassword}
       onPasswordChange={setNewPassword}
       onSubmitNewPassword={submitNewPasswordCb}
-      onGoHome={() => router.push("/")}
+      onGoHome={() => router.back()}
       isSubmitDisabled={isLoading}
     />
   );

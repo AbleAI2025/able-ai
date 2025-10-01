@@ -145,7 +145,11 @@ const DataReviewModal: React.FC<DataReviewModalProps> = ({
             <button
               type="button"
               className={styles.submitButton}
-              onClick={onConfirm}
+              onClick={() => {
+                console.log('🔘 Modal submit button clicked');
+                console.log('🔍 Modal state:', { isSubmitting, hasOnConfirm: !!onConfirm });
+                onConfirm();
+              }}
               disabled={isSubmitting}
             >
               {isSubmitting ? (

@@ -490,10 +490,9 @@ export default function OnboardingAIPageSimplified() {
   }, [setShowSetupChoice, resetState]);
 
   const handleSimilarSkillsGoHome = useCallback(() => {
-    // Navigate back to home or reset the flow
-    setChatSteps([]);
-    setFormData({});
-  }, [setChatSteps, setFormData]);
+    // Navigate to worker profile page
+    router.push(`/user/${user?.uid}/worker`);
+  }, [router, user?.uid]);
 
   const handleUseExistingData = useCallback(async (fieldName: string, existingValue: string) => {
     // Mark confirmation step as complete and set confirmed choice

@@ -52,8 +52,11 @@ export interface ChatStep {
   [key: string]: any;
 }
 
+import { generateHashtags as generateHashtagsService, type ProfileData as HashtagProfileData } from '@/lib/services/hashtag-generation';
+
 /**
  * Generate hashtags for profile data using AI
+ * @deprecated Use generateHashtagsService from @/lib/services/hashtag-generation directly
  */
 export async function generateHashtags(
   profileData: {
@@ -65,72 +68,12 @@ export async function generateHashtags(
   },
   ai?: any
 ): Promise<string[]> {
-  try {
-    if (!ai) {
-      console.log('🔍 No AI service available, using fallback hashtags');
-      return ['#worker', '#gig', '#freelance'];
-    }
-
-    const { geminiAIAgent } = await import('@/lib/firebase/ai');
-    const { Schema } = await import('@firebase/ai');
-    
-    // Prepare equipment data for the prompt
-    let equipmentText = '';
-    if (Array.isArray(profileData.equipment)) {
-      equipmentText = profileData.equipment.map(item => 
-        typeof item === 'string' ? item : item.name
-      ).join(', ');
-    } else if (typeof profileData.equipment === 'string') {
-      equipmentText = profileData.equipment;
-    }
-
-    const prompt = `Generate exactly 3 professional hashtags for this gig worker profile:
-
-Skills: ${profileData.skills || 'Not provided'}
-Experience: ${profileData.experience || 'Not provided'}
-Equipment: ${equipmentText || 'Not provided'}
-Location: ${profileData.location || 'Not provided'}
-
-Generate 3 relevant, specific hashtags that would help this worker be found by clients. 
-The 3rd hashtag should be based on their location.
-Examples: For a chef in London: "#chef", "#culinary", "#london"
-For a mechanic in Manchester: "#mechanic", "#automotive", "#manchester"
-For a cleaner in Birmingham: "#cleaning", "#housekeeping", "#birmingham"
-
-Be creative and specific - avoid generic hashtags. Use varied, professional terms that reflect their actual skills and equipment.
-
-Return only the hashtags, no explanations.`;
-
-    const response = await geminiAIAgent(
-      "gemini-2.0-flash",
-      {
-        prompt: prompt,
-        responseSchema: Schema.object({
-          properties: {
-            hashtags: Schema.array({
-              items: Schema.string()
-            })
-          },
-          required: ["hashtags"]
-        }),
-        isStream: false,
-      },
-      ai
-    );
-    
-    if (response.ok && response.data) {
-      const data = response.data as { hashtags: string[] };
-      console.log('🔍 AI generated hashtags:', data.hashtags);
-      return data.hashtags.slice(0, 3); // Ensure max 3 hashtags
-    } else {
-      console.log('🔍 AI hashtag generation failed, using fallback');
-      return ['#worker', '#gig', '#freelance'];
-    }
-    
-  } catch (error) {
-    console.error('Error generating hashtags:', error);
-    return ['#worker', '#gig', '#freelance'];
-  }
+  // Use the modular hashtag generation service
+  return generateHashtagsService(profileData as HashtagProfileData, ai, {
+    maxHashtags: 3,
+    includeLocation: true,
+    fallbackStrategy: 'skills-based'
+  });
 }
 
 /**

@@ -153,13 +153,34 @@ export async function setEquipment(value: string, ai?: any): Promise<{
     };
   }
   
-  // Basic validation
+  // Check for skip/none responses first
+  const skipPatterns = [
+    'none', 'n/a', 'na', 'skip', 'no equipment', 'no tools', 'no gear',
+    'don\'t have any', 'don\'t have', 'no formal', 'no official', 'nothing',
+    'not applicable', 'not relevant', 'no tools', 'no gear', 'no equipment',
+    'i don\'t have any', 'i don\'t have', 'i have none', 'i have nothing'
+  ];
+  
+  const isSkipResponse = skipPatterns.some(pattern => 
+    trimmed.toLowerCase().includes(pattern.toLowerCase())
+  );
+  
+  if (isSkipResponse) {
+    return { 
+      ok: true, 
+      equipment: [], // Empty array for no equipment
+      isAppropriate: true,
+      isWorkerRelated: true
+    };
+  }
+  
+  // Basic validation for non-skip responses
   if (!trimmed) {
-    return { ok: false, error: 'Please enter your equipment' };
+    return { ok: false, error: 'Please enter your equipment or say "none" if you don\'t have any' };
   }
   
   if (trimmed.length < 2) {
-    return { ok: false, error: 'Please provide at least one piece of equipment' };
+    return { ok: false, error: 'Please provide at least one piece of equipment, or say "none" if you don\'t have any' };
   }
   
   if (trimmed.length > 1000) {

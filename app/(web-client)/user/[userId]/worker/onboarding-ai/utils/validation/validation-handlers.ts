@@ -43,6 +43,33 @@ export async function simpleAICheck(
 
   const trimmedValue = String(value).trim();
   
+  // Special handling for equipment "none" responses - ensure they always pass
+  if (field === 'equipment') {
+    console.log('🔍 Checking equipment special handling for:', trimmedValue);
+    const skipPatterns = [
+      'none', 'n/a', 'na', 'skip', 'no equipment', 'no tools', 'no gear',
+      'don\'t have any', 'don\'t have', 'no formal', 'no official', 'nothing',
+      'not applicable', 'not relevant', 'no tools', 'no gear', 'no equipment',
+      'i don\'t have any', 'i don\'t have', 'i have none', 'i have nothing'
+    ];
+    
+    const isSkipResponse = skipPatterns.some(pattern => 
+      trimmedValue.toLowerCase().includes(pattern.toLowerCase())
+    );
+    
+    console.log('🔍 Equipment skip response check:', isSkipResponse);
+    
+    if (isSkipResponse) {
+      console.log('🔍 Equipment special handling triggered - returning early');
+      return {
+        sufficient: true,
+        sanitized: 'No equipment',
+        naturalSummary: 'Got it! No equipment needed.',
+        extractedData: JSON.stringify({ equipment: [] })
+      };
+    }
+  }
+  
   // Use AI for all validation
   try {
     const validationSchema = TypedSchema.object({
@@ -75,13 +102,15 @@ USER INPUT: "${trimmedValue}"
 VALIDATION RULES:
 - For skills: Accept any professional skill name, job title, or service description
 - For experience: Accept numbers (years), text descriptions, or combinations
-- For hourly rates: Accept positive numbers (minimum £12.21 for London)
-- For qualifications: Accept any professional qualifications, certifications, or education
-- For equipment: Accept any work-related equipment or tools
+- For hourly rates: Accept positive numbers (minimum £12.21 for London) - be EXTREMELY FLEXIBLE with formats like "15.50", "£15.50", "15 per hour", "15 pounds per hour", "20 pounds per hour", "$20/hour", "20/hour", "20", etc. - ACCEPT ANY format that contains a valid number
+- For qualifications: ACCEPT ANY professional qualifications, certifications, awards, or education - be EXTREMELY LENIENT. Examples: "Michelin Star Awardee", "Certified Chef", "Food Safety Certificate", "Culinary Arts Degree", "Red Seal Certification", "OSHA Certified", "First Aid Certified", "ServSafe Certified", "Wine Sommelier", "Barista Certification", "Master Chef", "Professional Certification", "Industry Award", "Culinary Award", "Professional Recognition", etc. - DO NOT REJECT legitimate professional qualifications
+- For equipment: Accept any work-related equipment or tools - BE EXTREMELY LENIENT. CRITICAL: ACCEPT "none", "no equipment", "don't have any", "nothing", "n/a", "skip" responses - these are VALID responses indicating no equipment needed
 - For dates: Accept any valid date format
 - For location fields: Accept coordinates, addresses, venue names, or any location information
 - For time fields: Accept single times (12:00, 2:30 PM) or time ranges (12:00-14:30, 12:00 PM - 2:30 PM)
 - For "about" field (bio): DO NOT clean or rewrite the content. Only check for appropriateness and sufficiency. Keep the original text as-is.
+
+CRITICAL: For qualifications field, "Michelin Star Awardee" is a PRESTIGIOUS culinary award and MUST be accepted. Do not reject it as unrelated to qualifications.
 
 If validation passes, respond with:
 - isAppropriate: true
@@ -127,14 +156,18 @@ Respond with JSON only:`;
       
       // Fallback validation for hourly rate - if AI incorrectly rejects a valid rate
       if (field === 'hourlyRate' && !validation.isSufficient) {
-        const rate = parseFloat(trimmedValue);
-        if (!isNaN(rate) && rate >= VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE) {
-          return {
-            sufficient: true,
-            sanitized: rate.toString(),
-            naturalSummary: `Hourly rate set to £${rate}`,
-            extractedData: JSON.stringify({ hourlyRate: rate })
-          };
+        // Try to extract number from various formats
+        const numMatch = trimmedValue.match(/(\d+(?:\.\d+)?)/);
+        if (numMatch) {
+          const rate = parseFloat(numMatch[1]);
+          if (!isNaN(rate) && rate >= VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE) {
+            return {
+              sufficient: true,
+              sanitized: rate.toString(),
+              naturalSummary: `Perfect! £${rate} per hour is a good rate.`,
+              extractedData: JSON.stringify({ hourlyRate: rate })
+            };
+          }
         }
       }
 
@@ -151,11 +184,123 @@ Respond with JSON only:`;
         }
       }
 
+      // Fallback validation for qualifications - if AI incorrectly rejects valid qualifications
+      if (field === 'qualifications' && !validation.isSufficient) {
+        // Check for specific prestigious qualifications that should always be accepted
+        const prestigiousQualifications = [
+          'michelin star', 'michelin star awardee', 'michelin star chef', 'michelin star award',
+          'james beard', 'james beard award', 'james beard winner',
+          'culinary institute', 'culinary arts', 'culinary degree',
+          'master chef', 'executive chef', 'head chef', 'sous chef',
+          'certified chef', 'professional chef', 'chef certification',
+          'food safety', 'servsafe', 'haccp', 'osha certified',
+          'wine sommelier', 'master sommelier', 'certified sommelier',
+          'barista certification', 'coffee certification', 'bartender certification',
+          'red seal', 'journeyman', 'master craftsman', 'professional certification'
+        ];
+        
+        const isPrestigiousQualification = prestigiousQualifications.some(qual => 
+          trimmedValue.toLowerCase().includes(qual.toLowerCase())
+        );
+        
+        if (isPrestigiousQualification) {
+          return {
+            sufficient: true,
+            sanitized: trimmedValue,
+            naturalSummary: `Wow! ${trimmedValue} - that's an incredible qualification!`,
+            extractedData: JSON.stringify({ qualifications: trimmedValue })
+          };
+        }
+        
+        // Check if it's a reasonable qualification (not too short, not inappropriate)
+        if (trimmedValue.length >= 3 && trimmedValue.length <= 500) {
+          // Check for obvious inappropriate content
+          const inappropriatePatterns = [
+            /mario|luigi|peach|bowser|sonic|link|zelda|pokemon|minecraft|fortnite/i,
+            /batman|superman|spiderman|wonder woman|iron man|thor/i,
+            /its a me mario|hello there|general kenobi|rick roll/i,
+            /i am the best at nothing|i can fly|i am a wizard|i am god/i,
+            /asdf|qwerty|random text|blah blah|lorem ipsum/i,
+            /certified fuck|certified killa|certified award|certified winner/i
+          ];
+          
+          const isInappropriate = inappropriatePatterns.some(pattern => pattern.test(trimmedValue));
+          
+          if (!isInappropriate) {
+            return {
+              sufficient: true,
+              sanitized: trimmedValue,
+              naturalSummary: `Great qualifications! ${trimmedValue}`,
+              extractedData: JSON.stringify({ qualifications: trimmedValue })
+            };
+          }
+        }
+      }
+
+
+
+      // Fallback validation for equipment - if AI incorrectly rejects valid equipment responses
+      if (field === 'equipment' && !validation.isSufficient) {
+        // Check for "none" responses first
+        const skipPatterns = [
+          'none', 'n/a', 'na', 'skip', 'no equipment', 'no tools', 'no gear',
+          'don\'t have any', 'don\'t have', 'no formal', 'no official', 'nothing',
+          'not applicable', 'not relevant', 'no tools', 'no gear', 'no equipment',
+          'i don\'t have any', 'i don\'t have', 'i have none', 'i have nothing'
+        ];
+        
+        const isSkipResponse = skipPatterns.some(pattern => 
+          trimmedValue.toLowerCase().includes(pattern.toLowerCase())
+        );
+        
+        if (isSkipResponse) {
+          return {
+            sufficient: true,
+            sanitized: 'No equipment',
+            naturalSummary: 'Got it! No equipment needed.',
+            extractedData: JSON.stringify({ equipment: [] })
+          };
+        }
+        
+        // Check if it's reasonable equipment (not too short, not inappropriate)
+        if (trimmedValue.length >= 2 && trimmedValue.length <= 500) {
+          // Check for obvious inappropriate content
+          const inappropriatePatterns = [
+            /mario|luigi|peach|bowser|sonic|link|zelda|pokemon|minecraft|fortnite/i,
+            /batman|superman|spiderman|wonder woman|iron man|thor/i,
+            /its a me mario|hello there|general kenobi|rick roll/i,
+            /i am the best at nothing|i can fly|i am a wizard|i am god/i,
+            /asdf|qwerty|random text|blah blah|lorem ipsum/i,
+            /certified fuck|certified killa|certified award|certified winner/i
+          ];
+          
+          const isInappropriate = inappropriatePatterns.some(pattern => pattern.test(trimmedValue));
+          
+          if (!isInappropriate) {
+            return {
+              sufficient: true,
+              sanitized: trimmedValue,
+              naturalSummary: `Great equipment! ${trimmedValue}`,
+              extractedData: JSON.stringify({ equipment: trimmedValue })
+            };
+          }
+        }
+      }
+
+      console.log('🔍 AI validation result:', validation);
+      console.log('🔍 Using sanitizedValue:', validation.sanitizedValue);
+      console.log('🔍 Using naturalSummary:', validation.naturalSummary);
+      console.log('🔍 Using extractedData:', validation.extractedData);
+      
+      // Use AI sanitization result if available, otherwise use validation result
+      const sanitizedValue = validation.sanitizedValue || trimmedValue;
+      const naturalSummary = validation.naturalSummary || 'Input processed successfully';
+      
       return {
         sufficient: validation.isSufficient,
         clarificationPrompt: validation.clarificationPrompt,
-        sanitized: validation.sanitizedValue,
-        naturalSummary: validation.naturalSummary,
+        sanitized: sanitizedValue,
+        naturalSummary: naturalSummary,
         extractedData: validation.extractedData ? JSON.parse(validation.extractedData) : undefined
       };
     } else {

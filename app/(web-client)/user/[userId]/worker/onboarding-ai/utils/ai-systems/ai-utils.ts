@@ -554,11 +554,18 @@ Also provide a natural, conversational summary like "So you are a [skill]?" or s
         required: ["sanitized", "naturalSummary"]
       });
     } else if (field === 'hourlyRate') {
-      prompt = `Clean up the grammar and formatting of this hourly rate input while keeping the original content and tone. Only fix spelling, grammar, punctuation, and basic formatting. Do not change the meaning or make it more "professional" - just make it grammatically correct.
+      prompt = `Extract and normalize this hourly rate input. Return ONLY the numeric value with currency symbol if needed. Do NOT add prefixes, labels, or extra formatting.
 
-Hourly Rate: "${value}"
+Input: "${value}"
 
-Also provide a natural, conversational summary like "So you charge [amount] per hour" or similar friendly response.`;
+Examples:
+- "25 per hour" → "25"
+- "£15.50" → "£15.50" 
+- "20 pounds per hour" → "20"
+- "15/hour" → "15"
+- "£12.50 per hour" → "£12.50"
+
+Return just the clean numeric value. Also provide a natural summary like "So you charge [amount] per hour".`;
       
       schema = Schema.object({
         properties: {
@@ -629,6 +636,20 @@ Also provide a natural, conversational summary like "Perfect! Your video intro w
 Address: "${value}"
 
 Also provide a natural, conversational summary like "Great! Your address is [address]" or similar friendly response.`;
+      
+      schema = Schema.object({
+        properties: {
+          sanitized: Schema.string(),
+          naturalSummary: Schema.string()
+        },
+        required: ["sanitized", "naturalSummary"]
+      });
+    } else if (field === 'equipment') {
+      prompt = `Clean up the grammar and formatting of this equipment input while keeping the original content and tone. Only fix spelling, grammar, punctuation, and basic formatting. Do not change the meaning or make it more "professional" - just make it grammatically correct.
+
+Equipment: "${value}"
+
+Also provide a natural, conversational summary like "Got it! You have [equipment details]" or similar friendly response.`;
       
       schema = Schema.object({
         properties: {
@@ -811,6 +832,26 @@ SPECIAL HANDLING FOR SKILLS FIELD:
 - Don't ask for more details if they've provided a clear profession
 - Always capitalize the first letter of the profession
 
+SPECIAL HANDLING FOR QUALIFICATIONS FIELD:
+- ACCEPT ANY professional qualifications, certifications, awards, or education
+- Examples: "Michelin Star Awardee", "Certified Chef", "Food Safety Certificate", "Culinary Arts Degree", "Red Seal Certification", "OSHA Certified", "First Aid Certified", "ServSafe Certified", "Wine Sommelier", "Barista Certification", "Master Chef", "Professional Certification", "Industry Award", "Culinary Award", "Professional Recognition", etc.
+- Be EXTREMELY LENIENT - accept any reasonable professional qualification
+- CRITICAL: "Michelin Star Awardee" is a PRESTIGIOUS culinary award and MUST be accepted - do not reject it
+- NEVER reject legitimate professional qualifications - only reject if clearly inappropriate or unrelated to work
+- If it sounds like a professional qualification, certification, award, or education, ACCEPT IT
+
+SPECIAL HANDLING FOR EQUIPMENT FIELD:
+- ACCEPT "none", "no equipment", "no tools", "don't have any", "nothing", "n/a", "skip" responses
+- If user says they have no equipment, accept it and return empty equipment list
+- Be flexible with "none" responses - users may not have equipment for their work
+- Only require equipment details if they actually have equipment to list
+
+SPECIAL HANDLING FOR HOURLY RATE FIELD:
+- ACCEPT any reasonable hourly rate format: "15", "15.50", "£15", "£15.50", "15 per hour", "£15 per hour", "15/hour", "£15/hour", "15 pounds per hour", etc.
+- Extract the numeric value and validate it's above minimum wage (£12.21)
+- Be flexible with currency symbols and text patterns
+- Accept decimal rates like "15.50" or "£15.50"
+
 REJECT IMMEDIATELY if the input contains:
 - Video game references: "mario", "luigi", "peach", "bowser", "sonic", "link", "zelda", "pokemon", "minecraft", "fortnite", etc.
 - Fictional characters: "batman", "superman", "spiderman", "wonder woman", "iron man", "thor", etc.
@@ -829,6 +870,8 @@ Check:
 6. Provide a natural summary of what the user said
 7. Extract the key data
 
+CRITICAL FOR QUALIFICATIONS: If the input contains words like "award", "certification", "certified", "degree", "diploma", "qualification", "awardee", "chef", "master", "professional", "industry", "culinary", "michelin", "james beard", "sommelier", "barista", "bartender", "food safety", "servsafe", "osha", "red seal", "journeyman", "craftsman", etc. - ALWAYS ACCEPT IT as a valid qualification. Do not reject professional qualifications.
+
 EXAMPLES OF CLEANING FOR SKILLS FIELD:
 - "I am a baker" → sanitizedValue: "Baker", naturalSummary: "Great! You're a baker."
 - "I'm a mechanic" → sanitizedValue: "Mechanic", naturalSummary: "Perfect! You're a mechanic."
@@ -836,12 +879,36 @@ EXAMPLES OF CLEANING FOR SKILLS FIELD:
 - "I am an electrician" → sanitizedValue: "Electrician", naturalSummary: "Wonderful! You're an electrician."
 - "I do plumbing" → sanitizedValue: "Plumber", naturalSummary: "Great! You're a plumber."
 
+EXAMPLES OF QUALIFICATIONS (ALL VALID - NEVER REJECT THESE):
+- "Michelin Star Awardee" → ACCEPT, naturalSummary: "Wow! A Michelin Star Awardee - that's incredible!"
+- "Michelin Star Chef" → ACCEPT, naturalSummary: "Amazing! A Michelin Star Chef - that's prestigious!"
+- "Certified Chef" → ACCEPT, naturalSummary: "Great! You're a certified chef."
+- "Food Safety Certificate" → ACCEPT, naturalSummary: "Perfect! You have food safety certification."
+- "Culinary Arts Degree" → ACCEPT, naturalSummary: "Excellent! You have a culinary arts degree."
+- "Master Chef" → ACCEPT, naturalSummary: "Fantastic! You're a master chef."
+- "Professional Certification" → ACCEPT, naturalSummary: "Great! You have professional certification."
+- "Industry Award" → ACCEPT, naturalSummary: "Wonderful! You have an industry award."
+- "Culinary Award" → ACCEPT, naturalSummary: "Excellent! You have a culinary award."
+
+EXAMPLES OF EQUIPMENT (ALL VALID):
+- "none" → ACCEPT, naturalSummary: "Got it! No equipment needed."
+- "no equipment" → ACCEPT, naturalSummary: "Perfect! No equipment required."
+- "don't have any" → ACCEPT, naturalSummary: "No problem! No equipment needed."
+- "nothing" → ACCEPT, naturalSummary: "Got it! No equipment required."
+- "Pans, Aprons, Knives" → ACCEPT, naturalSummary: "Great! You have pans, aprons, and knives."
+
+EXAMPLES OF HOURLY RATES (ALL VALID):
+- "15.50" → ACCEPT, naturalSummary: "Perfect! £15.50 per hour is a good rate."
+- "£15.50 per hour" → ACCEPT, naturalSummary: "Great! £15.50 per hour works well."
+- "15 pounds per hour" → ACCEPT, naturalSummary: "Excellent! £15 per hour is a good rate."
+
 EXAMPLES OF NATURAL SUMMARIES:
 - For skills: "Perfect! You're a mechanic." or "Great! You're a baker."
 - For experience: "Got it, you have 5 years of experience." or "You're a beginner, that's great!"
 - For bio: "This will be your bio!" or "Perfect bio!"
-- For qualifications: "Great qualifications!" or "Excellent certifications!"
-- For equipment: "Nice equipment list!" or "Perfect equipment setup!"
+- For qualifications: "Great qualifications!" or "Excellent certifications!" or "Wow! A Michelin Star Awardee - that's incredible!"
+- For equipment: "Nice equipment list!" or "Perfect equipment setup!" or "Got it! No equipment needed." or "Perfect! No equipment required."
+- For hourly rate: "Perfect! £15.50 per hour is a good rate." or "Great! £15 per hour works well."
 
 Make naturalSummary conversational, friendly, and encouraging. Use exclamation marks and positive language.
 

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,32 +13,33 @@
 }
 
 .modal {
-  background: white;
+  background: #161616;
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  color: #ffffff;
 }
 
 .header {
   padding: 24px 24px 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #444444;
 }
 
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: #111827;
+  color: #ffffff;
   margin: 0 0 8px 0;
 }
 
 .subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: #a0a0a0;
   margin: 0;
   line-height: 1.5;
 }
@@ -56,7 +57,7 @@
 }
 
 .fieldComparison {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #444444;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -64,11 +65,11 @@
 .fieldLabel {
   font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  color: #ffffff;
   margin: 0;
   padding: 12px 16px;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: #2F2F2F;
+  border-bottom: 1px solid #444444;
 }
 
 .comparisonRow {
@@ -95,12 +96,12 @@
 .columnTitle {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: #ffffff;
 }
 
 .changedBadge {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: #3b82f6;
+  color: #ffffff;
   font-size: 12px;
   font-weight: 500;
   padding: 2px 8px;
@@ -116,34 +117,34 @@
 .value {
   font-size: 14px;
   line-height: 1.5;
-  color: #374151;
-  background-color: #f9fafb;
+  color: #ffffff;
+  background-color: #2F2F2F;
   padding: 12px;
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #444444;
   width: 100%;
   word-wrap: break-word;
   white-space: pre-wrap;
 }
 
 .changedValue {
-  background-color: #f0f9ff;
+  background-color: #1f2937;
   border-color: #3b82f6;
-  color: #1e40af;
+  color: #ffffff;
 }
 
 .arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #a0a0a0;
   flex-shrink: 0;
 }
 
 .footer {
   padding: 16px 24px 24px 24px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-top: 1px solid #444444;
+  background-color: #2F2F2F;
 }
 
 .buttonGroup {
@@ -157,10 +158,10 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #444444;
   border-radius: 8px;
-  background-color: white;
-  color: #374151;
+  background-color: #2F2F2F;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -168,8 +169,8 @@
 }
 
 .goBackButton:hover:not(:disabled) {
-  background-color: #f9fafb;
-  border-color: #9ca3af;
+  background-color: #3A3A3A;
+  border-color: #a0a0a0;
 }
 
 .goBackButton:disabled {
@@ -181,24 +182,37 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 16px 32px;
   border: none;
-  border-radius: 8px;
-  background-color: #3b82f6;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 200px;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 
 .submitButton:hover:not(:disabled) {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .submitButton:disabled {
-  opacity: 0.5;
+  background: #9ca3af;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.submitButton:active:not(:disabled) {
+  background: linear-gradient(135deg, #1e40af, #1e3a8a);
+  transform: translateY(0);
 }
 
 .spinner {
@@ -214,6 +228,14 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.noChangesMessage {
+  text-align: center;
+  padding: 40px 20px;
+  color: #a0a0a0;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 /* Responsive design */

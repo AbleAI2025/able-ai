@@ -74,8 +74,12 @@ const ConfirmAmendedGigDetailsContainer: React.FC<ConfirmAmendedGigDetailsContai
       const role = lastRoleUsed.includes('BUYER') ? 'buyer' : 'worker';
       const res = await getGigDetails({ userId: user.uid, gigId, role, isViewQA: true });
       setIsLoading(false);
-      if (!res.gig) return;
-      setGigDetails({ ...amendedGig, status: res.gig.status });
+      if (!res.success) {
+        // Handle error case
+        return;
+      }
+      if (!res.data) return;
+      setGigDetails({ ...amendedGig, status: res.data.status });
     };
     fetchGigDetails();
   }, [user, lastRoleUsed, gigId]);

@@ -61,10 +61,10 @@ export function setWage(value: string): {
     }
   }
 
-  // Extract number with better regex to handle various formats
+  // Extract number with better regex to handle various formats including decimals
   const numMatch = trimmed.match(/(\d+(?:\.\d+)?)/);
   if (!numMatch) {
-    return { ok: false, error: 'Please enter a valid number for your hourly rate (e.g., £15, 20/hour, £25 per hour)' };
+    return { ok: false, error: 'Please enter a valid number for your hourly rate (e.g., £15, 20/hour, £25 per hour, 15.50, £12.50 per hour)' };
   }
   
   const amount = parseFloat(numMatch[1]);

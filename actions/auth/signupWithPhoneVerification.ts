@@ -66,30 +66,36 @@ export async function registerUserWithPhoneVerificationAction(data: RegisterUser
     if (error instanceof Error) {
       console.error("Error registering user with phone verification:", error.message);
       
-      // Handle specific Firebase errors with more descriptive messages
-      if (error.message.includes('email-already-in-use')) {
-        return { ok: false, error: 'This email address is already registered. Please use a different email or try signing in.' };
-      }
-      if (error.message.includes('invalid-email')) {
-        return { ok: false, error: 'Please enter a valid email address.' };
-      }
-      if (error.message.includes('weak-password')) {
-        return { ok: false, error: 'Password must be at least 8 characters long and contain a mix of letters, numbers, and symbols.' };
-      }
-      if (error.message.includes('invalid-phone-number')) {
-        return { ok: false, error: 'The phone number format is invalid. Please use international format (e.g., +44 20 7946 0958).' };
-      }
-      if (error.message.includes('phone-number-already-exists')) {
-        return { ok: false, error: 'This phone number is already registered. Please use a different number or try signing in.' };
-      }
-      if (error.message.includes('operation-not-allowed')) {
-        return { ok: false, error: 'Registration is temporarily disabled. Please try again later.' };
-      }
-      if (error.message.includes('quota-exceeded')) {
-        return { ok: false, error: 'Too many registration attempts. Please wait a moment and try again.' };
+      // Handle specific Firebase errors using error codes for better reliability
+      if ('code' in error) {
+        const firebaseError = error as { code: string };
+        switch (firebaseError.code) {
+          case 'auth/email-already-in-use':
+            return { ok: false, error: 'This email address is already registered. Please use a different email or try signing in.' };
+          case 'auth/invalid-email':
+            return { ok: false, error: 'Please enter a valid email address.' };
+          case 'auth/weak-password':
+            return { ok: false, error: 'Password must be at least 8 characters long and contain a mix of letters, numbers, and symbols.' };
+          case 'auth/invalid-phone-number':
+            return { ok: false, error: 'The phone number format is invalid. Please use international format (e.g., +44 20 7946 0958).' };
+          case 'auth/phone-number-already-exists':
+            return { ok: false, error: 'This phone number is already registered. Please use a different number or try signing in.' };
+          case 'auth/operation-not-allowed':
+            return { ok: false, error: 'Registration is temporarily disabled. Please try again later.' };
+          case 'auth/quota-exceeded':
+            return { ok: false, error: 'Too many registration attempts. Please wait a moment and try again.' };
+          case 'auth/network-request-failed':
+            return { ok: false, error: 'Network error. Please check your internet connection and try again.' };
+          case 'auth/too-many-requests':
+            return { ok: false, error: 'Too many failed attempts. Please wait a moment and try again.' };
+          default:
+            // Log unknown Firebase error codes for debugging
+            console.warn('Unknown Firebase error code:', firebaseError.code);
+            return { ok: false, error: 'Registration failed. Please check your information and try again.' };
+        }
       }
       
-      // Generic error fallback
+      // Generic error fallback for non-Firebase errors
       return { ok: false, error: 'Registration failed. Please check your information and try again.' };
     } else {
       console.error("Unexpected error registering user:", error);

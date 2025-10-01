@@ -103,7 +103,7 @@ export async function validateUserInput(
     };
   }
   
-  // 4. RELEVANCE CHECK (skip for qualifications with skip responses)
+  // 4. RELEVANCE CHECK (skip for qualifications and equipment with skip responses)
   if (context.currentField === 'qualifications') {
     const skipKeywords = ['none', 'n/a', 'na', 'skip', 'no qualifications', 'no certs', 'no certifications', 'don\'t have any', 'don\'t have', 'no formal', 'no official', 'nothing', 'not applicable', 'not relevant', 'no training', 'no education'];
     const hasSkipKeywords = skipKeywords.some(keyword => input.toLowerCase().includes(keyword));
@@ -119,6 +119,25 @@ export async function validateUserInput(
         reason: 'Valid skip response for qualifications',
         suggestedAction: 'continue',
         sanitizedInput: input
+      };
+    }
+  }
+  
+  if (context.currentField === 'equipment') {
+    const skipKeywords = ['none', 'n/a', 'na', 'skip', 'no equipment', 'no tools', 'no gear', 'don\'t have any', 'don\'t have', 'no formal', 'no official', 'nothing', 'not applicable', 'not relevant', 'no tools', 'no gear', 'no equipment', 'i don\'t have any', 'i don\'t have', 'i have none', 'i have nothing'];
+    const hasSkipKeywords = skipKeywords.some(keyword => input.toLowerCase().includes(keyword));
+    
+    if (hasSkipKeywords) {
+      // Skip relevance check for equipment with skip responses
+      return {
+        isValid: true,
+        isHelpRequest: false,
+        isInappropriate: false,
+        needsSupport: false,
+        confidence: 0.9,
+        reason: 'Valid skip response for equipment',
+        suggestedAction: 'continue',
+        sanitizedInput: 'No equipment'
       };
     }
   }

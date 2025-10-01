@@ -782,7 +782,13 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
       };
 
       console.log('📤 Submitting final form data:', finalFormData);
+      console.log('🔍 Calling onSubmit prop with data:', { 
+        hasOnSubmit: !!onSubmit, 
+        dataKeys: Object.keys(finalFormData),
+        dataSize: JSON.stringify(finalFormData).length
+      });
       onSubmit(finalFormData);
+      console.log('✅ onSubmit called successfully');
       
     } catch (error) {
       console.error('❌ Error in form submission:', error);
@@ -976,7 +982,7 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
         return '';
       case 'qualifications':
         // Qualifications are optional, but if provided, should be meaningful
-        return value && value.trim().length > 0 && value.trim().length < 5 ? 'Please provide more details about your qualifications (at least 5 characters)' : '';
+        return value && value.trim().length > 0 && value.trim().length < VALIDATION_CONSTANTS.WORKER.MIN_QUALIFICATIONS_LENGTH ? `Please provide more details about your qualifications (at least ${VALIDATION_CONSTANTS.WORKER.MIN_QUALIFICATIONS_LENGTH} characters)` : '';
       case 'hourlyRate':
         return !value || value < VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE ? `Please enter a valid hourly rate (minimum £${VALIDATION_CONSTANTS.WORKER.MIN_HOURLY_RATE})` : '';
       case 'location':
@@ -1394,7 +1400,11 @@ Qualifications: "${value}"`;
     }
 
     // Validate form before proceeding
-    if (!(await validateForm())) {
+    console.log('🔍 Starting form validation...');
+    const validationResult = await validateForm();
+    console.log('🔍 Form validation result:', validationResult);
+    
+    if (!validationResult) {
       console.log('❌ Form validation failed, not submitting');
       return;
     }
@@ -1502,8 +1512,10 @@ Qualifications: "${value}"`;
         cleanedData: { ...sanitizedData },
         onConfirm: () => {
           console.log('✅ User confirmed cleaned data, proceeding with submission');
+          console.log('🔍 Modal onConfirm called, sanitized data:', sanitizedData);
           setDataReviewModal(prev => ({ ...prev, isOpen: false }));
           // Submit sanitized data directly
+          console.log('🚀 Calling continueFormSubmission...');
           continueFormSubmission(sanitizedData);
         },
         onGoBack: () => {
@@ -1877,7 +1889,7 @@ Qualifications: "${value}"`;
           <button
             type="submit"
             className={styles.submitButton}
-            disabled={isSubmitting || progress < 75}
+            disabled={isSubmitting || progress < 50}
           >
             {isSubmitting ? (
               <>
@@ -1889,7 +1901,7 @@ Qualifications: "${value}"`;
             )}
           </button>
 
-          {progress < 75 && (
+          {progress < 50 && (
             <p className={styles.completionNote}>
               Please fill in all required fields to complete your profile: about, experience, skills, equipment, qualifications, hourly rate, location, availability, video introduction, and references
             </p>

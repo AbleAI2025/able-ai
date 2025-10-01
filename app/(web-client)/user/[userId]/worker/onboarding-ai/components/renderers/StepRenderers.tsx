@@ -496,7 +496,7 @@ export function renderSimilarSkillsConfirmationStep(
           🔍 Similar Skills Found
         </div>
         <div style={{ color: '#e5e5e5', fontSize: '15px', lineHeight: '1.6', marginBottom: '16px' }}>
-          I found similar skills in your profile for "{data.originalValue}". You can either use one of your existing skills or add this as a new skill.
+          I found similar skills in your profile for "{data.originalValue}". You can either keep it and go back to home or add a new skill.
         </div>
 
         <div style={{ marginBottom: '20px' }}>
@@ -509,8 +509,17 @@ export function renderSimilarSkillsConfirmationStep(
         </div>
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
-          <button onClick={handlers.onGoHome} style={{ background: 'transparent', color: '#888', border: '1px solid #444', borderRadius: '8px', padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s ease' }}>
-            ← Go back to home
+          <button onClick={() => {
+            console.log('🔍 Go Home button clicked');
+            console.log('🔍 handlers:', handlers);
+            console.log('🔍 handlers.onGoHome:', handlers.onGoHome);
+            if (handlers.onGoHome) {
+              handlers.onGoHome();
+            } else {
+              console.error('🔍 handlers.onGoHome is not defined!');
+            }
+          }} style={{ background: 'transparent', color: '#888', border: '1px solid #444', borderRadius: '8px', padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s ease' }}>
+            ← Go Home
           </button>
           <button onClick={handlers.onAddNew} style={{ background: data.confirmedChoice === 'new' ? '#555' : 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 600, cursor: data.confirmedChoice ? 'not-allowed' : 'pointer', fontSize: '14px', opacity: data.confirmedChoice ? 0.7 : 1, transition: 'all 0.2s ease' }} disabled={!!data.confirmedChoice}>
             {data.confirmedChoice === 'new' ? 'Adding New Skill' : 'Add a New Skill'}
