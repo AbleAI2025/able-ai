@@ -84,7 +84,6 @@ export async function getBuyerPayments(buyerId: string, filters: FilterState): P
       .where(and(eq(PaymentsTable.payerUserId, user.id), conditions.length > 0 ? and(...conditions) : undefined))
       .orderBy(desc(PaymentsTable.createdAt));
 
-    console.log({userPayments})
     if (!userPayments) {
       return {
         success: false,

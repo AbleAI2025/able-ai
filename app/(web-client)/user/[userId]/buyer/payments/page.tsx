@@ -288,7 +288,7 @@ export default function BuyerPaymentsPage() {
 
         <div className={styles.barChartContainer}>
           {!isLoadingPayments &&
-            <BarChartComponent data={chartData} />
+            <BarChartComponent data={chartData} emptyMessage="You don't have payments yet"/>
           }
         </div>
       </div>
