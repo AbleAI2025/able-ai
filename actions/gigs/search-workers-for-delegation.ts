@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle/db";
 import { UsersTable, GigWorkerProfilesTable, SkillsTable, GigsTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
-import { eq, and, ne, like, or } from "drizzle-orm";
+import { eq, and, ne, like, or, inArray } from "drizzle-orm";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { calculateDistance, parseCoordinates } from "@/lib/utils/distance";
@@ -223,17 +223,32 @@ async function processWorkerResults(workers: any[], gig: any) {
 }
 
 async function enrichWorkersWithSkills(workerMap: Map<string, WorkerSearchResult>, gig: any) {
-  // Get all skills for each worker
+  const workerIds = Array.from(workerMap.keys());
+  if (workerIds.length === 0) {
+    return;
+  }
+
+  const allWorkerSkills = await db
+    .select({
+      userId: GigWorkerProfilesTable.userId,
+      name: SkillsTable.name,
+      experienceYears: SkillsTable.experienceYears,
+      agreedRate: SkillsTable.agreedRate,
+    })
+    .from(SkillsTable)
+    .innerJoin(GigWorkerProfilesTable, eq(SkillsTable.workerProfileId, GigWorkerProfilesTable.id))
+    .where(inArray(GigWorkerProfilesTable.userId, workerIds));
+
+  const skillsByWorkerId = new Map<string, any[]>();
+  for (const skill of allWorkerSkills) {
+    if (!skillsByWorkerId.has(skill.userId)) {
+      skillsByWorkerId.set(skill.userId, []);
+    }
+    skillsByWorkerId.get(skill.userId)!.push(skill);
+  }
+
   for (const [workerId, worker] of workerMap) {
-    const workerSkills = await db
-      .select({
-        name: SkillsTable.name,
-        experienceYears: SkillsTable.experienceYears,
-        agreedRate: SkillsTable.agreedRate,
-      })
-      .from(SkillsTable)
-      .innerJoin(GigWorkerProfilesTable, eq(SkillsTable.workerProfileId, GigWorkerProfilesTable.id))
-      .where(eq(GigWorkerProfilesTable.userId, workerId));
+    const workerSkills = skillsByWorkerId.get(workerId) || [];
 
     // Convert string values to numbers for skills array
     worker.skills = workerSkills.map(skill => ({
@@ -311,11 +326,15 @@ export async function searchWorkersForDelegation(
   gigId: string,
   searchTerm: string = "",
   filters: SearchFilters = {}
-) {
+): Promise<{ success: true; data: WorkerSearchResult[]; count: number } | { error: string; status: number }> {
   try {
     console.log('🔍 DEBUG: Enhanced delegation search called with:', { gigId, searchTerm, filters });
 
-    const { user, gig } = await validateDelegationRequest(token, gigId);
+    const validationResult = await validateDelegationRequest(token, gigId);
+    if ('error' in validationResult) {
+      return validationResult as { error: string; status: number };
+    }
+    const { gig } = validationResult;
 
     const workers = await buildWorkerSearchQuery(gig, searchTerm);
 
@@ -437,3 +456,4 @@ async function calculateAvailabilityScore(workerId: string, gig: any): Promise<n
     return 0.5;
   }
 }
+
