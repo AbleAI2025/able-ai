@@ -106,6 +106,143 @@ async function delegateGigToWorkerAPI(gigId: string, workerId: string, token: st
 }
 
 
+interface SearchSectionProps {
+  filters: SearchFilters;
+  updateFilter: (key: keyof SearchFilters, value: any) => void;
+  showFilters: boolean;
+  setShowFilters: (value: boolean) => void;
+}
+
+function SearchSection({ filters, updateFilter, showFilters, setShowFilters }: SearchSectionProps) {
+  return (
+    <div className={styles.searchSection}>
+      <SearchInput
+        value={filters.searchTerm}
+        onChange={(value) => updateFilter('searchTerm', value)}
+        placeholder="Search by name, skill, or location..."
+        className={styles.searchInputArea}
+      />
+      <button
+        className={styles.filterToggle}
+        onClick={() => setShowFilters(!showFilters)}
+      >
+        Filters {showFilters ? '▲' : '▼'}
+      </button>
+    </div>
+  );
+}
+
+interface AdvancedFiltersProps {
+  filters: SearchFilters;
+  updateFilter: (key: keyof SearchFilters, value: any) => void;
+  clearFilters: () => void;
+}
+
+function AdvancedFilters({ filters, updateFilter, clearFilters }: AdvancedFiltersProps) {
+  return (
+    <div className={styles.filtersSection}>
+      <div className={styles.filterRow}>
+        <div className={styles.filterGroup}>
+          <label>Min Experience (years)</label>
+          <input
+            type="number"
+            min="0"
+            value={filters.minExperience || ''}
+            onChange={(e) => updateFilter('minExperience', e.target.value ? parseInt(e.target.value) : undefined)}
+            placeholder="0"
+          />
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label>Rate Range (£)</label>
+          <div className={styles.rateRange}>
+            <input
+              type="number"
+              min="0"
+              value={filters.minRate || ''}
+              onChange={(e) => updateFilter('minRate', e.target.value ? parseFloat(e.target.value) : undefined)}
+              placeholder="Min"
+            />
+            <span>-</span>
+            <input
+              type="number"
+              min="0"
+              value={filters.maxRate || ''}
+              onChange={(e) => updateFilter('maxRate', e.target.value ? parseFloat(e.target.value) : undefined)}
+              placeholder="Max"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.filterRow}>
+        <div className={styles.filterGroup}>
+          <label>Sort By</label>
+          <select
+            value={filters.sortBy}
+            onChange={(e) => updateFilter('sortBy', e.target.value)}
+          >
+            <option value="relevance">Best Match</option>
+            <option value="distance">Distance</option>
+            <option value="experience">Experience</option>
+            <option value="rate">Rate</option>
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label>
+            <input
+              type="checkbox"
+              checked={filters.availableOnly}
+              onChange={(e) => updateFilter('availableOnly', e.target.checked)}
+            />
+            Available Only
+          </label>
+        </div>
+      </div>
+
+      <div className={styles.filterActions}>
+        <button onClick={clearFilters} className={styles.clearFilters}>
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface ResultsSummaryProps {
+  workers: Worker[];
+}
+
+function ResultsSummary({ workers }: ResultsSummaryProps) {
+  return (
+    <div className={styles.resultsSummary}>
+      Found {workers.length} worker{workers.length !== 1 ? 's' : ''} matching your criteria
+    </div>
+  );
+}
+
+interface WorkerListProps {
+  workers: Worker[];
+  onDelegate: (workerId: string) => void;
+  delegatingWorkerId: string | null;
+}
+
+function WorkerList({ workers, onDelegate, delegatingWorkerId }: WorkerListProps) {
+  return (
+    <div className={styles.workerList}>
+      {workers.map(worker => (
+        <WorkerDelegateItemCard
+          key={worker.id}
+          worker={worker}
+          onDelegate={onDelegate}
+          isDelegating={delegatingWorkerId === worker.id}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function DelegateGigPage() {
   const router = useRouter();
   const params = useParams();
@@ -121,7 +258,7 @@ export default function DelegateGigPage() {
     availableOnly: false,
     sortBy: 'relevance'
   });
-  
+
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +268,7 @@ export default function DelegateGigPage() {
   useEffect(() => {
     const loadWorkers = async () => {
       if (!user?.token) return;
-      
+
       setIsLoading(true);
       setError(null);
       try {
@@ -144,7 +281,7 @@ export default function DelegateGigPage() {
         setIsLoading(false);
       }
     };
-    
+
     // Debounce search or load on initial mount
     const debounceTimeout = setTimeout(() => {
         loadWorkers();
@@ -158,10 +295,10 @@ export default function DelegateGigPage() {
         toast.error("Missing required information.");
         return;
     }
-    
+
     setDelegatingWorkerId(workerId);
     setError(null);
-    
+
     try {
         const result = await delegateGigToWorkerAPI(gigId, workerId, user.token);
         if (result.success) {
@@ -199,131 +336,51 @@ export default function DelegateGigPage() {
   return (
     <div className={styles.pageContainer}>
       <ScreenHeaderWithBack title="Delegate Gig" />
-      
+
       <div className={styles.contentArea}>
-        {/* Enhanced Search Bar */}
-        <div className={styles.searchSection}>
-          <SearchInput
-            value={filters.searchTerm}
-            onChange={(value) => updateFilter('searchTerm', value)}
-            placeholder="Search by name, skill, or location..."
-            className={styles.searchInputArea}
-          />
-          <button 
-            className={styles.filterToggle}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            Filters {showFilters ? '▲' : '▼'}
-          </button>
-        </div>
+        <SearchSection
+          filters={filters}
+          updateFilter={updateFilter}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+        />
 
-        {/* Advanced Filters */}
         {showFilters && (
-          <div className={styles.filtersSection}>
-            <div className={styles.filterRow}>
-              <div className={styles.filterGroup}>
-                <label>Min Experience (years)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={filters.minExperience || ''}
-                  onChange={(e) => updateFilter('minExperience', e.target.value ? parseInt(e.target.value) : undefined)}
-                  placeholder="0"
-                />
-              </div>
-              
-              <div className={styles.filterGroup}>
-                <label>Rate Range (£)</label>
-                <div className={styles.rateRange}>
-                  <input
-                    type="number"
-                    min="0"
-                    value={filters.minRate || ''}
-                    onChange={(e) => updateFilter('minRate', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    placeholder="Min"
-                  />
-                  <span>-</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={filters.maxRate || ''}
-                    onChange={(e) => updateFilter('maxRate', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    placeholder="Max"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.filterRow}>
-              <div className={styles.filterGroup}>
-                <label>Sort By</label>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => updateFilter('sortBy', e.target.value)}
-                >
-                  <option value="relevance">Best Match</option>
-                  <option value="distance">Distance</option>
-                  <option value="experience">Experience</option>
-                  <option value="rate">Rate</option>
-                </select>
-              </div>
-
-              <div className={styles.filterGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={filters.availableOnly}
-                    onChange={(e) => updateFilter('availableOnly', e.target.checked)}
-                  />
-                  Available Only
-                </label>
-              </div>
-            </div>
-
-            <div className={styles.filterActions}>
-              <button onClick={clearFilters} className={styles.clearFilters}>
-                Clear Filters
-              </button>
-            </div>
-          </div>
+          <AdvancedFilters
+            filters={filters}
+            updateFilter={updateFilter}
+            clearFilters={clearFilters}
+          />
         )}
 
-        {/* Results Summary */}
         {!isLoading && workers.length > 0 && (
-          <div className={styles.resultsSummary}>
-            Found {workers.length} worker{workers.length !== 1 ? 's' : ''} matching your criteria
-          </div>
+          <ResultsSummary workers={workers} />
         )}
 
         {isLoading && (
           <div className={styles.loadingContainer}>
-            <Loader2 size={32} className="animate-spin" /> 
+            <Loader2 size={32} className="animate-spin" />
             <p>Loading workers...</p>
           </div>
         )}
         {error && <p className={styles.errorMessage}>{error}</p>}
-        
+
         {!isLoading && !error && workers.length === 0 && (
           <p className={styles.emptyMessage}>
-            No workers found matching your search criteria. 
+            No workers found matching your search criteria.
             {filters.searchTerm && " Try adjusting your search terms or filters."}
           </p>
         )}
 
         {!isLoading && workers.length > 0 && (
-          <div className={styles.workerList}>
-            {workers.map(worker => (
-              <WorkerDelegateItemCard
-                key={worker.id}
-                worker={worker}
-                onDelegate={handleDelegate}
-                isDelegating={delegatingWorkerId === worker.id}
-              />
-            ))}
-          </div>
+          <WorkerList
+            workers={workers}
+            onDelegate={handleDelegate}
+            delegatingWorkerId={delegatingWorkerId}
+          />
         )}
       </div>
-      
+
       <MinimalFooterNav />
     </div>
   );
