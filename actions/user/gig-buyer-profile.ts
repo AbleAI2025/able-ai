@@ -25,16 +25,16 @@ const getCompletedHiresData = async (userId: string) => {
   });
 
   // Count gigs per skill name and return array with name and value
-  const skillCountsArr: { name: string; value: number }[] = [];
   const skillCounts: Record<string, number> = {};
   completedHires.forEach((gig) => {
     gig.skillsRequired.forEach((skill) => {
       skillCounts[skill.skillName] = (skillCounts[skill.skillName] || 0) + 1;
     });
   });
-  for (const [name, value] of Object.entries(skillCounts)) {
-    skillCountsArr.push({ name, value });
-  }
+  const skillCountsArr = Object.entries(skillCounts).map(([name, value]) => ({
+    name,
+    value,
+  }));
 
   const topSkills = skillCountsArr
     .sort((a, b) => b.value - a.value)
@@ -63,12 +63,7 @@ const getPaymentsData = async (userId: string) => {
 
   // Group payments into 4 groups of 3 months each
   const now = new Date();
-  const groups: { amountGross: string; createdAt: Date }[][] = [
-    [],
-    [],
-    [],
-    [],
-  ];
+  const groups: { amountGross: string; createdAt: Date }[][] = [[], [], [], []];
 
   payments.forEach((payment) => {
     const diffMonths =
@@ -82,16 +77,12 @@ const getPaymentsData = async (userId: string) => {
 
   // Calculate total expenses for each quarter, with clear naming
   const barData = groups.map((group, idx) => {
-    const groupDate = new Date(
-      now.getFullYear(),
-      now.getMonth() - idx * 3,
-      1
-    );
+    const groupDate = new Date(now.getFullYear(), now.getMonth() - idx * 3, 1);
     const quarter = Math.floor(groupDate.getMonth() / 3) + 1;
     const year = groupDate.getFullYear().toString().slice(-2);
     return {
       name: `Q${quarter}'${year}`,
-      a: group.reduce((sum, payment) => sum + Number(payment.amountGross), 0),
+      amount: group.reduce((sum, payment) => sum + Number(payment.amountGross), 0),
     };
   });
 
@@ -121,7 +112,7 @@ const getBadgesData = async (userId: string) => {
     )
     .where(eq(UserBadgesLinkTable.userId, userId));
 
-  const badgeDetails = badges?.map((badge) => ({
+  const badgeDetails = badges.map((badge) => ({
     id: badge.id,
     name: badge.badge.name,
     description: badge.badge.description,
@@ -139,26 +130,34 @@ const getReviewsData = async (userId: string) => {
     where: eq(ReviewsTable.targetUserId, userId),
   });
 
-  const reviewsData = await Promise.all(
-    reviews.map(async (review) => {
-      const author = review.authorUserId
-        ? await db.query.UsersTable.findFirst({
-            where: eq(UsersTable.id, review.authorUserId),
-          })
-        : null;
+  const authorIds = reviews
+    .map((review) => review.authorUserId)
+    .filter((id): id is string => !!id);
 
-      return {
-        id: review.id,
-        name: review.recommenderName || author?.fullName,
-        date: review.createdAt,
-        text: review.comment,
-      };
-    })
-  );
+  const authors = await (async () => {
+    if (authorIds.length === 0) return [];
+    return await db.query.UsersTable.findMany({
+      where: (users, { inArray }) => inArray(users.id, authorIds),
+    });
+  })();
 
-  const totalReviews = reviews?.length;
+  const authorsById = new Map(authors.map((author) => [author.id, author]));
 
-  const positiveReviews = reviews?.filter((item) => item.rating === 1).length;
+  const reviewsData = reviews.map((review) => {
+    const author = review.authorUserId
+      ? authorsById.get(review.authorUserId)
+      : null;
+    return {
+      id: review.id,
+      name: review.recommenderName || author?.fullName,
+      date: review.createdAt,
+      text: review.comment,
+    };
+  });
+
+  const totalReviews = reviews.length;
+
+  const positiveReviews = reviews.filter((item) => item.rating === 1).length;
 
   const averageRating =
     totalReviews > 0 ? (positiveReviews / totalReviews) * 100 : 0;
@@ -193,12 +192,13 @@ export const getGigBuyerProfileAction = async (
       throw new Error("Buyer profile not found");
     }
 
-    const [reviewsDataResult, completedHiresData, paymentsData, badgesData] = await Promise.all([
-      getReviewsData(buyerProfile.userId),
-      getCompletedHiresData(user.id),
-      getPaymentsData(user.id),
-      getBadgesData(buyerProfile.userId),
-    ]);
+    const [reviewsDataResult, completedHiresData, paymentsData, badgesData] =
+      await Promise.all([
+        getReviewsData(buyerProfile.userId),
+        getCompletedHiresData(user.id),
+        getPaymentsData(user.id),
+        getBadgesData(buyerProfile.userId),
+      ]);
 
     const data = {
       ...user,
@@ -210,7 +210,7 @@ export const getGigBuyerProfileAction = async (
       skills: completedHiresData.skillCountsArr,
       skillCounts: completedHiresData.skillCounts,
       totalPayments: paymentsData,
-      topSkills: completedHiresData.topSkills
+      topSkills: completedHiresData.topSkills,
     };
 
     return { success: true, profile: data };
