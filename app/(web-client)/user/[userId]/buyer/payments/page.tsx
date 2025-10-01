@@ -127,7 +127,6 @@ export default function BuyerPaymentsPage() {
   if (isLoading || (!user && !isLoading) || (authUserId && authUserId !== pageUserId)) {
     return <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={32} /> Loading...</div>;
   }
-  console.log({chartData})
 
   return (
     <div className={styles.container}>
@@ -289,7 +288,7 @@ export default function BuyerPaymentsPage() {
 
         <div className={styles.barChartContainer}>
           {!isLoadingPayments &&
-            <BarChartComponent data={chartData} emptyMessage="You don't have payments yet 2"/>
+            <BarChartComponent data={chartData} emptyMessage="You don't have payments yet"/>
           }
         </div>
       </div>

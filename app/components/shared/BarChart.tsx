@@ -38,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null;
 };
 
-export default function BarChartComponent({ data, emptyMessage }: { data?: { name: string; total: number }[], emptyMessage: string }) {
+export default function BarChartComponent({ data, emptyMessage }: { data: { name: string; total: number }[], emptyMessage: string }) {
   const [chartHeight, setChartHeight] = useState(220);
 
   const isWindowDefined = typeof window !== 'undefined';
@@ -72,7 +72,7 @@ export default function BarChartComponent({ data, emptyMessage }: { data?: { nam
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight} minHeight={120}>
-      {data && data?.length > 0 ?
+      {data?.length > 0 ?
         <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
           <XAxis
             dataKey="name"
