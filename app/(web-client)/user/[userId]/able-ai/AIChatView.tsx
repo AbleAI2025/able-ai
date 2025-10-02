@@ -90,6 +90,9 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ user, loadingGigs, gigs, setGigs,
                 const allGigs = [...result.data.offers, ...result.data.acceptedGigs];
                 setGigs(allGigs.slice(0, 3));
               }
+            })
+            .catch(error => {
+              console.error('Manual gig fetch failed:', error);
             });
           }
         }}
