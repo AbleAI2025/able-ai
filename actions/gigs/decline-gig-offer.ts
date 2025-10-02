@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
-import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
+import admin from "@/lib/firebase/firebase-server";
 
 // Use the exact string value for declined status
 const DECLINED_BY_WORKER = "DECLINED_BY_WORKER";
@@ -31,12 +31,16 @@ export async function declineGigOffer({
       where: and(
         eq(GigsTable.id, gigId),
         eq(GigsTable.statusInternal, gigStatusEnum.enumValues[0]),
-        isNull(GigsTable.workerUserId)
+        isNotNull(GigsTable.workerUserId)
       ),
       columns: {
         id: true,
         expiresAt: true,
       },
+      with: {
+        buyer: { columns: { id: true } },
+        worker: { columns: { id: true, fullName: true } },
+      }
     });
 
     if (!gig) {
@@ -71,7 +75,36 @@ export async function declineGigOffer({
       };
     }
 
-    await cancelRelatedPayments(gig.id);
+
+    const message: admin.messaging.Message = {
+      notification: {
+        title: `Gig Cancelled by Worker: ${gig.worker?.fullName}`,
+        body: `The worker has cancelled the gig.`,
+      },
+      android: {
+        priority: "high",
+      },
+      webpush: {
+        headers: {
+          Urgency: "high",
+        },
+        notification: {
+          click_action: `/buyer/gigs/${gigId}`,
+        },
+      },
+      data: {
+        gigId,
+        type: "GIG_CANCELLED_BY_WORKER",
+      },
+      topic: gig.buyer.id,
+    };
+
+    const notificationRes = await admin.messaging().send(message);
+
+    console.log("Notification sent:", notificationRes);
+    
+
+    //await cancelRelatedPayments(gig.id);
 
     return {
       success: true,

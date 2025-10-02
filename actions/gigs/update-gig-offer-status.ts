@@ -3,7 +3,7 @@
 import { db } from "@/lib/drizzle/db";
 import { and, eq } from "drizzle-orm";
 import { GigsTable, gigStatusEnum, UsersTable } from "@/lib/drizzle/schema";
-import { cancelRelatedPayments } from "@/lib/stripe/cancel-related-payments";
+import admin from "@/lib/firebase/firebase-server";
 
 const ACCEPTED = gigStatusEnum.enumValues[2];
 const CANCELLED_BY_BUYER = gigStatusEnum.enumValues[10];
@@ -59,6 +59,21 @@ export async function updateGigOfferStatus({
           expiresAt: true,
           statusInternal: true,
         },
+        with: {
+          buyer: {
+            columns: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+          worker: {
+            columns: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
       });
 
       if (!gig) {
@@ -84,12 +99,37 @@ export async function updateGigOfferStatus({
         })
         .where(eq(GigsTable.id, gigId));
     } else if (action === "cancel" && role === "worker") {
-      await validateGigNotExpired();
+      const result = await validateGigNotExpired();
 
       await db
         .update(GigsTable)
         .set({ statusInternal: newStatus })
         .where(eq(GigsTable.id, gigId));
+
+      const message: admin.messaging.Message = {
+        notification: {
+          title: `Gig Cancelled by Worker: ${result.worker?.fullName}`,
+          body: `The worker has cancelled the gig.`,
+        },
+        android: {
+          priority: "high",
+        },
+        webpush: {
+          headers: {
+            Urgency: "high",
+          },
+          notification: {
+            click_action: `/buyer/gigs/${gigId}`,
+          },
+        },
+        data: {
+          gigId,
+          type: "GIG_CANCELLED_BY_WORKER",
+        },
+        topic: result.buyer.id,
+      };
+
+      await admin.messaging().send(message);
     } else if (action === "complete") {
       await validateGigNotExpired();
 

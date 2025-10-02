@@ -142,7 +142,7 @@ export async function getWorkerOffers(userId: string) {
           },
         },
       },
-    });
+    }); 
 
     if (!user) {
       return { error: "User not found", status: 404 };
