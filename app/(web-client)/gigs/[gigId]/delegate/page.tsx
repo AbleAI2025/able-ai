@@ -4,46 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import ScreenHeaderWithBack from '@/app/components/layout/ScreenHeaderWithBack';
-import SearchInput from '@/app/components/forms/SearchInput';
-import WorkerDelegateItemCard from '@/app/components/gigs/WorkerDelegateItemCard';
 import MinimalFooterNav from '@/app/components/layout/MinimalFooterNav';
 import { toast } from 'sonner';
 
 import styles from './DelegateGigPage.module.css';
 import { Loader2 } from 'lucide-react';
-
-interface Worker {
-  id: string;
-  name: string;
-  username: string;
-  avatarUrl: string;
-  primarySkill: string;
-  experienceYears: number;
-  hourlyRate: number;
-  bio: string;
-  location: string;
-  distance: number;
-  skillMatchScore: number;
-  availabilityScore: number;
-  overallScore: number;
-  skills: Array<{
-    name: string;
-    experienceYears: number;
-    agreedRate: number;
-  }>;
-  isAvailable: boolean;
-  lastActive?: string;
-}
-
-interface SearchFilters {
-  searchTerm: string;
-  minExperience?: number;
-  maxRate?: number;
-  minRate?: number;
-  skills: string[];
-  availableOnly: boolean;
-  sortBy: 'relevance' | 'distance' | 'experience' | 'rate';
-}
+import { Worker, SearchFilters } from './types';
+import SearchSection from './components/SearchSection';
+import AdvancedFilters from './components/AdvancedFilters';
+import ResultsSummary from './components/ResultsSummary';
+import WorkerList from './components/WorkerList';
 
 // Enhanced API functions with filters
 async function fetchPotentialDelegates(gigId: string, filters: SearchFilters, token: string): Promise<Worker[]> {
@@ -106,144 +76,6 @@ async function delegateGigToWorkerAPI(gigId: string, workerId: string, token: st
 }
 
 
-interface SearchSectionProps {
-  filters: SearchFilters;
-  updateFilter: <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => void;
-  showFilters: boolean;
-  setShowFilters: (value: boolean) => void;
-}
-
-function SearchSection({ filters, updateFilter, showFilters, setShowFilters }: SearchSectionProps) {
-  return (
-    <div className={styles.searchSection}>
-      <SearchInput
-        value={filters.searchTerm}
-        onChange={(value) => updateFilter('searchTerm', value)}
-        placeholder="Search by name, skill, or location..."
-        className={styles.searchInputArea}
-      />
-      <button
-        className={styles.filterToggle}
-        onClick={() => setShowFilters(!showFilters)}
-      >
-        Filters {showFilters ? '▲' : '▼'}
-      </button>
-    </div>
-  );
-}
-
-interface AdvancedFiltersProps {
-  filters: SearchFilters;
-  updateFilter: (key: keyof SearchFilters, value: any) => void;
-  clearFilters: () => void;
-}
-
-function AdvancedFilters({ filters, updateFilter, clearFilters }: AdvancedFiltersProps) {
-  return (
-    <div className={styles.filtersSection}>
-      <div className={styles.filterRow}>
-        <div className={styles.filterGroup}>
-          <label htmlFor="min-experience">Min Experience (years)</label>
-          <input
-            id="min-experience"
-            type="number"
-            min="0"
-            value={filters.minExperience ?? ''}
-            onChange={(e) => updateFilter('minExperience', e.target.value ? parseInt(e.target.value) : undefined)}
-            placeholder="0"
-          />
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label>Rate Range (£)</label>
-          <div className={styles.rateRange}>
-            <input
-              type="number"
-              min="0"
-              value={filters.minRate || ''}
-              onChange={(e) => updateFilter('minRate', e.target.value ? parseFloat(e.target.value) : undefined)}
-              placeholder="Min"
-            />
-            <span>-</span>
-            <input
-              type="number"
-              min="0"
-              value={filters.maxRate || ''}
-              onChange={(e) => updateFilter('maxRate', e.target.value ? parseFloat(e.target.value) : undefined)}
-              placeholder="Max"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.filterRow}>
-        <div className={styles.filterGroup}>
-          <label htmlFor="sort-by">Sort By</label>
-          <select
-            id="sort-by"
-            value={filters.sortBy}
-            onChange={(e) => updateFilter('sortBy', e.target.value)}
-          >
-            <option value="relevance">Best Match</option>
-            <option value="distance">Distance</option>
-            <option value="experience">Experience</option>
-            <option value="rate">Rate</option>
-          </select>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label>
-            <input
-              type="checkbox"
-              checked={filters.availableOnly}
-              onChange={(e) => updateFilter('availableOnly', e.target.checked)}
-            />
-            Available Only
-          </label>
-        </div>
-      </div>
-
-      <div className={styles.filterActions}>
-        <button onClick={clearFilters} className={styles.clearFilters}>
-          Clear Filters
-        </button>
-      </div>
-    </div>
-  );
-}
-
-interface ResultsSummaryProps {
-  workers: Worker[];
-}
-
-function ResultsSummary({ workers }: ResultsSummaryProps) {
-  return (
-    <div className={styles.resultsSummary}>
-      Found {workers.length} worker{workers.length !== 1 ? 's' : ''} matching your criteria
-    </div>
-  );
-}
-
-interface WorkerListProps {
-  workers: Worker[];
-  onDelegate: (workerId: string) => void;
-  delegatingWorkerId: string | null;
-}
-
-function WorkerList({ workers, onDelegate, delegatingWorkerId }: WorkerListProps) {
-  return (
-    <div className={styles.workerList}>
-      {workers.map(worker => (
-        <WorkerDelegateItemCard
-          key={worker.id}
-          worker={worker}
-          onDelegate={onDelegate}
-          isDelegating={delegatingWorkerId === worker.id}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function DelegateGigPage() {
   const router = useRouter();
@@ -319,7 +151,7 @@ export default function DelegateGigPage() {
     }
   };
 
-  const updateFilter = (key: keyof SearchFilters, value: any) => {
+  const updateFilter = <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
