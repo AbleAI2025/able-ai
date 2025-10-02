@@ -32,15 +32,27 @@ interface AIChatViewProps {
 }
 
 const QAModeIndicator: React.FC = () => {
+  const [isQaMode, setIsQaMode] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Reading from localStorage should be done in useEffect to avoid SSR issues.
+    setIsQaMode(localStorage.getItem('isViewQA') === 'true');
+  }, []);
+
+  const handleDisable = () => {
+    localStorage.setItem('isViewQA', 'false');
+    // Consider replacing this with a less disruptive update mechanism,
+    // such as `router.refresh()` or by triggering a data refetch via state.
+    router.refresh();
+  };
+
   return (
     <div className={styles.qaIndicator}>
-      <span>QA Mode: {localStorage.getItem('isViewQA') === 'true' ? 'ON' : 'OFF'}</span>
-      {localStorage.getItem('isViewQA') === 'true' && (
+      <span>QA Mode: {isQaMode ? 'ON' : 'OFF'}</span>
+      {isQaMode && (
         <button
-          onClick={() => {
-            localStorage.setItem('isViewQA', 'false');
-            window.location.reload();
-          }}
+          onClick={handleDisable}
           className={styles.disableQAButton}
         >
           Disable QA Mode
