@@ -113,6 +113,7 @@ function getMappedStatus(internalStatus: string): GigDetails["status"] {
       return "COMPLETED";
     case "CANCELLED_BY_BUYER":
     case "CANCELLED_BY_WORKER":
+    case "DECLINED_BY_WORKER":
     case "CANCELLED_BY_ADMIN":
       return "CANCELLED";
     default:

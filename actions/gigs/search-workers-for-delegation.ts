@@ -95,7 +95,7 @@ export async function searchWorkersForDelegation(
     }
 
     // Check if gig is in a state that allows delegation
-    const allowedStatuses = ['PENDING_WORKER_ACCEPTANCE', 'ACCEPTED', 'IN_PROGRESS'];
+    const allowedStatuses = ['PENDING_WORKER_ACCEPTANCE', 'ACCEPTED', 'IN_PROGRESS', "DECLINED_BY_WORKER"];
     
     if (!allowedStatuses.includes(gig.statusInternal)) {
       return { 

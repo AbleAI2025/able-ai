@@ -90,8 +90,6 @@ export async function updateGigOfferStatus({
         .update(GigsTable)
         .set({ statusInternal: newStatus })
         .where(eq(GigsTable.id, gigId));
-
-      await cancelRelatedPayments(gigId);
     } else if (action === "complete") {
       await validateGigNotExpired();
 
