@@ -11,6 +11,10 @@ export const ERROR_CODES = {
         code: 403,
         message: 'Forbidden: You do not have permission to perform this action.',
     },
+    DELEGATE: {
+        code: 403,
+        message: 'Unauthorized to delegate this gig',
+    },
     NOT_FOUND: {
         code: 404,
         message: 'Not Found',

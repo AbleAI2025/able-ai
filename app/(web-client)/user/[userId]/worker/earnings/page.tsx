@@ -29,7 +29,6 @@ async function fetchWorkerEarnings(userId: string, filters: FilterState): Promis
   return allEarnings;
 }
 
-
 // Mock chart data (aggregate by month for example)
 const getEarningsChartData = (earnings: WorkerEarning[]) => {
   const monthlyTotals: { [key: string]: number } = {};
@@ -210,7 +209,7 @@ export default function WorkerEarningsPage() {
         )}
         <div className={styles.barChartContainer}>
           {!isLoadingEarnings &&
-            <BarChartComponent data={chartData} />
+            <BarChartComponent data={chartData} emptyMessage="You don't have earnings yet" />
           }
         </div>
         {/* 

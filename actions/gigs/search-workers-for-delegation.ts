@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle/db";
 import { UsersTable, GigWorkerProfilesTable, SkillsTable, GigsTable, WorkerAvailabilityTable } from "@/lib/drizzle/schema";
-import { eq, and, ne, like, or } from "drizzle-orm";
+import { eq, and, ne, like, or, inArray } from "drizzle-orm";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { calculateDistance, parseCoordinates } from "@/lib/utils/distance";
@@ -44,270 +44,323 @@ export interface SearchFilters {
   sortBy?: 'relevance' | 'distance' | 'experience' | 'rate';
 }
 
+async function validateDelegationRequest(token: string, gigId: string) {
+  // Authenticate user
+  const { uid } = await isUserAuthenticated(token);
+  if (!uid) throw ERROR_CODES.UNAUTHORIZED;
+
+  // Get user details
+  const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firebaseUid, uid),
+    columns: { id: true, fullName: true }
+  });
+
+  if (!user) {
+      return { error: ERROR_CODES.USER_NOT_FOUND.message, status: ERROR_CODES.USER_NOT_FOUND.code };
+  }
+
+  // Get gig details with more information for better matching
+  const gig = await db.query.GigsTable.findFirst({
+    where: eq(GigsTable.id, gigId),
+    columns: {
+      id: true,
+      buyerUserId: true,
+      workerUserId: true,
+      statusInternal: true,
+      exactLocation: true,
+      addressJson: true,
+      titleInternal: true,
+      fullDescription: true,
+      startTime: true,
+      endTime: true,
+      agreedRate: true
+    }
+  });
+
+  if (!gig) {
+      return { error: 'Gig not found', status: 404 };
+  }
+
+  // Verify user is either the buyer or the assigned worker of this gig
+  if (gig.buyerUserId !== user.id && gig.workerUserId !== user.id) {
+      return { error: ERROR_CODES.DELEGATE.message, status: ERROR_CODES.DELEGATE.code };
+  }
+
+  // Check if gig is in a state that allows delegation
+  const allowedStatuses = ['PENDING_WORKER_ACCEPTANCE', 'ACCEPTED', 'IN_PROGRESS', "DECLINED_BY_WORKER"];
+
+  if (!allowedStatuses.includes(gig.statusInternal)) {
+    return { 
+        error: `Cannot delegate gig with status: ${gig.statusInternal}`, 
+        status: 400 
+      };
+  }
+
+  return { user, gig };
+}
+
+async function buildWorkerSearchQuery(gig: any, searchTerm: string) {
+  console.log('🔍 DEBUG: Delegation search - excluding users:', {
+    buyerUserId: gig.buyerUserId,
+    workerUserId: gig.workerUserId
+  });
+
+  // Build enhanced search query
+  const searchPattern = searchTerm ? `%${searchTerm.toLowerCase()}%` : '%';
+
+  // Get all workers with their skills and availability
+  const workers = await db
+    .select({
+      id: UsersTable.id,
+      fullName: UsersTable.fullName,
+      email: UsersTable.email,
+      bio: GigWorkerProfilesTable.fullBio,
+      location: GigWorkerProfilesTable.location,
+      latitude: GigWorkerProfilesTable.latitude,
+      longitude: GigWorkerProfilesTable.longitude,
+      skillName: SkillsTable.name,
+      experienceYears: SkillsTable.experienceYears,
+      agreedRate: SkillsTable.agreedRate,
+      lastActive: UsersTable.updatedAt,
+    })
+    .from(UsersTable)
+    .innerJoin(GigWorkerProfilesTable, eq(UsersTable.id, GigWorkerProfilesTable.userId))
+    .leftJoin(SkillsTable, eq(GigWorkerProfilesTable.id, SkillsTable.workerProfileId))
+    .where(
+      and(
+        // Exclude current worker if exists (to prevent self-delegation)
+        gig.workerUserId ? ne(UsersTable.id, gig.workerUserId) : undefined,
+        // Exclude buyer if they are also a worker (to prevent buyer from delegating to themselves)
+        gig.buyerUserId ? ne(UsersTable.id, gig.buyerUserId) : undefined,
+        // Apply search filters if search term is provided
+        searchTerm ? or(
+          like(UsersTable.fullName, searchPattern),
+          like(UsersTable.email, searchPattern),
+          like(SkillsTable.name, searchPattern),
+          like(GigWorkerProfilesTable.fullBio, searchPattern)
+        ) : undefined
+      )
+    )
+    .limit(MAX_RESULTS);
+
+  return workers;
+}
+
+async function processWorkerResults(workers: any[], gig: any) {
+  // Get gig coordinates for distance calculation
+  const gigLocation = gig.exactLocation || gig.addressJson;
+  const gigCoords = parseCoordinates(gigLocation);
+
+  // Group workers by ID and calculate scores
+  const workerMap = new Map<string, WorkerSearchResult>();
+
+  for (const worker of workers) {
+    if (!workerMap.has(worker.id)) {
+      // Calculate distance
+      let distance = 0;
+      let isWithinDistance = true;
+
+      if (gigCoords && worker.latitude && worker.longitude) {
+        const workerLat = parseFloat(worker.latitude.toString());
+        const workerLng = parseFloat(worker.longitude.toString());
+
+        if (!isNaN(workerLat) && !isNaN(workerLng)) {
+          distance = calculateDistance(
+            gigCoords.lat,
+            gigCoords.lon,
+            workerLat,
+            workerLng
+          );
+          isWithinDistance = distance <= DELEGATION_SEARCH_RADIUS_KM;
+        }
+      } else if (gigCoords && worker.location) {
+        const workerCoords = parseCoordinates(worker.location);
+        if (workerCoords) {
+          distance = calculateDistance(
+            gigCoords.lat,
+            gigCoords.lon,
+            workerCoords.lat,
+            workerCoords.lon
+          );
+          isWithinDistance = distance <= DELEGATION_SEARCH_RADIUS_KM;
+        }
+      }
+
+      // Only include workers within distance
+      if (isWithinDistance) {
+        // Calculate skill match score based on gig requirements
+        const skillMatchScore = calculateSkillMatchScore(worker, gig);
+
+        // Calculate availability score
+        const availabilityScore = await calculateAvailabilityScore(worker.id, gig);
+
+        // Calculate overall score
+        const overallScore = (skillMatchScore * 0.4) + (availabilityScore * 0.3) + ((1 - distance / DELEGATION_SEARCH_RADIUS_KM) * 0.3);
+
+        workerMap.set(worker.id, {
+          id: worker.id,
+          name: worker.fullName || 'Unknown Worker',
+          username: worker.email?.split('@')[0] || 'user',
+          avatarUrl: '/images/default-avatar.svg',
+          primarySkill: worker.skillName || 'Professional',
+          experienceYears: parseFloat(String(worker.experienceYears || '0')),
+          hourlyRate: parseFloat(worker.agreedRate || '0'),
+          bio: worker.bio || '',
+          location: worker.location || 'Location not specified',
+          distance: Math.round(distance * 100) / 100,
+          skillMatchScore: Math.round(skillMatchScore * 100) / 100,
+          availabilityScore: Math.round(availabilityScore * 100) / 100,
+          overallScore: Math.round(overallScore * 100) / 100,
+          skills: [], // Will be populated below
+          isAvailable: availabilityScore > 0.5,
+          lastActive: worker.lastActive?.toString()
+        });
+      }
+    }
+  }
+
+  return workerMap;
+}
+
+async function enrichWorkersWithSkills(workerMap: Map<string, WorkerSearchResult>, gig: any) {
+  const workerIds = Array.from(workerMap.keys());
+  if (workerIds.length === 0) {
+    return;
+  }
+
+  const allWorkerSkills = await db
+    .select({
+      userId: GigWorkerProfilesTable.userId,
+      name: SkillsTable.name,
+      experienceYears: SkillsTable.experienceYears,
+      agreedRate: SkillsTable.agreedRate,
+    })
+    .from(SkillsTable)
+    .innerJoin(GigWorkerProfilesTable, eq(SkillsTable.workerProfileId, GigWorkerProfilesTable.id))
+    .where(inArray(GigWorkerProfilesTable.userId, workerIds));
+
+  const skillsByWorkerId = new Map<string, any[]>();
+  for (const skill of allWorkerSkills) {
+    if (!skillsByWorkerId.has(skill.userId)) {
+      skillsByWorkerId.set(skill.userId, []);
+    }
+    skillsByWorkerId.get(skill.userId)!.push(skill);
+  }
+
+  for (const [workerId, worker] of workerMap) {
+    const workerSkills = skillsByWorkerId.get(workerId) || [];
+
+    // Convert string values to numbers for skills array
+    worker.skills = workerSkills.map(skill => ({
+      name: skill.name,
+      experienceYears: parseFloat(String(skill.experienceYears || '0')),
+      agreedRate: parseFloat(String(skill.agreedRate || '0'))
+    }));
+
+    // Update primary skill to the most relevant one
+    if (workerSkills.length > 0) {
+      const mostRelevantSkill = findMostRelevantSkill(workerSkills, gig.titleInternal || '', gig.fullDescription || '');
+      worker.primarySkill = mostRelevantSkill.name;
+      worker.experienceYears = parseFloat(String(mostRelevantSkill.experienceYears || '0'));
+      worker.hourlyRate = parseFloat(String(mostRelevantSkill.agreedRate || '0'));
+    }
+  }
+}
+
+function applyFilters(results: WorkerSearchResult[], filters: SearchFilters) {
+  let filteredResults = [...results];
+
+  if (filters.minExperience) {
+    filteredResults = filteredResults.filter(w => w.experienceYears >= filters.minExperience!);
+  }
+
+  if (filters.maxRate) {
+    filteredResults = filteredResults.filter(w => w.hourlyRate <= filters.maxRate!);
+  }
+
+  if (filters.minRate) {
+    filteredResults = filteredResults.filter(w => w.hourlyRate >= filters.minRate!);
+  }
+
+  if (filters.availableOnly) {
+    filteredResults = filteredResults.filter(w => w.isAvailable);
+  }
+
+  if (filters.skills && filters.skills.length > 0) {
+    filteredResults = filteredResults.filter(w =>
+      w.skills.some(skill =>
+        filters.skills!.some(filterSkill =>
+          skill.name.toLowerCase().includes(filterSkill.toLowerCase())
+        )
+      )
+    );
+  }
+
+  return filteredResults;
+}
+
+function sortResults(results: WorkerSearchResult[], sortBy: string = 'relevance') {
+  const sortedResults = [...results];
+
+  switch (sortBy) {
+    case 'distance':
+      sortedResults.sort((a, b) => a.distance - b.distance);
+      break;
+    case 'experience':
+      sortedResults.sort((a, b) => b.experienceYears - a.experienceYears);
+      break;
+    case 'rate':
+      sortedResults.sort((a, b) => a.hourlyRate - b.hourlyRate);
+      break;
+    case 'relevance':
+    default:
+      sortedResults.sort((a, b) => b.overallScore - a.overallScore);
+      break;
+  }
+
+  return sortedResults;
+}
+
 export async function searchWorkersForDelegation(
   token: string,
   gigId: string,
   searchTerm: string = "",
   filters: SearchFilters = {}
-) {
+): Promise<{ success: true; data: WorkerSearchResult[]; count: number } | { error: string; status: number }> {
   try {
     console.log('🔍 DEBUG: Enhanced delegation search called with:', { gigId, searchTerm, filters });
-    
-    // Authenticate user
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
-    // Get user details
-    const user = await db.query.UsersTable.findFirst({
-      where: eq(UsersTable.firebaseUid, uid),
-      columns: { id: true, fullName: true }
-    });
-
-    if (!user) {
-      return { error: 'User not found', status: 404 };
+    const validationResult = await validateDelegationRequest(token, gigId);
+    if ('error' in validationResult) {
+      return validationResult as { error: string; status: number };
     }
+    const { gig } = validationResult;
 
-    // Get gig details with more information for better matching
-    const gig = await db.query.GigsTable.findFirst({
-      where: eq(GigsTable.id, gigId),
-      columns: {
-        id: true,
-        buyerUserId: true,
-        workerUserId: true,
-        statusInternal: true,
-        exactLocation: true,
-        addressJson: true,
-        titleInternal: true,
-        fullDescription: true,
-        startTime: true,
-        endTime: true,
-        agreedRate: true
-      }
-    });
+    const workers = await buildWorkerSearchQuery(gig, searchTerm);
 
-    if (!gig) {
-      return { error: 'Gig not found', status: 404 };
-    }
+    const workerMap = await processWorkerResults(workers, gig);
 
-    // Verify user is either the buyer or the assigned worker of this gig
-    if (gig.buyerUserId !== user.id && gig.workerUserId !== user.id) {
-      return { error: 'Unauthorized to delegate this gig', status: 403 };
-    }
+    await enrichWorkersWithSkills(workerMap, gig);
 
-    // Check if gig is in a state that allows delegation
-    const allowedStatuses = ['PENDING_WORKER_ACCEPTANCE', 'ACCEPTED', 'IN_PROGRESS', "DECLINED_BY_WORKER"];
-    
-    if (!allowedStatuses.includes(gig.statusInternal)) {
-      return { 
-        error: `Cannot delegate gig with status: ${gig.statusInternal}`, 
-        status: 400 
-      };
-    }
-
-    // Get gig coordinates for distance calculation
-    const gigLocation = gig.exactLocation || gig.addressJson;
-    const gigCoords = parseCoordinates(gigLocation);
-    
-    console.log('🔍 DEBUG: Delegation search - excluding users:', {
-      buyerUserId: gig.buyerUserId,
-      workerUserId: gig.workerUserId,
-      currentUser: user.id
-    });
-    
-    // Build enhanced search query
-    const searchPattern = searchTerm ? `%${searchTerm.toLowerCase()}%` : '%';
-    
-    // Get all workers with their skills and availability
-    const workers = await db
-      .select({
-        id: UsersTable.id,
-        fullName: UsersTable.fullName,
-        email: UsersTable.email,
-        bio: GigWorkerProfilesTable.fullBio,
-        location: GigWorkerProfilesTable.location,
-        latitude: GigWorkerProfilesTable.latitude,
-        longitude: GigWorkerProfilesTable.longitude,
-        skillName: SkillsTable.name,
-        experienceYears: SkillsTable.experienceYears,
-        agreedRate: SkillsTable.agreedRate,
-        lastActive: UsersTable.updatedAt,
-      })
-      .from(UsersTable)
-      .innerJoin(GigWorkerProfilesTable, eq(UsersTable.id, GigWorkerProfilesTable.userId))
-      .leftJoin(SkillsTable, eq(GigWorkerProfilesTable.id, SkillsTable.workerProfileId))
-      .where(
-        and(
-          // Exclude current worker if exists (to prevent self-delegation)
-          gig.workerUserId ? ne(UsersTable.id, gig.workerUserId) : undefined,
-          // Exclude buyer if they are also a worker (to prevent buyer from delegating to themselves)
-          gig.buyerUserId ? ne(UsersTable.id, gig.buyerUserId) : undefined,
-          // Apply search filters if search term is provided
-          searchTerm ? or(
-            like(UsersTable.fullName, searchPattern),
-            like(UsersTable.email, searchPattern),
-            like(SkillsTable.name, searchPattern),
-            like(GigWorkerProfilesTable.fullBio, searchPattern)
-          ) : undefined
-        )
-      )
-      .limit(MAX_RESULTS);
-
-    // Group workers by ID and calculate scores
-    const workerMap = new Map<string, WorkerSearchResult>();
-    
-    for (const worker of workers) {
-      if (!workerMap.has(worker.id)) {
-        // Calculate distance
-        let distance = 0;
-        let isWithinDistance = true;
-        
-        if (gigCoords && worker.latitude && worker.longitude) {
-          const workerLat = parseFloat(worker.latitude.toString());
-          const workerLng = parseFloat(worker.longitude.toString());
-          
-          if (!isNaN(workerLat) && !isNaN(workerLng)) {
-            distance = calculateDistance(
-              gigCoords.lat,
-              gigCoords.lon,
-              workerLat,
-              workerLng
-            );
-            isWithinDistance = distance <= DELEGATION_SEARCH_RADIUS_KM;
-          }
-        } else if (gigCoords && worker.location) {
-          const workerCoords = parseCoordinates(worker.location);
-          if (workerCoords) {
-            distance = calculateDistance(
-              gigCoords.lat,
-              gigCoords.lon,
-              workerCoords.lat,
-              workerCoords.lon
-            );
-            isWithinDistance = distance <= DELEGATION_SEARCH_RADIUS_KM;
-          }
-        }
-        
-        // Only include workers within distance
-        if (isWithinDistance) {
-          // Calculate skill match score based on gig requirements
-          const skillMatchScore = calculateSkillMatchScore(worker, gig);
-          
-          // Calculate availability score
-          const availabilityScore = await calculateAvailabilityScore(worker.id, gig);
-          
-          // Calculate overall score
-          const overallScore = (skillMatchScore * 0.4) + (availabilityScore * 0.3) + ((1 - distance / DELEGATION_SEARCH_RADIUS_KM) * 0.3);
-          
-          workerMap.set(worker.id, {
-            id: worker.id,
-            name: worker.fullName || 'Unknown Worker',
-            username: worker.email?.split('@')[0] || 'user',
-            avatarUrl: '/images/default-avatar.svg',
-            primarySkill: worker.skillName || 'Professional',
-            experienceYears: parseFloat(String(worker.experienceYears || '0')),
-            hourlyRate: parseFloat(worker.agreedRate || '0'),
-            bio: worker.bio || '',
-            location: worker.location || 'Location not specified',
-            distance: Math.round(distance * 100) / 100,
-            skillMatchScore: Math.round(skillMatchScore * 100) / 100,
-            availabilityScore: Math.round(availabilityScore * 100) / 100,
-            overallScore: Math.round(overallScore * 100) / 100,
-            skills: [], // Will be populated below
-            isAvailable: availabilityScore > 0.5,
-            lastActive: worker.lastActive?.toString()
-          });
-        }
-      }
-    }
-
-    // Get all skills for each worker
-    for (const [workerId, worker] of workerMap) {
-      const workerSkills = await db
-        .select({
-          name: SkillsTable.name,
-          experienceYears: SkillsTable.experienceYears,
-          agreedRate: SkillsTable.agreedRate,
-        })
-        .from(SkillsTable)
-        .innerJoin(GigWorkerProfilesTable, eq(SkillsTable.workerProfileId, GigWorkerProfilesTable.id))
-        .where(eq(GigWorkerProfilesTable.userId, workerId));
-      
-      // Convert string values to numbers for skills array
-      worker.skills = workerSkills.map(skill => ({
-        name: skill.name,
-        experienceYears: parseFloat(String(skill.experienceYears || '0')),
-        agreedRate: parseFloat(String(skill.agreedRate || '0'))
-      }));
-      
-      // Update primary skill to the most relevant one
-      if (workerSkills.length > 0) {
-        const mostRelevantSkill = findMostRelevantSkill(workerSkills, gig.titleInternal || '', gig.fullDescription || '');
-        worker.primarySkill = mostRelevantSkill.name;
-        worker.experienceYears = parseFloat(String(mostRelevantSkill.experienceYears || '0'));
-        worker.hourlyRate = parseFloat(String(mostRelevantSkill.agreedRate || '0'));
-      }
-    }
-
-    // Apply filters
     let results = Array.from(workerMap.values());
-    
-    if (filters.minExperience) {
-      results = results.filter(w => w.experienceYears >= filters.minExperience!);
-    }
-    
-    if (filters.maxRate) {
-      results = results.filter(w => w.hourlyRate <= filters.maxRate!);
-    }
-    
-    if (filters.minRate) {
-      results = results.filter(w => w.hourlyRate >= filters.minRate!);
-    }
-    
-    if (filters.availableOnly) {
-      results = results.filter(w => w.isAvailable);
-    }
-    
-    if (filters.skills && filters.skills.length > 0) {
-      results = results.filter(w => 
-        w.skills.some(skill => 
-          filters.skills!.some(filterSkill => 
-            skill.name.toLowerCase().includes(filterSkill.toLowerCase())
-          )
-        )
-      );
-    }
 
-    // Sort results
-    const sortBy = filters.sortBy || 'relevance';
-    switch (sortBy) {
-      case 'distance':
-        results.sort((a, b) => a.distance - b.distance);
-        break;
-      case 'experience':
-        results.sort((a, b) => b.experienceYears - a.experienceYears);
-        break;
-      case 'rate':
-        results.sort((a, b) => a.hourlyRate - b.hourlyRate);
-        break;
-      case 'relevance':
-      default:
-        results.sort((a, b) => b.overallScore - a.overallScore);
-        break;
-    }
+    results = applyFilters(results, filters);
+
+    results = sortResults(results, filters.sortBy);
 
     console.log(`🔍 DEBUG: Found ${results.length} workers for delegation`);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: results,
-      count: results.length 
+      count: results.length
     };
 
   } catch (error: any) {
     console.error('Error searching workers for delegation:', error);
-    return { 
-      error: error.message || 'Failed to search workers', 
-      status: 500 
+    return {
+      error: error.message || 'Failed to search workers',
+      status: 500
     };
   }
 }
@@ -403,3 +456,4 @@ async function calculateAvailabilityScore(workerId: string, gig: any): Promise<n
     return 0.5;
   }
 }
+
