@@ -62,16 +62,6 @@ export function doSlotsOverlap(slot1: AvailabilitySlot, slot2: AvailabilitySlot)
 function generateEventsFromSlot(slot: AvailabilitySlot, startDate: Date, endDate: Date): AvailabilityEvent[] {
   const events: AvailabilityEvent[] = [];
   
-  // Debug logging to see what we're working with
-  console.log(`generateEventsFromSlot called with:`, {
-    frequency: slot.frequency,
-    days: slot.days,
-    ends: slot.ends,
-    occurrences: slot.occurrences,
-    startDate: startDate.toDateString(),
-    endDate: endDate.toDateString()
-  });
-  
   // Start from the slot's startDate if provided, otherwise use the provided startDate
   const slotStartDate = slot.startDate ? new Date(slot.startDate) : startDate;
   const today = new Date();
@@ -226,20 +216,6 @@ function createEventFromSlot(slot: AvailabilitySlot, date: Date): AvailabilityEv
   // Set end time
   const [endHour, endMinute] = slot.endTime.split(':').map(Number);
   eventEnd.setHours(endHour, endMinute, 0, 0);
-  
-  // Debug logging
-  console.log('createEventFromSlot:', {
-    slotId: slot.id,
-    date: date.toDateString(),
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-    eventStart: eventStart.toISOString(),
-    eventEnd: eventEnd.toISOString(),
-    startHour,
-    startMinute,
-    endHour,
-    endMinute
-  });
   
   return {
     id: `${slot.id}-${date.toISOString().split('T')[0]}`,

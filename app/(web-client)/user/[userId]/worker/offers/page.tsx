@@ -73,7 +73,7 @@ export default function WorkerOffersPage() {
     // Check if user is authorized to view this page
     if (!loadingAuth && user && authUserId === pageUserId) {
       setIsLoadingData(true);
-      fetchWorkerData(pageUserId)
+      fetchWorkerData(user.uid)
         .then((data) => {
           setOffers(data.offers);
           setAcceptedGigs(data.acceptedGigs);
