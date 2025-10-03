@@ -1,7 +1,7 @@
 "use client";
 export async function setLastRoleUsed(lastRoleUsed: "BUYER" | "GIG_WORKER") {
   try {
-    localStorage.setItem("lastRoleUsed", lastRoleUsed);
+    window.localStorage.setItem("lastRoleUsed", lastRoleUsed);
 
     return null;
   } catch (error) {

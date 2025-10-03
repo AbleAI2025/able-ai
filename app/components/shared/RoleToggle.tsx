@@ -24,20 +24,23 @@ const RoleToggle: React.FC<{ lastViewVisited?: string }> = ({
 
   const handleToggle = async (newRole: "BUYER" | "GIG_WORKER") => {
     if (newRole === currentActiveRole && !lastViewVisited) return;
-
+    sessionStorage.setItem("roleSwitchInProgress", "1");
+    
     try {
       if (newRole === "GIG_WORKER" && !userHasWorkerRole) {
         toast.error("You cannot switch to worker mode, please complete onboarding first.");
+        await setLastRoleUsed(newRole);
         router.push(`/user/${user?.uid}/worker/onboarding-ai`);
         return;
       }
 
-      const path = `/user/${user?.uid}/${newRole === "GIG_WORKER" ? "worker" : "buyer"}`;
       await setLastRoleUsed(newRole);
+      const path = `/user/${user?.uid}/${newRole === "GIG_WORKER" ? "worker" : "buyer"}`;
       router.push(lastViewVisited || path);
     } catch (error) {
       console.error("Failed to switch role:", error);
       toast.error("Failed to switch roles. Please try again.");
+      sessionStorage.removeItem("roleSwitchInProgress");
     }
   };
 
