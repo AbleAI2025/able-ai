@@ -35,6 +35,7 @@ import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { authClient } from "@/lib/firebase/clientApp";
 import PhoneNumberModal from "./phoneNumberModal";
 import PasswordInputField from "@/app/components/form/PasswodInputField";
+import { getLastRoleUsed } from "@/lib/last-role-used";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function SettingsPage() {
 
   // Delete Account related states
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isResendingEmail, setIsResendingEmail] = useState(false);
 
   // Privacy Settings related states
@@ -74,11 +75,13 @@ export default function SettingsPage() {
   const [emailGigUpdates, setEmailGigUpdates] = useState(false);
   const [emailPlatformAnnouncements, setEmailPlatformAnnouncements] =
     useState(false);
-    
+
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<FlowStep>('connecting');
+
+  const userLastRole = getLastRoleUsed() as UserRole;
 
   const fetchSettings = async () => {
     try {
@@ -92,9 +95,9 @@ export default function SettingsPage() {
         email: user?.email || "",
         phone: userProfile?.phone || "",
         // Added mock Stripe data
-        stripeAccountId: userProfile?.stripeCustomerId || null, // Or a mock ID like 'acct_123abc'
-        stripeAccountStatus: "incomplete",
+        stripeCustomerId: userProfile?.stripeCustomerId || null,
         stripeConnectAccountId: userProfile?.stripeConnectAccountId || null, // Or 'connected', 'pending_verification', etc.
+        stripeAccountStatus: "incomplete",
         canReceivePayouts: false, // Or true
         lastRole: userProfile?.lastRoleUsed as UserRole,
         privacySettings: {
@@ -118,7 +121,11 @@ export default function SettingsPage() {
       setEmailPlatformAnnouncements(
         data.notificationPreferences.email.platformAnnouncements
       );
-      if (!data.stripeAccountId || !data.stripeAccountStatus) {
+      if (
+        (userLastRole === 'GIG_WORKER' && !data.stripeConnectAccountId) ||
+        (userLastRole === 'BUYER' && !data.stripeCustomerId) ||
+        !data.stripeAccountStatus
+      ) {
         setShowStripeModal(true)
       }
       // setSmsGigAlerts(data.notificationPreferences.sms.gigAlerts); // SMS commented out
@@ -319,7 +326,7 @@ export default function SettingsPage() {
     }
   };
 
-// Delete Account Confirmation
+  // Delete Account Confirmation
   const handleDeleteAccountConfirmed = async () => {
     clearMessages();
     setIsDeletingAccount(true);
@@ -394,8 +401,6 @@ export default function SettingsPage() {
     }
   }
 
-
-
   if (isLoadingSettings) {
     return <Loader />;
   }
@@ -425,7 +430,7 @@ export default function SettingsPage() {
                 To secure your account and access all features, please verify your email address. A verification link has been sent to <strong>{user.email}</strong>.
               </p>
               <div className={styles.verificationActions}>
-                <button 
+                <button
                   onClick={handleResendVerification}
                   className={styles.resendButton}
                   disabled={isResendingEmail}
@@ -457,7 +462,10 @@ export default function SettingsPage() {
 
           {/* Inline Stripe Prompt / Status Indicator (Alternative to Modal) */}
           {userSettings &&
-            userSettings.stripeAccountId &&
+            (
+              (userLastRole === 'GIG_WORKER' && userSettings.stripeConnectAccountId) ||
+              (userLastRole === 'BUYER' && userSettings.stripeCustomerId)
+            ) &&
             userSettings.stripeAccountStatus === "connected" &&
             userSettings.canReceivePayouts && (
               <div
@@ -465,7 +473,7 @@ export default function SettingsPage() {
               >
                 <CheckCircle size={20} /> Stripe account connected and active.
               </div>
-          )}
+            )}
 
           {/* Profile Information Section */}
           <section className={styles.section} id="profile-information">
@@ -725,7 +733,7 @@ export default function SettingsPage() {
           </div>
         )}
         {showStripeModal && (
-          userSettings?.lastRole === 'BUYER' ?
+          userLastRole === 'BUYER' ?
             <>
               <StripeElementsProvider options={{
                 mode: 'setup',
@@ -735,10 +743,10 @@ export default function SettingsPage() {
                   labels: 'floating',
                 }
               }}>
-                <StripeModal userId={user?.uid} userRole={userSettings.lastRole} connectionStep={currentStep} isConnectingStripe={isConnectingStripe} handleCloseModal={() => setShowStripeModal(false)} handleOpenStripeConnection={handleOpenStripeConnection} />
+                <StripeModal userId={user?.uid} userRole={userLastRole} connectionStep={currentStep} isConnectingStripe={isConnectingStripe} handleCloseModal={() => setShowStripeModal(false)} handleOpenStripeConnection={handleOpenStripeConnection} />
               </StripeElementsProvider>
             </>
-            : <StripeModal userId={user?.uid} userRole={userSettings.lastRole} connectionStep={currentStep} isConnectingStripe={isConnectingStripe} handleCloseModal={() => setShowStripeModal(false)} handleOpenStripeConnection={handleStripeConnect} />
+            : <StripeModal userId={user?.uid} userRole={userLastRole} connectionStep={currentStep} isConnectingStripe={isConnectingStripe} handleCloseModal={() => setShowStripeModal(false)} handleOpenStripeConnection={handleStripeConnect} />
         )}
       </div>
     </div>
