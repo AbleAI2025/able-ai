@@ -547,7 +547,7 @@ export default function SettingsPage() {
               name="card"
               type="text"
               disabled
-              value={"Visa **** 1234"}
+              value={""}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => () => {
                 console.log(e);
               }}
