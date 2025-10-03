@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { checkStripeConnection } from '../actions/stripe/check-stripe-connection';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 
-// Define la estructura de tu estado
 interface StripeStatus {
   isConnected: boolean;
   isLoading: boolean;
@@ -48,7 +47,7 @@ export const useStripeStatus = (userId: string): StripeStatus => {
     };
 
     checkStatus();
-  }, []);
+  }, [userId, lastRoleUsed]);
 
   return status;
 };

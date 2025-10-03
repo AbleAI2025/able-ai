@@ -186,8 +186,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         const filteredEvents = filterEvents(allEventsCombined, activeFilter);
@@ -352,8 +352,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         setEvents(filterEvents(allEventsCombined, activeFilter));
@@ -402,8 +402,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         setEvents(filterEvents(allEventsCombined, activeFilter));
@@ -491,8 +491,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         setEvents(filterEvents(allEventsCombined, activeFilter));
@@ -512,8 +512,11 @@ const WorkerCalendarPage = () => {
 
   const handleAcceptOffer = async (offerId: string) => {
 
-    if (!isLoading && isConnected) router.push(`/user/${authUserUid}/settings`);
-    
+    if (!isLoading && !isConnected) {
+      router.push(`/user/${authUserUid}/settings`);
+      return;
+    }
+
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
     try {
@@ -597,9 +600,8 @@ const WorkerCalendarPage = () => {
       />
 
       <main
-        className={`${styles.mainContent} ${
-          isFilterTransitioning ? styles.filterTransitioning : ""
-        }`}
+        className={`${styles.mainContent} ${isFilterTransitioning ? styles.filterTransitioning : ""
+          }`}
       >
         {activeFilter === "Manage availability" ? (
           <>

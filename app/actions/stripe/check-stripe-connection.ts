@@ -55,12 +55,14 @@ export async function checkStripeConnection(firebaseUid: string, userRole: "BUYE
 
     if (!userRecord) throw new Error('User not found');
 
-    const stripeCustomerId = userRecord?.stripeCustomerId;
-    const stripeAccountId = userRecord?.stripeConnectAccountId;
+    const stripeCustomerId = userRecord.stripeCustomerId;
+    const stripeAccountId = userRecord.stripeConnectAccountId;
 
 
     if (userRole === 'BUYER') return await checkCustomerConnection(stripeCustomerId);
     if (userRole === 'GIG_WORKER') return await checkAccountConnection(stripeAccountId);
+
+    throw new Error('Invalid or missing user role for Stripe connection check.');
 
   } catch (error: unknown) {
     console.error('Error verifying Stripe connection:', error);

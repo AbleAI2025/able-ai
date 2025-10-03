@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStripeStatus } from '@/app/hooks/useStripeConnectionStatus';
+import { Loader2 } from 'lucide-react';
 
 interface StripeConnectionGuardProps {
   children: React.ReactNode;
@@ -25,7 +26,7 @@ const StripeConnectionGuard: React.FC<StripeConnectionGuardProps> = ({
   }, [isLoading, isConnected, redirectPath, router]);
 
   if (isLoading) {
-    return 'Loading';
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><Loader2 className="animate-spin" size={32} /></div>;
   }
 
   if (!isConnected) {

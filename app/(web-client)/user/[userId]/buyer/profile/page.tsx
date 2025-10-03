@@ -73,7 +73,6 @@ export default function BuyerProfilePage() {
     },
     companyRole: "",
   });
-  const lastRoleUsed = getLastRoleUsed();
 
 
   const fetchUserProfile = async () => {
