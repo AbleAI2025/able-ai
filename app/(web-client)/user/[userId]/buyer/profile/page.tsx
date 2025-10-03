@@ -32,6 +32,8 @@ import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import UserNameModal from "@/app/components/profile/UserNameModal";
 import EditBusinessModal from "@/app/components/profile/EditBusinessModal";
 import SocialLinkModal from "./SocialLinkModal";
+import { getLastRoleUsed } from "@/lib/last-role-used";
+import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
 
 interface BusinessInfo {
   fullCompanyName: string;
@@ -71,6 +73,8 @@ export default function BuyerProfilePage() {
     },
     companyRole: "",
   });
+  const lastRoleUsed = getLastRoleUsed();
+
 
   const fetchUserProfile = async () => {
     const { success, profile } = await getGigBuyerProfileAction(user?.token);
@@ -210,7 +214,7 @@ export default function BuyerProfilePage() {
       </div>
     );
   }
-  if (!dashboardData) {
+  if (!dashboardData || !authUserId) {
     return (
       <div className={styles.container}>
         <div className={styles.pageWrapper}>
@@ -221,190 +225,192 @@ export default function BuyerProfilePage() {
   }
 
   return (
-    <div className={styles.container}>
-      <ScreenHeaderWithBack />
-      <div className={styles.pageWrapper}>
-        {/* Profile Header */}
-        <header className={styles.profileHeader}>
-          <h3 className={styles.profileHeaderName}>
-            {dashboardData.fullName}
-            <button
-              className={styles.editButton}
-              type="button"
-              aria-label="Edit name"
-              onClick={() => setIsOpen(true)}
-            >
-              <Edit2 size={16} color="#ffffff" className={styles.icon} />
-            </button>
-          </h3>
-          <p className={styles.profileHeaderUsername}>
-            {dashboardData?.socialLink}
-            <button
-              className={styles.editButton}
-              type="button"
-              aria-label="Edit social link"
-              onClick={() => setIsSocialModalOpen(true)}
-            >
-              <Edit2 size={14} color="#ffffff" className={styles.icon} />
-            </button>
-          </p>
-        </header>
-
-        {/* Intro & Business Card Section */}
-        <section className={`${styles.section} ${styles.introCard}`}>
-          <BuyerProfileVideo
-            dashboardData={dashboardData}
-            isSelfView={isSelfView}
-            isEditingVideo={isEditingVideo}
-            setIsEditingVideo={setIsEditingVideo}
-            handleVideoUpload={handleVideoUpload}
-          />
-
-          <div className={styles.businessInfoCard}>
-            <div className={styles.headerRow}>
+    <StripeConnectionGuard userId={authUserId} redirectPath={`/user/${authUserId}/settings`}>
+      <div className={styles.container}>
+        <ScreenHeaderWithBack />
+        <div className={styles.pageWrapper}>
+          {/* Profile Header */}
+          <header className={styles.profileHeader}>
+            <h3 className={styles.profileHeaderName}>
+              {dashboardData.fullName}
               <button
-                onClick={() => setIsModalOpen(true)}
-                className={styles.editInfoBtn}
+                className={styles.editButton}
+                type="button"
+                aria-label="Edit name"
+                onClick={() => setIsOpen(true)}
               >
-                <Pencil size={20} />
+                <Edit2 size={16} color="#ffffff" className={styles.icon} />
               </button>
+            </h3>
+            <p className={styles.profileHeaderUsername}>
+              {dashboardData?.socialLink}
+              <button
+                className={styles.editButton}
+                type="button"
+                aria-label="Edit social link"
+                onClick={() => setIsSocialModalOpen(true)}
+              >
+                <Edit2 size={14} color="#ffffff" className={styles.icon} />
+              </button>
+            </p>
+          </header>
+
+          {/* Intro & Business Card Section */}
+          <section className={`${styles.section} ${styles.introCard}`}>
+            <BuyerProfileVideo
+              dashboardData={dashboardData}
+              isSelfView={isSelfView}
+              isEditingVideo={isEditingVideo}
+              setIsEditingVideo={setIsEditingVideo}
+              handleVideoUpload={handleVideoUpload}
+            />
+
+            <div className={styles.businessInfoCard}>
+              <div className={styles.headerRow}>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className={styles.editInfoBtn}
+                >
+                  <Pencil size={20} />
+                </button>
+              </div>
+
+              <h4>Business:</h4>
+              <p>{businessInfo?.fullCompanyName || "Not provided"}</p>
+
+              <span className={styles.location}>
+                {businessInfo?.location?.formatted_address || "Not provided"}
+              </span>
+
+              <h4>Role:</h4>
+              <p>{businessInfo?.companyRole || "Not provided"}</p>
             </div>
+          </section>
 
-            <h4>Business:</h4>
-            <p>{businessInfo?.fullCompanyName || "Not provided"}</p>
+          {/* Statistics Section */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Statistics</h2>
+            <div className={styles.statisticsItemsContainer}>
+              <StatisticItemDisplay
+                stat={{
+                  id: 1,
+                  icon: ThumbsUp,
+                  value: dashboardData?.responseRateInternal || 0,
+                  label: `Would work with ${user?.displayName?.split(" ")?.[0] ?? ""
+                    } again`,
+                  iconColor: "#7eeef9",
+                }}
+              />
+              <StatisticItemDisplay
+                stat={{
+                  id: 2,
+                  icon: MessageSquare,
+                  value: dashboardData?.averageRating || 0,
+                  label: "Response rate",
+                  iconColor: "#7eeef9",
+                }}
+              />
+            </div>
+          </section>
 
-            <span className={styles.location}>
-              {businessInfo?.location?.formatted_address || "Not provided"}
-            </span>
-
-            <h4>Role:</h4>
-            <p>{businessInfo?.companyRole || "Not provided"}</p>
+          {/* Completed Hires Card */}
+          <div className={styles.completedHiresCard}>
+            <div className={styles.completedHiresCount}>
+              <span className={styles.completedHiresLabel}>Completed Hires</span>
+              <span className={styles.completedHiresNumber}>
+                {dashboardData.completedHires}
+              </span>
+            </div>
+            <div className={styles.staffTypesList}>
+              <span className={styles.staffTypesTitle}>
+                Types of Staff Hired:
+              </span>
+              {dashboardData?.topSkills && dashboardData.topSkills.length > 0 ? (
+                <ul>
+                  {dashboardData.topSkills.map((type, index) => (
+                    <li key={index}>{type.name}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span className={styles.emptyMessage}>No staff types yet</span>
+              )}
+            </div>
           </div>
-        </section>
 
-        {/* Statistics Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Statistics</h2>
-          <div className={styles.statisticsItemsContainer}>
-            <StatisticItemDisplay
-              stat={{
-                id: 1,
-                icon: ThumbsUp,
-                value: dashboardData?.responseRateInternal || 0,
-                label: `Would work with ${user?.displayName?.split(" ")?.[0] ?? ""
-                  } again`,
-                iconColor: "#7eeef9",
-              }}
-            />
-            <StatisticItemDisplay
-              stat={{
-                id: 2,
-                icon: MessageSquare,
-                value: dashboardData?.averageRating || 0,
-                label: "Response rate",
-                iconColor: "#7eeef9",
-              }}
-            />
-          </div>
-        </section>
+          {/* Workforce Analytics Section */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
+            <div className={styles.analyticsChartsContainer}>
+              <PieChartComponent skills={dashboardData?.skills} />
+              <BarChartComponent data={dashboardData?.totalPayments || []} emptyMessage="You don't have payments yet" />
+            </div>
+          </section>
 
-        {/* Completed Hires Card */}
-        <div className={styles.completedHiresCard}>
-          <div className={styles.completedHiresCount}>
-            <span className={styles.completedHiresLabel}>Completed Hires</span>
-            <span className={styles.completedHiresNumber}>
-              {dashboardData.completedHires}
-            </span>
-          </div>
-          <div className={styles.staffTypesList}>
-            <span className={styles.staffTypesTitle}>
-              Types of Staff Hired:
-            </span>
-            {dashboardData?.topSkills && dashboardData.topSkills.length > 0 ? (
-              <ul>
-                {dashboardData.topSkills.map((type, index) => (
-                  <li key={index}>{type.name}</li>
-                ))}
-              </ul>
-            ) : (
-              <span className={styles.emptyMessage}>No staff types yet</span>
-            )}
-          </div>
-        </div>
+          {/* Badges Awarded Section */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Badges Awarded</h2>
+            <div className={styles.badges}>
+              {dashboardData && dashboardData.badges.length > 0 ? (
+                dashboardData?.badges?.map((badge) => (
+                  <div className={styles.badge} key={badge.id}>
+                    <AwardDisplayBadge
+                      icon={badge.icon as BadgeIcon}
+                      title={badge.name}
+                      role="buyer"
+                      type={badge.type}
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className={styles.noBadges}>No badges available</p>
+              )}
+            </div>
+          </section>
 
-        {/* Workforce Analytics Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
-          <div className={styles.analyticsChartsContainer}>
-            <PieChartComponent skills={dashboardData?.skills} />
-            <BarChartComponent data={dashboardData?.totalPayments || []} emptyMessage="You don't have payments yet" />
-          </div>
-        </section>
-
-        {/* Badges Awarded Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Badges Awarded</h2>
-          <div className={styles.badges}>
-            {dashboardData && dashboardData.badges.length > 0 ? (
-              dashboardData?.badges?.map((badge) => (
-                <div className={styles.badge} key={badge.id}>
-                  <AwardDisplayBadge
-                    icon={badge.icon as BadgeIcon}
-                    title={badge.name}
-                    role="buyer"
-                    type={badge.type}
+          {/* Worker Reviews Section */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Worker Reviews</h2>
+            {dashboardData?.reviews?.length > 0 ? (
+              <div className={styles.reviewsListContainer}>
+                {dashboardData?.reviews.map((review, index) => (
+                  <ReviewCardItem
+                    key={index}
+                    reviewerName={review.name}
+                    date={review.date.toString()}
+                    comment={review.text}
                   />
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <p className={styles.noBadges}>No badges available</p>
+              <p className={styles.noReviews}>No worker reviews yet.</p>
             )}
-          </div>
-        </section>
-
-        {/* Worker Reviews Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Worker Reviews</h2>
-          {dashboardData?.reviews?.length > 0 ? (
-            <div className={styles.reviewsListContainer}>
-              {dashboardData?.reviews.map((review, index) => (
-                <ReviewCardItem
-                  key={index}
-                  reviewerName={review.name}
-                  date={review.date.toString()}
-                  comment={review.text}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className={styles.noReviews}>No worker reviews yet.</p>
-          )}
-        </section>
+          </section>
+        </div>
+        {/* Edit Name Modal */}
+        {isOpen && (
+          <UserNameModal
+            userId={user.uid}
+            initialValue={dashboardData.fullName}
+            fetchUserProfile={(_id) => fetchUserProfile()}
+            onClose={() => setIsOpen(false)}
+          />
+        )}
+        {isModalOpen && (
+          <EditBusinessModal
+            initialData={businessInfo}
+            onSave={handleSave}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
+        {isSocialModalOpen && (
+          <SocialLinkModal
+            initialValue={dashboardData.socialLink}
+            onClose={() => setIsSocialModalOpen(false)}
+            fetchUserProfile={fetchUserProfile}
+            updateAction={updateSocialLinkBuyerProfileAction}
+          />
+        )}
       </div>
-      {/* Edit Name Modal */}
-      {isOpen && (
-        <UserNameModal
-          userId={user.uid}
-          initialValue={dashboardData.fullName}
-          fetchUserProfile={(_id) => fetchUserProfile()}
-          onClose={() => setIsOpen(false)}
-        />
-      )}
-      {isModalOpen && (
-        <EditBusinessModal
-          initialData={businessInfo}
-          onSave={handleSave}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-      {isSocialModalOpen && (
-        <SocialLinkModal
-          initialValue={dashboardData.socialLink}
-          onClose={() => setIsSocialModalOpen(false)}
-          fetchUserProfile={fetchUserProfile}
-          updateAction={updateSocialLinkBuyerProfileAction}
-        />
-      )}
-    </div>
+    </StripeConnectionGuard>
   );
 }

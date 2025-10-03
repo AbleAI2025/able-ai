@@ -12,6 +12,7 @@ import styles from './PaymentsPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { BuyerPayment, getBuyerPayments } from '@/actions/payments/get-buyer-payments';
 import BarChartComponent from '@/app/components/shared/BarChart';
+import StripeConnectionGuard from '@/app/components/shared/StripeConnectionGuard';
 
 interface FilterState {
   staffType: 'All' | string;
@@ -123,175 +124,177 @@ export default function BuyerPaymentsPage() {
     return <Briefcase size={18} className={styles.paymentGigIcon} />; // Default
   }
 
-
   if (isLoading || (!user && !isLoading) || (authUserId && authUserId !== pageUserId)) {
     return <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={32} /> Loading...</div>;
   }
 
+  if (!authUserId) return null;
+
   return (
-    <div className={styles.container}>
-      <div className={styles.pageWrapper}>
-        <header className={styles.header}>
-          <button onClick={() => router.back()} className={styles.backButton}>
-            <ArrowLeft size={16} />
-          </button>
-          <h1 className={styles.pageTitle}>Payments</h1>
-          <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
-            <Filter size={16} /> Filter
-          </button>
-        </header>
-        <p className={styles.totalsNote}>Totals include Able AI & payment provider fees.</p>
-        {/* Example of how a filter modal might be structured */}
-        {showFilterModal && (
-          <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <h3 className={styles.modalHeader}>Filter Payments</h3>
+    <StripeConnectionGuard userId={authUserId} redirectPath={`/user/${authUserId}/settings`}>
+      <div className={styles.container}>
+        <div className={styles.pageWrapper}>
+          <header className={styles.header}>
+            <button onClick={() => router.back()} className={styles.backButton}>
+              <ArrowLeft size={16} />
+            </button>
+            <h1 className={styles.pageTitle}>Payments</h1>
+            <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
+              <Filter size={16} /> Filter
+            </button>
+          </header>
+          <p className={styles.totalsNote}>Totals include Able AI & payment provider fees.</p>
+          {/* Example of how a filter modal might be structured */}
+          {showFilterModal && (
+            <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
+              <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                <h3 className={styles.modalHeader}>Filter Payments</h3>
 
-              <div className={styles.modalFilterForm}>
-                <div>
-                  <p className={styles.modalHeader}>Gig Type</p>
-                  <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
-                    {gigTypes.map(type => (
-                      <label key={type} className={styles.filterOptionLabel} style={{ padding: '0.5rem 0' }}>
+                <div className={styles.modalFilterForm}>
+                  <div>
+                    <p className={styles.modalHeader}>Gig Type</p>
+                    <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                      {gigTypes.map(type => (
+                        <label key={type} className={styles.filterOptionLabel} style={{ padding: '0.5rem 0' }}>
+                          <input
+                            type="radio"
+                            name="gigTypeModalFilter"
+                            value={type}
+                            checked={filters.staffType === type}
+                            onChange={() => handleFilterChange('staffType', type)}
+                          />
+                          {type}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className={styles.modalHeader}>Date</p>
+                    <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                      <div className={styles.filterItem}>
+                        <label htmlFor="dateFrom">
+                          From
+                        </label>
                         <input
-                          type="radio"
-                          name="gigTypeModalFilter"
-                          value={type}
-                          checked={filters.staffType === type}
-                          onChange={() => handleFilterChange('staffType', type)}
+                          id="dateFrom"
+                          type="date"
+                          value={filters.dateFrom}
+                          onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
                         />
-                        {type}
-                      </label>
-                    ))}
+                      </div>
+                      <div className={styles.filterItem}>
+                        <label htmlFor="dateTo">
+                          To
+                        </label>
+                        <input
+                          id="dateTo"
+                          type="date"
+                          value={filters.dateTo}
+                          onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className={styles.modalHeader}>Price</p>
+                    <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                      <div className={styles.filterItem}>
+                        <label htmlFor="priceFrom">
+                          Minimum price
+                        </label>
+                        <input
+                          id="priceFrom"
+                          type="number"
+                          placeholder="0.00"
+                          value={filters.priceFrom}
+                          onChange={(e) => handleFilterChange('priceFrom', e.target.value)}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div className={styles.filterItem}>
+                        <label htmlFor="priceTo">
+                          Maximum price
+                        </label>
+                        <input
+                          id="priceTo"
+                          type="number"
+                          placeholder="1000.00"
+                          value={filters.priceTo}
+                          onChange={(e) => handleFilterChange('priceTo', e.target.value)}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <p className={styles.modalHeader}>Date</p>
-                  <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
-                    <div className={styles.filterItem}>
-                      <label htmlFor="dateFrom">
-                        From
-                      </label>
-                      <input
-                        id="dateFrom"
-                        type="date"
-                        value={filters.dateFrom}
-                        onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                      />
-                    </div>
-                    <div className={styles.filterItem}>
-                      <label htmlFor="dateTo">
-                        To
-                      </label>
-                      <input
-                        id="dateTo"
-                        type="date"
-                        value={filters.dateTo}
-                        onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                      />
-                    </div>
-                  </div>
+                <div className={styles.modalActions}>
+                  <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
+                  <button onClick={submitFilters} className={`${styles.actionButton} ${styles.secondary}`}>Apply filters</button>
                 </div>
-
-                <div>
-                  <p className={styles.modalHeader}>Price</p>
-                  <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
-                    <div className={styles.filterItem}>
-                      <label htmlFor="priceFrom">
-                        Minimum price
-                      </label>
-                      <input
-                        id="priceFrom"
-                        type="number"
-                        placeholder="0.00"
-                        value={filters.priceFrom}
-                        onChange={(e) => handleFilterChange('priceFrom', e.target.value)}
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div className={styles.filterItem}>
-                      <label htmlFor="priceTo">
-                        Maximum price
-                      </label>
-                      <input
-                        id="priceTo"
-                        type="number"
-                        placeholder="1000.00"
-                        value={filters.priceTo}
-                        onChange={(e) => handleFilterChange('priceTo', e.target.value)}
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.modalActions}>
-                <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
-                <button onClick={submitFilters} className={`${styles.actionButton} ${styles.secondary}`}>Apply filters</button>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {isLoadingPayments ? (
+            <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28} /> Loading payments...</div>
+          ) : error ? (
+            <div className={styles.emptyState}>{error}</div>
+          ) : payments.length === 0 ? (
+            <div className={styles.emptyState}>No payment history found {filters.staffType !== 'All' ? `for ${filters.staffType}s` : ''}.</div>
+          ) : (
+            <div className={styles.paymentList}>
+              {payments.map(payment => (
+                <div key={payment.id} className={styles.paymentItem}>
+                  <div className={styles.paymentCard}>
+                    <div className={styles.paymentDetails}>
+                      {getGigIcon(payment.gigType || '')}
+                      <div className={styles.paymentHeader}>
+                        <span className={styles.paymentGigInfo}>{payment.gigType}, {payment.workerName}</span>
+                        {
+                          payment.date ?
+                            <span className={styles.paymentDate}>{new Date(payment.date || '').toLocaleDateString()}</span> :
+                            <>Has not been paid yet</>
+                        }
+                      </div>
+                    </div>
+
+                    {payment.status === 'PAID' && payment.invoiceUrl && (
+                      <Link
+                        href={payment.invoiceUrl || '/'}
+                        className={styles.generateInvoice}
+                      >
+                        <FileText size={20} /> Invoice
+                      </Link>
+                    )}
+                  </div>
 
 
-        {isLoadingPayments ? (
-          <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28} /> Loading payments...</div>
-        ) : error ? (
-          <div className={styles.emptyState}>{error}</div>
-        ) : payments.length === 0 ? (
-          <div className={styles.emptyState}>No payment history found {filters.staffType !== 'All' ? `for ${filters.staffType}s` : ''}.</div>
-        ) : (
-          <div className={styles.paymentList}>
-            {payments.map(payment => (
-              <div key={payment.id} className={styles.paymentItem}>
-                <div className={styles.paymentCard}>
-                  <div className={styles.paymentDetails}>
-                    {getGigIcon(payment.gigType || '')}
-                    <div className={styles.paymentHeader}>
-                      <span className={styles.paymentGigInfo}>{payment.gigType}, {payment.workerName}</span>
-                      {
-                        payment.date ?
-                          <span className={styles.paymentDate}>{new Date(payment.date || '').toLocaleDateString()}</span> :
-                          <>Has not been paid yet</>
-                      }
+                  <div className={styles.paymentRight}>
+                    <span className={styles.amount}>£{(Number(payment.amount)).toFixed(2)}</span>
+                    <div className={styles.actions}>
+                      <button onClick={() => handleRepeatGig(payment.gigId || '')} className={styles.actionButton}>
+                        Repeat Gig
+                      </button>
+
                     </div>
                   </div>
-
-                  {payment.status === 'PAID' && payment.invoiceUrl && (
-                    <Link
-                      href={payment.invoiceUrl || '/'}
-                      className={styles.generateInvoice}
-                    >
-                      <FileText size={20} /> Invoice
-                    </Link>
-                  )}
                 </div>
+              ))}
+            </div>
+          )}
 
-
-                <div className={styles.paymentRight}>
-                  <span className={styles.amount}>£{(Number(payment.amount)).toFixed(2)}</span>
-                  <div className={styles.actions}>
-                    <button onClick={() => handleRepeatGig(payment.gigId || '')} className={styles.actionButton}>
-                      Repeat Gig
-                    </button>
-
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className={styles.barChartContainer}>
+            {!isLoadingPayments &&
+              <BarChartComponent data={chartData} emptyMessage="You don't have payments yet" />
+            }
           </div>
-        )}
-
-        <div className={styles.barChartContainer}>
-          {!isLoadingPayments &&
-            <BarChartComponent data={chartData} emptyMessage="You don't have payments yet"/>
-          }
         </div>
       </div>
-    </div>
+    </StripeConnectionGuard>
   );
 }
