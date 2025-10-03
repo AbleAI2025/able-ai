@@ -2,35 +2,87 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { getLastRoleUsed } from "@/lib/last-role-used";
 
 const RouteTracker = () => {
   const { user } = useAuth();
   const pathname = usePathname();
   const previousPathRef = useRef<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const lastRoleUsed = getLastRoleUsed();
+
+    if (pathname === "/select-role" || pathname === "/") {
+      if (lastRoleUsed === "BUYER") {
+        const lastPathBuyer = localStorage.getItem("lastPathBuyer");
+        if (lastPathBuyer) {
+          router.push(lastPathBuyer);
+          return;
+        }
+        router.push("/select-role");
+        return;
+      } else if (lastRoleUsed === "GIG_WORKER") {
+        const lastPathGigWorker = localStorage.getItem("lastPathGigWorker");
+
+        if (lastPathGigWorker) {
+          router.push(lastPathGigWorker);
+          return;
+        }
+        router.push("/select-role");
+        return;
+      } else {
+        router.push("/select-role");
+        return;
+      }
+    }
+
+    if (sessionStorage.getItem("roleSwitchInProgress")) {
+      sessionStorage.removeItem("roleSwitchInProgress");
+      previousPathRef.current = pathname;
+      return;
+    }
     const previousPath = previousPathRef.current;
     const pathSegments = pathname.split("/");
-    const roleFromPathname: "GIG_WORKER" | "BUYER" | null = 
-      pathSegments.includes("worker")
-        ? "GIG_WORKER"
-        : pathSegments.includes("buyer")
-        ? "BUYER"
-        : null;
-  
-    if (previousPath && previousPath !== pathname && roleFromPathname) {
+
+    let roleFromPathname: "GIG_WORKER" | "BUYER" | null = pathSegments.includes(
+      "worker"
+    )
+      ? "GIG_WORKER"
+      : pathSegments.includes("buyer")
+      ? "BUYER"
+      : null;
+
+    if (!roleFromPathname) {
+      roleFromPathname = getLastRoleUsed();
+    } else {
+      localStorage.setItem("lastRoleUsed", roleFromPathname);
+    }
+
+    const mustSave =
+      (pathSegments.includes("worker") && roleFromPathname === "GIG_WORKER") ||
+      (pathSegments.includes("buyer") && roleFromPathname === "BUYER") ||
+      (!pathSegments.includes("worker") &&
+        !pathSegments.includes("buyer") &&
+        !!roleFromPathname);
+
+    if (previousPath && previousPath !== pathname && mustSave && pathname !== "/select-role" && pathname !== "/") {
       const key =
         roleFromPathname === "GIG_WORKER"
           ? "lastPathGigWorker"
           : "lastPathBuyer";
-          
+
       localStorage.setItem(key, previousPath);
     }
-  
+
     previousPathRef.current = pathname;
   }, [pathname, user?.claims]);
-  
 
   return null;
 };
