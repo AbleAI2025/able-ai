@@ -10,9 +10,11 @@ interface StripeElementsProviderProps {
   options: StripeElementsOptions;
 }
 
+const stripePromise = getStripe();
+
 const StripeElementsProvider: React.FC<StripeElementsProviderProps> = ({ children, options }) => {
   return (
-    <Elements stripe={getStripe()} options={options}>
+    <Elements stripe={stripePromise} options={options}>
       {children}
     </Elements>
   );

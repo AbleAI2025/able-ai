@@ -12,6 +12,7 @@ import { CalendarEvent } from "@/app/types/CalendarEventTypes";
 import { getCalendarEvents } from "@/actions/events/get-calendar-events";
 import styles from "./BuyerCalendarPage.module.css";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
 
 const FILTERS = ["Accepted gigs", "See gig offers"];
 
@@ -94,7 +95,7 @@ const BuyerCalendarPage = () => {
     };
 
     fetchEvents();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingAuth]);
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -133,46 +134,50 @@ const BuyerCalendarPage = () => {
     setView(newView);
   };
 
+  if (!authUserId) return null;
+
   return (
-    <div className={styles.container}>
-      <ScreenHeaderWithBack />
-      <CalendarHeader
-        date={date}
-        view={view}
-        role="buyer"
-        onViewChange={handleViewChange}
-        onNavigate={handleNavigate}
-        filters={FILTERS}
-        activeFilter={activeFilter}
-        onFilterChange={handleFilterChange}
-      />
-      <main className={styles.mainContent}>
-        <AppCalendar
-          events={events}
+    <StripeConnectionGuard userId={authUserId} redirectPath={`/user/${authUserId}/settings`}>
+      <div className={styles.container}>
+        <ScreenHeaderWithBack />
+        <CalendarHeader
           date={date}
           view={view}
-          onView={setView}
-          onNavigate={setDate}
-          onSelectEvent={handleEventClick}
-          userRole="buyer"
+          role="buyer"
+          onViewChange={handleViewChange}
+          onNavigate={handleNavigate}
+          filters={FILTERS}
           activeFilter={activeFilter}
-          components={{
-            event: (({ event }: { event: CalendarEvent; title: string }) => (
-              <CalendarEventComponent event={event} userRole="buyer" view={view} activeFilter={activeFilter} />
-            )) as React.ComponentType<unknown>,
-          }}
-          hideToolbar={true}
+          onFilterChange={handleFilterChange}
         />
-      </main>
+        <main className={styles.mainContent}>
+          <AppCalendar
+            events={events}
+            date={date}
+            view={view}
+            onView={setView}
+            onNavigate={setDate}
+            onSelectEvent={handleEventClick}
+            userRole="buyer"
+            activeFilter={activeFilter}
+            components={{
+              event: (({ event }: { event: CalendarEvent; title: string }) => (
+                <CalendarEventComponent event={event} userRole="buyer" view={view} activeFilter={activeFilter} />
+              )) as React.ComponentType<unknown>,
+            }}
+            hideToolbar={true}
+          />
+        </main>
 
 
-      <EventDetailModal
-        event={selectedEvent}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        userRole="buyer"
-      />
-    </div>
+        <EventDetailModal
+          event={selectedEvent}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          userRole="buyer"
+        />
+      </div>
+    </StripeConnectionGuard>
   );
 };
 

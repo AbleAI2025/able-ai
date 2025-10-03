@@ -12,6 +12,7 @@ import PublicWorkerProfile from "@/app/types/workerProfileTypes";
 import {
   getPrivateWorkerProfileAction,
 } from "@/actions/user/gig-worker-profile";
+import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
 
 export default function WorkerOwnedProfilePage() {
   const router = useRouter();
@@ -88,15 +89,17 @@ export default function WorkerOwnedProfilePage() {
   }
 
   return (
-    <div className={styles.profilePageContainer}>
-      <CloseButton />
-      <WorkerProfile
-        workerProfile={profile}
-        isSelfView={true}
-        handleAddSkill={() => {}}
-        handleSkillDetails={handleSkillDetails}
-        fetchUserProfile={fetchUserProfile}
-      />
-    </div>
+    <StripeConnectionGuard userId={userId} redirectPath={`/user/${userId}/settings`}>
+      <div className={styles.profilePageContainer}>
+        <CloseButton />
+        <WorkerProfile
+          workerProfile={profile}
+          isSelfView={true}
+          handleAddSkill={() => { }}
+          handleSkillDetails={handleSkillDetails}
+          fetchUserProfile={fetchUserProfile}
+        />
+      </div>
+    </StripeConnectionGuard>
   );
 }

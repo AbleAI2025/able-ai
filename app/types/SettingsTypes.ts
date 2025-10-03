@@ -8,7 +8,7 @@ export interface UserSettingsData {
   email: string;
   phone?: string | null; // Added phone field
   // Stripe Connect related fields (essential for Gig Workers, optional for Buyers unless they also act as sellers)
-  stripeAccountId: string | null; // The Stripe Connect Account ID
+  stripeCustomerId: string | null; // The Stripe customer ID
   stripeAccountStatus:
   | "connected"
   | "pending_verification"
@@ -16,7 +16,7 @@ export interface UserSettingsData {
   | "restricted"
   | "disabled"
   | null;
-  stripeConnectAccountId: string | null;
+  stripeConnectAccountId: string | null; // The Stripe Connect Account ID
   canReceivePayouts: boolean; // Derived on backend, true if Stripe account is fully setup and can receive payouts
 
   lastRole: UserRole;

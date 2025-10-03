@@ -36,6 +36,7 @@ import {
 import { acceptGigOffer } from "@/actions/gigs/accept-gig-offer";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 import { toast } from "sonner";
+import { useStripeStatus } from "@/app/hooks/useStripeConnectionStatus";
 
 const FILTERS = ["Manage availability", "Accepted gigs", "See gig offers"];
 
@@ -65,6 +66,7 @@ const WorkerCalendarPage = () => {
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
   const authUserUid = user?.uid;
+  const { isConnected, isLoading } = useStripeStatus(authUserUid || '');
 
   // Set default view based on screen size
   const [view, setView] = useState<View>(() => {
@@ -316,8 +318,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         setEvents(filterEvents(allEventsCombined, activeFilter));
@@ -366,8 +368,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         setEvents(filterEvents(allEventsCombined, activeFilter));
@@ -455,8 +457,8 @@ const WorkerCalendarPage = () => {
         const availabilityArray = Array.isArray(availabilityRes.availability)
           ? availabilityRes.availability
           : availabilityRes.availability
-          ? [availabilityRes.availability]
-          : [];
+            ? [availabilityRes.availability]
+            : [];
         setAvailabilitySlots(availabilityArray);
 
         setEvents(filterEvents(allEventsCombined, activeFilter));
@@ -475,6 +477,12 @@ const WorkerCalendarPage = () => {
   };
 
   const handleAcceptOffer = async (offerId: string) => {
+
+    if (!isLoading && !isConnected) {
+      router.push(`/user/${authUserUid}/settings`);
+      return;
+    }
+
     setProcessingOfferId(offerId);
     setProcessingAction("accept");
     try {
@@ -565,9 +573,8 @@ const WorkerCalendarPage = () => {
       />
 
       <main
-        className={`${styles.mainContent} ${
-          isFilterTransitioning ? styles.filterTransitioning : ""
-        }`}
+        className={`${styles.mainContent} ${isFilterTransitioning ? styles.filterTransitioning : ""
+          }`}
       >
         {activeFilter === "Manage availability" ? (
           <>
