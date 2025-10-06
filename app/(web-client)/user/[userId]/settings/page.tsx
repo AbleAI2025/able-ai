@@ -36,6 +36,8 @@ import { authClient } from "@/lib/firebase/clientApp";
 import PhoneNumberModal from "./phoneNumberModal";
 import PasswordInputField from "@/app/components/form/PasswodInputField";
 import { getLastRoleUsed } from "@/lib/last-role-used";
+import { createCustomerPortalSession } from "@/app/actions/stripe/create-customer-portal-session";
+import { createAccountPortalSession } from "@/app/actions/stripe/create-portal-session";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -358,6 +360,16 @@ export default function SettingsPage() {
     }
   };
 
+  const generateCustomerPortalSession = async () => {
+    if (!user) return;
+
+    const createPortalSessionFunc = userLastRole === 'BUYER' ? createCustomerPortalSession : createAccountPortalSession;
+    const { url: sessionUrl, status } = await createPortalSessionFunc(user.uid);
+
+    if (status !== 200) return;
+
+    if (sessionUrl) window.location.href = sessionUrl;
+  }
 
   async function handleToggleEmailNotification() {
     try {
@@ -547,20 +559,12 @@ export default function SettingsPage() {
             <h2 className={styles.sectionTitle}>
               Payment Settings - Stripe portal
             </h2>
-            <label htmlFor="phone" className={styles.label}>
-              Payment method
-            </label>
-            <InputField
-              id="card"
-              name="card"
-              type="text"
-              disabled
-              value={""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => () => {
-                console.log(e);
-              }}
-              placeholder="Your display name"
-            />
+            <button
+              className={styles.button}
+              onClick={generateCustomerPortalSession}
+            >
+              {userLastRole === 'BUYER' ? "Go to buyer portal" : "Go to worker portal"}
+            </button>
           </section>
 
           {/* Preferences Section */}

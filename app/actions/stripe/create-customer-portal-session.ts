@@ -1,6 +1,7 @@
 'use server';
 
 import Stripe from 'stripe';
+import { headers } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { stripeApi as stripeServer } from '@/lib/stripe-server';
 import { db } from "@/lib/drizzle/db";
@@ -8,7 +9,10 @@ import { UsersTable } from "@/lib/drizzle/schema";
 
 const stripeApi: Stripe = stripeServer;
 
-export async function createAccountPortalSession(firebaseUid: string) {
+export async function createCustomerPortalSession(firebaseUid: string) {
+  const requestHeaders = await headers();
+  const originUrl = requestHeaders.get('origin') || requestHeaders.get('host');
+
   try {
     if (!firebaseUid) {
       return { error: 'User ID is required.', status: 400 }
@@ -17,22 +21,22 @@ export async function createAccountPortalSession(firebaseUid: string) {
     const userRecord = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, firebaseUid),
       columns: {
-        stripeConnectAccountId: true,
+        stripeCustomerId: true,
       }
     });
-    
 
     if (!userRecord) throw new Error('User not found');
 
-    if (!userRecord.stripeConnectAccountId) {
+    if (!userRecord.stripeCustomerId) {
       return { error: 'Stripe Connected Account ID not found for this user. Please connect your bank account first.', status: 404 };
     }
 
-    const loginLink = await stripeApi.accounts.createLoginLink(
-      userRecord.stripeConnectAccountId
-    );
+    const session = await stripeApi.billingPortal.sessions.create({
+      customer: userRecord.stripeCustomerId,
+      return_url: `${originUrl}/user/${firebaseUid}/settings`,
+    });
 
-    return { url: loginLink.url, status: 200 }
+    return { url: session.url, status: 200 }
 
   } catch (error: any) {
     console.error('Error creating Stripe Account Link:', error);
