@@ -2,45 +2,20 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 
 const RouteTracker = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const pathname = usePathname();
   const previousPathRef = useRef<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
+    if (!user || loading) return;
 
-    const lastRoleUsed = getLastRoleUsed();
 
     if (pathname === "/select-role" || pathname === "/") {
-      if (lastRoleUsed === "BUYER") {
-        const lastPathBuyer = localStorage.getItem("lastPathBuyer");
-        if (lastPathBuyer) {
-          router.push(lastPathBuyer);
-          return;
-        }
-        router.push("/select-role");
-        return;
-      } else if (lastRoleUsed === "GIG_WORKER") {
-        const lastPathGigWorker = localStorage.getItem("lastPathGigWorker");
-
-        if (lastPathGigWorker) {
-          router.push(lastPathGigWorker);
-          return;
-        }
-        router.push("/select-role");
-        return;
-      } else {
-        router.push("/select-role");
-        return;
-      }
+      return
     }
 
     if (sessionStorage.getItem("roleSwitchInProgress")) {

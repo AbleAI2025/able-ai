@@ -1,17 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "@/app/components/brand/Logo";
 import ActionButton from "./ActionButton";
 import styles from "./SelectRolePage.module.css";
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
-import { setLastRoleUsed } from "@/lib/last-role-used";
+import { getLastRoleUsed, setLastRoleUsed } from "@/lib/last-role-used";
 
 export default function SelectRolePage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastRoleUsed = getLastRoleUsed();
+  const [isChangingRole, setIsChangingRole] = useState(false);
+
+  useEffect(() => {
+    if (!lastRoleUsed) {
+      setIsChangingRole(true);
+    }
+
+    if (isChangingRole) {
+      return;
+    }
+    if (lastRoleUsed === "BUYER") {
+      const lastPathBuyer = localStorage.getItem("lastPathBuyer");
+      if (lastPathBuyer) {
+        window.location.replace(lastPathBuyer);
+        return;
+      }
+      window.location.replace(`/user/${user?.uid}/buyer`);
+      return;
+    } else if (lastRoleUsed === "GIG_WORKER") {
+      const lastPathGigWorker = localStorage.getItem("lastPathGigWorker");
+      if (lastPathGigWorker) {
+        window.location.replace(lastPathGigWorker);
+        return;
+      }
+      window.location.replace(`/user/${user?.uid}/worker`);
+      return;
+    }
+  }, [isChangingRole]);
 
   const handleRoleSelection = async (role: "BUYER" | "GIG_WORKER") => {
     try {
@@ -25,6 +54,7 @@ export default function SelectRolePage() {
 
       sessionStorage.setItem("roleSwitchInProgress", "1");
       await setLastRoleUsed(role);
+      setIsChangingRole(false);
     } catch (err) {
       console.error("Error setting role:", err);
       setError("Failed to set your role. Please try again.");
