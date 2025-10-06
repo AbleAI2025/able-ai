@@ -13,7 +13,6 @@ const RouteTracker = () => {
   useEffect(() => {
     if (!user || loading) return;
 
-
     if (pathname === "/select-role" || pathname === "/") {
       return
     }
