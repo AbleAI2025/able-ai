@@ -62,9 +62,7 @@ export const useUserProfile = (user: User | null) => {
           profileVisibility: false,
         },
       };
-
-      console.log("Fetched user settings with real Stripe data:", data, stripeConnection);
-
+      
       setUserSettings(data);
       setDisplayName(userProfile?.fullName || "");
       setPhone(userProfile?.phone || "");

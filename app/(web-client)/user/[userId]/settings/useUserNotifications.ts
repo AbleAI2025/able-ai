@@ -10,7 +10,7 @@ export const useUserNotifications = (user: User | null) => {
   const handleToggleEmailNotification = async (currentValue: boolean) => {
     try {
       const { data, error } = await updateNotificationEmailAction(
-        { emailProferences: !currentValue },
+        { emailPreferences: !currentValue },
         user?.token
       );
       if (error) {

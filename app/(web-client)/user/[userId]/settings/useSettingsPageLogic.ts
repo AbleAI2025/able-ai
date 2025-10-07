@@ -76,20 +76,8 @@ export const useSettingsPageLogic = () => {
     if (user && !userProfile.isLoadingSettings && userProfile.userSettings && !showStripeModal && !stripeModalDismissed) {
       const userSettings = userProfile.userSettings;
 
-      // Debug logging
-      console.log("Stripe modal check after settings loaded:", {
-        userLastRole,
-        userSettings,
-        showStripeModal,
-        stripeModalDismissed,
-        user,
-        canReceivePayouts: userSettings.canReceivePayouts,
-        isLoadingSettings: userProfile.isLoadingSettings
-      });
-
       // Show modal only if user is not connected to Stripe and hasn't dismissed it
       if (userLastRole && !userSettings.canReceivePayouts) {
-        console.log("Showing Stripe modal - user needs to connect to Stripe");
         setShowStripeModal(true);
       }
     }

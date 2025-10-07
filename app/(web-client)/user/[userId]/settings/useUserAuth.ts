@@ -52,7 +52,7 @@ export const useUserAuth = (user: User | null) => {
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
         console.error("Error changing password", err);
-        if (err.code === "auth/wrong-password.") {
+        if (err.code === "auth/wrong-password") {
           throw new Error("Current password incorrect.");
         } else if (err.code === "auth/requires-recent-login") {
           throw new Error("For security login again");

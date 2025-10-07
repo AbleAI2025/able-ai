@@ -15,8 +15,6 @@ export const useAccountDeletion = (user: User | null, setShowDeleteAccountModal:
   const handleDeleteAccountConfirmed = async () => {
     setIsDeletingAccount(true);
     try {
-      console.log("Deleting account...");
-
       const result = await deleteUserAccountAction(user?.token);
 
       if (!result.success) {

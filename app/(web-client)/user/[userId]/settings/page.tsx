@@ -35,7 +35,6 @@ export default function SettingsPage() {
     isResendingEmail,
     handleDeleteAccountConfirmed,
     userLastRole,
-    setShowStripeModal,
     handleStripeModalClose,
     handleOpenStripeConnection,
     handleStripeConnect,
