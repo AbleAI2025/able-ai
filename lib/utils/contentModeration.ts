@@ -266,7 +266,7 @@ export function preValidateContent(input: string): ContentModerationResult {
   const normalizedInput = input.toLowerCase().trim();
   
   // Check for empty or very short input
-  if (!normalizedInput || normalizedInput.length < 2) {
+  if (!normalizedInput || normalizedInput.length < 1) {
     return {
       isAppropriate: false,
       confidence: 1.0,
@@ -293,30 +293,7 @@ export function preValidateContent(input: string): ContentModerationResult {
   
   // Check for common bypass attempts
   const bypassAttempts = [
-    // Leet speak variations
-    { pattern: /m4r10|m4rio|m4r1o/gi, reason: 'Leet speak variation of "mario"' },
-    { pattern: /l00igi|l00gi|lu1gi/gi, reason: 'Leet speak variation of "luigi"' },
-    { pattern: /p34ch|p3ach|pe4ch/gi, reason: 'Leet speak variation of "peach"' },
-    { pattern: /b0w53r|b0wser|b0ws3r/gi, reason: 'Leet speak variation of "bowser"' },
-    
-    // Spacing variations
-    { pattern: /m\s*a\s*r\s*i\s*o/gi, reason: 'Spaced variation of "mario"' },
-    { pattern: /l\s*u\s*i\s*g\s*i/gi, reason: 'Spaced variation of "luigi"' },
-    { pattern: /p\s*e\s*a\s*c\s*h/gi, reason: 'Spaced variation of "peach"' },
-    
-    // Character substitution
-    { pattern: /m@rio|m@r10/gi, reason: 'Character substitution for "mario"' },
-    { pattern: /l@igi|l@1gi/gi, reason: 'Character substitution for "luigi"' },
-    { pattern: /p@ach|p@3ach/gi, reason: 'Character substitution for "peach"' },
-    
-    // Common meme phrases with variations
-    { pattern: /its\s*a\s*me/gi, reason: 'Mario catchphrase variation' },
-    { pattern: /hello\s*there/gi, reason: 'Star Wars meme reference' },
-    { pattern: /general\s*kenobi/gi, reason: 'Star Wars meme reference' },
-    
-    // Nonsense patterns
-    { pattern: /^[a-z]{1,2}\s*[a-z]{1,2}\s*[a-z]{1,2}$/gi, reason: 'Random character sequence' },
-    { pattern: /^[0-9]{1,2}\s*[0-9]{1,2}\s*[0-9]{1,2}$/gi, reason: 'Random number sequence' }
+    { pattern: /('|").*(\bor\s+\d+\s*=\s*\d+|union\s+select|--|#|\/\*|\*\/).*('|")/gi, reason: 'Potential SQL injection attempt' },
   ];
   
   for (const attempt of bypassAttempts) {

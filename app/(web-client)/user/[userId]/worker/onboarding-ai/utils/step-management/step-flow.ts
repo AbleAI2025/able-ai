@@ -271,23 +271,60 @@ export async function addNextStepSafely(
           const summaryPromise = (async () => {
             const { geminiAIAgent } = await import('@/lib/firebase/ai');
             
+            // Parse location first — it might be a JSON object (with formatted_address/lat/lng) or a plain string
+            const rawLocation = formData.location;
+            let parsedLocation: any = null;
+
+            if (typeof rawLocation === 'string') {
+              try {
+              parsedLocation = rawLocation ? JSON.parse(rawLocation) : null;
+              } catch (e) {
+              // not a JSON string — leave parsedLocation as null
+              parsedLocation = null;
+              }
+            } else if (rawLocation && typeof rawLocation === 'object') {
+              parsedLocation = rawLocation;
+            }
+
+            // Determine a human-friendly location string to include in the prompt
+            let locationForPrompt = 'Not provided';
+            if (parsedLocation) {
+              if (parsedLocation.formatted_address) {
+              locationForPrompt = parsedLocation.formatted_address;
+              } else if (parsedLocation.address) {
+              locationForPrompt = parsedLocation.address;
+              } else if (parsedLocation.lat !== undefined && parsedLocation.lng !== undefined) {
+              locationForPrompt = `${parsedLocation.lat}, ${parsedLocation.lng}`;
+              } else {
+              // Fallback to serializing the object if nothing more user-friendly exists
+              try {
+                locationForPrompt = JSON.stringify(parsedLocation);
+              } catch {
+                locationForPrompt = 'Not provided';
+              }
+              }
+            } else if (typeof rawLocation === 'string' && rawLocation.trim() !== '') {
+              // raw string location (not JSON)
+              locationForPrompt = rawLocation;
+            }
+
             const summaryPrompt = `Create a personalized summary of this worker's profile based on their onboarding information:
 
-Profile Information:
-- About: ${formData.about || 'Not provided'}
-- Skills/Profession: ${formData.skills || 'Not provided'}
-- Experience: ${formData.experience || 'Not provided'}
-- Qualifications: ${formData.qualifications || 'Not provided'}
-- Equipment: ${formData.equipment || 'Not provided'}
-- Hourly Rate: ${formData.hourlyRate || 'Not provided'}
-- Location: ${formData.location || 'Not provided'}
+      Profile Information:
+      - About: ${formData.about || 'Not provided'}
+      - Skills/Profession: ${formData.skills || 'Not provided'}
+      - Experience: ${formData.experience || 'Not provided'}
+      - Qualifications: ${formData.qualifications || 'Not provided'}
+      - Equipment: ${formData.equipment || 'Not provided'}
+      - Hourly Rate: ${formData.hourlyRate || 'Not provided'}
+      - Location: ${locationForPrompt}
 
-Create a warm, professional summary that highlights their key strengths and experience. Make it personal and engaging, like you're introducing them to potential clients. Keep it concise but comprehensive.
+      Create a warm, professional summary that highlights their key strengths and experience. Make it personal and engaging, like you're introducing them to potential clients. Keep it concise but comprehensive.
 
-Example format:
-"Meet [Name], a skilled [profession] with [experience] of experience. [He/She] specializes in [key skills] and brings [qualifications] to every project. Based in [location], [he/she] is available at [hourly rate] and is equipped with [equipment]. [Personal touch about their background]."
+      Example format:
+      "Meet [Name], a skilled [profession] with [experience] of experience. [He/She] specializes in [key skills] and brings [qualifications] to every project. Based in [location], [he/she] is available at [hourly rate] and is equipped with [equipment]. [Personal touch about their background]."
 
-Generate a summary:`;
+      Generate a summary:`;
 
             const { Schema } = await import('@firebase/ai');
             

@@ -24,7 +24,7 @@ export interface ProfileData {
   qualifications?: string;
   equipment?: string | any[];
   hourlyRate?: number | string;
-  location?: { lat: number; lng: number } | string;
+  location?: { lat?: number; lng?: number, formatted_address?: string } | string;
   availability?: {
     days: string[];
     startTime: string;
@@ -53,6 +53,7 @@ export interface ChatStep {
 }
 
 import { generateHashtags as generateHashtagsService, type ProfileData as HashtagProfileData } from '@/lib/services/hashtag-generation';
+import { debug } from "console";
 
 /**
  * Generate hashtags for profile data using AI
@@ -105,7 +106,6 @@ export async function handleProfileSubmission(
       experience: requiredData.experience,
       skills: requiredData.skills,
       equipment: requiredData.equipment,
-      location: typeof requiredData.location === 'string' ? requiredData.location : JSON.stringify(requiredData.location || ''),
     };
     console.log('🔍 Hashtag generation data:', hashtagData);
     const hashtags = await generateHashtags(hashtagData, ai);
@@ -125,19 +125,47 @@ export async function handleProfileSubmission(
       isComplete: false
     };
     setChatSteps(prev => [...prev, savingStep]);
-    
-    // Save profile with generated hashtags
-    const profileDataWithHashtags = {
+
+    const rawLocation = requiredData.location;
+    let parsedLocation: any = null;
+
+    if (typeof rawLocation === 'string') {
+      try {
+      parsedLocation = rawLocation ? JSON.parse(rawLocation) : null;
+      } catch (e) {
+      // not a JSON string — leave parsedLocation as null
+      parsedLocation = null;
+      }
+    } else if (rawLocation && typeof rawLocation === 'object') {
+      parsedLocation = rawLocation;
+    }
+
+    // Start with required data and hashtags; only add/override location/lat/lng if we have a parsed location object
+    const profileDataWithHashtags: any = {
       ...requiredData,
       hashtags: hashtags
     };
+
+    if (
+      parsedLocation &&
+      (parsedLocation.formatted_address || parsedLocation.lat !== undefined || parsedLocation.lng !== undefined)
+    ) {
+      if (parsedLocation.formatted_address) {
+      profileDataWithHashtags.location = parsedLocation.formatted_address;
+      }
+      if (parsedLocation.lat !== undefined) {
+      profileDataWithHashtags.latitude = parsedLocation.lat;
+      }
+      if (parsedLocation.lng !== undefined) {
+      profileDataWithHashtags.longitude = parsedLocation.lng;
+      }
+    }
     
     // Debug: Log the data being sent to the action
     console.log('🔍 Data being sent to action:', profileDataWithHashtags);
     console.log('🔍 requiredData:', requiredData);
     
     const result = await saveWorkerProfileFromOnboardingAction(profileDataWithHashtags as any, userToken);
-    
     
     // Mark saving step as complete
     setChatSteps(prev => prev.map(step => 
@@ -158,10 +186,7 @@ export async function handleProfileSubmission(
       };
       setChatSteps(prev => [...prev, successStep]);
       
-      // Navigate to worker dashboard after a short delay
-      setTimeout(() => {
-        router.push(`/user/${userId}/worker`);
-      }, 2000);
+      router.push(`/user/${userId}/worker`);
     } else {
       console.error('Profile submission failed:', result.error);
       const errorMessage = result.error || 'Failed to save profile. Please try again.';

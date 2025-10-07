@@ -18,24 +18,6 @@ import { getAI } from '@firebase/ai';
 import { Schema } from '@firebase/ai';
 import { parseExperienceToNumeric } from '@/lib/utils/experienceParsing';
 
-// Helper: generate a compact random code and build a recommendation URL
-function generateRandomCode(length = 8): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Avoid ambiguous chars
-  let result = "";
-  const array = new Uint32Array(length);
-  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
-    window.crypto.getRandomValues(array);
-    for (let i = 0; i < length; i++) {
-      result += alphabet[array[i] % alphabet.length];
-    }
-  } else {
-    for (let i = 0; i < length; i++) {
-      result += alphabet[Math.floor(Math.random() * alphabet.length)];
-    }
-  }
-  return result;
-}
-
 function buildRecommendationLink(workerProfileId: string | null): string {
   const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000';
   

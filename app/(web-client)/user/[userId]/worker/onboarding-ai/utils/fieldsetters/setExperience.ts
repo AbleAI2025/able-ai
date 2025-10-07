@@ -30,7 +30,7 @@ export function setExperience(value: string): {
     return { ok: false, error: 'Please provide your experience level' };
   }
   
-  if (trimmed.length < 2) {
+  if (trimmed.length < 1) {
     return { ok: false, error: 'Please provide more detail about your experience' };
   }
   

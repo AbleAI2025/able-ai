@@ -306,6 +306,9 @@ export default function OnboardingRenderer({
               async () => {
                 console.log('🔍 Summary step confirm clicked');
                 await handleProfileSubmission(step.summaryData);
+                // Mark summary step as complete
+                setChatSteps(prev => prev.map(s => s.id === step.id ? { ...s, isComplete: true } : s));
+                console.log('🔍 Summary step marked as complete');
               }
             );
           }
