@@ -293,7 +293,7 @@ export function preValidateContent(input: string): ContentModerationResult {
   
   // Check for common bypass attempts
   const bypassAttempts = [
-    { pattern: /('|").*(\bor\s+\d+\s*=\s*\d+|union\s+select|--|#|\/\*|\*\/).*('|")/gi, reason: 'Potential SQL injection attempt' },
+    { pattern: /(\bor\s+\d+\s*=\s*\d+|union\s+select|--|#|\/\*|\*\/)/gi, reason: 'Potential SQL injection attempt' },
   ];
   
   for (const attempt of bypassAttempts) {

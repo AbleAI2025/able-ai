@@ -1,5 +1,6 @@
-import { generateContextAwarePrompt, generateConversationAwarePrompt, sanitizeWithAI, extractSkillName } from '../ai-systems/ai-utils';
-import { buildConversationContext, generateMemoryAwarePrompt, generateAlternativePhrasing } from '../ai-systems/conversation-memory';
+import { parseLocationData } from '../locationUtils';
+import { generateContextAwarePrompt, sanitizeWithAI, extractSkillName } from '../ai-systems/ai-utils';
+// import { buildConversationContext, generateMemoryAwarePrompt, generateAlternativePhrasing } from '../ai-systems/conversation-memory';
 import { buildRecommendationLink } from '../helpers/helpers';
 import { buildJobTitleConfirmationStep, buildSimilarSkillsConfirmationStep } from './step-builders';
 import { checkExistingSimilarSkill, interpretJobTitle } from '../ai-systems/ai-utils';
@@ -270,43 +271,7 @@ export async function addNextStepSafely(
           // Add timeout to prevent hanging
           const summaryPromise = (async () => {
             const { geminiAIAgent } = await import('@/lib/firebase/ai');
-            
-            // Parse location first — it might be a JSON object (with formatted_address/lat/lng) or a plain string
-            const rawLocation = formData.location;
-            let parsedLocation: any = null;
-
-            if (typeof rawLocation === 'string') {
-              try {
-              parsedLocation = rawLocation ? JSON.parse(rawLocation) : null;
-              } catch (e) {
-              // not a JSON string — leave parsedLocation as null
-              parsedLocation = null;
-              }
-            } else if (rawLocation && typeof rawLocation === 'object') {
-              parsedLocation = rawLocation;
-            }
-
-            // Determine a human-friendly location string to include in the prompt
-            let locationForPrompt = 'Not provided';
-            if (parsedLocation) {
-              if (parsedLocation.formatted_address) {
-              locationForPrompt = parsedLocation.formatted_address;
-              } else if (parsedLocation.address) {
-              locationForPrompt = parsedLocation.address;
-              } else if (parsedLocation.lat !== undefined && parsedLocation.lng !== undefined) {
-              locationForPrompt = `${parsedLocation.lat}, ${parsedLocation.lng}`;
-              } else {
-              // Fallback to serializing the object if nothing more user-friendly exists
-              try {
-                locationForPrompt = JSON.stringify(parsedLocation);
-              } catch {
-                locationForPrompt = 'Not provided';
-              }
-              }
-            } else if (typeof rawLocation === 'string' && rawLocation.trim() !== '') {
-              // raw string location (not JSON)
-              locationForPrompt = rawLocation;
-            }
+            const { humanReadableLocation: locationForPrompt } = parseLocationData(formData.location);
 
             const summaryPrompt = `Create a personalized summary of this worker's profile based on their onboarding information:
 

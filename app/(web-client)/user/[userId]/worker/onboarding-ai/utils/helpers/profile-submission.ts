@@ -1,21 +1,8 @@
+import { parseLocationData } from '../locationUtils';
 import { saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
 import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
 import { validateWorkerProfileData } from "@/app/components/onboarding/ManualProfileForm";
 import { interpretJobTitle } from '../ai-systems/ai-utils';
-
-/**
- * Extract key terms from text for hashtag generation
- */
-function extractKeyTerms(text: string): string[] {
-  // Remove common words and extract meaningful terms
-  const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'her', 'its', 'our', 'their'];
-  
-  return text
-    .split(/\s+/)
-    .map(word => word.replace(/[^\w]/g, '').toLowerCase())
-    .filter(word => word.length > 2 && !commonWords.includes(word))
-    .filter((word, index, arr) => arr.indexOf(word) === index); // Remove duplicates
-}
 
 export interface ProfileData {
   about?: string;
@@ -53,7 +40,6 @@ export interface ChatStep {
 }
 
 import { generateHashtags as generateHashtagsService, type ProfileData as HashtagProfileData } from '@/lib/services/hashtag-generation';
-import { debug } from "console";
 
 /**
  * Generate hashtags for profile data using AI
@@ -126,38 +112,23 @@ export async function handleProfileSubmission(
     };
     setChatSteps(prev => [...prev, savingStep]);
 
-    const rawLocation = requiredData.location;
-    let parsedLocation: any = null;
-
-    if (typeof rawLocation === 'string') {
-      try {
-      parsedLocation = rawLocation ? JSON.parse(rawLocation) : null;
-      } catch (e) {
-      // not a JSON string — leave parsedLocation as null
-      parsedLocation = null;
-      }
-    } else if (rawLocation && typeof rawLocation === 'object') {
-      parsedLocation = rawLocation;
-    }
-
-    // Start with required data and hashtags; only add/override location/lat/lng if we have a parsed location object
+    // Start with required data and hashtags; only add/override location/lat/lng if we have parsed location data
     const profileDataWithHashtags: any = {
       ...requiredData,
       hashtags: hashtags
     };
 
-    if (
-      parsedLocation &&
-      (parsedLocation.formatted_address || parsedLocation.lat !== undefined || parsedLocation.lng !== undefined)
-    ) {
-      if (parsedLocation.formatted_address) {
-      profileDataWithHashtags.location = parsedLocation.formatted_address;
+    const { databaseLocation } = parseLocationData(requiredData.location);
+
+    if (databaseLocation) {
+      if (databaseLocation.location) {
+        profileDataWithHashtags.location = databaseLocation.location;
       }
-      if (parsedLocation.lat !== undefined) {
-      profileDataWithHashtags.latitude = parsedLocation.lat;
+      if (databaseLocation.latitude) {
+        profileDataWithHashtags.latitude = databaseLocation.latitude;
       }
-      if (parsedLocation.lng !== undefined) {
-      profileDataWithHashtags.longitude = parsedLocation.lng;
+      if (databaseLocation.longitude) {
+        profileDataWithHashtags.longitude = databaseLocation.longitude;
       }
     }
     
