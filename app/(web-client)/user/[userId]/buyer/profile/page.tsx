@@ -11,12 +11,12 @@ import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
 import PieChartComponent from "@/app/components/shared/PiChart";
 import BarChartComponent from "@/app/components/shared/BarChart";
 import { useAuth } from "@/context/AuthContext";
+import { getGigBuyerProfileAction } from "@/actions/user/gig-buyer-profile";
 import {
-  getGigBuyerProfileAction,
   updateBusinessInfoBuyerProfileAction,
   updateSocialLinkBuyerProfileAction,
   updateVideoUrlBuyerProfileAction,
-} from "@/actions/user/gig-buyer-profile";
+} from "@/actions/user/buyer-profile-updates";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import {
   getStorage,
