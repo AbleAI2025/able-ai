@@ -77,9 +77,9 @@ export const getGigWorkerProfile = async (
         user?: { fullName: string; rtwStatus: string | null };
       })
     | undefined
-): Promise<{ success: true; data?: PublicWorkerProfile }> => {
+): Promise<{ success: boolean; data?: PublicWorkerProfile }> => {
   try {
-    if (!workerProfile) return { success: true};
+    if (!workerProfile) return { success: false};
 
     const skills = await db.query.SkillsTable.findMany({
       where: eq(SkillsTable.workerProfileId, workerProfile.id),

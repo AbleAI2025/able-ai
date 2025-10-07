@@ -39,7 +39,7 @@ export default function BuyerDashboardPage() {
   useEffect(() => {
     if (user && user.uid !== pageUserId) {
       // If the authenticated user's ID does not match the page's userId param, redirect to their own dashboard
-      window.location.href = `/user/${user.uid}/worker`;
+      window.location.href = `/user/${user.uid}/buyer`;
     }
   }, [user, pageUserId]);
 
