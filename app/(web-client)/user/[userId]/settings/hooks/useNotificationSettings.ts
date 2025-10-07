@@ -14,14 +14,15 @@ export const useNotificationSettings = (
   const userNotifications = useUserNotifications(user);
 
   // Derive settings from userSettings
-  const { notificationEmail, notificationSms, profileVisibility } = useMemo(() => {
-    const { notificationPreferences, privacySettings } = userSettings || {};
-    return {
-      notificationEmail: notificationPreferences?.email?.gigUpdates ?? false,
-      notificationSms: notificationPreferences?.sms?.gigAlerts ?? false,
-      profileVisibility: privacySettings?.profileVisibility ?? false,
-    };
-  }, [userSettings]);
+  const { notificationEmail, notificationSms, profileVisibility } =
+    useMemo(() => {
+      const { notificationPreferences, privacySettings } = userSettings || {};
+      return {
+        notificationEmail: notificationPreferences?.email?.gigUpdates ?? false,
+        notificationSms: notificationPreferences?.sms?.gigAlerts ?? false,
+        profileVisibility: privacySettings?.profileVisibility ?? false,
+      };
+    }, [userSettings]);
 
   const updateUserSettingsState = (updates: Partial<UserSettingsData>) => {
     if (userSettings) {
@@ -34,8 +35,14 @@ export const useNotificationSettings = (
 
   const handleToggleEmailNotification = async () => {
     const newValue = !notificationEmail;
-    const currentPreferences = userSettings?.notificationPreferences || { email: { gigUpdates: false, platformAnnouncements: false }, sms: { gigAlerts: false } };
-    const currentEmail = currentPreferences.email || { gigUpdates: false, platformAnnouncements: false };
+    const currentPreferences = userSettings?.notificationPreferences || {
+      email: { gigUpdates: false, platformAnnouncements: false },
+      sms: { gigAlerts: false },
+    };
+    const currentEmail = currentPreferences.email || {
+      gigUpdates: false,
+      platformAnnouncements: false,
+    };
 
     try {
       // Optimistically update local state
@@ -70,7 +77,10 @@ export const useNotificationSettings = (
 
   const handleToggleSmsNotification = async () => {
     const newValue = !notificationSms;
-    const currentPreferences = userSettings?.notificationPreferences || { email: { gigUpdates: false, platformAnnouncements: false }, sms: { gigAlerts: false } };
+    const currentPreferences = userSettings?.notificationPreferences || {
+      email: { gigUpdates: false, platformAnnouncements: false },
+      sms: { gigAlerts: false },
+    };
     const currentSms = currentPreferences.sms || { gigAlerts: false };
 
     try {
@@ -106,7 +116,9 @@ export const useNotificationSettings = (
 
   const handleToggleProfileVisibility = async () => {
     const newValue = !profileVisibility;
-    const currentPrivacy = userSettings?.privacySettings || { profileVisibility: false };
+    const currentPrivacy = userSettings?.privacySettings || {
+      profileVisibility: false,
+    };
 
     try {
       // Optimistically update local state
