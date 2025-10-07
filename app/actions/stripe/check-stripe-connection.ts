@@ -30,11 +30,10 @@ async function checkAccountConnection(stripeAccountId: string | null) {
 
   try {
     const account = await stripeApi.accounts.retrieve(stripeAccountId);
-    const paymentsEnabled = account.capabilities?.card_payments === 'active';
 
     return {
-      connected: paymentsEnabled,
-      message: paymentsEnabled ? 'Connected as Stripe Account.' : 'Stripe Account not activated or not enabled for payments yet.'
+      connected: Boolean(account),
+      message: account.id ? 'Connected as Stripe Account.' : 'Stripe Account not activated or not enabled for payments yet.'
     };
   } catch (error: any) {
     console.error('Error trying to recover Account:', error.message);
