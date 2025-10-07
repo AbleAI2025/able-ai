@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
-import { sendSignInLinkToEmail, onAuthStateChanged, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
+import {
+  sendSignInLinkToEmail,
+  onAuthStateChanged,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+} from "firebase/auth";
 import { StepInputConfig } from "@/app/types/form";
 import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
@@ -14,20 +19,20 @@ import { toast } from "sonner";
 import PasswordInputField from "@/app/components/form/PasswodInputField";
 import { checkEmailVerificationStatus } from "@/lib/utils/emailVerification";
 import EmailVerificationModal from "./EmailVerificationModal";
+import { formatPhoneNumber } from "@/app/(web-client)/user/[userId]/settings/settingsUtils";
 
 interface RegisterViewProps {
   onToggleRegister: () => void;
   onError: (error: React.ReactNode | null) => void;
 }
 
-
-type RegistrationStep = 'form' | 'email-verification' | 'verification-complete';
+type RegistrationStep = "form" | "email-verification" | "verification-complete";
 
 const RegisterView: React.FC<RegisterViewProps> = ({
   onToggleRegister,
   onError,
 }) => {
-  const [currentStep, setCurrentStep] = useState<RegistrationStep>('form');
+  const [currentStep, setCurrentStep] = useState<RegistrationStep>("form");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -56,22 +61,28 @@ const RegisterView: React.FC<RegisterViewProps> = ({
           if (!email) {
             email = formData.email;
           }
-          
+
           if (email) {
             await signInWithEmailLink(authClient, email, window.location.href);
             window.localStorage.removeItem("emailForSignIn");
-            
+
             // Clear URL parameters
-            window.history.replaceState({}, document.title, window.location.pathname);
-            
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
+
             // Set verification complete
             setVerificationComplete(true);
-            setCurrentStep('verification-complete');
-            toast.success("Email verified successfully! Redirecting to role selection...");
-            
+            setCurrentStep("verification-complete");
+            toast.success(
+              "Email verified successfully! Redirecting to role selection..."
+            );
+
             // Redirect to role selection after a short delay
             setTimeout(() => {
-              router.push('/select-role');
+              router.push("/select-role");
             }, 2000);
           }
         } catch (error) {
@@ -86,19 +97,21 @@ const RegisterView: React.FC<RegisterViewProps> = ({
 
   // Monitor email verification status
   useEffect(() => {
-    if (currentStep === 'email-verification' && !verificationComplete) {
+    if (currentStep === "email-verification" && !verificationComplete) {
       setIsVerifying(true);
-      
+
       const unsubscribe = onAuthStateChanged(authClient, (user) => {
         if (user && user.emailVerified) {
           setVerificationComplete(true);
           setIsVerifying(false);
-          setCurrentStep('verification-complete');
-          toast.success("Email verified successfully! Redirecting to role selection...");
-          
+          setCurrentStep("verification-complete");
+          toast.success(
+            "Email verified successfully! Redirecting to role selection..."
+          );
+
           // Redirect to role selection after a short delay
           setTimeout(() => {
-            router.push('/select-role');
+            router.push("/select-role");
           }, 2000);
         }
       });
@@ -106,7 +119,6 @@ const RegisterView: React.FC<RegisterViewProps> = ({
       return () => unsubscribe();
     }
   }, [currentStep, verificationComplete, authClient, router]);
-
 
   const validatePassword = async (password: string) => {
     const lengthIsCorrect = password.trim().length >= 10;
@@ -169,11 +181,22 @@ const RegisterView: React.FC<RegisterViewProps> = ({
 
     // Register user with phone number
     try {
+      let phone = null;
+      if (formData.phone.trim()) {
+        const formattedPhone = formatPhoneNumber(formData.phone.trim());
+        if (formData.phone.trim() && !formattedPhone) {
+          throw new Error(
+            "Invalid phone number format. Please enter a valid phone number, e.g., +1234567890"
+          );
+        }
+        phone = formattedPhone
+      }
+
       const result = await registerUserAction({
         email: formData.email.trim(),
         password: formData.password.trim(),
         name: formData.name.trim(),
-        phone: formData.phone.trim(),
+        phone: phone ? phone : undefined,
       });
 
       if (!result.ok) {
@@ -184,58 +207,63 @@ const RegisterView: React.FC<RegisterViewProps> = ({
 
       // Check if user is authenticated and get their verification status
       if (authClient?.currentUser) {
-        const verificationStatus = checkEmailVerificationStatus(authClient.currentUser);
-        
+        const verificationStatus = checkEmailVerificationStatus(
+          authClient.currentUser
+        );
+
         if (verificationStatus.needsVerification) {
           // Show verification modal instead of proceeding
           setUnverifiedUserEmail(verificationStatus.email || formData.email);
           setShowVerificationModal(true);
           setLoading(false);
           return;
-        } else if (verificationStatus.isVerified) {
+        } else if (verificationStatuformData.phone.trims.isVerified) {
           // Email is already verified, proceed to role selection
           toast.success("Registration successful! Redirecting...");
-          router.push('/select-role');
+          router.push("/select-role");
           return;
         }
       }
 
       // Fallback: Move to email verification step if no user found
-      setCurrentStep('email-verification');
-      
+      setCurrentStep("email-verification");
+
       // Automatically send verification email after successful registration
       await handleEmailVerification();
-
     } catch (error: any) {
-      console.error('Registration error:', error);
-      onError(error.message || 'Registration failed');
+      console.error("Registration error:", error);
+      onError(error.message || "Registration failed");
       setLoading(false);
     }
   };
-
 
   const handleEmailVerification = async () => {
     try {
       setLoading(true);
       onError(null);
 
-      const host = window?.location.origin || "https://able-ai-mvp-able-ai-team.vercel.app";
+      const host =
+        window?.location.origin ||
+        "https://able-ai-mvp-able-ai-team.vercel.app";
       const actionCodeSettings = {
         url: host + "/?verified=true",
         handleCodeInApp: true,
       };
 
-      await sendSignInLinkToEmail(authClient, formData.email, actionCodeSettings);
-      
+      await sendSignInLinkToEmail(
+        authClient,
+        formData.email,
+        actionCodeSettings
+      );
+
       window.localStorage.setItem("emailForSignIn", formData.email);
       setEmailSent(true);
       toast.success("Verification email sent successfully!");
-      
+
       // Reset success state after 3 seconds
       setTimeout(() => {
         setEmailSent(false);
       }, 3000);
-
     } catch (error: any) {
       console.error("Error sending email:", error);
       onError(`Error sending email: ${error.message}`);
@@ -245,7 +273,7 @@ const RegisterView: React.FC<RegisterViewProps> = ({
   };
 
   const handleBackToForm = () => {
-    setCurrentStep('form');
+    setCurrentStep("form");
     onError(null);
   };
 
@@ -259,18 +287,16 @@ const RegisterView: React.FC<RegisterViewProps> = ({
     setUnverifiedUserEmail("");
     // The user will be automatically redirected by the auth state change
     toast.success("Email verified successfully! Redirecting...");
-    router.push('/select-role');
+    router.push("/select-role");
   };
 
   // Render different steps
 
-  if (currentStep === 'verification-complete') {
+  if (currentStep === "verification-complete") {
     return (
       <div className={styles.emailVerificationContainer}>
         <div className={styles.emailVerificationHeader}>
-          <h2 className={styles.emailVerificationTitle}>
-            Email Verified! 🎉
-          </h2>
+          <h2 className={styles.emailVerificationTitle}>Email Verified! 🎉</h2>
           <p className={styles.emailVerificationSubtitle}>
             Your email has been successfully verified
           </p>
@@ -281,43 +307,50 @@ const RegisterView: React.FC<RegisterViewProps> = ({
             Redirecting you to role selection...
           </p>
 
-          <div className={styles.loadingSpinner} style={{ margin: '20px auto', width: '32px', height: '32px' }}></div>
+          <div
+            className={styles.loadingSpinner}
+            style={{ margin: "20px auto", width: "32px", height: "32px" }}
+          ></div>
         </div>
       </div>
     );
   }
 
-  if (currentStep === 'email-verification') {
+  if (currentStep === "email-verification") {
     return (
       <div className={styles.emailVerificationContainer}>
         <div className={styles.emailVerificationHeader}>
-          <h2 className={styles.emailVerificationTitle}>
-            Verify Your Email
-          </h2>
+          <h2 className={styles.emailVerificationTitle}>Verify Your Email</h2>
           <p className={styles.emailVerificationSubtitle}>
             We've sent a verification link to
           </p>
-          <p className={styles.emailAddress}>
-            {formData.email}
-          </p>
+          <p className={styles.emailAddress}>{formData.email}</p>
         </div>
 
         <div>
           <p className={styles.emailInstructions}>
-            Please check your email and click the verification link to complete your registration.
+            Please check your email and click the verification link to complete
+            your registration.
           </p>
 
           {isVerifying && (
-            <div style={{ textAlign: 'center', margin: '20px 0' }}>
-              <div className={styles.loadingSpinner} style={{ margin: '0 auto 10px', width: '24px', height: '24px' }}></div>
-              <p style={{ color: '#a0a0a0', fontSize: '14px' }}>Waiting for email verification...</p>
+            <div style={{ textAlign: "center", margin: "20px 0" }}>
+              <div
+                className={styles.loadingSpinner}
+                style={{ margin: "0 auto 10px", width: "24px", height: "24px" }}
+              ></div>
+              <p style={{ color: "#a0a0a0", fontSize: "14px" }}>
+                Waiting for email verification...
+              </p>
             </div>
           )}
 
           <button
             onClick={handleEmailVerification}
             disabled={loading || isVerifying}
-            className={`${styles.resendButton} ${emailSent ? styles.success : ''}`}
+            className={`${styles.resendButton} ${
+              emailSent ? styles.success : ""
+            }`}
           >
             {loading ? (
               <>
@@ -326,15 +359,35 @@ const RegisterView: React.FC<RegisterViewProps> = ({
               </>
             ) : emailSent ? (
               <>
-                <svg className={styles.emailIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className={styles.emailIcon}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 Email Sent!
               </>
             ) : (
               <>
-                <svg className={styles.emailIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg
+                  className={styles.emailIcon}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
                 </svg>
                 Resend Verification Email
               </>
@@ -355,91 +408,90 @@ const RegisterView: React.FC<RegisterViewProps> = ({
 
   return (
     <>
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <div className={styles.inputGroup}>
-        <label htmlFor="name-register" className={styles.label}>
-          Name
-        </label>
-        <InputField
-          type="text"
-          id="name-register"
-          name="name"
-          placeholder="Enter your name"
-          value={formData.name}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <div className={styles.inputGroup}>
+          <label htmlFor="name-register" className={styles.label}>
+            Name
+          </label>
+          <InputField
+            type="text"
+            id="name-register"
+            name="name"
+            placeholder="Enter your name"
+            value={formData.name}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
 
+        <div className={styles.inputGroup}>
+          <label htmlFor="email-register" className={styles.label}>
+            Email Address
+          </label>
+          <InputField
+            type="email"
+            id="email-register"
+            name="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
 
-      <div className={styles.inputGroup}>
-        <label htmlFor="email-register" className={styles.label}>
-          Email Address
-        </label>
-        <InputField
-          type="email"
-          id="email-register"
-          name="email"
-          placeholder="Enter your email"
-          value={formData.email}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
+        <div className={styles.inputGroup}>
+          <label htmlFor="phone-register" className={styles.label}>
+            Phone Number
+          </label>
+          <InputField
+            type="tel"
+            id="phone-register"
+            name="phone"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
 
-      <div className={styles.inputGroup}>
-        <label htmlFor="phone-register" className={styles.label}>
-          Phone Number
-        </label>
-        <InputField
-          type="tel"
-          id="phone-register"
-          name="phone"
-          placeholder="Enter your phone number"
-          value={formData.phone}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
+        <div className={styles.inputGroup}>
+          <label htmlFor="password-register" className={styles.label}>
+            Password
+          </label>
+          <PasswordInputField
+            password={formData.password}
+            setPassword={(value: string) =>
+              setFormData((prev) => ({ ...prev, password: value }))
+            }
+            id="password-register"
+            name="password-register"
+            placeholder="Make it secure..."
+            required
+          />
+        </div>
 
-      <div className={styles.inputGroup}>
-        <label htmlFor="password-register" className={styles.label}>
-          Password
-        </label>
-        <PasswordInputField
-          password={formData.password}
-          setPassword={(value: string) =>
-            setFormData((prev) => ({ ...prev, password: value }))
-          }
-          id="password-register"
-          name="password-register"
-          placeholder="Make it secure..."
-          required
-        />
-      </div>
+        <div className={styles.submitWrapper}>
+          <SubmitButton loading={loading} disabled={loading}>
+            Register Account
+          </SubmitButton>
+        </div>
 
-      <div className={styles.submitWrapper}>
-        <SubmitButton loading={loading} disabled={loading}>
-          Register Account
-        </SubmitButton>
-      </div>
+        <button
+          type="button"
+          className={styles.toggleButton}
+          onClick={onToggleRegister}
+        >
+          Already have an account?{" "}
+          <span className={styles.linkText}>Sign In</span>
+        </button>
+      </form>
 
-      <button
-        type="button"
-        className={styles.toggleButton}
-        onClick={onToggleRegister}
-      >
-        Already have an account?{" "}
-        <span className={styles.linkText}>Sign In</span>
-      </button>
-    </form>
-
-    <EmailVerificationModal
-      isOpen={showVerificationModal}
-      onClose={handleCloseVerificationModal}
-      userEmail={unverifiedUserEmail}
-      onVerificationComplete={handleVerificationComplete}
-    />
+      <EmailVerificationModal
+        isOpen={showVerificationModal}
+        onClose={handleCloseVerificationModal}
+        userEmail={unverifiedUserEmail}
+        onVerificationComplete={handleVerificationComplete}
+      />
     </>
   );
 };

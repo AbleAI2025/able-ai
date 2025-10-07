@@ -6,7 +6,7 @@ type RegisterUserData = {
   email: string;
   password: string;
   name: string;
-  phone: string;
+  phone: string | undefined;
 };
 
 export async function registerUserAction(data: RegisterUserData) {
@@ -16,6 +16,7 @@ export async function registerUserAction(data: RegisterUserData) {
       email: data.email,
       password: data.password,
       displayName: data.name,
+      phoneNumber: data.phone
     });
 
     await findOrCreatePgUserAndUpdateRole({
