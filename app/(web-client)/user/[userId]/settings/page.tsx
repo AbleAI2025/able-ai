@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { parsePhoneNumber } from "libphonenumber-js";
 import {
   updatePassword,
   sendPasswordResetEmail,
@@ -93,6 +94,35 @@ export default function SettingsPage() {
 
   const userLastRole = getLastRoleUsed() as UserRole;
 
+  const isValidE164PhoneNumber = (phone: string): boolean => {
+    const e164Regex = /^\+[1-9]\d{1,14}$/;
+    return e164Regex.test(phone);
+  };
+
+  const formatPhoneNumber = (phone: string): string | null => {
+    if (!phone) return '';
+    phone = phone.trim();
+    if (isValidE164PhoneNumber(phone)) return phone;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `+44${digits}`;
+    }
+    if (digits.length === 11 && digits.startsWith('1')) {
+      return `+${digits}`;
+    }
+    // Try parsing with GB for UK audience
+    try {
+      const parsed = parsePhoneNumber(phone, 'GB');
+      if (parsed.isValid()) {
+        return parsed.number;
+      }
+    } catch (error) {
+      console.error("Error parsing phone number:", error);
+      setError("Invalid phone number format. Please enter a valid phone number, e.g., +1234567890");
+    }
+    return null;
+  };
+
   const fetchSettings = async () => {
     try {
       if (!user?.uid) throw "User not authenticated.";
@@ -179,22 +209,32 @@ export default function SettingsPage() {
 
   const handleProfileUpdate = async (event: FormEvent) => {
     event.preventDefault();
+    const formattedPhone = formatPhoneNumber(phone);
+    if (formattedPhone && formattedPhone !== phone) {
+      setPhone(formattedPhone);
+    }
+    if (phone && !formattedPhone) {
+      setError("Invalid phone number format. Please enter a valid phone number, e.g., +1234567890");
+      return;
+    }
     clearMessages();
     setIsSavingProfile(true);
 
     try {
       const { success: updateSuccess, error: updateError } =
         await updateUserProfileAction(
-          { fullName: displayName, phone: phone },
+          { fullName: displayName, phone: formattedPhone || phone },
           user?.token
         );
 
-      if (!updateSuccess) throw updateError;
+      console.log("Update success:", updateSuccess, "Error:", updateError);
 
-      const { success: fetchSuccess, error: fetchError } =
+      if (!updateSuccess) setError(updateError || "Failed to update profile.");
+
+      const { success: fetchSuccess, data, error: fetchError } =
         await getProfileInfoUserAction(user?.token);
       if (!fetchSuccess) throw fetchError;
-
+      console.log("Profile updated successfully", data, user);
       toast.success("Profile updated successfully");
       setSuccessMessage("Profile updated successfully!");
     } catch (err: unknown) {

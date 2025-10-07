@@ -61,9 +61,9 @@ export const updateUserProfileAction = async (
     });
 
     return { success: true, data: updatedUsers[0] || null };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error updating user profile", error);
-    return { success: false, error };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to update user profile." };
   }
 };
 
