@@ -40,21 +40,26 @@ const SignInView: React.FC<SignInViewProps> = ({
           password
         );
       }
-      
+
       const user = userCredential?.user;
 
       if (!user?.uid) throw new Error("User UID not found");
 
-      /*
       if (!user?.emailVerified) {
         throw new Error("Email is not verified");
       }
-      */
 
       const response = await signInWithFirebaseAction(user.uid);
 
       if (response?.error) {
-        onError(<>{response.error || "Email or password is incorrect."}</>);
+        onError(
+          <>
+            {response.error || "Email or password is incorrect."}
+            <a href="/reset-password" className={styles.errorLink}>
+              Reset password?
+            </a>
+          </>
+        );
       } else {
         await user.getIdToken(true);
         await user.getIdTokenResult();

@@ -217,7 +217,7 @@ const RegisterView: React.FC<RegisterViewProps> = ({
           setShowVerificationModal(true);
           setLoading(false);
           return;
-        } else if (verificationStatuformData.phone.trims.isVerified) {
+        } else if (verificationStatus.isVerified) {
           // Email is already verified, proceed to role selection
           toast.success("Registration successful! Redirecting...");
           router.push("/select-role");
