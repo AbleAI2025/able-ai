@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, FormEvent } from "react";
@@ -27,10 +26,21 @@ import { createAccountLink } from "@/app/actions/stripe/create-account-link";
 import { FirebaseError } from "firebase/app";
 import SwitchControl from "@/app/components/shared/SwitchControl";
 import { toast } from "sonner";
-import { deleteUserAccountAction, getProfileInfoUserAction, updateNotificationEmailAction, updateNotificationSmsAction, updateProfileVisibilityAction, updateUserProfileAction } from "@/actions/user/user";
+import {
+  deleteUserAccountAction,
+  getProfileInfoUserAction,
+  updateNotificationEmailAction,
+  updateNotificationSmsAction,
+  updateProfileVisibilityAction,
+  updateUserProfileAction,
+} from "@/actions/user/user";
 import StripeModal from "@/app/components/settings/stripeModal";
 import StripeElementsProvider from "@/lib/stripe/StripeElementsProvider";
-import { FlowStep, UserRole, UserSettingsData } from "@/app/types/SettingsTypes";
+import {
+  FlowStep,
+  UserRole,
+  UserSettingsData,
+} from "@/app/types/SettingsTypes";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
 import { authClient } from "@/lib/firebase/clientApp";
 import PhoneNumberModal from "./phoneNumberModal";
@@ -63,7 +73,6 @@ export default function SettingsPage() {
   const [notificationEmail, setNotificationEmail] = useState(false);
   const [notificationSms, setNotificationSms] = useState(false);
 
-
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState(""); // Added state for phone number
   // Password fields
@@ -78,18 +87,21 @@ export default function SettingsPage() {
   const [emailPlatformAnnouncements, setEmailPlatformAnnouncements] =
     useState(false);
 
-
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<FlowStep>('connecting');
+  const [currentStep, setCurrentStep] = useState<FlowStep>("connecting");
 
   const userLastRole = getLastRoleUsed() as UserRole;
 
   const fetchSettings = async () => {
     try {
-      if (!user?.uid) throw "User not authenticated."
+      if (!user?.uid) throw "User not authenticated.";
 
-      const { success, data: userProfile, error } = await getProfileInfoUserAction(user?.token);
+      const {
+        success,
+        data: userProfile,
+        error,
+      } = await getProfileInfoUserAction(user?.token);
       if (!success) throw error;
 
       const data: UserSettingsData = {
@@ -124,16 +136,19 @@ export default function SettingsPage() {
         data.notificationPreferences.email.platformAnnouncements
       );
       if (
-        (userLastRole === 'GIG_WORKER' && !data.stripeConnectAccountId) ||
-        (userLastRole === 'BUYER' && !data.stripeCustomerId) ||
-        !data.stripeAccountStatus
+        (userLastRole === "GIG_WORKER" && !data.stripeConnectAccountId) ||
+        (userLastRole === "BUYER" && !data.stripeCustomerId)
       ) {
-        setShowStripeModal(true)
+        setShowStripeModal(true);
       }
       // setSmsGigAlerts(data.notificationPreferences.sms.gigAlerts); // SMS commented out
       setProfileVisibility(userProfile?.profileVisibility || false);
-      setNotificationEmail(userProfile?.notificationPreferences.emailGigUpdates || false)
-      setNotificationSms(userProfile?.notificationPreferences.smsGigAlerts || false)
+      setNotificationEmail(
+        userProfile?.notificationPreferences.emailGigUpdates || false
+      );
+      setNotificationSms(
+        userProfile?.notificationPreferences.smsGigAlerts || false
+      );
       // setPhone(data.phone || ''); // Set initial state for phone
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -168,20 +183,23 @@ export default function SettingsPage() {
     setIsSavingProfile(true);
 
     try {
-      const { success: updateSuccess, error: updateError } = await updateUserProfileAction(
-        { fullName: displayName, phone: phone },
-        user?.token
-      );
+      const { success: updateSuccess, error: updateError } =
+        await updateUserProfileAction(
+          { fullName: displayName, phone: phone },
+          user?.token
+        );
 
       if (!updateSuccess) throw updateError;
 
-      const { success: fetchSuccess, error: fetchError } = await getProfileInfoUserAction(user?.token);
+      const { success: fetchSuccess, error: fetchError } =
+        await getProfileInfoUserAction(user?.token);
       if (!fetchSuccess) throw fetchError;
 
       toast.success("Profile updated successfully");
       setSuccessMessage("Profile updated successfully!");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to update profile.";
+      const message =
+        err instanceof Error ? err.message : "Failed to update profile.";
       setError(message);
     } finally {
       setIsSavingProfile(false);
@@ -248,7 +266,9 @@ export default function SettingsPage() {
     try {
       if (authClient) {
         await sendPasswordResetEmail(authClient, userSettings.email);
-        setSuccessMessage("Password reset email sent. Please check your inbox.");
+        setSuccessMessage(
+          "Password reset email sent. Please check your inbox."
+        );
         toast.success(`Check your email to reset your password.`);
       }
     } catch (err) {
@@ -298,12 +318,12 @@ export default function SettingsPage() {
     setIsConnectingStripe(true);
     try {
       const response = await createAccountLink(user?.uid);
-      if (response.error && response.status === 500) throw new Error(response.error);
+      if (response.error && response.status === 500)
+        throw new Error(response.error);
 
       if (response.status === 200 && response.url) {
         window.location.href = response.url;
       }
-
     } catch (err: any) {
       setError(err.message || "Failed to initiate Stripe Connect.");
     } finally {
@@ -318,9 +338,8 @@ export default function SettingsPage() {
     setIsConnectingStripe(true);
 
     try {
-      setCurrentStep('payment-method');
+      setCurrentStep("payment-method");
       setIsConnectingStripe(false);
-
     } catch (err: any) {
       setError(err.message || "Failed to initiate Stripe Connect.");
     } finally {
@@ -363,13 +382,16 @@ export default function SettingsPage() {
   const generateCustomerPortalSession = async () => {
     if (!user) return;
 
-    const createPortalSessionFunc = userLastRole === 'BUYER' ? createCustomerPortalSession : createAccountPortalSession;
+    const createPortalSessionFunc =
+      userLastRole === "BUYER"
+        ? createCustomerPortalSession
+        : createAccountPortalSession;
     const { url: sessionUrl, status } = await createPortalSessionFunc(user.uid);
 
     if (status !== 200) return;
 
     if (sessionUrl) window.location.href = sessionUrl;
-  }
+  };
 
   async function handleToggleEmailNotification() {
     try {
@@ -378,10 +400,10 @@ export default function SettingsPage() {
         user?.token
       );
       setNotificationEmail(error ? notificationEmail : data);
-      toast.success("Email notification updated")
+      toast.success("Email notification updated");
     } catch (error) {
       console.error("Failed to update email notifications", error);
-      setNotificationEmail(notificationEmail); // Revert to current value 
+      setNotificationEmail(notificationEmail); // Revert to current value
     }
   }
 
@@ -409,7 +431,6 @@ export default function SettingsPage() {
     } catch (error) {
       console.error("Failed to update profile visibility", error);
       setProfileVisibility(profileVisibility);
-
     }
   }
 
@@ -430,16 +451,22 @@ export default function SettingsPage() {
       <div className={styles.card}>
         <ScreenHeaderWithBack title="Settings" />
         <div className={styles.pageWrapper}>
-          <p className={styles.pageDescription}>Manage your account preferences and settings</p>
+          <p className={styles.pageDescription}>
+            Manage your account preferences and settings
+          </p>
           {/* Email Verification Section */}
           {user && !user.emailVerified && (
             <div className={styles.verificationSection}>
               <div className={styles.verificationHeader}>
                 <AlertTriangle className={styles.warningIcon} />
-                <h2 className={styles.verificationModalTitle}>Verify Your Email Address</h2>
+                <h2 className={styles.verificationModalTitle}>
+                  Verify Your Email Address
+                </h2>
               </div>
               <p className={styles.verificationText}>
-                To secure your account and access all features, please verify your email address. A verification link has been sent to <strong>{user.email}</strong>.
+                To secure your account and access all features, please verify
+                your email address. A verification link has been sent to{" "}
+                <strong>{user.email}</strong>.
               </p>
               <div className={styles.verificationActions}>
                 <button
@@ -449,16 +476,42 @@ export default function SettingsPage() {
                 >
                   {isResendingEmail ? (
                     <>
-                      <svg className={styles.spinnerIcon} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className={styles.spinnerIcon}
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Sending...
                     </>
                   ) : (
                     <>
-                      <svg className={styles.emailIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg
+                        className={styles.emailIcon}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
                       </svg>
                       Resend Verification Email
                     </>
@@ -471,21 +524,6 @@ export default function SettingsPage() {
           {successMessage && (
             <p className={styles.successMessage}>{successMessage}</p>
           )}
-
-          {/* Inline Stripe Prompt / Status Indicator (Alternative to Modal) */}
-          {userSettings &&
-            (
-              (userLastRole === 'GIG_WORKER' && userSettings.stripeConnectAccountId) ||
-              (userLastRole === 'BUYER' && userSettings.stripeCustomerId)
-            ) &&
-            userSettings.stripeAccountStatus === "connected" &&
-            userSettings.canReceivePayouts && (
-              <div
-                className={`${styles.section} ${styles.stripeStatusBannerConnected}`}
-              >
-                <CheckCircle size={20} /> Stripe account connected and active.
-              </div>
-            )}
 
           {/* Profile Information Section */}
           <section className={styles.section} id="profile-information">
@@ -559,12 +597,45 @@ export default function SettingsPage() {
             <h2 className={styles.sectionTitle}>
               Payment Settings - Stripe portal
             </h2>
-            <button
-              className={styles.button}
-              onClick={generateCustomerPortalSession}
-            >
-              {userLastRole === 'BUYER' ? "Go to buyer portal" : "Go to worker portal"}
-            </button>
+            {(userLastRole === "GIG_WORKER" &&
+              !userSettings.stripeConnectAccountId) ||
+            (userLastRole === "BUYER" && !userSettings.stripeCustomerId) ? (
+              <div className={styles.stripePrompt}>
+                <p>
+                  To{" "}
+                  {userLastRole === "BUYER"
+                    ? "hire gig workers"
+                    : "receive payments for your gigs"}
+                  , you need to set up your{" "}
+                  {userLastRole === "BUYER" ? "customer" : "Stripe Connect"}{" "}
+                  account with Stripe, our secure payment provider.
+                </p>
+                <button
+                  onClick={handleStripeConnect}
+                  className={styles.button}
+                  disabled={isConnectingStripe}
+                >
+                  {isConnectingStripe
+                    ? "Redirecting..."
+                    : `Set up ${
+                        userLastRole === "BUYER" ? "Customer" : "Stripe Connect"
+                      } Account`}
+                </button>
+              </div>
+            ) : (
+              <div className={styles.stripeStatusBannerConnected}>
+                <CheckCircle size={20} /> Stripe account is connected and can
+                receive payouts.
+                <button
+                  className={styles.button}
+                  onClick={generateCustomerPortalSession}
+                >
+                  {userLastRole === "BUYER"
+                    ? "Go to buyer portal"
+                    : "Go to worker portal"}
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Preferences Section */}
@@ -614,7 +685,8 @@ export default function SettingsPage() {
           {/* Account Security Section */}
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>
-              <Shield size={20} style={{ marginRight: "0.5rem" }} /> Account Security
+              <Shield size={20} style={{ marginRight: "0.5rem" }} /> Account
+              Security
             </h2>
             <form
               onSubmit={handleChangePassword}
@@ -683,7 +755,6 @@ export default function SettingsPage() {
             </div>
           </section>
 
-
           <section className={styles.bottomNavSection}>
             <div className={styles.bottomNav}>
               <button onClick={handleLogout} className={styles.bottomNavLink}>
@@ -730,28 +801,47 @@ export default function SettingsPage() {
                   className={`${styles.button} ${styles.danger}`}
                   disabled={isDeletingAccount}
                 >
-                  {isDeletingAccount ? "Deleting..." : "Are you sure? This is irreversible"}
+                  {isDeletingAccount
+                    ? "Deleting..."
+                    : "Are you sure? This is irreversible"}
                 </button>
               </div>
             </div>
           </div>
         )}
-        {showStripeModal && (
-          userLastRole === 'BUYER' ?
+        {showStripeModal &&
+          (userLastRole === "BUYER" ? (
             <>
-              <StripeElementsProvider options={{
-                mode: 'setup',
-                currency: 'gbp',
-                appearance: {
-                  theme: 'night',
-                  labels: 'floating',
-                }
-              }}>
-                <StripeModal userId={user?.uid} userRole={userLastRole} connectionStep={currentStep} isConnectingStripe={isConnectingStripe} handleCloseModal={() => setShowStripeModal(false)} handleOpenStripeConnection={handleOpenStripeConnection} />
+              <StripeElementsProvider
+                options={{
+                  mode: "setup",
+                  currency: "gbp",
+                  appearance: {
+                    theme: "night",
+                    labels: "floating",
+                  },
+                }}
+              >
+                <StripeModal
+                  userId={user?.uid}
+                  userRole={userLastRole}
+                  connectionStep={currentStep}
+                  isConnectingStripe={isConnectingStripe}
+                  handleCloseModal={() => setShowStripeModal(false)}
+                  handleOpenStripeConnection={handleOpenStripeConnection}
+                />
               </StripeElementsProvider>
             </>
-            : <StripeModal userId={user?.uid} userRole={userLastRole} connectionStep={currentStep} isConnectingStripe={isConnectingStripe} handleCloseModal={() => setShowStripeModal(false)} handleOpenStripeConnection={handleStripeConnect} />
-        )}
+          ) : (
+            <StripeModal
+              userId={user?.uid}
+              userRole={userLastRole}
+              connectionStep={currentStep}
+              isConnectingStripe={isConnectingStripe}
+              handleCloseModal={() => setShowStripeModal(false)}
+              handleOpenStripeConnection={handleStripeConnect}
+            />
+          ))}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStripeStatus } from '@/app/hooks/useStripeConnectionStatus';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface StripeConnectionGuardProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ const StripeConnectionGuard: React.FC<StripeConnectionGuardProps> = ({
 
   useEffect(() => {
     if (!isLoading && !isConnected) {
+      toast.error("You need to connect your Stripe account to access this page.");
       router.replace(redirectPath);
     }
   }, [isLoading, isConnected, redirectPath, router]);

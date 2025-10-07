@@ -32,6 +32,10 @@ export default function SelectRolePage() {
       window.location.replace(`/user/${user?.uid}/buyer`);
       return;
     } else if (lastRoleUsed === "GIG_WORKER") {
+      if (!user?.claims.haveWorkerProfile) {
+        window.location.replace(`/user/${user?.uid}/worker/onboarding-ai`);
+        return;
+      }
       const lastPathGigWorker = localStorage.getItem("lastPathGigWorker");
       if (lastPathGigWorker) {
         window.location.replace(lastPathGigWorker);

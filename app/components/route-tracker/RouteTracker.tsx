@@ -14,7 +14,7 @@ const RouteTracker = () => {
     if (!user || loading) return;
 
     if (pathname === "/select-role" || pathname === "/") {
-      return
+      return;
     }
 
     if (sessionStorage.getItem("roleSwitchInProgress")) {
@@ -46,7 +46,7 @@ const RouteTracker = () => {
         !pathSegments.includes("buyer") &&
         !!roleFromPathname);
 
-    if (previousPath && previousPath !== pathname && mustSave && pathname !== "/select-role" && pathname !== "/") {
+    if (previousPath && previousPath !== pathname && mustSave && pathname !== "/select-role" && pathname !== "/" && !pathname.includes("/onboarding-success")) {
       const key =
         roleFromPathname === "GIG_WORKER"
           ? "lastPathGigWorker"

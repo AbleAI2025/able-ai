@@ -22,12 +22,9 @@ import styles from "./HomePage.module.css";
 import Loader from "@/app/components/shared/Loader";
 import { useAuth } from "@/context/AuthContext";
 import { useAiSuggestionBanner } from "@/hooks/useAiSuggestionBanner";
-import {
-  resetUnreadCountInDB,
-} from "@/actions/notifications/useUnreadNotifications";
+import { resetUnreadCountInDB } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
-
 
 export default function WorkerDashboardPage() {
   const params = useParams();
@@ -38,18 +35,26 @@ export default function WorkerDashboardPage() {
   const authUserToken = user?.token;
 
   async function fetchNotifications(token: string) {
-    const { notifications, unreadCount } = await getAllNotificationsAction(token);
-    
+    const { notifications, unreadCount } = await getAllNotificationsAction(
+      token
+    );
+
     setUnreadNotifications(unreadCount);
     return notifications;
   }
 
   useEffect(() => {
+    if (user && user.uid !== pageUserId) {
+      // If the authenticated user's ID does not match the page's userId param, redirect to their own dashboard
+      window.location.href = `/user/${user.uid}/worker`;
+    }
+  }, [user, pageUserId]);
+
+  useEffect(() => {
     if (authUserToken) {
-      fetchNotifications(authUserToken)
-        .catch((err) => {
-          console.error("Failed to fetch notifications:", err);
-        })
+      fetchNotifications(authUserToken).catch((err) => {
+        console.error("Failed to fetch notifications:", err);
+      });
     }
   }, [authUserToken]);
 
@@ -138,19 +143,19 @@ export default function WorkerDashboardPage() {
           unreadNotifications={unreadNotifications}
         />
         {uid && (
-            <AiSuggestionBanner
-              suggestions={aiSuggestions}
-              currentIndex={currentIndex}
-              isLoading={isLoadingSuggestions}
-              error={suggestionsError}
-              dismissed={suggestionsDismissed} // Pass the dismissed state
-              onDismiss={dismissSuggestions}
-              onRefresh={refreshSuggestions}
-              goToNext={goToNext}
-              goToPrev={goToPrev}
-              userId={uid}
-            />
-          )}
+          <AiSuggestionBanner
+            suggestions={aiSuggestions}
+            currentIndex={currentIndex}
+            isLoading={isLoadingSuggestions}
+            error={suggestionsError}
+            dismissed={suggestionsDismissed} // Pass the dismissed state
+            onDismiss={dismissSuggestions}
+            onRefresh={refreshSuggestions}
+            goToNext={goToNext}
+            goToPrev={goToPrev}
+            userId={uid}
+          />
+        )}
         <main className={styles.contentWrapper}>
           <IconGrid items={actionItems} />
           <ReferralBanner />

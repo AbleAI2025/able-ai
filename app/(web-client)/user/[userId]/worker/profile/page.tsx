@@ -46,13 +46,14 @@ export default function WorkerOwnedProfilePage() {
     } else {
       setError("Could not load your profile.");
       setProfile(null);
+      router.replace(`/user/${userId}/worker/onboarding-ai`);
     }
     setLoadingProfile(false);
   }
 
   useEffect(() => {
     if (!loadingAuth && user) {
-      if (lastRoleUsed === "GIG_WORKER" || user.claims.role === "QA") {
+      if (lastRoleUsed === "GIG_WORKER") {
         fetchUserProfile(user.token);
       } else {
         router.replace("/select-role");
