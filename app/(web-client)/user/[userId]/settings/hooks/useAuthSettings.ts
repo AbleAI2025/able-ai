@@ -12,9 +12,10 @@ import {
 import { toast } from "sonner";
 import { FirebaseError } from "firebase/app";
 import { authClient } from "@/lib/firebase/clientApp";
+import { sendEmailVerification } from "firebase/auth";
 import { User } from "@/context/AuthContext";
 
-export const useUserAuth = (user: User | null) => {
+export const useAuthSettings = (user: User | null) => {
   const router = useRouter();
 
   // Password change state
@@ -22,6 +23,7 @@ export const useUserAuth = (user: User | null) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
 
   const handleChangePassword = async (event: FormEvent) => {
     event.preventDefault();
@@ -51,7 +53,6 @@ export const useUserAuth = (user: User | null) => {
       toast.success("Password changed successfully!");
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
-        console.error("Error changing password", err);
         if (err.code === "auth/wrong-password") {
           throw new Error("Current password incorrect.");
         } else if (err.code === "auth/requires-recent-login") {
@@ -60,7 +61,6 @@ export const useUserAuth = (user: User | null) => {
           throw new Error(err.message || "Error changing password.");
         }
       } else {
-        console.error("Error unknown:", err);
         throw new Error("Error changing password.");
       }
     } finally {
@@ -101,6 +101,21 @@ export const useUserAuth = (user: User | null) => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!user) return;
+
+    setIsResendingEmail(true);
+    try {
+      await sendEmailVerification(user);
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      toast.error("Failed to send verification email. Please try again later.");
+      console.error("Error resending verification email:", error);
+    } finally {
+      setIsResendingEmail(false);
+    }
+  };
+
   return {
     // Password change
     currentPassword,
@@ -115,5 +130,9 @@ export const useUserAuth = (user: User | null) => {
 
     // Logout
     handleLogout,
+
+    // Email verification
+    isResendingEmail,
+    handleResendVerification,
   };
 };

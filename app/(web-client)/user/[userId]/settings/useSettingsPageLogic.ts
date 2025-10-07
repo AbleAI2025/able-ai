@@ -3,57 +3,71 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
-import {
-  FlowStep,
-  UserRole,
-} from "@/app/types/SettingsTypes";
-import { useUserProfile } from "./useUserProfile";
-import { useUserNotifications } from "./useUserNotifications";
-import { useUserAuth } from "./useUserAuth";
-import { useStripeIntegration } from "./useStripeIntegration";
-import { useEmailVerification } from "./useEmailVerification";
-import { useAccountDeletion } from "./useAccountDeletion";
+import { UserRole } from "@/app/types/SettingsTypes";
+import { checkStripeConnection } from "@/app/actions/stripe/check-stripe-connection";
+import { usePaymentSettings } from "./hooks/usePaymentSettings";
+import { useUserProfileSettings } from "./hooks/useUserProfileSettings";
+import { useNotificationSettings } from "./hooks/useNotificationSettings";
+import { useAuthSettings } from "./hooks/useAuthSettings";
+import { useAccountManagement } from "./hooks/useAccountManagement";
 
 export const useSettingsPageLogic = () => {
   const { user } = useAuth();
 
-  // Delete Account related states
-  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-
-  // Privacy Settings related states
-  const profileVisibility = false;
-  const notificationEmail = false;
-  const notificationSms = false;
-
-  const [showStripeModal, setShowStripeModal] = useState(false);
-  const [stripeModalDismissed, setStripeModalDismissed] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
-  const successMessage = null;
-  const currentStep: FlowStep = "connecting";
 
   const userLastRole = getLastRoleUsed() as UserRole;
 
   // Use custom hooks
-  const userProfile = useUserProfile(user);
-  const userNotifications = useUserNotifications(user);
-  const userAuth = useUserAuth(user);
-  const { handleResendVerification: _handleResendVerification, isResendingEmail } = useEmailVerification();
-  const { isDeletingAccount, handleDeleteAccountConfirmed } = useAccountDeletion(user, setShowDeleteAccountModal);
-  const { generateCustomerPortalSession, handleStripeConnect, isConnectingStripe, handleOpenStripeConnection } = useStripeIntegration(userLastRole);
+  const paymentSettings = usePaymentSettings(userLastRole);
+  const userProfileSettings = useUserProfileSettings(user);
+  const notificationSettings = useNotificationSettings(user, userProfileSettings.userSettings, userProfileSettings.setUserSettings);
+  const authSettings = useAuthSettings(user);
+  const accountManagement = useAccountManagement(user);
 
-  // Create wrapper functions for hooks that need user parameter
-  const handleResendVerification = () => _handleResendVerification(user);
+  // Derive settings from notificationSettings (which uses userProfileSettings.userSettings)
+  const profileVisibility = notificationSettings.profileVisibility;
+  const notificationEmail = notificationSettings.notificationEmail;
+  const notificationSms = notificationSettings.notificationSms;
 
-  // Handle modal close with dismissal tracking
-  const handleStripeModalClose = () => {
-    setShowStripeModal(false);
-    setStripeModalDismissed(true);
-  };
+  // Wrapper functions to match component expectations
+  const handleProfileUpdateWrapper = userProfileSettings.handleProfileUpdate;
+  const handleToggleEmailNotificationWrapper = notificationSettings.handleToggleEmailNotification;
+  const handleToggleSmsNotificationWrapper = notificationSettings.handleToggleSmsNotification;
+  const handleToggleProfileVisibilityWrapper = notificationSettings.handleToggleProfileVisibility;
+  const handleChangePasswordWrapper = authSettings.handleChangePassword;
+  const handleForgotPasswordWrapper = authSettings.handleForgotPassword;
+  const handleLogoutWrapper = authSettings.handleLogout;
+  const handleStripeConnectWrapper = () => paymentSettings.handleStripeConnect(user);
+  const handleOpenStripeConnectionWrapper = paymentSettings.handleOpenStripeConnection;
+  const generateCustomerPortalSessionWrapper = () => paymentSettings.generateCustomerPortalSession(user);
+  const handleResendVerification = authSettings.handleResendVerification;
+
+  // Handle modal close with dismissal tracking - now delegated to paymentSettings
+  const handleStripeModalClose = paymentSettings.handleStripeModalClose;
 
   const fetchSettings = async () => {
     try {
-      await userProfile.fetchSettings();
+      await userProfileSettings.fetchSettings();
+
+      // Fetch Stripe status separately
+      if (user?.uid) {
+        const stripeConnection = await checkStripeConnection(user.uid, userLastRole);
+        const stripeAccountStatus = stripeConnection.connected ? 'connected' : null;
+        const canReceivePayouts = stripeConnection.connected;
+
+        // Update userSettings with Stripe data
+        if (userProfileSettings.userSettings) {
+          userProfileSettings.setUserSettings({
+            ...userProfileSettings.userSettings,
+            stripeCustomerId: userLastRole === 'BUYER' && stripeConnection.connected ? "customer_connected" : null,
+            stripeAccountStatus: userLastRole === 'GIG_WORKER' ? stripeAccountStatus : null,
+            stripeConnectAccountId: userLastRole === 'GIG_WORKER' && stripeConnection.connected ? "account_connected" : null,
+            canReceivePayouts,
+            lastRole: userLastRole,
+          });
+        }
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "Could not load settings.");
@@ -73,76 +87,74 @@ export const useSettingsPageLogic = () => {
 
   // Check Stripe modal after settings are loaded
   useEffect(() => {
-    if (user && !userProfile.isLoadingSettings && userProfile.userSettings && !showStripeModal && !stripeModalDismissed) {
-      const userSettings = userProfile.userSettings;
+    if (user && !userProfileSettings.isLoadingSettings && userProfileSettings.userSettings && !paymentSettings.showStripeModal && !paymentSettings.stripeModalDismissed) {
+      const userSettings = userProfileSettings.userSettings;
 
       // Show modal only if user is not connected to Stripe and hasn't dismissed it
       if (userLastRole && !userSettings.canReceivePayouts) {
-        setShowStripeModal(true);
+        paymentSettings.setShowStripeModal(true);
       }
     }
-  }, [user, userProfile.userSettings, userProfile.isLoadingSettings, userLastRole, showStripeModal, stripeModalDismissed]);
+  }, [user, userProfileSettings.userSettings, userProfileSettings.isLoadingSettings, userLastRole, paymentSettings.showStripeModal, paymentSettings.stripeModalDismissed, paymentSettings]);
 
   return {
     user,
-    userSettings: userProfile.userSettings,
-    isLoadingSettings: userProfile.isLoadingSettings,
+    userSettings: userProfileSettings.userSettings,
+    isLoadingSettings: userProfileSettings.isLoadingSettings,
     error,
-    successMessage,
-    showDeleteAccountModal,
-    setShowDeleteAccountModal,
-    showStripeModal,
-    currentStep,
-    isConnectingStripe,
+    showDeleteAccountModal: accountManagement.showDeleteAccountModal,
+    setShowDeleteAccountModal: accountManagement.setShowDeleteAccountModal,
+    showStripeModal: paymentSettings.showStripeModal,
+    currentStep: paymentSettings.currentStep,
+    isConnectingStripe: paymentSettings.isConnectingStripe,
     handleResendVerification,
-    isResendingEmail,
-    handleDeleteAccountConfirmed,
+    isResendingEmail: authSettings.isResendingEmail,
+    handleDeleteAccountConfirmed: accountManagement.handleDeleteAccountConfirmed,
     userLastRole,
-    setShowStripeModal,
     handleStripeModalClose,
-    handleOpenStripeConnection,
-    handleStripeConnect: () => handleStripeConnect(user),
-    isDeletingAccount,
+    handleOpenStripeConnection: handleOpenStripeConnectionWrapper,
+    handleStripeConnect: handleStripeConnectWrapper,
+    isDeletingAccount: accountManagement.isDeletingAccount,
     profileSectionProps: {
-      displayName: userProfile.displayName,
-      setDisplayName: userProfile.setDisplayName,
-      phone: userProfile.phone,
-      setPhone: userProfile.setPhone,
-      handleProfileUpdate: userProfile.handleProfileUpdate,
-      isSavingProfile: userProfile.isSavingProfile,
+      displayName: userProfileSettings.displayName,
+      setDisplayName: userProfileSettings.setDisplayName,
+      phone: userProfileSettings.phone,
+      setPhone: userProfileSettings.setPhone,
+      handleProfileUpdate: handleProfileUpdateWrapper,
+      isSavingProfile: userProfileSettings.isSavingProfile,
       user,
     },
     paymentSectionProps: {
       userLastRole,
-      userSettings: userProfile.userSettings,
-      handleStripeConnect: () => handleStripeConnect(user),
-      isConnectingStripe,
-      generateCustomerPortalSession: () => generateCustomerPortalSession(user),
+      userSettings: userProfileSettings.userSettings,
+      handleStripeConnect: handleStripeConnectWrapper,
+      isConnectingStripe: paymentSettings.isConnectingStripe,
+      generateCustomerPortalSession: generateCustomerPortalSessionWrapper,
     },
     notificationSectionProps: {
       notificationEmail,
-      handleToggleEmailNotification: () => userNotifications.handleToggleEmailNotification(notificationEmail),
+      handleToggleEmailNotification: handleToggleEmailNotificationWrapper,
       notificationSms,
-      handleToggleSmsNotification: () => userNotifications.handleToggleSmsNotification(notificationSms),
+      handleToggleSmsNotification: handleToggleSmsNotificationWrapper,
     },
     privacySectionProps: {
       profileVisibility,
-      handleToggleProfileVisibility: () => userNotifications.handleToggleProfileVisibility(profileVisibility),
+      handleToggleProfileVisibility: handleToggleProfileVisibilityWrapper,
     },
     securitySectionProps: {
-      currentPassword: userAuth.currentPassword,
-      setCurrentPassword: userAuth.setCurrentPassword,
-      newPassword: userAuth.newPassword,
-      setNewPassword: userAuth.setNewPassword,
-      confirmNewPassword: userAuth.confirmNewPassword,
-      setConfirmNewPassword: userAuth.setConfirmNewPassword,
-      handleChangePassword: userAuth.handleChangePassword,
-      handleForgotPassword: userAuth.handleForgotPassword,
-      isSavingProfile: userAuth.isSavingProfile,
+      currentPassword: authSettings.currentPassword,
+      setCurrentPassword: authSettings.setCurrentPassword,
+      newPassword: authSettings.newPassword,
+      setNewPassword: authSettings.setNewPassword,
+      confirmNewPassword: authSettings.confirmNewPassword,
+      setConfirmNewPassword: authSettings.setConfirmNewPassword,
+      handleChangePassword: handleChangePasswordWrapper,
+      handleForgotPassword: handleForgotPasswordWrapper,
+      isSavingProfile: authSettings.isSavingProfile,
     },
     bottomNavSectionProps: {
-      handleLogout: userAuth.handleLogout,
-      setShowDeleteAccountModal,
+      handleLogout: handleLogoutWrapper,
+      setShowDeleteAccountModal: accountManagement.setShowDeleteAccountModal,
     },
   };
 };

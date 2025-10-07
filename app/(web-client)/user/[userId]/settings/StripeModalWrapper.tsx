@@ -13,6 +13,7 @@ interface StripeModalWrapperProps {
   onCloseModal: () => void;
   handleOpenStripeConnection: () => void;
   handleStripeConnect: () => void;
+  onPrimaryAction?: () => void; // This is just for compatibility, the functions are passed to StripeModal
 }
 
 export const StripeModalWrapper: React.FC<StripeModalWrapperProps> = ({
@@ -46,7 +47,7 @@ export const StripeModalWrapper: React.FC<StripeModalWrapperProps> = ({
           connectionStep={currentStep}
           isConnectingStripe={isConnectingStripe}
           handleCloseModal={onCloseModal}
-          handleOpenStripeConnection={handleOpenStripeConnection}
+          onPrimaryAction={handleOpenStripeConnection}
         />
       </StripeElementsProvider>
     </>
@@ -57,7 +58,7 @@ export const StripeModalWrapper: React.FC<StripeModalWrapperProps> = ({
       connectionStep={currentStep}
       isConnectingStripe={isConnectingStripe}
       handleCloseModal={onCloseModal}
-      handleOpenStripeConnection={handleStripeConnect}
+      onPrimaryAction={handleStripeConnect}
     />
   );
 };

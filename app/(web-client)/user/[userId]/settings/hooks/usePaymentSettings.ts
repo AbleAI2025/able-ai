@@ -7,10 +7,11 @@ import { createAccountPortalSession } from "@/app/actions/stripe/create-portal-s
 import { FlowStep } from "@/app/types/SettingsTypes";
 import { User } from "@/context/AuthContext";
 
-export const useStripeIntegration = (userLastRole: string) => {
+export const usePaymentSettings = (userLastRole: string) => {
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   const [currentStep, setCurrentStep] = useState<FlowStep>("connecting");
   const [showStripeModal, setShowStripeModal] = useState(false);
+  const [stripeModalDismissed, setStripeModalDismissed] = useState(false);
 
   const handleStripeConnect = async (user: User | null) => {
     if (!user) return;
@@ -63,11 +64,20 @@ export const useStripeIntegration = (userLastRole: string) => {
     if (sessionUrl) window.location.href = sessionUrl;
   };
 
+  // Handle modal close with dismissal tracking
+  const handleStripeModalClose = () => {
+    setShowStripeModal(false);
+    setStripeModalDismissed(true);
+  };
+
   return {
     isConnectingStripe,
     currentStep,
     showStripeModal,
     setShowStripeModal,
+    stripeModalDismissed,
+    setStripeModalDismissed,
+    handleStripeModalClose,
     handleStripeConnect,
     handleOpenStripeConnection,
     generateCustomerPortalSession,

@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import {
   updateNotificationEmailAction,
   updateNotificationSmsAction,
@@ -16,7 +15,6 @@ export const useUserNotifications = (user: User | null) => {
       if (error) {
         throw new Error(typeof error === 'string' ? error : "Failed to update email notifications");
       }
-      toast.success("Email notification updated");
       return data;
     } catch (error) {
       console.error("Failed to update email notifications", error);

@@ -25,7 +25,6 @@ export default function SettingsPage() {
     userSettings,
     isLoadingSettings,
     error,
-    successMessage,
     showDeleteAccountModal,
     setShowDeleteAccountModal,
     showStripeModal,
@@ -73,9 +72,6 @@ export default function SettingsPage() {
             isResendingEmail={isResendingEmail}
           />
           {error && <p className={styles.errorMessage}>{error}</p>}
-          {successMessage && (
-            <p className={styles.successMessage}>{successMessage}</p>
-          )}
 
           <ProfileSection {...profileSectionProps} />
 

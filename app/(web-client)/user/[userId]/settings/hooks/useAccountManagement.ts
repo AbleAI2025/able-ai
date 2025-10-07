@@ -8,8 +8,9 @@ import { deleteUserAccountAction } from "@/actions/user/user";
 import { authClient } from "@/lib/firebase/clientApp";
 import { User } from "@/context/AuthContext";
 
-export const useAccountDeletion = (user: User | null, setShowDeleteAccountModal: (show: boolean) => void) => {
+export const useAccountManagement = (user: User | null) => {
   const router = useRouter();
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const handleDeleteAccountConfirmed = async () => {
@@ -41,6 +42,8 @@ export const useAccountDeletion = (user: User | null, setShowDeleteAccountModal:
   };
 
   return {
+    showDeleteAccountModal,
+    setShowDeleteAccountModal,
     isDeletingAccount,
     handleDeleteAccountConfirmed,
   };

@@ -10,33 +10,32 @@ export const isValidE164PhoneNumber = (phone: string): boolean => {
 
 /**
  * Formats and validates a phone number, returning E.164 format or null if invalid
- * Handles international formats and common country codes
+ * Uses libphonenumber-js with multiple default countries for robust parsing
  */
 export const formatPhoneNumber = (phone: string): string | null => {
   if (!phone) return null;
-  phone = phone.trim();
-  if (isValidE164PhoneNumber(phone)) return phone;
-  const digits = phone.replace(/\D/g, '');
+  const trimmedPhone = phone.trim();
 
-  // US numbers (11 digits starting with 1)
-  if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-
-  // UK numbers (10-11 digits)
-  if (digits.length >= 10 && digits.length <= 11) {
-    return `+44${digits}`;
-  }
+  // If already in E.164 format, return as-is
+  if (isValidE164PhoneNumber(trimmedPhone)) return trimmedPhone;
 
   // Try parsing with multiple default countries for broader support
-  const defaultCountries: CountryCode[] = ['GB', 'US', 'CO', 'CA', 'AU'];
+  const defaultCountries: CountryCode[] = ["GB", "US", "CO", "CA", "AU"];
   for (const country of defaultCountries) {
     try {
-      const parsed = parsePhoneNumberWithError(phone, {defaultCountry: country});
+      const parsed = parsePhoneNumberWithError(trimmedPhone, {
+        defaultCountry: country,
+      });
       if (parsed.isValid()) {
         return parsed.number;
       }
-    } catch {}
+    } catch (error: unknown) {
+      // Continue to next country if parsing fails for this one
+      console.warn(
+        `Failed to parse phone number with default country ${country}:`,
+        error
+      );
+    }
   }
 
   return null;

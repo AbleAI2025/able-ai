@@ -6,14 +6,11 @@ import {
   getProfileInfoUserAction,
   updateUserProfileAction,
 } from "@/actions/user/user";
-import { checkStripeConnection } from "@/app/actions/stripe/check-stripe-connection";
-import { formatPhoneNumber } from "./settingsUtils";
+import { formatPhoneNumber } from "../settingsUtils";
 import { User } from "@/context/AuthContext";
-import { UserSettingsData } from "@/app/types/SettingsTypes";
-import { getLastRoleUsed } from "@/lib/last-role-used";
-import { UserRole } from "@/app/types/SettingsTypes";
+import { UserSettingsData, UserRole } from "@/app/types/SettingsTypes";
 
-export const useUserProfile = (user: User | null) => {
+export const useUserProfileSettings = (user: User | null) => {
   const [userSettings, setUserSettings] = useState<UserSettingsData | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -31,43 +28,34 @@ export const useUserProfile = (user: User | null) => {
       } = await getProfileInfoUserAction(user?.token);
       if (!success) throw error;
 
-      // Get user role and fetch Stripe connection status
-      const userLastRole = getLastRoleUsed() as UserRole;
-      const stripeConnection = await checkStripeConnection(user.uid, userLastRole);
-
-      // Determine Stripe status based on connection result
-      const stripeAccountStatus: UserSettingsData['stripeAccountStatus'] =
-        stripeConnection.connected ? 'connected' : null;
-      const canReceivePayouts = stripeConnection.connected;
-
       const data: UserSettingsData = {
         displayName: user?.displayName || "",
         email: user?.email || "",
         phone: userProfile?.phone || null,
-        stripeCustomerId: userLastRole === 'BUYER' && stripeConnection.connected ? "customer_connected" : null,
-        stripeAccountStatus: userLastRole === 'GIG_WORKER' ? stripeAccountStatus : null,
-        stripeConnectAccountId: userLastRole === 'GIG_WORKER' && stripeConnection.connected ? "account_connected" : null,
-        canReceivePayouts,
-        lastRole: userLastRole,
+        stripeCustomerId: null, // Will be set by payment settings
+        stripeAccountStatus: null, // Will be set by payment settings
+        stripeConnectAccountId: null, // Will be set by payment settings
+        canReceivePayouts: false, // Will be set by payment settings
+        lastRole: "BUYER" as UserRole, // Will be set by payment settings
         notificationPreferences: {
           email: {
-            gigUpdates: false,
-            platformAnnouncements: false,
+            gigUpdates: userProfile?.notificationPreferences?.emailGigUpdates ?? false,
+            platformAnnouncements: false, // Not implemented yet
           },
           sms: {
-            gigAlerts: false,
+            gigAlerts: userProfile?.notificationPreferences?.smsGigAlerts ?? false,
           },
         },
         privacySettings: {
-          profileVisibility: false,
+          profileVisibility: userProfile?.profileVisibility ?? false,
         },
       };
-      
+
       setUserSettings(data);
       setDisplayName(userProfile?.fullName || "");
       setPhone(userProfile?.phone || "");
     } catch (err: unknown) {
-      console.error("Error fetching settings:", err);
+      console.error("Error fetching profile settings:", err);
       throw err; // Let parent hook handle error
     } finally {
       setIsLoadingSettings(false);
@@ -116,6 +104,7 @@ export const useUserProfile = (user: User | null) => {
 
   return {
     userSettings,
+    setUserSettings,
     isLoadingSettings,
     isSavingProfile,
     displayName,
