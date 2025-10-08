@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import ProfileVideo from "./WorkerProfileVideo";
+import styles from "./WorkerProfile.module.css";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import {
   getStorage,
@@ -26,7 +27,6 @@ export default function VideoSection({
   fetchUserProfile,
 }: VideoSectionProps) {
   const { user } = useAuth();
-  const uploadProgressRef = useRef(0);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
@@ -57,53 +57,30 @@ export default function VideoSection({
         }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
         const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
         const uploadTask = uploadBytesResumable(fileStorageRef, file);
-        uploadProgressRef.current = 0;
+
+        const toastId = toast.loading("Uploading video...");
 
         uploadTask.on(
           "state_changed",
           (snapshot) => {
             const progress =
               (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            if (
-              progress >= 25 &&
-              progress < 50 &&
-              uploadProgressRef.current < 25
-            ) {
-              toast.info("Upload progress: 25%");
-              uploadProgressRef.current = 25;
-            } else if (
-              progress >= 50 &&
-              progress < 75 &&
-              uploadProgressRef.current < 50
-            ) {
-              toast.info("Upload progress: 50%");
-              uploadProgressRef.current = 50;
-            } else if (
-              progress >= 75 &&
-              progress < 90 &&
-              uploadProgressRef.current < 75
-            ) {
-              toast.info("Upload progress: 75%");
-              uploadProgressRef.current = 75;
-            } else if (progress >= 90 && uploadProgressRef.current < 90) {
-              toast.info("Upload progress: 90%");
-              uploadProgressRef.current = 90;
-            }
+            toast.loading(`Uploading: ${Math.round(progress)}%`, { id: toastId });
           },
           (error) => {
             console.error("Upload failed:", error);
-            toast.error("Video upload failed. Please try again.");
+            toast.error("Video upload failed. Please try again.", { id: toastId });
           },
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
               .then((downloadURL) => {
                 updateVideoUrlProfileAction(downloadURL, user.token);
-                toast.success("Video upload successfully");
+                toast.success("Video upload successful", { id: toastId });
                 fetchUserProfile(user.token);
               })
               .catch((error) => {
                 console.error("Failed to get download URL:", error);
-                toast.error("Failed to get video URL. Please try again.");
+                toast.error("Failed to get video URL. Please try again.", { id: toastId });
               });
           }
         );
@@ -116,7 +93,7 @@ export default function VideoSection({
   );
 
   return (
-    <div className="profileImageVideo">
+    <div className={styles.profileImageVideo}>
       <ProfileVideo
         videoUrl={videoUrl}
         isSelfView={isSelfView}

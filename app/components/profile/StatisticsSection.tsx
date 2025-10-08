@@ -18,7 +18,7 @@ export default function StatisticsSection({ workerProfile }: StatisticsSectionPr
           stat={{
             id: 1,
             icon: ThumbsUp,
-            value: workerProfile?.responseRateInternal || 0,
+            value: workerProfile?.averageRating || 0,
             label: `Would work with ${
               workerProfile?.user?.fullName?.split(" ")?.[0] ?? ""
             } again`,
@@ -30,7 +30,7 @@ export default function StatisticsSection({ workerProfile }: StatisticsSectionPr
           stat={{
             id: 2,
             icon: MessageSquare,
-            value: workerProfile?.averageRating || 0,
+            value: workerProfile?.responseRateInternal || 0,
             label: "Response rate",
             iconColor: "#41a1e8",
           }}

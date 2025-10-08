@@ -10,6 +10,7 @@ interface UserInfoBarProps {
   isSelfView: boolean;
   onEditName: () => void;
   onEditSocial: () => void;
+  onVerifyRTW: () => void;
 }
 
 export default function UserInfoBar({
@@ -17,6 +18,7 @@ export default function UserInfoBar({
   isSelfView,
   onEditName,
   onEditSocial,
+  onVerifyRTW,
 }: UserInfoBarProps) {
   return (
     <div className={styles.userInfoBar}>
@@ -37,15 +39,13 @@ export default function UserInfoBar({
         {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
           <div className={styles.verifiedBadgeContainer}>
             <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
-            <span className={styles.verifiedText}>
-              Right to work verified
-            </span>
+            <span className={styles.verifiedText}>Right to work verified</span>
           </div>
         ) : isSelfView ? (
           <button
             type="button"
             className={styles.verifyRTWButton}
-            onClick={() => {}} // TODO: handle RTW
+            onClick={onVerifyRTW}
           >
             Verify your right to work
           </button>
@@ -76,22 +76,18 @@ export default function UserInfoBar({
       </h3>
 
       <div className={styles.workerInfo}>
-        {true && (
-          <Link
-            href={
-              isSelfView
-                ? "calendar"
-                : `/user/${workerProfile.userId}/worker/${workerProfile.id}/availability`
-            }
-            className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
-            aria-label="View calendar"
-          >
-            <CalendarDays size={28} className={styles.calendarIcon} />
-            <span>
-              {isSelfView ? "View calendar" : "Availability calendar"}
-            </span>
-          </Link>
-        )}
+        <Link
+          href={
+            isSelfView
+              ? "calendar"
+              : `/user/${workerProfile.userId}/worker/${workerProfile.id}/availability`
+          }
+          className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
+          aria-label="View calendar"
+        >
+          <CalendarDays size={28} className={styles.calendarIcon} />
+          <span>{isSelfView ? "View calendar" : "Availability calendar"}</span>
+        </Link>
       </div>
     </div>
   );

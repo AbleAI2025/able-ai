@@ -67,6 +67,7 @@ const WorkerProfile = ({
         isSelfView={isSelfView}
         onEditName={() => setIsOpen(true)}
         onEditSocial={() => setIsSocialModalOpen(true)}
+        onVerifyRTW={() => setShowRtwPopup(true)}
       />
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
@@ -129,7 +130,7 @@ const WorkerProfile = ({
         <SocialLinkModal
           initialValue={workerProfile.socialLink ?? ""}
           onClose={() => setIsSocialModalOpen(false)}
-          fetchUserProfile={() => fetchUserProfile(user?.token || "")}
+          fetchUserProfile={() => user?.token && fetchUserProfile(user.token)}
           updateAction={updateSocialLinkWorkerProfileAction}
         />
       )}

@@ -60,7 +60,7 @@ export default function LocationSection({
       );
 
       if (!success) {
-        throw error || new Error("Failed to update location");
+        throw new Error(typeof error === 'string' ? error : "Failed to update location");
       }
 
       toast.success("Location updated successfully!");
