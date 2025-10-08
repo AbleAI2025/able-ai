@@ -109,7 +109,7 @@ const WorkerProfile = ({
               .then((downloadURL) => {
                 updateVideoUrlProfileAction(downloadURL, user.token);
                 toast.success("Video upload successfully");
-                getPrivateWorkerProfileAction(user.token);
+                fetchUserProfile(user.token);
               })
               .catch((error) => {
                 console.error("Failed to get download URL:", error);
@@ -361,7 +361,7 @@ const WorkerProfile = ({
         <SocialLinkModal
           initialValue={workerProfile.socialLink ?? ""}
           onClose={() => setIsSocialModalOpen(false)}
-          fetchUserProfile={() => fetchUserProfile(workerProfile.id)}
+          fetchUserProfile={() => fetchUserProfile(user?.token || "")}
           updateAction={updateSocialLinkWorkerProfileAction}
         />
       )}

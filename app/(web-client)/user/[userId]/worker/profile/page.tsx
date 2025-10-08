@@ -69,7 +69,6 @@ export default function WorkerOwnedProfilePage() {
   if (loadingAuth || loadingProfile) {
     return (
       <div className={styles.pageLoadingContainer}>
-        {/* Using a generic Loader2 for now, ensure it's imported or replace with appropriate loader */}
         <UserCircle className="animate-spin" size={48} /> Loading Profile...
       </div>
     );

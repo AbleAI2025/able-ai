@@ -68,7 +68,7 @@ export default function ProfileVideo({
         rel="noopener noreferrer"
         className={styles.videoLink}
       >
-        <video className={styles.videoPlayer} preload="metadata" muted>
+        <video key={videoUrl} className={styles.videoPlayer} preload="metadata" muted>
           <source src={videoUrl! + "#t=0.1"} type="video/webm" />
         </video>
         {videoUrl && (
