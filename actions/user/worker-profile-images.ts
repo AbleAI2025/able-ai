@@ -13,7 +13,7 @@ export const updateProfileImageAction = async (
   newImage: string
 ) => {
   try {
-    if (!token) throw new Error("User ID is required");
+    if (!token) throw new Error("Token is required");
 
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw ERROR_CODES.UNAUTHORIZED;
@@ -45,7 +45,7 @@ export const deleteImageAction = async (
   imageUrl: string
 ) => {
   try {
-    if (!token) throw new Error("User ID is required");
+    if (!token) throw new Error("Token is required");
 
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw ERROR_CODES.UNAUTHORIZED;
@@ -55,7 +55,7 @@ export const deleteImageAction = async (
       columns: { images: true },
     });
 
-    if (!skill) throw "Skill not found";
+    if (!skill) throw new Error("Skill not found");
 
     const updatedImages = skill?.images?.filter((img) => img !== imageUrl);
 

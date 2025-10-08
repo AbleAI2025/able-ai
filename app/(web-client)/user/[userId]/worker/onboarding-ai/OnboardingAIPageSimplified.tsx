@@ -408,7 +408,10 @@ export default function OnboardingAIPageSimplified() {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             
             // Update video URL in profile
-            await updateVideoUrlProfileAction(downloadURL, user?.token);
+            if (!user?.token) {
+              throw new Error("Authentication token is required");
+            }
+            await updateVideoUrlProfileAction(downloadURL, user.token);
             
             // Update form data
             const updatedFormData = { ...formData, videoIntro: downloadURL };

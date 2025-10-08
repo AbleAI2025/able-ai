@@ -9,13 +9,9 @@ import { eq } from "drizzle-orm";
 
 export const updateVideoUrlProfileAction = async (
   videoUrl: string,
-  token?: string | undefined
+  token: string
 ) => {
   try {
-    if (!token) {
-      throw new Error("User ID is required to fetch buyer profile");
-    }
-
     const { uid } = await isUserAuthenticated(token);
     if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
@@ -23,7 +19,7 @@ export const updateVideoUrlProfileAction = async (
       where: eq(UsersTable.firebaseUid, uid),
     });
 
-    if (!user) throw "User not found";
+    if (!user) throw new Error("User not found");
 
     const result = await db
       .update(GigWorkerProfilesTable)
@@ -31,41 +27,37 @@ export const updateVideoUrlProfileAction = async (
         videoUrl: videoUrl,
         updatedAt: new Date(),
       })
-      .where(eq(GigWorkerProfilesTable.userId, user?.id))
-      .returning({ videoUrl: GigWorkerProfilesTable.videoUrl, updatedAt: GigWorkerProfilesTable.updatedAt });
+      .where(eq(GigWorkerProfilesTable.userId, user.id))
+      .returning({ videoUrl: GigWorkerProfilesTable.videoUrl });
 
     // Verify the update was successful
-    if (result.length > 0 && result[0].videoUrl === videoUrl) {
-      return { success: true, data: "Video URL updated successfully" };
-    } else {
+    if (result.length === 0 || result[0].videoUrl !== videoUrl) {
       throw new Error("Failed to verify video URL update");
     }
+
+    return { success: true, data: "Video URL updated successfully" };
   } catch (error) {
     console.error("Video URL update error:", error);
     return {
       success: false,
-      data: "Video URL update failed",
-      error: error instanceof Error ? error.message : "Unknown error"
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
 
 export const updateSocialLinkWorkerProfileAction = async (
   socialLink: string,
-  token?: string
+  token: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    if (!token) {
-      return { success: false, error: "User token is required" };
-    }
-
     const { uid } = await isUserAuthenticated(token);
-    if (!uid) return { success: false, error: "Unauthorized" };
+    if (!uid) throw ERROR_CODES.UNAUTHORIZED;
 
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, uid),
     });
-    if (!user) return { success: false, error: "User not found" };
+    if (!user) throw new Error("User not found");
 
     await db
       .update(GigWorkerProfilesTable)

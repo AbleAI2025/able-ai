@@ -112,12 +112,7 @@ export async function extractExperienceYears(experienceText: string): Promise<nu
   // Try multiple patterns to extract years of experience
   let yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
 
-  // If no explicit years found, try to extract any number that might represent years
-  if (!yearsMatch) {
-    yearsMatch = experienceText.match(/(\d+)/);
-  }
-
-  // If still no number found, try to extract decimal numbers (e.g., "2.5 years")
+  // If no explicit years found, try to extract any decimal or integer number
   if (!yearsMatch) {
     yearsMatch = experienceText.match(/(\d+\.?\d*)/);
   }
@@ -270,7 +265,7 @@ export async function saveEquipmentData(
   const equipmentToInsert = [];
   const processedNames = new Set<string>();
 
-  for (const item of equipment as NonNullable<typeof equipment>) {
+  for (const item of equipment) {
     const normalizedName = item.name.toLowerCase().trim();
 
     // Check if this equipment already exists (case-insensitive)

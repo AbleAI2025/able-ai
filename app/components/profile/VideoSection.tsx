@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 interface VideoSectionProps {
   videoUrl?: string | null;
   isSelfView: boolean;
-  updateVideoUrlProfileAction: (url: string, token: string) => Promise<{ success: boolean; data: string; error?: unknown }>;
+  updateVideoUrlProfileAction: (url: string, token: string) => Promise<{ success: boolean; data: string | null; error?: unknown }>;
   fetchUserProfile: (token: string) => void;
 }
 
@@ -73,8 +73,12 @@ export default function VideoSection({
           },
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {
-                updateVideoUrlProfileAction(downloadURL, user.token);
+              .then(async (downloadURL) => {
+                if (!user.token) {
+                  toast.error("Authentication token is required", { id: toastId });
+                  return;
+                }
+                await updateVideoUrlProfileAction(downloadURL, user.token);
                 toast.success("Video upload successful", { id: toastId });
                 fetchUserProfile(user.token);
               })

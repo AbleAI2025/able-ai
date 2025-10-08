@@ -9,7 +9,7 @@ interface ProfileMediaProps {
   workerProfile: PublicWorkerProfile;
   isSelfView: boolean;
   workerLink: string | null;
-  updateVideoUrlProfileAction: (url: string, token: string) => Promise<{ success: boolean; data: string; error?: unknown }>;
+  updateVideoUrlProfileAction: (url: string, token: string) => Promise<{ success: boolean; data: string | null; error?: unknown }>;
   fetchUserProfile: (token: string) => void;
 }
 

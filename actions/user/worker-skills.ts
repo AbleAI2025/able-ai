@@ -3,7 +3,6 @@
 import { db } from "@/lib/drizzle/db";
 import {
   BadgeDefinitionsTable,
-  EquipmentTable,
   GigWorkerProfilesTable,
   QualificationsTable,
   ReviewsTable,
@@ -12,11 +11,9 @@ import {
   UsersTable,
 } from "@/lib/drizzle/schema";
 
-import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
 import { and, eq } from "drizzle-orm";
 import { VALIDATION_CONSTANTS } from "@/app/constants/validation";
-import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 
 export const getSkillDetailsWorker = async (id: string) => {
   try {
@@ -24,12 +21,16 @@ export const getSkillDetailsWorker = async (id: string) => {
       where: eq(SkillsTable.id, id),
     });
 
-    if (!skill) throw "Skill not found";
+    if (!skill) throw new Error("Skill not found");
 
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
       where: eq(GigWorkerProfilesTable.id, skill?.workerProfileId),
       with: { user: { columns: { fullName: true } } },
     });
+
+    if (!workerProfile) {
+      throw new Error("Worker profile not found for the given skill.");
+    }
 
     const badges = await db
       .select({
