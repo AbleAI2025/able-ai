@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm";
 import type { OnboardingProfileData } from "@/app/types/workerProfileTypes";
 
 // Helper function to parse location data
-export function parseLocationData(profileData: Pick<OnboardingProfileData, 'location'>) {
+export async function parseLocationData(profileData: Pick<OnboardingProfileData, 'location'>): Promise<{ latitude: number | null; longitude: number | null; locationText: string }> {
   let latitude = null;
   let longitude = null;
   let locationText = '';
@@ -108,7 +108,7 @@ export async function saveAvailabilityData(userId: string, availabilityData: Onb
 }
 
 // Helper function to extract experience years from text
-export function extractExperienceYears(experienceText: string): number {
+export async function extractExperienceYears(experienceText: string): Promise<number> {
   // Try multiple patterns to extract years of experience
   let yearsMatch = experienceText.match(/(\d+)\s*(?:years?|yrs?|y)/i);
 

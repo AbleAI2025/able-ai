@@ -135,13 +135,13 @@ export const saveWorkerProfileFromOnboardingAction = async (
     const generatedHashtags = profileData.hashtags || [];
 
     // Parse location data
-    const { latitude, longitude, locationText } = parseLocationData(profileData);
+    const { latitude, longitude, locationText } = await parseLocationData(profileData);
 
     const profileUpdateData = {
       fullBio: profileData.about,
       location: locationText,
-      latitude: latitude,
-      longitude: longitude,
+      latitude: latitude ? String(latitude) : null,
+      longitude: longitude ? String(longitude) : null,
       // Remove availabilityJson - we'll save to worker_availability table instead
       videoUrl: (() => {
         if (typeof profileData.videoIntro === "string") {
@@ -218,7 +218,7 @@ export const saveWorkerProfileFromOnboardingAction = async (
     // Save skills data
     try {
       const skillName = profileData.skills || profileData.jobTitle || "";
-      const yearsOfExperience = extractExperienceYears(profileData.experience || "");
+      const yearsOfExperience = await extractExperienceYears(profileData.experience || "");
       const extractedHourlyRate = profileData.hourlyRate
         ? parseFloat(profileData.hourlyRate)
         : validatedHourlyRate;
