@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -32,8 +31,8 @@ import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import UserNameModal from "@/app/components/profile/UserNameModal";
 import EditBusinessModal from "@/app/components/profile/EditBusinessModal";
 import SocialLinkModal from "./SocialLinkModal";
-import { getLastRoleUsed } from "@/lib/last-role-used";
 import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
+import { hasSignificantPayments } from "@/utils/payment-utils";
 
 interface BusinessInfo {
   fullCompanyName: string;
@@ -104,6 +103,7 @@ export default function BuyerProfilePage() {
   // update when dashboardData is available
   useEffect(() => {
     if (dashboardData) {
+      console.log("Updating business info from dashboard data:", dashboardData);
       setBusinessInfo({
         fullCompanyName: dashboardData.fullCompanyName || "-",
         location: dashboardData.billingAddressJson || {
@@ -340,8 +340,45 @@ export default function BuyerProfilePage() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
             <div className={styles.analyticsChartsContainer}>
-              <PieChartComponent skills={dashboardData?.skills} />
-              <BarChartComponent data={dashboardData?.totalPayments || []} emptyMessage="You don't have payments yet" />
+              {dashboardData?.skills && dashboardData.skills.length > 0 ? (
+                <PieChartComponent skills={dashboardData?.skills} />
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: 50,
+                    background: '#333',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 16
+                  }}
+                >
+                  No skills data available
+                </div>
+              )}
+              {hasSignificantPayments(dashboardData?.totalPayments || []) ? (
+                <BarChartComponent
+                  data={(dashboardData?.totalPayments || []).map(p => ({ name: p.name, total: p.amount }))}
+                  emptyMessage="You don't have payments yet"
+                />
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: 50,
+                    background: '#333',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 16
+                  }}
+                >
+                  You don't have payments yet
+                </div>
+              )}
             </div>
           </section>
 

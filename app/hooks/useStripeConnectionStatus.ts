@@ -31,7 +31,6 @@ export const useStripeStatus = (userId: string): StripeStatus => {
       try {
         const response = await checkStripeConnection(userId, lastRoleUsed);
 
-        console.log("Stripe connection response:", response);
         setStatus({
           isConnected: Boolean(response?.connected),
           isLoading: false,
