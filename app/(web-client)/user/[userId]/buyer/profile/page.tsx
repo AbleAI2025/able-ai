@@ -1,201 +1,42 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
-import { ThumbsUp, Loader2, MessageSquare, Edit2, Pencil } from "lucide-react";
+import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 import styles from "./BuyerProfilePage.module.css";
-import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
-import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
-import ReviewCardItem from "@/app/components/shared/ReviewCardItem";
-import PieChartComponent from "@/app/components/shared/PiChart";
-import BarChartComponent from "@/app/components/shared/BarChart";
-import { useAuth } from "@/context/AuthContext";
-import { getGigBuyerProfileAction } from "@/actions/user/gig-buyer-profile";
-import {
-  updateBusinessInfoBuyerProfileAction,
-  updateSocialLinkBuyerProfileAction,
-  updateVideoUrlBuyerProfileAction,
-} from "@/actions/user/buyer-profile-updates";
-import { firebaseApp } from "@/lib/firebase/clientApp";
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
-import { toast } from "sonner";
-import DashboardData from "@/app/types/BuyerProfileTypes";
+import { useBuyerProfileData } from "./hooks/useBuyerProfileData";
+import Header from "./sections/Header";
+import IntroSection from "./sections/IntroSection";
+import StatisticsSection from "./sections/StatisticsSection";
+import CompletedHires from "./sections/CompletedHires";
+import WorkforceAnalytics from "./sections/WorkforceAnalytics";
+import BadgesSection from "./sections/BadgesSection";
+import ReviewsSection from "./sections/ReviewsSection";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
-import BuyerProfileVideo from "@/app/components/profile/BuyerProfileVideo";
-import { BadgeIcon } from "@/app/components/profile/GetBadgeIcon";
 import UserNameModal from "@/app/components/profile/UserNameModal";
 import EditBusinessModal from "@/app/components/profile/EditBusinessModal";
 import SocialLinkModal from "./SocialLinkModal";
 import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
-import { hasSignificantPayments } from "@/utils/payment-utils";
-
-interface BusinessInfo {
-  fullCompanyName: string;
-  location: {
-    formatted_address: string;
-    lat: number | undefined;
-    lng: number | undefined;
-  };
-  companyRole: string;
-}
+import { updateSocialLinkBuyerProfileAction } from "@/actions/user/buyer-profile-updates";
 
 export default function BuyerProfilePage() {
-  const router = useRouter();
-  const params = useParams();
-  const pathname = usePathname();
-  const pageUserId = params.userId as string;
-  const { user, loading: loadingAuth } = useAuth();
-  const authUserId = user?.uid;
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null
-  );
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const {
+    dashboardData,
+    isLoadingData,
+    error,
+    businessInfo,
+    handleVideoUpload,
+    handleSave,
+    isSelfView,
+    isEditingVideo,
+    setIsEditingVideo,
+    user,
+    authUserId,
+    fetchUserProfile,
+  } = useBuyerProfileData();
+
   const [isOpen, setIsOpen] = useState(false);
-  const isSelfView = authUserId === pageUserId;
-  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // default empty state
-  const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
-    fullCompanyName: "",
-    location: {
-      formatted_address: "",
-      lat: undefined,
-      lng: undefined,
-    },
-    companyRole: "",
-  });
-
-
-  const fetchUserProfile = async () => {
-    const { success, profile } = await getGigBuyerProfileAction(user?.token);
-
-    if (success && profile) {
-      // Format review dates
-
-      setDashboardData({
-        ...profile,
-      });
-      setError(null);
-    } else {
-      setError("Failed to fetch profile data");
-      setDashboardData(null);
-    }
-
-    setIsLoadingData(false);
-  };
-
-  useEffect(() => {
-    // At this point, user is authenticated and authorized for this pageUserId
-    if (user) {
-      // This check is somewhat redundant due to above, but keeps structure similar
-      fetchUserProfile();
-    }
-  }, [loadingAuth, user, authUserId, pageUserId, , pathname, router]);
-
-  // update when dashboardData is available
-  useEffect(() => {
-    if (dashboardData) {
-      console.log("Updating business info from dashboard data:", dashboardData);
-      setBusinessInfo({
-        fullCompanyName: dashboardData.fullCompanyName || "-",
-        location: dashboardData.billingAddressJson || {
-          formatted_address: "",
-          lat: undefined,
-          lng: undefined,
-        },
-        companyRole: dashboardData.companyRole || "-",
-      });
-    }
-  }, [dashboardData]);
-
-  const handleVideoUpload = useCallback(
-    async (file: Blob) => {
-      if (!user) {
-        console.error("Missing required parameters for video upload");
-        setError("Failed to upload video. Please try again.");
-        return;
-      }
-
-      if (!file || file.size === 0) {
-        console.error("Invalid file for video upload");
-        setError("Invalid video file. Please try again.");
-        return;
-      }
-
-      // Check file size (limit to 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
-        setError("Video file too large. Please use a file smaller than 50MB.");
-        return;
-      }
-
-      try {
-        const filePath = `buyer/${user.uid}/introVideo/introduction-${encodeURI(
-          user.email ?? user.uid
-        )}.webm`;
-        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
-        const uploadTask = uploadBytesResumable(fileStorageRef, file);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // Progress handling if needed
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            setError("Video upload failed. Please try again.");
-          },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {
-                updateVideoUrlBuyerProfileAction(downloadURL, user.token);
-                toast.success("Video upload successfully");
-                fetchUserProfile();
-              })
-              .catch((error) => {
-                console.error("Failed to get download URL:", error);
-                setError("Failed to get video URL. Please try again.");
-              });
-          }
-        );
-      } catch (error) {
-        console.error("Video upload error:", error);
-        setError("Failed to upload video. Please try again.");
-      }
-    },
-    [user]
-  );
-
-  const handleSave = async (updatedData: typeof businessInfo) => {
-    try {
-      const { success, error } = await updateBusinessInfoBuyerProfileAction(
-        updatedData,
-        user?.token
-      );
-      if (!success) {
-        throw new Error("Failed to update business info: ");
-      }
-      toast.success("Business info updated successfully");
-
-      setBusinessInfo(updatedData);
-      setIsModalOpen(false);
-      fetchUserProfile();
-    } catch (error) {
-      console.error("Failed to update business info:", error);
-      toast.error("Failed to update business info. Please try again.");
-      return;
-    }
-  };
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
   if (!user || isLoadingData) {
     return (
@@ -228,206 +69,38 @@ export default function BuyerProfilePage() {
       <div className={styles.container}>
         <ScreenHeaderWithBack />
         <div className={styles.pageWrapper}>
-          {/* Profile Header */}
-          <header className={styles.profileHeader}>
-            <h3 className={styles.profileHeaderName}>
-              {dashboardData.fullName}
-              <button
-                className={styles.editButton}
-                type="button"
-                aria-label="Edit name"
-                onClick={() => setIsOpen(true)}
-              >
-                <Edit2 size={16} color="#ffffff" className={styles.icon} />
-              </button>
-            </h3>
-            <p className={styles.profileHeaderUsername}>
-              {dashboardData?.socialLink}
-              <button
-                className={styles.editButton}
-                type="button"
-                aria-label="Edit social link"
-                onClick={() => setIsSocialModalOpen(true)}
-              >
-                <Edit2 size={14} color="#ffffff" className={styles.icon} />
-              </button>
-            </p>
-          </header>
+          <Header
+            dashboardData={dashboardData}
+            onEditName={() => setIsOpen(true)}
+            onEditSocialLink={() => setIsSocialModalOpen(true)}
+          />
 
-          {/* Intro & Business Card Section */}
-          <section className={`${styles.section} ${styles.introCard}`}>
-            <BuyerProfileVideo
-              dashboardData={dashboardData}
-              isSelfView={isSelfView}
-              isEditingVideo={isEditingVideo}
-              setIsEditingVideo={setIsEditingVideo}
-              handleVideoUpload={handleVideoUpload}
-            />
+          <IntroSection
+            dashboardData={dashboardData}
+            businessInfo={businessInfo}
+            isSelfView={isSelfView}
+            isEditingVideo={isEditingVideo}
+            setIsEditingVideo={setIsEditingVideo}
+            handleVideoUpload={handleVideoUpload}
+            onEditBusiness={() => setIsModalOpen(true)}
+          />
 
-            <div className={styles.businessInfoCard}>
-              <div className={styles.headerRow}>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className={styles.editInfoBtn}
-                >
-                  <Pencil size={20} />
-                </button>
-              </div>
+          <StatisticsSection dashboardData={dashboardData} user={user} />
 
-              <h4>Business:</h4>
-              <p>{businessInfo?.fullCompanyName || "Not provided"}</p>
+          <CompletedHires dashboardData={dashboardData} />
 
-              <span className={styles.location}>
-                {businessInfo?.location?.formatted_address || "Not provided"}
-              </span>
+          <WorkforceAnalytics dashboardData={dashboardData} />
 
-              <h4>Role:</h4>
-              <p>{businessInfo?.companyRole || "Not provided"}</p>
-            </div>
-          </section>
+          <BadgesSection dashboardData={dashboardData} />
 
-          {/* Statistics Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Statistics</h2>
-            <div className={styles.statisticsItemsContainer}>
-              <StatisticItemDisplay
-                stat={{
-                  id: 1,
-                  icon: ThumbsUp,
-                  value: dashboardData?.responseRateInternal || 0,
-                  label: `Would work with ${user?.displayName?.split(" ")?.[0] ?? ""
-                    } again`,
-                  iconColor: "#7eeef9",
-                }}
-              />
-              <StatisticItemDisplay
-                stat={{
-                  id: 2,
-                  icon: MessageSquare,
-                  value: dashboardData?.averageRating || 0,
-                  label: "Response rate",
-                  iconColor: "#7eeef9",
-                }}
-              />
-            </div>
-          </section>
-
-          {/* Completed Hires Card */}
-          <div className={styles.completedHiresCard}>
-            <div className={styles.completedHiresCount}>
-              <span className={styles.completedHiresLabel}>Completed Hires</span>
-              <span className={styles.completedHiresNumber}>
-                {dashboardData.completedHires}
-              </span>
-            </div>
-            <div className={styles.staffTypesList}>
-              <span className={styles.staffTypesTitle}>
-                Types of Staff Hired:
-              </span>
-              {dashboardData?.topSkills && dashboardData.topSkills.length > 0 ? (
-                <ul>
-                  {dashboardData.topSkills.map((type, index) => (
-                    <li key={index}>{type.name}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span className={styles.emptyMessage}>No staff types yet</span>
-              )}
-            </div>
-          </div>
-
-          {/* Workforce Analytics Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Workforce Analytics</h2>
-            <div className={styles.analyticsChartsContainer}>
-              {dashboardData?.skills && dashboardData.skills.length > 0 ? (
-                <PieChartComponent skills={dashboardData?.skills} />
-              ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: 50,
-                    background: '#333',
-                    borderRadius: 8,
-                    color: '#fff',
-                    fontSize: 16
-                  }}
-                >
-                  No skills data available
-                </div>
-              )}
-              {hasSignificantPayments(dashboardData?.totalPayments || []) ? (
-                <BarChartComponent
-                  data={(dashboardData?.totalPayments || []).map(p => ({ name: p.name, total: p.amount }))}
-                  emptyMessage="You don't have payments yet"
-                />
-              ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: 50,
-                    background: '#333',
-                    borderRadius: 8,
-                    color: '#fff',
-                    fontSize: 16
-                  }}
-                >
-                  You don't have payments yet
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Badges Awarded Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Badges Awarded</h2>
-            <div className={styles.badges}>
-              {dashboardData && dashboardData.badges.length > 0 ? (
-                dashboardData?.badges?.map((badge) => (
-                  <div className={styles.badge} key={badge.id}>
-                    <AwardDisplayBadge
-                      icon={badge.icon as BadgeIcon}
-                      title={badge.name}
-                      role="buyer"
-                      type={badge.type}
-                    />
-                  </div>
-                ))
-              ) : (
-                <p className={styles.noBadges}>No badges available</p>
-              )}
-            </div>
-          </section>
-
-          {/* Worker Reviews Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Worker Reviews</h2>
-            {dashboardData?.reviews?.length > 0 ? (
-              <div className={styles.reviewsListContainer}>
-                {dashboardData?.reviews.map((review, index) => (
-                  <ReviewCardItem
-                    key={index}
-                    reviewerName={review.name}
-                    date={review.date.toString()}
-                    comment={review.text}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className={styles.noReviews}>No worker reviews yet.</p>
-            )}
-          </section>
+          <ReviewsSection dashboardData={dashboardData} />
         </div>
         {/* Edit Name Modal */}
         {isOpen && (
           <UserNameModal
             userId={user.uid}
             initialValue={dashboardData.fullName}
-            fetchUserProfile={(_id) => fetchUserProfile()}
+            fetchUserProfile={fetchUserProfile}
             onClose={() => setIsOpen(false)}
           />
         )}
