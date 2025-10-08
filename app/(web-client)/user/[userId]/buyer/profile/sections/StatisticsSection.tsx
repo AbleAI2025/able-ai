@@ -2,10 +2,11 @@ import { ThumbsUp, MessageSquare } from "lucide-react";
 import styles from "../BuyerProfilePage.module.css";
 import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
 import DashboardData from "@/app/types/BuyerProfileTypes";
+import { User } from "@/context/AuthContext";
 
 interface StatisticsSectionProps {
   dashboardData: DashboardData;
-  user: any; // Replace with proper type
+  user: User;
 }
 
 export default function StatisticsSection({ dashboardData, user }: StatisticsSectionProps) {

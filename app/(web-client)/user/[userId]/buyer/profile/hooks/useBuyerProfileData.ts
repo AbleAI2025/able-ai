@@ -35,7 +35,9 @@ export function useBuyerProfileData() {
   const authUserId = user?.uid;
   const isSelfView = authUserId === pageUserId;
 
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
@@ -70,11 +72,11 @@ export function useBuyerProfileData() {
     if (user) {
       fetchUserProfile();
     }
-  }, [loadingAuth, user, authUserId, pageUserId, pathname, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingAuth, user?.uid]);
 
   useEffect(() => {
     if (dashboardData) {
-      console.log("Updating business info from dashboard data:", dashboardData);
       setBusinessInfo({
         fullCompanyName: dashboardData.fullCompanyName || "-",
         location: dashboardData.billingAddressJson || {

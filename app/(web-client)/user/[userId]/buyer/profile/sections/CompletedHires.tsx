@@ -15,13 +15,13 @@ export default function CompletedHires({ dashboardData }: CompletedHiresProps) {
         </span>
       </div>
       <div className={styles.staffTypesList}>
-        <span className={styles.staffTypesTitle}>
+        <span className={styles.completedHiresLabel}>
           Types of Staff Hired:
         </span>
         {dashboardData?.topSkills && dashboardData.topSkills.length > 0 ? (
           <ul>
             {dashboardData.topSkills.map((type, index) => (
-              <li key={index}>{type.name}</li>
+              <li key={`buyer-gig-skills-types-${index}-${type.name}`}>{type.name}</li>
             ))}
           </ul>
         ) : (

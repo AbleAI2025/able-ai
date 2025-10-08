@@ -14,7 +14,7 @@ export default function ReviewsSection({ dashboardData }: ReviewsSectionProps) {
         <div className={styles.reviewsListContainer}>
           {dashboardData?.reviews.map((review, index) => (
             <ReviewCardItem
-              key={index}
+              key={`buyer-profile-reviews-${index}-${review.id}`}
               reviewerName={review.name}
               date={review.date.toString()}
               comment={review.text}
