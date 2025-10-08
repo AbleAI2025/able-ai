@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getGigBuyerProfileAction } from "@/actions/user/gig-buyer-profile";
 import {
@@ -27,9 +27,7 @@ interface BusinessInfo {
 }
 
 export function useBuyerProfileData() {
-  const router = useRouter();
   const params = useParams();
-  const pathname = usePathname();
   const pageUserId = params.userId as string;
   const { user, loading: loadingAuth } = useAuth();
   const authUserId = user?.uid;
@@ -118,9 +116,8 @@ export function useBuyerProfileData() {
 
         uploadTask.on(
           "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          () => {
+            // Progress tracking could be implemented here if needed
           },
           (error) => {
             console.error("Upload failed:", error);
@@ -128,14 +125,18 @@ export function useBuyerProfileData() {
           },
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {
-                updateVideoUrlBuyerProfileAction(downloadURL, user.token);
-                toast.success("Video upload successfully");
-                fetchUserProfile();
+              .then(async (downloadURL) => {
+                const { success, error } = await updateVideoUrlBuyerProfileAction(downloadURL, user.token);
+                if (success) {
+                  toast.success("Video upload successfully");
+                  fetchUserProfile();
+                } else {
+                  throw error || new Error("Failed to save video URL");
+                }
               })
               .catch((error) => {
-                console.error("Failed to get download URL:", error);
-                setError("Failed to get video URL. Please try again.");
+                console.error("Failed to get download URL or update profile:", error);
+                setError("Failed to process video upload. Please try again.");
               });
           }
         );
@@ -144,6 +145,7 @@ export function useBuyerProfileData() {
         setError("Failed to upload video. Please try again.");
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user]
   );
 
@@ -154,7 +156,7 @@ export function useBuyerProfileData() {
         user?.token
       );
       if (!success) {
-        throw new Error("Failed to update business info: ");
+        throw new Error("Failed to update business info: " + JSON.stringify(error));
       }
       toast.success("Business info updated successfully");
 

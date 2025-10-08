@@ -60,6 +60,7 @@ const BuyerProfileVideo = ({
             className={styles.videoLink}
           >
             <video
+              key={`${dashboardData.videoUrl}-${isEditingVideo}`}
               width="120"
               height="120"
               className={styles.videoPreview}
@@ -67,6 +68,7 @@ const BuyerProfileVideo = ({
               muted
             >
               <source
+                key={dashboardData.videoUrl}
                 src={dashboardData.videoUrl + "#t=0.1"}
                 type="video/webm"
               />

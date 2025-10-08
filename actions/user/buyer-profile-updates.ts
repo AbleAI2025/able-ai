@@ -9,7 +9,7 @@ import { eq } from "drizzle-orm";
 export const updateVideoUrlBuyerProfileAction = async (
   videoUrl: string,
   token?: string | undefined
-) => {
+): Promise<{ success: boolean; data?: string; error?: string }> => {
   try {
     if (!token) {
       throw new Error("User ID is required to fetch buyer profile");
@@ -22,7 +22,7 @@ export const updateVideoUrlBuyerProfileAction = async (
       where: eq(UsersTable.firebaseUid, uid),
     });
 
-    if (!user) throw "User not found";
+    if (!user) throw new Error("User not found");
 
     await db
       .update(BuyerProfilesTable)
@@ -30,12 +30,16 @@ export const updateVideoUrlBuyerProfileAction = async (
         videoUrl: videoUrl,
         updatedAt: new Date(),
       })
-      .where(eq(BuyerProfilesTable.userId, user?.id));
+      .where(eq(BuyerProfilesTable.userId, user.id));
 
     return { success: true, data: "Url video updated successfully" };
-  } catch (error) {
-    console.log("Error saving video url", error);
-    return { success: false, data: "Url video updated successfully", error };
+  } catch (error: unknown) {
+    console.error("Error saving video url", error);
+    return {
+      success: false,
+      data: "Failed to update video url",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 };
 

@@ -18,11 +18,27 @@ import SocialLinkModal from "./SocialLinkModal";
 import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
 import { updateSocialLinkBuyerProfileAction } from "@/actions/user/buyer-profile-updates";
 
+// Empty dashboard data for loading states
+const emptyDashboardData = {
+  fullName: "",
+  username: "",
+  fullCompanyName: "",
+  companyRole: "",
+  socialLink: "",
+  responseRateInternal: 0,
+  averageRating: 0,
+  completedHires: 0,
+  topSkills: [],
+  badges: [],
+  reviews: [],
+  statistics: [],
+  badgesEarnedByTheirWorkers: [],
+};
+
 export default function BuyerProfilePage() {
   const {
     dashboardData,
     isLoadingData,
-    error,
     businessInfo,
     handleVideoUpload,
     handleSave,
@@ -38,67 +54,63 @@ export default function BuyerProfilePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
-  if (!user || isLoadingData) {
-    return (
-      <div className={styles.loadingContainer}>
-        <Loader2 className="animate-spin" size={32} /> Loading Dashboard...
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.pageWrapper}>
-          <p className={styles.errorMessage}>{error}</p>
-        </div>
-      </div>
-    );
-  }
-  if (!dashboardData || !authUserId) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.pageWrapper}>
-          <p className={styles.errorMessage}>No dashboard data available.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <StripeConnectionGuard userId={authUserId} redirectPath={`/user/${authUserId}/settings`}>
+    <StripeConnectionGuard userId={authUserId || ""} redirectPath={`/user/${authUserId}/settings`}>
       <div className={styles.container}>
         <ScreenHeaderWithBack />
         <div className={styles.pageWrapper}>
-          <Header
-            dashboardData={dashboardData}
-            onEditName={() => setIsOpen(true)}
-            onEditSocialLink={() => setIsSocialModalOpen(true)}
-          />
+          {/* Show loading/error state only if there's an auth/user error */}
+          {(!user || (isLoadingData && !dashboardData)) ? (
+            <div className={styles.loadingContainer}>
+              <Loader2 className="animate-spin" size={32} /> Loading Dashboard...
+            </div>
+          ) : (
+            <>
+              <Header
+                dashboardData={dashboardData || emptyDashboardData}
+                onEditName={() => setIsOpen(true)}
+                onEditSocialLink={() => setIsSocialModalOpen(true)}
+              />
 
-          <IntroSection
-            dashboardData={dashboardData}
-            businessInfo={businessInfo}
-            isSelfView={isSelfView}
-            isEditingVideo={isEditingVideo}
-            setIsEditingVideo={setIsEditingVideo}
-            handleVideoUpload={handleVideoUpload}
-            onEditBusiness={() => setIsModalOpen(true)}
-          />
+              <IntroSection
+                dashboardData={dashboardData || emptyDashboardData}
+                businessInfo={businessInfo}
+                isSelfView={isSelfView}
+                isEditingVideo={isEditingVideo}
+                setIsEditingVideo={setIsEditingVideo}
+                handleVideoUpload={handleVideoUpload}
+                onEditBusiness={() => setIsModalOpen(true)}
+              />
 
-          <StatisticsSection dashboardData={dashboardData} user={user} />
+              {user && (
+                <StatisticsSection
+                  dashboardData={dashboardData || emptyDashboardData}
+                  user={user}
+                />
+              )}
 
-          <CompletedHires dashboardData={dashboardData} />
+              <CompletedHires
+                dashboardData={dashboardData || emptyDashboardData}
+              />
 
-          <WorkforceAnalytics dashboardData={dashboardData} />
+              <WorkforceAnalytics
+                dashboardData={dashboardData || emptyDashboardData}
+              />
 
-          <BadgesSection dashboardData={dashboardData} />
+              <BadgesSection
+                dashboardData={dashboardData || emptyDashboardData}
+              />
 
-          <ReviewsSection dashboardData={dashboardData} />
+              <ReviewsSection
+                dashboardData={dashboardData || emptyDashboardData}
+              />
+            </>
+          )}
         </div>
         {/* Edit Name Modal */}
-        {isOpen && (
+        {isOpen && dashboardData && (
           <UserNameModal
-            userId={user.uid}
+            userId={user?.uid || ""}
             initialValue={dashboardData.fullName}
             fetchUserProfile={fetchUserProfile}
             onClose={() => setIsOpen(false)}
@@ -111,7 +123,7 @@ export default function BuyerProfilePage() {
             onClose={() => setIsModalOpen(false)}
           />
         )}
-        {isSocialModalOpen && (
+        {isSocialModalOpen && dashboardData && (
           <SocialLinkModal
             initialValue={dashboardData.socialLink}
             onClose={() => setIsSocialModalOpen(false)}

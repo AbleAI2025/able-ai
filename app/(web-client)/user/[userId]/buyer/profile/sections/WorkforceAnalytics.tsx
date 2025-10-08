@@ -49,7 +49,7 @@ export default function WorkforceAnalytics({ dashboardData }: WorkforceAnalytics
               fontSize: 16
             }}
           >
-            You don't have payments yet
+            You don&apos;t have payments yet
           </div>
         )}
       </div>

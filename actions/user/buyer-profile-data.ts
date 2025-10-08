@@ -130,12 +130,11 @@ export const getReviewsData = async (userId: string) => {
     .map((review) => review.authorUserId)
     .filter((id): id is string => !!id);
 
-  const authors = await (async () => {
-    if (authorIds.length === 0) return [];
-    return await db.query.UsersTable.findMany({
-      where: (users, { inArray }) => inArray(users.id, authorIds),
-    });
-  })();
+  const authors = authorIds.length > 0
+    ? await db.query.UsersTable.findMany({
+        where: (users, { inArray }) => inArray(users.id, authorIds),
+      })
+    : [];
 
   const authorsById = new Map(authors.map((author) => [author.id, author]));
 
