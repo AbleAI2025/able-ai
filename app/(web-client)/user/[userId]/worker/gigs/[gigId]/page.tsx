@@ -44,7 +44,16 @@ async function fetchWorkerGigDetails(user: User | WorkerUser, gigId: string): Pr
 
 async function checkIfGigIsAvailableOffer(user: User | WorkerUser, gigId: string): Promise<boolean> {
   try {
-    const result = await getWorkerOffers(user.uid);
+    // Extract Firebase UID for getWorkerOffers (expects Firebase UID)
+    let firebaseUid: string;
+    if ('uid' in user && user.uid) {
+      firebaseUid = user.uid;
+    } else {
+      console.error("Cannot determine Firebase UID for user:", user);
+      return false;
+    }
+
+    const result = await getWorkerOffers(firebaseUid);
     if (result.success && result.data?.offers) {
       return result.data.offers.some(offer => offer.id === gigId);
     }
