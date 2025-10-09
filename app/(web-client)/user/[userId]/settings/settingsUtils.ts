@@ -20,7 +20,7 @@ export const formatPhoneNumber = (phone: string): string | null => {
   if (isValidE164PhoneNumber(trimmedPhone)) return trimmedPhone;
 
   // Try parsing with multiple default countries for broader support
-  const defaultCountries: CountryCode[] = ["GB", "US", "CO", "CA", "AU"];
+  const defaultCountries: CountryCode[] = ["GB"];
   for (const country of defaultCountries) {
     try {
       const parsed = parsePhoneNumberWithError(trimmedPhone, {

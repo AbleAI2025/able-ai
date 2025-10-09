@@ -135,7 +135,6 @@ const ScreenHeaderWithBack: React.FC<ScreenHeaderWithBackProps> = (props) => {
       </Link>
       {isHomePage && (
         <Notification
-          uid={user?.uid}
           handleClick={handleClick}
           unreadCount={unreadCount}
           unreadNotifications={unreadNotifications}

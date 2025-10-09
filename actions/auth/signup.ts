@@ -1,30 +1,25 @@
 "use server";
 import { findOrCreatePgUserAndUpdateRole } from "@/lib/user.server";
-import { authServer } from "@/lib/firebase/firebase-server";
 
 type RegisterUserData = {
+  firebaseUid: string;
+  displayName: string | null;
+  photoURL: string | null;
   email: string;
   password: string;
   name: string;
-  phone: string | undefined;
+  phone: string | null;
 };
 
 export async function registerUserAction(data: RegisterUserData) {
   try {
 
-    const firebaseUser = await authServer.createUser({
-      email: data.email,
-      password: data.password,
-      displayName: data.name,
-      phoneNumber: data.phone
-    });
-
     await findOrCreatePgUserAndUpdateRole({
       // This function MUST return these new fields
-      firebaseUid: firebaseUser.uid,
+      firebaseUid: data.firebaseUid,
       email: data.email,
-      displayName: firebaseUser?.displayName || data.name,
-      photoURL: firebaseUser?.photoURL,
+      displayName: data?.displayName || data.name,
+      photoURL: data?.photoURL,
       initialRoleContext: "BUYER" as "BUYER" | "GIG_WORKER" | undefined,
       phone: data.phone,
     });

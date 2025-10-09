@@ -1,19 +1,20 @@
 import Image from "next/image";
 import Link from "next/link"
 import styles from './Notification.module.css'
+import { useAuth } from "@/context/AuthContext";
 
 interface NotificationProps {
-    uid: string | undefined;
     handleClick: () => void;
     unreadCount: number;
     unreadNotifications: number;
 }
 
 
-const Notification = ({ uid, handleClick, unreadCount, unreadNotifications }: NotificationProps) => {
+const Notification = ({ handleClick, unreadCount, unreadNotifications }: NotificationProps) => {
+    const {user} = useAuth()
   return (
       <Link
-            href={`/user/${uid}/notifications`}
+            href={`/user/${user?.uid}/notifications`}
             passHref
             onClick={handleClick}
         >
