@@ -47,3 +47,10 @@ export type ExpandedLatestCharge = Stripe.Charge & {
 export type ExpandedPaymentIntent = Stripe.PaymentIntent & {
   latest_charge: ExpandedLatestCharge | null;
 };
+
+export interface DetailedStripeStatus {
+  buyerConnected: boolean;
+  canPay: boolean;
+  workerConnected: boolean;
+  canEarn: boolean;
+}

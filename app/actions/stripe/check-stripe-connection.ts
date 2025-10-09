@@ -62,7 +62,6 @@ export async function checkStripeConnection(firebaseUid: string, userRole: "BUYE
     if (userRole === 'GIG_WORKER') return await checkAccountConnection(stripeAccountId);
 
     throw new Error('Invalid or missing user role for Stripe connection check.');
-
   } catch (error: unknown) {
     console.error('Error verifying Stripe connection:', error);
     return { connected: false, error: getErrorMessage(error), status: 500 }

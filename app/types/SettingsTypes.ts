@@ -19,6 +19,12 @@ export interface UserSettingsData {
   stripeConnectAccountId: string | null; // The Stripe Connect Account ID
   canReceivePayouts: boolean; // Derived on backend, true if Stripe account is fully setup and can receive payouts
 
+  // Enhanced Stripe status fields for detailed capability checking
+  buyerConnected?: boolean;    // Customer account exists
+  canPay?: boolean;           // Customer can make payments (not delinquent)
+  workerConnected?: boolean;  // Connect account exists  
+  canEarn?: boolean;          // Connect account can receive transfers
+
   lastRole: UserRole;
   notificationPreferences: {
     email: {

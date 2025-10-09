@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import { UserRole } from "@/app/types/SettingsTypes";
-import { checkStripeConnection } from "@/app/actions/stripe/check-stripe-connection";
+import { getDetailedStripeStatus } from "@/app/actions/stripe/get-detailed-stripe-status";
 import { usePaymentSettings } from "./hooks/usePaymentSettings";
 import { useUserProfileSettings } from "./hooks/useUserProfileSettings";
 import { useNotificationSettings } from "./hooks/useNotificationSettings";
@@ -50,23 +50,39 @@ export const useSettingsPageLogic = () => {
     try {
       await userProfileSettings.fetchSettings();
 
-      // Fetch Stripe status separately
+      // Fetch detailed Stripe status
       if (user?.uid) {
-        const stripeConnection = await checkStripeConnection(user.uid, userLastRole);
-        const stripeAccountStatus = stripeConnection.connected ? 'connected' : null;
-        const canReceivePayouts = stripeConnection.connected;
+        // Use a default role if userLastRole is null
+        const roleToCheck = userLastRole || 'GIG_WORKER';
+        const detailedStatus = await getDetailedStripeStatus(user.uid, roleToCheck);
 
-        // Update userSettings with Stripe data
-        if (userProfileSettings.userSettings) {
-          userProfileSettings.setUserSettings({
-            ...userProfileSettings.userSettings,
-            stripeCustomerId: userLastRole === 'BUYER' && stripeConnection.connected ? "customer_connected" : null,
-            stripeAccountStatus: userLastRole === 'GIG_WORKER' ? stripeAccountStatus : null,
-            stripeConnectAccountId: userLastRole === 'GIG_WORKER' && stripeConnection.connected ? "account_connected" : null,
-            canReceivePayouts,
-            lastRole: userLastRole,
-          });
-        }
+        // Always update userSettings with detailed Stripe status, even if userSettings is null
+        const currentSettings = userProfileSettings.userSettings || {
+          displayName: user.displayName || "",
+          email: user.email || "",
+          phone: null,
+          stripeCustomerId: null,
+          stripeAccountStatus: null,
+          stripeConnectAccountId: null,
+          canReceivePayouts: false,
+          lastRole: roleToCheck,
+          notificationPreferences: {
+            email: { gigUpdates: false, platformAnnouncements: false },
+            sms: { gigAlerts: false },
+          },
+          privacySettings: { profileVisibility: false },
+        };
+
+        userProfileSettings.setUserSettings({
+          ...currentSettings,
+          buyerConnected: detailedStatus.buyerConnected,
+          canPay: detailedStatus.canPay,
+          workerConnected: detailedStatus.workerConnected,
+          canEarn: detailedStatus.canEarn,
+          lastRole: roleToCheck,
+        });
+
+
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -85,14 +101,29 @@ export const useSettingsPageLogic = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+
+
   // Check Stripe modal after settings are loaded
   useEffect(() => {
     if (user && !userProfileSettings.isLoadingSettings && userProfileSettings.userSettings && !paymentSettings.showStripeModal && !paymentSettings.stripeModalDismissed) {
       const userSettings = userProfileSettings.userSettings;
 
-      // Show modal only if user is not connected to Stripe and hasn't dismissed it
-      if (userLastRole && !userSettings.canReceivePayouts) {
-        paymentSettings.setShowStripeModal(true);
+      // Only check modal status if we have the detailed Stripe status fields
+      // This prevents showing the modal before the detailed status is loaded
+      const hasDetailedStatus = userLastRole === 'BUYER' 
+        ? userSettings.buyerConnected !== undefined 
+        : userSettings.workerConnected !== undefined;
+
+      if (hasDetailedStatus) {
+        // Show modal only if user is not connected to Stripe and hasn't dismissed it
+        // Use connection status instead of capability status
+        const isNotConnected = userLastRole === 'BUYER' 
+          ? !userSettings.buyerConnected 
+          : !userSettings.workerConnected;
+
+        if (userLastRole && isNotConnected) {
+          paymentSettings.setShowStripeModal(true);
+        }
       }
     }
   }, [user, userProfileSettings.userSettings, userProfileSettings.isLoadingSettings, userLastRole, paymentSettings.showStripeModal, paymentSettings.stripeModalDismissed, paymentSettings]);
