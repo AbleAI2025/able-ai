@@ -58,8 +58,6 @@ export default function SettingsPage() {
     );
   }
 
-  console.log(profileSectionProps);
-
   return (
     <div className={styles.container}>
       <div className={styles.card}>
