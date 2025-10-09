@@ -40,7 +40,7 @@ async function fetchTokenResultWithPolling(
   for (let i = 0; i < MAX_POLLING_ATTEMPTS; i++) {
     const tokenResult = await getIdTokenResult(user, true);
 
-    if (tokenResult.claims?.role) {
+    if (tokenResult.claims?.email) {
       return tokenResult;
     }
 
@@ -61,6 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       unsubscribe = onAuthStateChanged(authClient, async (firebaseUser) => {
       if (firebaseUser) {
         const tokenResult = await fetchTokenResultWithPolling(firebaseUser);
+        
         if (tokenResult) {
           const emailVerification = checkEmailVerificationStatus(firebaseUser);
           const enrichedUser = Object.assign(firebaseUser, {
