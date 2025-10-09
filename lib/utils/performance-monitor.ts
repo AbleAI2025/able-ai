@@ -113,32 +113,7 @@ export function getOperationMetrics(operation: string): ApiCallMetrics | null {
   };
 }
 
-/**
- * Get all metrics for monitoring dashboard
- */
-export function getAllMetrics(): Record<string, ApiCallMetrics> {
-  const allMetrics: Record<string, ApiCallMetrics> = {};
-  
-  for (const [operationName] of metricsStore) {
-    const metrics = getOperationMetrics(operationName);
-    if (metrics) {
-      allMetrics[operationName] = metrics;
-    }
-  }
-  
-  return allMetrics;
-}
 
-/**
- * Clear metrics (useful for testing or periodic cleanup)
- */
-export function clearMetrics(operation?: string): void {
-  if (operation) {
-    metricsStore.delete(operation);
-  } else {
-    metricsStore.clear();
-  }
-}
 
 /**
  * Log performance summary for monitoring

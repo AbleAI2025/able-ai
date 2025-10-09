@@ -18,6 +18,168 @@ import {
   retryStripeOperation,
 } from '@/lib/stripe/error-handler';
 import { DetailedStripeStatus } from './types';
+import { WorkerUser } from "@/actions/user/get-worker-user";
+
+// Global counter for performance logging sampling
+let performanceLogCounter = 0;
+
+/**
+ * Check buyer status by retrieving and analyzing Stripe customer information
+ */
+async function checkBuyerStatus(
+  firebaseUid: string,
+  customerId: string,
+  status: DetailedStripeStatus
+): Promise<void> {
+  const customerResult = await handleStripeCustomerRetrieval(
+    stripeApi,
+    customerId,
+    {
+      operation: 'buyer_status_check',
+      userId: firebaseUid,
+      stripeId: customerId,
+    }
+  );
+
+  if (customerResult.success) {
+    // Customer can pay if they exist and are not delinquent
+    status.canPay = !customerResult.data.delinquent;
+
+    logServer({
+      code: 20003,
+      message: 'Buyer status checked successfully',
+      type: 'info',
+      details: {
+        firebaseUid,
+        customerId: customerId,
+        canPay: status.canPay,
+        delinquent: customerResult.data.delinquent,
+      },
+    });
+  } else {
+    // Safe default: assume cannot pay if we can't verify
+    status.canPay = false;
+
+    logServer({
+      ...ERROR_CODES.STRIPE_CUSTOMER_RETRIEVAL_FAILED,
+      details: {
+        firebaseUid,
+        customerId: customerId,
+        fallbackValue: status.canPay,
+      },
+    });
+  }
+}
+
+/**
+ * Update worker capabilities in the database
+ */
+async function updateWorkerCapabilitiesInDatabase(
+  firebaseUid: string,
+  userId: string,
+  payoutsEnabled: boolean,
+  transfersActive: boolean,
+  canEarn: boolean
+): Promise<boolean> {
+  const updateResult = await retryStripeOperation(
+    async () => {
+      await db.update(UsersTable)
+        .set({
+          canReceivePayouts: payoutsEnabled,
+          stripeAccountStatus: transfersActive && payoutsEnabled ? 'connected' : 'incomplete',
+        })
+        .where(eq(UsersTable.id, userId));
+      return true;
+    },
+    {
+      operation: 'database_update',
+      userId: firebaseUid,
+      additionalContext: {
+        payoutsEnabled,
+        transfersActive,
+        canEarn,
+      },
+    },
+    2, // Max 2 retries for database operations
+    500 // 500ms base delay
+  );
+
+  if (!updateResult.success) {
+    logServer({
+      ...ERROR_CODES.STRIPE_STATUS_UPDATE_FAILED,
+      details: {
+        firebaseUid,
+        accountId: userId,
+        error: updateResult.error,
+      },
+    });
+  }
+
+  return updateResult.success;
+}
+
+/**
+ * Check worker status by retrieving and analyzing Stripe Connect account information
+ */
+async function checkWorkerStatus(
+  firebaseUid: string,
+  accountId: string,
+  userRecord: WorkerUser,
+  status: DetailedStripeStatus
+): Promise<void> {
+  const accountResult = await handleStripeAccountRetrieval(
+    stripeApi,
+    accountId,
+    {
+      operation: 'worker_status_check',
+      userId: firebaseUid,
+      stripeId: accountId,
+    }
+  );
+
+  if (accountResult.success) {
+    const transfersActive = accountResult.data.capabilities?.transfers === 'active';
+    const payoutsEnabled = accountResult.data.payouts_enabled;
+
+    // Worker can earn if they have active transfers and payouts enabled
+    status.canEarn = transfersActive && payoutsEnabled;
+
+    // Update database with current capability information
+    const dbUpdated = await updateWorkerCapabilitiesInDatabase(
+      firebaseUid,
+      userRecord.id,
+      payoutsEnabled,
+      transfersActive,
+      status.canEarn
+    );
+
+    logServer({
+      code: 20004,
+      message: 'Worker status checked successfully',
+      type: 'info',
+      details: {
+        firebaseUid,
+        accountId: accountId,
+        canEarn: status.canEarn,
+        transfersActive,
+        payoutsEnabled,
+        databaseUpdated: dbUpdated,
+      },
+    });
+  } else {
+    // Maintain existing canReceivePayouts value as fallback
+    status.canEarn = userRecord.canReceivePayouts || false;
+
+    logServer({
+      ...ERROR_CODES.STRIPE_ACCOUNT_RETRIEVAL_FAILED,
+      details: {
+        firebaseUid,
+        accountId: accountId,
+        fallbackValue: status.canEarn,
+      },
+    });
+  }
+}
 
 /**
  * Enhanced Stripe status checking that provides detailed capability information
@@ -26,7 +188,7 @@ import { DetailedStripeStatus } from './types';
  * @param userRole - The user's role (for future use and API consistency)
  */
 export async function getDetailedStripeStatus(
-  firebaseUid: string, 
+  firebaseUid: string,
   userRole: "BUYER" | "GIG_WORKER"
 ): Promise<DetailedStripeStatus> {
   const operationName = 'getDetailedStripeStatus';
@@ -81,135 +243,16 @@ export async function getDetailedStripeStatus(
 
     const status: DetailedStripeStatus = { ...safeDefaults };
 
-    // Check buyer status (customer account and delinquent status)
+    // Check buyer status
     if (userRecord.stripeCustomerId) {
       status.buyerConnected = true;
-      
-      const customerResult = await handleStripeCustomerRetrieval(
-        stripeApi,
-        userRecord.stripeCustomerId,
-        {
-          operation: 'buyer_status_check',
-          userId: firebaseUid,
-          stripeId: userRecord.stripeCustomerId,
-        }
-      );
-
-      if (customerResult.success) {
-        // Customer can pay if they exist and are not delinquent
-        status.canPay = !customerResult.data.delinquent;
-        
-        logServer({
-          code: 20003,
-          message: 'Buyer status checked successfully',
-          type: 'info',
-          details: {
-            firebaseUid,
-            customerId: userRecord.stripeCustomerId,
-            canPay: status.canPay,
-            delinquent: customerResult.data.delinquent,
-          },
-        });
-      } else {
-        // Safe default: assume cannot pay if we can't verify
-        status.canPay = false;
-        
-        logServer({
-          ...ERROR_CODES.STRIPE_CUSTOMER_RETRIEVAL_FAILED,
-          details: {
-            firebaseUid,
-            customerId: userRecord.stripeCustomerId,
-            fallbackValue: status.canPay,
-          },
-        });
-      }
+      await checkBuyerStatus(firebaseUid, userRecord.stripeCustomerId, status);
     }
 
-    // Check worker status (Connect account and transfer capabilities)
+    // Check worker status
     if (userRecord.stripeConnectAccountId) {
       status.workerConnected = true;
-      
-      const accountResult = await handleStripeAccountRetrieval(
-        stripeApi,
-        userRecord.stripeConnectAccountId,
-        {
-          operation: 'worker_status_check',
-          userId: firebaseUid,
-          stripeId: userRecord.stripeConnectAccountId,
-        }
-      );
-
-      if (accountResult.success) {
-        const transfersActive = accountResult.data.capabilities?.transfers === 'active';
-        const payoutsEnabled = accountResult.data.payouts_enabled;
-        
-        // Worker can earn if they have active transfers and payouts enabled
-        status.canEarn = transfersActive && payoutsEnabled;
-        
-        // Update database with current capability information using retry logic
-        const updateResult = await retryStripeOperation(
-          async () => {
-            await db.update(UsersTable)
-              .set({
-                canReceivePayouts: payoutsEnabled,
-                stripeAccountStatus: transfersActive && payoutsEnabled ? 'connected' : 'incomplete',
-              })
-              .where(eq(UsersTable.id, userRecord.id));
-            return true;
-          },
-          {
-            operation: 'database_update',
-            userId: firebaseUid,
-            additionalContext: {
-              payoutsEnabled,
-              transfersActive,
-              canEarn: status.canEarn,
-            },
-          },
-          2, // Max 2 retries for database operations
-          500 // 500ms base delay
-        );
-
-        if (!updateResult.success) {
-          logServer({
-            ...ERROR_CODES.STRIPE_STATUS_UPDATE_FAILED,
-            details: {
-              firebaseUid,
-              accountId: userRecord.stripeConnectAccountId,
-              error: updateResult.error,
-            },
-          });
-        }
-
-        logServer({
-          code: 20004,
-          message: 'Worker status checked successfully',
-          type: 'info',
-          details: {
-            firebaseUid,
-            accountId: userRecord.stripeConnectAccountId,
-            canEarn: status.canEarn,
-            transfersActive,
-            payoutsEnabled,
-            databaseUpdated: updateResult.success,
-          },
-        });
-
-
-        
-      } else {
-        // Maintain existing canReceivePayouts value as fallback
-        status.canEarn = userRecord.canReceivePayouts || false;
-        
-        logServer({
-          ...ERROR_CODES.STRIPE_ACCOUNT_RETRIEVAL_FAILED,
-          details: {
-            firebaseUid,
-            accountId: userRecord.stripeConnectAccountId,
-            fallbackValue: status.canEarn,
-          },
-        });
-      }
+      await checkWorkerStatus(firebaseUid, userRecord.stripeConnectAccountId, userRecord, status);
     }
 
     // Log successful completion
@@ -228,7 +271,8 @@ export async function getDetailedStripeStatus(
     endPerformanceTracking(operationName, startTime, true);
     
     // Log performance summary periodically (every 10th call)
-    if (Math.random() < 0.1) {
+    performanceLogCounter = (performanceLogCounter + 1) % 10;
+    if (performanceLogCounter === 0) {
       logPerformanceSummary(operationName);
     }
 
@@ -247,8 +291,13 @@ export async function getDetailedStripeStatus(
     });
 
     endPerformanceTracking(operationName, startTime, false, error instanceof Error ? error : String(error));
-    
-    // Return graceful defaults
-    return getGracefulDefaults(operationName);
+
+    // Return graceful defaults with context
+    return getGracefulDefaults({
+      operation: operationName,
+      userId: firebaseUid,
+      userRole: userRole,
+      errorType: 'unknown',
+    });
   }
 }

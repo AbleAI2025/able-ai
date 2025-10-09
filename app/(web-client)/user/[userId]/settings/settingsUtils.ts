@@ -1,4 +1,28 @@
 import { parsePhoneNumberWithError, CountryCode } from "libphonenumber-js";
+import { User } from "@/context/AuthContext";
+import { UserSettingsData, UserRole } from "@/app/types/SettingsTypes";
+
+/**
+ * Creates a default UserSettingsData object for a given user and role.
+ * This centralizes the default values to avoid duplication with the type definition.
+ */
+export const createDefaultUserSettings = (user: User, role: UserRole): UserSettingsData => {
+  return {
+    displayName: user.displayName || "",
+    email: user.email || "",
+    phone: null,
+    stripeCustomerId: null,
+    stripeAccountStatus: null,
+    stripeConnectAccountId: null,
+    canReceivePayouts: false,
+    lastRole: role,
+    notificationPreferences: {
+      email: { gigUpdates: false, platformAnnouncements: false },
+      sms: { gigAlerts: false },
+    },
+    privacySettings: { profileVisibility: false },
+  };
+};
 
 /**
  * Validates if a phone number is in E.164 format

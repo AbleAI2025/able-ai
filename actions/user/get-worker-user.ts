@@ -5,10 +5,13 @@ import { eq } from "drizzle-orm";
 import { GigWorkerProfilesTable, UsersTable } from "@/lib/drizzle/schema";
 
 export interface WorkerUser {
-  uid: string;
+  uid?: string;
   displayName?: string;
   email?: string;
   id: string;
+  canReceivePayouts?: boolean;
+  stripeAccountStatus?: string | null;
+  stripeConnectAccountId?: string | null;
 }
 
 export async function getWorkerUserFromProfileId(profileId: string): Promise<{

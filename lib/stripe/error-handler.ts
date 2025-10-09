@@ -5,6 +5,7 @@
 import Stripe from 'stripe';
 import { logServer, ERROR_CODES, AppLogError } from '@/lib/log';
 import { getErrorMessage } from '@/lib/utils/errors';
+import { getDegradationStrategy, type DegradationContext } from './graceful-degradation';
 
 export interface StripeErrorContext {
   operation: string;
@@ -219,28 +220,36 @@ export async function handleStripeAccountRetrieval(
 }
 
 /**
- * Graceful degradation strategy for Stripe operations
+ * Graceful degradation strategy for Stripe operations with context-aware fallbacks
  */
-export function getGracefulDefaults(operation: string): {
+export function getGracefulDefaults(context: DegradationContext): {
   buyerConnected: boolean;
   canPay: boolean;
   workerConnected: boolean;
   canEarn: boolean;
 } {
-  // Log the degradation
-  logServer({
-    ...ERROR_CODES.STRIPE_API_ERROR,
-    message: `Using graceful defaults for ${operation}`,
-    type: 'warning',
-    details: { operation },
-  });
+  const strategy = getDegradationStrategy(context);
 
-  return {
-    buyerConnected: false,
-    canPay: false,
-    workerConnected: false,
-    canEarn: false,
+  // Return the fallback status from the degradation strategy
+  return strategy.fallbackStatus;
+}
+
+/**
+ * Legacy function for backward compatibility - use getGracefulDefaults with context instead
+ * @deprecated Use getGracefulDefaults(context: DegradationContext) instead
+ */
+export function getGracefulDefaultsLegacy(operation: string): {
+  buyerConnected: boolean;
+  canPay: boolean;
+  workerConnected: boolean;
+  canEarn: boolean;
+} {
+  // Create a basic context for legacy calls
+  const context: DegradationContext = {
+    operation,
   };
+
+  return getGracefulDefaults(context);
 }
 
 /**

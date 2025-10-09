@@ -10,6 +10,7 @@ import { useUserProfileSettings } from "./hooks/useUserProfileSettings";
 import { useNotificationSettings } from "./hooks/useNotificationSettings";
 import { useAuthSettings } from "./hooks/useAuthSettings";
 import { useAccountManagement } from "./hooks/useAccountManagement";
+import { createDefaultUserSettings } from "./settingsUtils";
 
 export const useSettingsPageLogic = () => {
   const { user } = useAuth();
@@ -57,21 +58,7 @@ export const useSettingsPageLogic = () => {
         const detailedStatus = await getDetailedStripeStatus(user.uid, roleToCheck);
 
         // Always update userSettings with detailed Stripe status, even if userSettings is null
-        const currentSettings = userProfileSettings.userSettings || {
-          displayName: user.displayName || "",
-          email: user.email || "",
-          phone: null,
-          stripeCustomerId: null,
-          stripeAccountStatus: null,
-          stripeConnectAccountId: null,
-          canReceivePayouts: false,
-          lastRole: roleToCheck,
-          notificationPreferences: {
-            email: { gigUpdates: false, platformAnnouncements: false },
-            sms: { gigAlerts: false },
-          },
-          privacySettings: { profileVisibility: false },
-        };
+        const currentSettings = userProfileSettings.userSettings || createDefaultUserSettings(user, roleToCheck);
 
         userProfileSettings.setUserSettings({
           ...currentSettings,
