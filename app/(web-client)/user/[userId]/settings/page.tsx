@@ -45,7 +45,7 @@ export default function SettingsPage() {
     securitySectionProps,
     bottomNavSectionProps,
   } = useSettingsPageLogic();
-  
+
   if (isLoadingSettings) {
     return <Loader />;
   }
@@ -57,6 +57,8 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  console.log(profileSectionProps);
 
   return (
     <div className={styles.container}>
@@ -75,8 +77,8 @@ export default function SettingsPage() {
 
           <ProfileSection {...profileSectionProps} />
 
-          {user && !user.phoneNumber && (
-            <PhoneNumberModal userPhone={user.phoneNumber || ""} />
+          {!profileSectionProps.phone && (
+            <PhoneNumberModal userPhone={profileSectionProps.phone || ""} />
           )}
 
           <PaymentSection {...paymentSectionProps} />
