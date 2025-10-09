@@ -55,9 +55,6 @@ const SignInView: React.FC<SignInViewProps> = ({
         onError(
           <>
             {response.error || "Email or password is incorrect."}
-            <a href="/reset-password" className={styles.errorLink}>
-              Reset password?
-            </a>
           </>
         );
       } else {
