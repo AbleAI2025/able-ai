@@ -34,7 +34,7 @@
 .modalTitle {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-white);
   margin: 0;
 }
 
@@ -68,7 +68,7 @@
 .emailIcon {
   width: 48px;
   height: 48px;
-  color: #3b82f6;
+  color: var(--text-white);
 }
 
 .modalText {

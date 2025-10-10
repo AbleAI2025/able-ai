@@ -11,7 +11,6 @@ interface EmailVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   userEmail: string;
-  onVerificationComplete: () => void;
 }
 
 const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
@@ -82,7 +81,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
           </div>
 
           <p className={styles.modalText}>
-            Please verify your email address before signing in.
+            Please verify your email address
           </p>
 
           <p className={styles.emailAddress}>{userEmail}</p>
@@ -113,35 +112,16 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 
           <div className={styles.buttonGroup}>
             <button
-              onClick={handleSendVerificationEmail}
+              onClick={() => {
+                onClose();
+                toast.success("Redirecting to login");
+                window.location.replace("/");
+              }}
               disabled={loading || emailSent}
               className={`${styles.verifyButton} ${
                 emailSent ? styles.success : ""
               }`}
             >
-              {loading ? (
-                <>
-                  <div className={styles.loadingSpinner}></div>
-                  Sending...
-                </>
-              ) : emailSent ? (
-                <>
-                  <svg
-                    className={styles.emailIcon}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Email Sent!
-                </>
-              ) : (
                 <>
                   <svg
                     className={styles.emailIcon}
@@ -156,31 +136,20 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                       d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  Send Verification Email
+                  I just verified, go to login
                 </>
-              )}
             </button>
 
             <button
               onClick={() => {
                 onClose();
-                toast.success("Redirecting to login");
-                router.push("/");
               }}
               disabled={loading || emailSent}
               className={styles.resendButton}
             >
-              I just verified, go to login
+              I'll verify later
             </button>
           </div>
-
-          <button
-            onClick={onClose}
-            className={styles.cancelButton}
-            disabled={loading}
-          >
-            I'll verify later
-          </button>
         </div>
       </div>
     </div>
