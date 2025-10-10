@@ -30,7 +30,7 @@ async function getWorkerDetails(
 ): Promise<{ name: string; skills: SkillsProps[] } | null> {
   const response = await fetch(`/api/workers/${workerId}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -57,7 +57,9 @@ export default function PublicRecommendationPage() {
     skills: SkillsProps[];
   } | null>(null);
   const [isLoadingWorker, setIsLoadingWorker] = useState(true);
-  const [selectedSkill, setSelectedSkill] = useState<{id: string, name: string} | undefined>();
+  const [selectedSkill, setSelectedSkill] = useState<
+    { id: string; name: string } | undefined
+  >();
 
   const [formData, setFormData] = useState<RecommendationFormData>({
     recommendationText: "",
@@ -68,27 +70,35 @@ export default function PublicRecommendationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-   const firstName = React.useMemo(() => workerDetails?.name.split(" ")[0], [workerDetails]);
-  
+
+  const firstName = React.useMemo(
+    () => workerDetails?.name.split(" ")[0],
+    [workerDetails]
+  );
+
   // Fetch worker details
   useEffect(() => {
-    if (workerToRecommendId && user?.token) {
-      setIsLoadingWorker(true);
-      getWorkerDetails(workerToRecommendId, user.token)
-        .then((details) => {
-          if (details) {
-            setWorkerDetails(details);
-          } else {
-            setError("Could not load worker details to recommend.");
-          }
-        })
-        .catch((err: Error) => setError(err.message || "Error fetching worker details."))
-        .finally(() => setIsLoadingWorker(false));
-    } else if (!user?.token) {
-      setError("You must be logged in to view worker recommendations.");
-      setIsLoadingWorker(false);
-    }
+    const fetchWorker = async () => {
+      if (!user?.token) {
+        setError("You must be logged in to view worker recommendations.");
+        setIsLoadingWorker(false);
+        return;
+      }
+      if (!workerToRecommendId) return;
+
+      try {
+        setIsLoadingWorker(true);
+        const details = await getWorkerDetails(workerToRecommendId, user.token);
+        setWorkerDetails(details ?? null);
+        if (!details) setError("Could not load worker details to recommend.");
+      } catch (err) {
+        setError((err as Error).message || "Error fetching worker details.");
+      } finally {
+        setIsLoadingWorker(false);
+      }
+    };
+
+    fetchWorker();
   }, [workerToRecommendId, user?.token]);
 
   const handleChange = (
@@ -179,8 +189,10 @@ export default function PublicRecommendationPage() {
 
         <div className={styles.recommendationCard}>
           <div className={styles.prompt}>
-            <p>{firstName} is available for hire on Able! <br />
-            Please provide a reference for {firstName}&apos;s skills as a{" "}</p>
+            <p>
+              {firstName} is available for hire on Able! <br />
+              Please provide a reference for {firstName}&apos;s skills as a{" "}
+            </p>
             <select
               className={styles.select}
               value={selectedSkill?.id || ""}
@@ -223,16 +235,20 @@ export default function PublicRecommendationPage() {
                 value={formData.recommendationText}
                 onChange={handleChange}
                 className={styles.textarea}
-                placeholder={selectedSkill?.name ? 
-                  `Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${selectedSkill?.name}` : 
-                  "Enter your recommendation here..."
+                placeholder={
+                  selectedSkill?.name
+                    ? `Enter your recommendation here... eg: What makes ${workerDetails.name} great at ${selectedSkill?.name}`
+                    : "Enter your recommendation here..."
                 }
                 required
               />
             </div>
 
             <div className={styles.inputGroup}>
-              <label htmlFor="relationship" className={styles.label}>How do you know {workerDetails.name}? <span style={{color: 'var(--error-color)'}}>*</span></label>
+              <label htmlFor="relationship" className={styles.label}>
+                How do you know {workerDetails.name}?{" "}
+                <span style={{ color: "var(--error-color)" }}>*</span>
+              </label>
               <textarea
                 id="relationship"
                 name="relationship"

@@ -6,7 +6,7 @@ import { isUserAuthenticated } from '@/lib/user.server';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ workerId: string }> }
+  { params }: { params: { workerId: string } }
 ) {
   try {
     // Get token from Authorization header

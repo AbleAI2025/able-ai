@@ -30,7 +30,7 @@ function generateRandomCode(length = 8): string {
 }
 
 function buildRecommendationLink(workerProfileId: string | null): string {
-  const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000';
+  const origin = window.location.origin ?? 'http://localhost:3000';
   
   if (!workerProfileId) {
     throw new Error('Worker profile ID is required to build recommendation link');

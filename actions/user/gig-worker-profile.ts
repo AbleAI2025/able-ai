@@ -323,8 +323,6 @@ export const updateVideoUrlProfileAction = async (
   token?: string | undefined
 ) => {
   try {
-    console.log("🎥 Updating video URL:", videoUrl);
-
     if (!token) {
       throw new Error("User ID is required to fetch buyer profile");
     }
@@ -338,23 +336,21 @@ export const updateVideoUrlProfileAction = async (
 
     if (!user) throw "User not found";
 
-    console.log(
-      "🎥 Updating video URL for user:",
-      user.id,
-      "with URL:",
-      videoUrl
-    );
-
     const result = await db
       .update(GigWorkerProfilesTable)
       .set({
         videoUrl: videoUrl,
         updatedAt: new Date(),
       })
-      .where(eq(GigWorkerProfilesTable.userId, user?.id))
-      .returning();
+      .where(eq(GigWorkerProfilesTable.userId, user?.id));
 
-    console.log("🎥 Video URL update result:", result);
+    if (result.rowCount === 0) {
+      return {
+        success: false,
+        error: "Failed to update video profile",
+        status: 500,
+      };
+    }
 
     return { success: true, data: "Url video updated successfully" };
   } catch (error) {

@@ -45,16 +45,7 @@ export default function WorkerOwnedProfilePage() {
 
       const data = result.data;
       if (data) {
-        const updatedReviews = (data.reviews ?? []).map(
-          (rev: any) => ({
-            ...rev,
-            date: rev.date
-              ? new Date(rev.date).toISOString().split("T")[0] // "YYYY-MM-DD"
-              : null,
-          })
-        );
-
-        setProfile({ ...data, reviews: updatedReviews });
+        setProfile(data);
         setError(null);
       } else {
         setError("Could not load your profile.");

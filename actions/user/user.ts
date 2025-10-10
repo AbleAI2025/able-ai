@@ -44,7 +44,9 @@ export const updateUserProfileAction = async (
   token?: string
 ) => {
   try {
-    if (!token) throw "Token is required";
+    if (!token) throw new Error("Token is required");
+
+    if (updateData.phone && updateData.phone.length !== 14) throw new Error("The phone long must to be 14")
 
     const { data, uid } = await isUserAuthenticated(token);
     if (!data) throw ERROR_CODES.UNAUTHORIZED;

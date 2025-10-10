@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/drizzle/db';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/drizzle/db";
 import {
   BadgeDefinitionsTable,
   EquipmentTable,
@@ -9,30 +9,24 @@ import {
   SkillsTable,
   UserBadgesLinkTable,
   UsersTable,
-} from '@/lib/drizzle/schema';
-import { and, eq } from 'drizzle-orm';
-import { isUserAuthenticated } from '@/lib/user.server';
-import PublicWorkerProfile, { SemanticProfile } from '@/app/types/workerProfileTypes';
+} from "@/lib/drizzle/schema";
+import { and, eq } from "drizzle-orm";
+import { isUserAuthenticated } from "@/lib/user.server";
+import { SemanticProfile } from "@/app/types/workerProfileTypes";
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get("authorization");
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
 
     const { uid } = await isUserAuthenticated(token);
     if (!uid) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await db.query.UsersTable.findFirst({
@@ -40,10 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
@@ -58,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     if (!workerProfile) {
       return NextResponse.json(
-        { error: 'Worker profile not found' },
+        { error: "Worker profile not found" },
         { status: 404 }
       );
     }
@@ -101,7 +92,7 @@ export async function GET(request: NextRequest) {
       id: badge.id,
       name: badge.badge.name,
       description: badge.badge.description,
-      icon: badge.badge.icon ?? '',
+      icon: badge.badge.icon ?? "",
       type: badge.badge.type,
       awardedAt: badge.awardedAt,
       awardedBySystem: badge.awardedBySystem,
@@ -110,14 +101,14 @@ export async function GET(request: NextRequest) {
     const reviews = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile.userId),
-        eq(ReviewsTable.type, 'INTERNAL_PLATFORM')
+        eq(ReviewsTable.type, "INTERNAL_PLATFORM")
       ),
     });
 
     const recommendations = await db.query.ReviewsTable.findMany({
       where: and(
         eq(ReviewsTable.targetUserId, workerProfile.userId),
-        eq(ReviewsTable.type, 'EXTERNAL_REQUESTED')
+        eq(ReviewsTable.type, "EXTERNAL_REQUESTED")
       ),
     });
 
@@ -128,11 +119,11 @@ export async function GET(request: NextRequest) {
 
     const data = {
       ...workerProfile,
-      fullBio: workerProfile?.fullBio ?? undefined,
-      location: workerProfile?.location ?? undefined,
-      privateNotes: workerProfile?.privateNotes ?? undefined,
-      responseRateInternal: workerProfile?.responseRateInternal ?? undefined,
-      videoUrl: workerProfile?.videoUrl ?? undefined,
+      fullBio: workerProfile?.fullBio,
+      location: workerProfile?.location,
+      privateNotes: workerProfile?.privateNotes,
+      responseRateInternal: workerProfile?.responseRateInternal,
+      videoUrl: workerProfile?.videoUrl,
       hashtags: Array.isArray(workerProfile?.hashtags)
         ? workerProfile.hashtags
         : undefined,
@@ -146,7 +137,7 @@ export async function GET(request: NextRequest) {
       reviews,
       recommendations,
       qualifications,
-      user: { fullName: workerProfile?.user?.fullName || '' },
+      user: { fullName: workerProfile?.user?.fullName || "" },
     };
 
     return NextResponse.json({
@@ -154,9 +145,9 @@ export async function GET(request: NextRequest) {
       data,
     });
   } catch (error) {
-    console.error('Error fetching private worker profile:', error);
+    console.error("Error fetching private worker profile:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

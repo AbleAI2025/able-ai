@@ -85,7 +85,7 @@ export default interface PublicWorkerProfile {
       | undefined;
   };
 
-  fullBio: string | undefined;
+  fullBio?: string;
   privateNotes?: string;
   averageRating?: number | undefined;
   hashtags?: string[];

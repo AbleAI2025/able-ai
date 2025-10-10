@@ -58,30 +58,29 @@ const WorkerProfile = ({
   isSelfView: boolean;
 }) => {
   const { user } = useAuth();
-  const [error, setError] = useState<string | null>(null);
   const [workerLink, setWorkerLink] = useState<string | null>(null);
   const [showRtwPopup, setShowRtwPopup] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false); // 👈 nuevo estado
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
       if (!user) {
         console.error("Missing required parameters for video upload");
-        setError("Failed to upload video. Please try again.");
+        toast.error("Failed to upload video. Please try again.");
         return;
       }
 
       if (!file || file.size === 0) {
         console.error("Invalid file for video upload");
-        setError("Invalid video file. Please try again.");
+        toast.error("Invalid video file. Please try again.");
         return;
       }
 
       // Check file size (limit to 50MB)
       const maxSize = 50 * 1024 * 1024; // 50MB
       if (file.size > maxSize) {
-        setError("Video file too large. Please use a file smaller than 50MB.");
+        toast.error("Video file too large. Please use a file smaller than 50MB.");
         return;
       }
 
@@ -101,7 +100,7 @@ const WorkerProfile = ({
           },
           (error) => {
             console.error("Upload failed:", error);
-            setError("Video upload failed. Please try again.");
+            toast.error("Video upload failed. Please try again.");
           },
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
@@ -111,13 +110,13 @@ const WorkerProfile = ({
               })
               .catch((error) => {
                 console.error("Failed to get download URL:", error);
-                setError("Failed to get video URL. Please try again.");
+                toast.error("Failed to get video URL. Please try again.");
               });
           }
         );
       } catch (error) {
         console.error("Video upload error:", error);
-        setError("Failed to upload video. Please try again.");
+        toast.error("Failed to upload video. Please try again.");
       }
     },
     [user]
@@ -335,7 +334,7 @@ const WorkerProfile = ({
                 className={styles.button}
                 onClick={() =>
                   (window.location.href =
-                    "/user/A3BDfET6iPbY0zYHUTaIU0sMucF3/worker/rtw")
+                    `/user/${user?.uid}/worker/rtw`)
                 }
               >
                 Non UK national

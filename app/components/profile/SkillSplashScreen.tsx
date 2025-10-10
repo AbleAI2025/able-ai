@@ -257,17 +257,6 @@ const SkillSplashScreen = ({
           </div>
         )}
 
-        {/* 
-        {
-          <p>
-            <span>Customer reviews:</span>
-            profile.customerReviewsText && (
-            <span className={styles.review}>{profile.customerReviewsText}</span>
-            )
-          </p>
-        }
-            */}
-
         <table className={styles.skillDisplayTable}>
           <thead>
             <tr>
