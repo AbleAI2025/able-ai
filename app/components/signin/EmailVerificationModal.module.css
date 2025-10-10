@@ -13,7 +13,7 @@
 }
 
 .modalContent {
-  background: white;
+  background: var(--background-dark);
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   max-width: 500px;
@@ -34,7 +34,7 @@
 .modalTitle {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #111827;
+  color: #fff;
   margin: 0;
 }
 
@@ -73,7 +73,7 @@
 
 .modalText {
   font-size: 1.125rem;
-  color: #374151;
+  color: #fff;
   margin: 0 0 16px 0;
   font-weight: 500;
 }
@@ -91,7 +91,7 @@
 
 .instructions {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #fff;
   margin: 0 0 24px 0;
   line-height: 1.5;
 }

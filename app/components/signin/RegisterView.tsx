@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from "react";
 import {
-  sendEmailVerification,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import InputField from "@/app/components/form/InputField";
@@ -114,9 +113,6 @@ const RegisterView: React.FC<RegisterViewProps> = ({
         return;
       }
 
-      await sendEmailVerification(userCredential.user);
-      toast.success("Verification email sent successfully!");
-      setEmailSent(true);
       setUnverifiedUserEmail(formData.email);
       setShowVerificationModal(true);
     } catch (error: unknown) {
@@ -134,12 +130,13 @@ const RegisterView: React.FC<RegisterViewProps> = ({
   const handleCloseVerificationModal = () => {
     setShowVerificationModal(false);
     setUnverifiedUserEmail("");
+    window.location.replace("/");
   };
 
   const handleVerificationComplete = () => {
     setShowVerificationModal(false);
     toast.success("Email verified successfully! Redirecting...");
-    router.push("/select-role");
+    window.location.replace("/");
   };
 
   return (
