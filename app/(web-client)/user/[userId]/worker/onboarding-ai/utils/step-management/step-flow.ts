@@ -80,15 +80,12 @@ const specialFields: RequiredField[] = SPECIAL_FIELDS_CONFIG;
  */
 export function getNextRequiredField(formData: FormData, existingProfileData?: any): RequiredField | undefined {
   // First, find the first required field that hasn't been filled in formData
-  console.log('🔍 getNextRequiredField - formData:', formData);
-  console.log('🔍 getNextRequiredField - requiredFields:', requiredFields.map(f => ({ name: f.name, hasValue: !!formData[f.name], value: formData[f.name] })));
   
   let nextField = requiredFields.find((f: RequiredField) => !formData[f.name]);
   
   // Special handling: if qualifications is the next field but user has provided bio with qualifications info,
   // skip to video step to avoid asking for redundant information
   if (nextField?.name === 'qualifications' && formData.about && formData.about.length > 50) {
-    console.log('🔍 getNextRequiredField - skipping qualifications, user likely provided info in bio');
     // Find the next field after qualifications
     const qualificationsIndex = requiredFields.findIndex(f => f.name === 'qualifications');
     nextField = requiredFields[qualificationsIndex + 1];
@@ -96,11 +93,8 @@ export function getNextRequiredField(formData: FormData, existingProfileData?: a
   
   // If no required field is missing, check special fields
   if (!nextField) {
-    console.log('🔍 getNextRequiredField - checking specialFields:', specialFields.map(f => ({ name: f.name, hasValue: !!formData[f.name] })));
     nextField = specialFields.find((f: RequiredField) => !formData[f.name]);
   }
-  
-  console.log('🔍 getNextRequiredField - nextField:', nextField);
   
   return nextField;
 }
@@ -111,11 +105,8 @@ export function getNextRequiredField(formData: FormData, existingProfileData?: a
 export function areAllRequiredFieldsCompleted(formData: FormData): boolean {
   const allFieldsCompleted = requiredFields.every(field => {
     const hasValue = !!formData[field.name];
-    console.log(`🔍 Field ${field.name}: ${hasValue ? 'completed' : 'missing'}`);
     return hasValue;
   });
-  
-  console.log('🔍 All required fields completed:', allFieldsCompleted);
   return allFieldsCompleted;
 }
 
@@ -206,7 +197,6 @@ export async function addNextStepSafely(
   if (!nextField) {
     // Check if all required fields are completed - if so, show references step
     if (areAllRequiredFieldsCompleted(formData)) {
-      console.log('🔍 All required fields completed, showing references step');
       
       // Use existing worker profile ID
       if (!workerProfileId) {
@@ -253,6 +243,21 @@ export async function addNextStepSafely(
               type: "bot",
               content: "Please check out your gigfolio and share with your network\n\nif your connections make a hire on Able you get £5!",
               isNew: true,
+            },
+            // Fourth message: Stripe connection
+            {
+              id: Date.now() + 5,
+              type: "bot",
+              content: "Follow this link to connect to Stripe so you can be paid at the end of your shift",
+              isNew: true,
+            },
+            // Fifth message: Stripe link
+            {
+              id: Date.now() + 6,
+              type: "shareLink",
+              linkUrl: "https://connect.stripe.com/oauth/authorize?response_type=code&client_id=YOUR_STRIPE_CLIENT_ID&scope=read_write",
+              linkText: "Connect to Stripe",
+              isNew: true,
             }
           ];
         });
@@ -260,13 +265,10 @@ export async function addNextStepSafely(
       
       // After references, show AI-generated summary first
       setTimeout(async () => {
-        console.log('🔍 Adding AI summary step after references');
-        console.log('🔍 Current formData:', formData);
         
         // Generate AI summary with timeout
         let aiSummary = '';
         try {
-          console.log('🔍 Starting AI summary generation...');
           
           // Add timeout to prevent hanging
           const summaryPromise = (async () => {
@@ -325,7 +327,6 @@ export async function addNextStepSafely(
             throw new Error('AI summary generation failed');
           }
           
-          console.log('🔍 AI summary generated successfully');
         } catch (error) {
           console.error('AI summary generation failed:', error);
           // Fallback summary
@@ -348,8 +349,6 @@ export async function addNextStepSafely(
         
         // After AI summary, show final summary component
         setTimeout(() => {
-          console.log('🔍 Adding final summary component after AI summary');
-          console.log('🔍 Final summary formData:', formData);
           setChatSteps((prev: ChatStep[]) => {
             const filtered = prev.filter(s => s.type !== 'typing');
             const newSteps = [...filtered, {
@@ -358,7 +357,6 @@ export async function addNextStepSafely(
               summaryData: formData,
               isNew: true,
             }];
-            console.log('🔍 Final summary step added:', newSteps[newSteps.length - 1]);
             return newSteps;
           });
         }, 3000); // Wait 3 seconds after AI summary to show final summary
@@ -397,7 +395,6 @@ export async function addNextStepSafely(
 
   // Check if all required fields are completed - if so, show references step
   if (areAllRequiredFieldsCompleted(formData)) {
-    console.log('🔍 All required fields completed, showing references step');
     
     // Use existing worker profile ID
     if (!workerProfileId) {
@@ -444,6 +441,21 @@ export async function addNextStepSafely(
             type: "bot",
             content: "Please check out your gigfolio and share with your network\n\nif your connections make a hire on Able you get £5!",
             isNew: true,
+          },
+          // Fourth message: Stripe connection
+          {
+            id: Date.now() + 5,
+            type: "bot",
+            content: "Follow this link to connect to Stripe so you can be paid at the end of your shift",
+            isNew: true,
+          },
+          // Fifth message: Stripe link
+          {
+            id: Date.now() + 6,
+            type: "shareLink",
+            linkUrl: "https://connect.stripe.com/oauth/authorize?response_type=code&client_id=YOUR_STRIPE_CLIENT_ID&scope=read_write",
+            linkText: "Connect to Stripe",
+            isNew: true,
           }
         ];
       });
@@ -451,8 +463,6 @@ export async function addNextStepSafely(
     
     // After references, proceed to summary step
     setTimeout(() => {
-      console.log('🔍 Adding summary step after references');
-      console.log('🔍 Current formData:', formData);
       setChatSteps((prev: ChatStep[]) => {
         const filtered = prev.filter(s => s.type !== 'typing');
         const newSteps = [...filtered, {
@@ -461,8 +471,6 @@ export async function addNextStepSafely(
           summaryData: formData,
           isNew: true,
         }];
-        console.log('🔍 Summary step added:', newSteps[newSteps.length - 1]);
-        console.log('🔍 All chat steps after adding summary:', newSteps);
         return newSteps;
       });
     }, 3000); // Wait 3 seconds after the last message
@@ -499,8 +507,13 @@ export async function addNextStepSafely(
 
   // Replace typing indicator with intelligent bot message and input step after delay
   setTimeout(async () => {
-    // Generate intelligent context-aware prompt using AI
-    let intelligentPrompt = nextField.defaultPrompt;
+    // Use default prompt directly - AI context-aware generation is unreliable
+    const intelligentPrompt = nextField.defaultPrompt;
+    
+    // DISABLED: AI context-aware prompt generation due to AI not following instructions
+    // The AI was generating wrong questions (location instead of skills)
+    // TODO: Fix AI prompt generation or use a more reliable AI model
+    /*
     try {
       // Use AI to generate contextual prompts
       let contextInfo = '';
@@ -534,6 +547,7 @@ export async function addNextStepSafely(
       console.error('AI prompt generation failed:', error);
       // Fallback to default prompt
     }
+    */
 
     setChatSteps((prev) => {
       const filtered = prev.filter(s => s.type !== 'typing');
@@ -619,8 +633,6 @@ export async function handleInputSubmission(
     // Extract skill name using AI before checking for similar skills
     const skillExtractionResult = await extractSkillName(valueToUse, ai);
     const skillNameToSearch = skillExtractionResult?.skillName || valueToUse;
-    
-    console.log('🔍 Extracted skill name:', skillNameToSearch, 'from input:', valueToUse);
     
     // Check for similar skills using the extracted skill name
     const similarSkillsResult = await checkExistingSimilarSkill(skillNameToSearch, workerProfileId || '');
@@ -970,14 +982,9 @@ export function initializeChatSteps(
         isNew: true,
       });
     } else {
-      // Add the question as a bot message first
-      steps.push({
-        id: steps.length + 1,
-        type: "bot",
-        content: firstMissingField.defaultPrompt,
-        isComplete: true,
-        isNew: true,
-      });
+      // DISABLED: Don't add the question here - let the step flow handle it
+      // The step flow system will add the next step automatically
+      // This prevents duplication between initialization and step flow systems
     }
     
     // Don't add input step - let the chat input handle the flow naturally

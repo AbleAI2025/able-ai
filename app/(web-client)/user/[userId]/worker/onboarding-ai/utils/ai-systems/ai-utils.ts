@@ -311,6 +311,7 @@ Format as a single paragraph.`,
  * Generate context-aware prompt for AI
  */
 export async function generateContextAwarePrompt(fieldName: string, aboutInfo: string, ai: any): Promise<string> {
+  
   // Quick fallback if AI service is not available
   if (!ai) {
     console.log('AI service not available, using fallback prompt');
@@ -325,11 +326,13 @@ export async function generateContextAwarePrompt(fieldName: string, aboutInfo: s
       required: ['prompt']
     });
 
+    const prompt = PROMPTS.contextAwarePrompt(fieldName, aboutInfo);
+    
     // Add timeout to prevent hanging
     const aiCall = geminiAIAgent(
       "gemini-2.0-flash",
       {
-        prompt: PROMPTS.contextAwarePrompt(fieldName, aboutInfo),
+        prompt: prompt,
         responseSchema: promptSchema,
         isStream: false,
       },
@@ -671,8 +674,6 @@ Also provide a natural, conversational summary like "Got it! You have [equipment
 
     if (result.ok) {
       const data = result.data as any;
-      console.log('🔍 AI sanitization raw response:', result.data);
-      console.log('🔍 AI sanitization parsed data:', data);
       return {
         sanitized: data.sanitized || value,
         naturalSummary: data.naturalSummary,

@@ -263,7 +263,8 @@ export default function OnboardingRenderer({
         )}
 
         {chatSteps.map((step, idx) => {
-          const key = `${step.id}-${idx}`;
+          const key = `step-${step.id}-${step.type}-${idx}`;
+          
           
           if (step.type === "support") {
             return (
@@ -297,18 +298,13 @@ export default function OnboardingRenderer({
           }
           
           if (step.type === "summary") {
-            console.log('🔍 Rendering summary step with data:', step.summaryData);
-            console.log('🔍 Summary step key:', key);
-            console.log('🔍 Summary step isSubmitting:', isSubmitting);
             return renderSummaryStep(
               key,
               isSubmitting,
               async () => {
-                console.log('🔍 Summary step confirm clicked');
                 await handleProfileSubmission(step.summaryData);
                 // Mark summary step as complete
                 setChatSteps(prev => prev.map(s => s.id === step.id ? { ...s, isComplete: true } : s));
-                console.log('🔍 Summary step marked as complete');
               }
             );
           }
@@ -341,6 +337,13 @@ export default function OnboardingRenderer({
           }
           
           if (step.type === "bot") {
+            // Skip rendering bot messages that are followed by input steps
+            // The input step will render the bot message itself to avoid duplicates
+            const nextStep = chatSteps[idx + 1];
+            if (nextStep && nextStep.type === "input") {
+              return null;
+            }
+            
             // Use MessageBubble like the old file for consistent styling
             return (
               <MessageBubble
