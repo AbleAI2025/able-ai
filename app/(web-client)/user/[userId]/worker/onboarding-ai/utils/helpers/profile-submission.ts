@@ -1,8 +1,11 @@
-import { parseLocationData } from '../locationUtils';
-import { saveWorkerProfileFromOnboardingAction, createWorkerProfileAction } from "@/actions/user/gig-worker-profile";
+import { parseLocationData } from "../locationUtils";
+import {
+  saveWorkerProfileFromOnboardingAction,
+  createWorkerProfileAction,
+} from "@/actions/user/gig-worker-profile";
 import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
 import { validateWorkerProfileData } from "@/app/components/onboarding/ManualProfileForm";
-import { interpretJobTitle } from '../ai-systems/ai-utils';
+import { interpretJobTitle } from "../ai-systems/ai-utils";
 
 export interface ProfileData {
   about?: string;
@@ -11,17 +14,21 @@ export interface ProfileData {
   qualifications?: string;
   equipment?: string | any[];
   hourlyRate?: number | string;
-  location?: { lat?: number; lng?: number, formatted_address?: string } | string;
-  availability?: {
-    days: string[];
-    startTime: string;
-    endTime: string;
-    frequency?: string;
-    ends?: string;
-    startDate?: string;
-    endDate?: string;
-    occurrences?: number;
-  } | string;
+  location?:
+    | { lat?: number; lng?: number; formatted_address?: string }
+    | string;
+  availability?:
+    | {
+        days: string[];
+        startTime: string;
+        endTime: string;
+        frequency?: string;
+        ends?: string;
+        startDate?: string;
+        endDate?: string;
+        occurrences?: number;
+      }
+    | string;
   videoIntro?: string;
   references?: string;
   jobTitle?: string;
@@ -39,7 +46,11 @@ export interface ChatStep {
   [key: string]: any;
 }
 
-import { generateHashtags as generateHashtagsService, type ProfileData as HashtagProfileData } from '@/lib/services/hashtag-generation';
+import {
+  generateHashtags as generateHashtagsService,
+  type ProfileData as HashtagProfileData,
+} from "@/lib/services/hashtag-generation";
+import { toast } from "sonner";
 
 /**
  * Generate hashtags for profile data using AI
@@ -59,7 +70,7 @@ export async function generateHashtags(
   return generateHashtagsService(profileData as HashtagProfileData, ai, {
     maxHashtags: 3,
     includeLocation: true,
-    fallbackStrategy: 'skills-based'
+    fallbackStrategy: "skills-based",
   });
 }
 
@@ -70,7 +81,9 @@ export async function handleProfileSubmission(
   requiredData: ProfileData,
   userToken: string,
   userId: string,
-  setChatSteps: (steps: ChatStep[] | ((prev: ChatStep[]) => ChatStep[])) => void,
+  setChatSteps: (
+    steps: ChatStep[] | ((prev: ChatStep[]) => ChatStep[])
+  ) => void,
   setWorkerProfileId: (id: string) => void,
   setError: (error: string | null) => void,
   router: any,
@@ -82,10 +95,10 @@ export async function handleProfileSubmission(
     const hashtagStep: ChatStep = {
       id: hashtagStepId,
       type: "hashtag-generation",
-      isComplete: false
+      isComplete: false,
     };
-    setChatSteps(prev => [...prev, hashtagStep]);
-    
+    setChatSteps((prev) => [...prev, hashtagStep]);
+
     // Generate hashtags
     const hashtagData = {
       about: requiredData.about,
@@ -93,29 +106,30 @@ export async function handleProfileSubmission(
       skills: requiredData.skills,
       equipment: requiredData.equipment,
     };
-    console.log('🔍 Hashtag generation data:', hashtagData);
+
     const hashtags = await generateHashtags(hashtagData, ai);
-    console.log('🔍 Generated hashtags:', hashtags);
-    
+
     // Mark hashtag step as complete
-    setChatSteps(prev => prev.map(step => 
-      step.id === hashtagStepId ? { ...step, isComplete: true } : step
-    ));
-    
+    setChatSteps((prev) =>
+      prev.map((step) =>
+        step.id === hashtagStepId ? { ...step, isComplete: true } : step
+      )
+    );
+
     // Add profile saving step
     const savingStepId = Date.now() + 1;
     const savingStep: ChatStep = {
       id: savingStepId,
       type: "bot",
       content: "Saving your profile with generated hashtags...",
-      isComplete: false
+      isComplete: false,
     };
-    setChatSteps(prev => [...prev, savingStep]);
+    setChatSteps((prev) => [...prev, savingStep]);
 
     // Start with required data and hashtags; only add/override location/lat/lng if we have parsed location data
     const profileDataWithHashtags: any = {
       ...requiredData,
-      hashtags: hashtags
+      hashtags: hashtags,
     };
 
     const { databaseLocation } = parseLocationData(requiredData.location);
@@ -131,51 +145,54 @@ export async function handleProfileSubmission(
         profileDataWithHashtags.longitude = databaseLocation.longitude;
       }
     }
-    
-    // Debug: Log the data being sent to the action
-    console.log('🔍 Data being sent to action:', profileDataWithHashtags);
-    console.log('🔍 requiredData:', requiredData);
-    
-    const result = await saveWorkerProfileFromOnboardingAction(profileDataWithHashtags as any, userToken);
-    
+
+    const result = await saveWorkerProfileFromOnboardingAction(
+      profileDataWithHashtags as any,
+      userToken
+    );
+
     // Mark saving step as complete
-    setChatSteps(prev => prev.map(step => 
-      step.id === savingStepId ? { ...step, isComplete: true } : step
-    ));
-    
+    setChatSteps((prev) =>
+      prev.map((step) =>
+        step.id === savingStepId ? { ...step, isComplete: true } : step
+      )
+    );
+
     if (result.success) {
       if (result.workerProfileId) {
         setWorkerProfileId(result.workerProfileId);
       }
-      
+
       // Add success step
       const successStep: ChatStep = {
         id: Date.now() + 2,
         type: "bot",
-        content: "🎉 Profile created successfully! Redirecting to your dashboard...",
-        isComplete: true
+        content:
+          "🎉 Profile created successfully! Redirecting to your dashboard...",
+        isComplete: true,
       };
-      setChatSteps(prev => [...prev, successStep]);
-      
+      setChatSteps((prev) => [...prev, successStep]);
+
       router.push(`/user/${userId}/worker`);
     } else {
-      console.error('Profile submission failed:', result.error);
-      const errorMessage = result.error || 'Failed to save profile. Please try again.';
+      console.error("Profile submission failed:", result.error);
+      const errorMessage =
+        result.error || "Failed to save profile. Please try again.";
       setError(errorMessage);
-      
+
       // Add error step to show the actual error to user
       const errorStep: ChatStep = {
         id: Date.now() + 2,
         type: "bot",
         content: `❌ Profile submission failed: ${errorMessage}`,
-        isComplete: true
+        isComplete: true,
       };
-      setChatSteps(prev => [...prev, errorStep]);
-      
+      setChatSteps((prev) => [...prev, errorStep]);
+
       throw new Error(errorMessage);
     }
   } catch (error) {
-    setError('An error occurred while saving your profile. Please try again.');
+    setError("An error occurred while saving your profile. Please try again.");
   }
 }
 
@@ -189,16 +206,16 @@ export async function createWorkerProfile(
 ): Promise<string | null> {
   try {
     const result = await createWorkerProfileAction(userToken);
-    
+
     if (result.success && result.workerProfileId) {
       setWorkerProfileId(result.workerProfileId);
       return result.workerProfileId;
     } else {
-      setError('Failed to create worker profile. Please try again.');
+      setError("Failed to create worker profile. Please try again.");
       return null;
     }
   } catch (error) {
-    setError('Failed to create worker profile. Please try again.');
+    setError("Failed to create worker profile. Please try again.");
     return null;
   }
 }
@@ -213,47 +230,62 @@ export function processFormDataForSubmission(
   return new Promise(async (resolve, reject) => {
     try {
       // Extract job title from skills field if not already provided
-      let extractedJobTitle = formData.jobTitle || '';
+      let extractedJobTitle = formData.jobTitle || "";
       if (!extractedJobTitle && formData.skills && ai) {
         try {
           const jobTitleResult = await interpretJobTitle(formData.skills, ai);
           if (jobTitleResult && jobTitleResult.confidence >= 50) {
             extractedJobTitle = jobTitleResult.jobTitle;
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
       // Parse experience to get numeric values
-      const { years: experienceYears, months: experienceMonths } = parseExperienceToNumeric(formData.experience || '');
-      
+      const { years: experienceYears, months: experienceMonths } =
+        parseExperienceToNumeric(formData.experience || "");
+
       const requiredData: ProfileData = {
-        about: formData.about || '',
-        experience: formData.experience || '',
-        skills: formData.skills || '',
-        qualifications: formData.qualifications || '',
-        equipment: typeof formData.equipment === 'string' && formData.equipment.trim().length > 0
-          ? formData.equipment.split(/[,\n;]/).map((item: string) => ({ name: item.trim(), description: undefined })).filter((item: { name: string; description: undefined }) => item.name.length > 0)
-          : [],
-        hourlyRate: String(formData.hourlyRate || ''),
-        location: typeof formData.location === 'string' ? formData.location : JSON.stringify(formData.location || ''),
-        availability: formData.availability || { 
-          days: [], 
-          startTime: '09:00', 
-          endTime: '17:00',
-          frequency: 'weekly',
-          ends: 'never',
-          startDate: new Date().toISOString().split('T')[0],
+        about: formData.about || "",
+        experience: formData.experience || "",
+        skills: formData.skills || "",
+        qualifications: formData.qualifications || "",
+        equipment:
+          typeof formData.equipment === "string" &&
+          formData.equipment.trim().length > 0
+            ? formData.equipment
+                .split(/[,\n;]/)
+                .map((item: string) => ({
+                  name: item.trim(),
+                  description: undefined,
+                }))
+                .filter(
+                  (item: { name: string; description: undefined }) =>
+                    item.name.length > 0
+                )
+            : [],
+        hourlyRate: String(formData.hourlyRate || ""),
+        location:
+          typeof formData.location === "string"
+            ? formData.location
+            : JSON.stringify(formData.location || ""),
+        availability: formData.availability || {
+          days: [],
+          startTime: "09:00",
+          endTime: "17:00",
+          frequency: "weekly",
+          ends: "never",
+          startDate: new Date().toISOString().split("T")[0],
           endDate: undefined,
-          occurrences: undefined
+          occurrences: undefined,
         },
-        videoIntro: typeof formData.videoIntro === 'string' ? formData.videoIntro : '',
-        time: formData.time || '',
+        videoIntro:
+          typeof formData.videoIntro === "string" ? formData.videoIntro : "",
+        time: formData.time || "",
         jobTitle: formData.jobTitle || extractedJobTitle,
         experienceYears: experienceYears,
-        experienceMonths: experienceMonths
+        experienceMonths: experienceMonths,
       };
-      
+
       resolve(requiredData);
     } catch (error) {
       reject(error);
@@ -264,7 +296,10 @@ export function processFormDataForSubmission(
 /**
  * Validate form data before submission
  */
-export function validateFormData(formData: any): { isValid: boolean; errors: Record<string, string> } {
+export function validateFormData(formData: any): {
+  isValid: boolean;
+  errors: Record<string, string>;
+} {
   const validation = validateWorkerProfileData(formData);
   return validation;
 }
@@ -281,26 +316,29 @@ export async function handleManualFormSubmission(
   router: any,
   ai?: any
 ): Promise<void> {
-  if (!userToken) {
-    setError('Authentication required. Please sign in again.');
-    return;
-  }
-
-  // Validate the form data before proceeding
-  const validation = validateFormData(formData);
-  if (!validation.isValid) {
-    setError(`Form validation failed: ${Object.values(validation.errors).join(', ')}`);
-    return;
-  }
-
-  setIsSubmitting(true);
-  setError(null);
-  
   try {
+    if (!userToken) {
+      setError("Authentication required. Please sign in again.");
+      return;
+    }
+
+    // Validate the form data before proceeding
+    const validation = validateFormData(formData);
+    if (!validation.isValid) {
+      toast.error(
+        `Form validation failed: ${Object.values(validation.errors).join(", ")}`
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
     const requiredData = await processFormDataForSubmission(formData, ai);
-    
+    console.log("requiredData", requiredData);
+
     // Save the profile data to database
-    await handleProfileSubmission(
+    const result = await handleProfileSubmission(
       requiredData,
       userToken,
       userId,
@@ -310,8 +348,10 @@ export async function handleManualFormSubmission(
       router,
       ai
     );
+
+    toast.success("Profile updated successfully!");
   } catch (error) {
-    setError('Failed to save profile. Please try again.');
+    toast.error("Failed to save profile. Please try again.");
   } finally {
     setIsSubmitting(false);
   }

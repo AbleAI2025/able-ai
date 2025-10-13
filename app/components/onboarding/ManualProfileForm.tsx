@@ -101,13 +101,13 @@ export const validateWorkerProfileData = (formData: FormData, workerProfileId?: 
         }
         break;
       case 'location':
-        if (!value || !value.lat || !value.lng) {
+        if (!value) {
           errors.location = 'Please select your location';
           isValid = false;
         }
         break;
       case 'availability':
-        if (!value || !value.days || value.days.length === 0) {
+        if (!value.length) {
           errors.availability = 'Please select at least one day of availability';
           isValid = false;
         }
