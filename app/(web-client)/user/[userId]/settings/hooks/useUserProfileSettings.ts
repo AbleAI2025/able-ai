@@ -96,7 +96,7 @@ export const useUserProfileSettings = (user: User | null) => {
       return { success: true, data: updatedProfile };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update profile.";
-      throw new Error(message);
+      toast.error(message);
     } finally {
       setIsSavingProfile(false);
     }
