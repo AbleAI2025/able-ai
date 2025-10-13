@@ -671,8 +671,6 @@ Also provide a natural, conversational summary like "Got it! You have [equipment
 
     if (result.ok) {
       const data = result.data as any;
-      console.log('🔍 AI sanitization raw response:', result.data);
-      console.log('🔍 AI sanitization parsed data:', data);
       return {
         sanitized: data.sanitized || value,
         naturalSummary: data.naturalSummary,

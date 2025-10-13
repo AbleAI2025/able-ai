@@ -154,7 +154,7 @@ export function useOnboardingHandlers({
 }: any) {
 
   const handleInputSubmit = useCallback(async (stepId: number, inputName: string, inputValue?: string): Promise<boolean> => {
-    console.log('🔍 handleInputSubmit called with:', { stepId, inputName, inputValue, formDataValue: formData[inputName] });
+
     const valueToUse = inputValue ?? formData[inputName];
     if (!valueToUse) {
       console.error('No value provided for input submission');
@@ -344,7 +344,7 @@ export function useOnboardingHandlers({
     }
 
     // Handle different field types
-    console.log('🔍 Processing field type:', inputName, 'jobTitle:', formData.jobTitle);
+
     if (inputName === 'skills' && !formData.jobTitle) {
       // First check user's own similar skills
       const similarSkillsResult = await checkExistingSimilarSkill(valueToUse, workerProfileId || '');
@@ -369,14 +369,13 @@ export function useOnboardingHandlers({
         return true; // Validation passed
       } else {
         // Fall back to enhanced validation for skills field
-        console.log('🔍 Job title interpretation failed, using enhanced validation for skills');
         try {
           const validationResult = await enhancedValidation(inputName, valueToUse, 'text');
-          console.log('🔍 Skills validation result:', validationResult);
-          
+
+
           if (validationResult.sufficient && validationResult.sanitized && validationResult.naturalSummary) {
             // Create sanitized confirmation step
-            console.log('🔍 Creating sanitized confirmation step for skills');
+
           setChatSteps((prev: any[]) => [
             ...prev,
             {
@@ -394,7 +393,7 @@ export function useOnboardingHandlers({
             return true; // Validation passed
           } else {
             // Show clarification prompt
-            console.log('🔍 Showing clarification prompt for skills:', validationResult.clarificationPrompt);
+
             setChatSteps((prev: any[]) => [
               ...prev,
               {
@@ -415,18 +414,16 @@ export function useOnboardingHandlers({
       }
     } else if (inputName === 'videoIntro') {
       // Special handling for video field - should not be processed as text input
-      console.log('🔍 Video field detected - this should be handled by video component, not text validation');
       return false; // Don't process video field as text input
     } else {
       // For other fields, use enhanced validation to create confirmation steps
-      console.log('🔍 Processing field:', inputName, 'with value:', valueToUse);
       try {
         const validationResult = await enhancedValidation(inputName, valueToUse, 'text');
-        console.log('🔍 Validation result for', inputName, ':', validationResult);
-        
+
+
         if (validationResult.sufficient && validationResult.sanitized && validationResult.naturalSummary) {
           // Create sanitized confirmation step
-          console.log('🔍 Creating sanitized confirmation step for', inputName);
+
           setChatSteps((prev: any[]) => [
             ...prev,
             {
@@ -444,7 +441,7 @@ export function useOnboardingHandlers({
           return true; // Validation passed
         } else {
           // Show clarification prompt and STOP - don't proceed to next field
-          console.log('🔍 Showing clarification prompt for', inputName, ':', validationResult.clarificationPrompt);
+
           setChatSteps((prev: any[]) => [
             ...prev,
             {
@@ -616,19 +613,13 @@ export function useOnboardingHandlers({
   }, [formData, setFormData, chatSteps, setChatSteps]);
 
   const handleSimilarSkillsGoHome = useCallback(() => {
-    // Debug logging
-    console.log('🔍 handleSimilarSkillsGoHome called');
-    console.log('🔍 user:', user);
-    console.log('🔍 user?.uid:', user?.uid);
-    console.log('🔍 router:', router);
-    
+
+
     // Navigate to worker profile page
     if (user?.uid) {
       const targetUrl = `/user/${user.uid}/worker`;
-      console.log('🔍 Navigating to:', targetUrl);
       router.push(targetUrl);
     } else {
-      console.error('🔍 No user UID available');
       // Fallback: try to go back
       router.back();
     }
@@ -733,7 +724,7 @@ export function useOnboardingHandlers({
   }, []);
 
   const enhancedValidation = useCallback(async (field: string, value: unknown, type: string): Promise<{ sufficient: boolean, clarificationPrompt?: string, sanitized?: string | unknown, naturalSummary?: string, extractedData?: string }> => {
-    console.log('🔍 Enhanced validation called for field:', field, 'with value:', value);
+
     
     if (!value) {
       return { 
@@ -761,7 +752,7 @@ export function useOnboardingHandlers({
         const hasSkipKeywords = skipKeywords.some(keyword => trimmedValue.toLowerCase().includes(keyword));
         
         if (hasSkipKeywords) {
-          console.log('🔍 Qualifications skip response detected:', trimmedValue);
+
           // Bypass all validation for qualifications skip responses
           return {
             sufficient: true,
@@ -775,26 +766,10 @@ export function useOnboardingHandlers({
       // 1. ENHANCED INPUT VALIDATION (AI + Hardcoded patterns)
       const validation = await validateUserInput(trimmedValue, analysisContext, ai);
       
-      // Debug logging for qualifications, equipment, and hourlyRate
-      if (field === 'qualifications' || field === 'equipment' || field === 'hourlyRate') {
-        console.log(`🔍 ${field} validation:`, {
-          input: trimmedValue,
-          isValid: validation.isValid,
-          reason: validation.reason,
-          confidence: validation.confidence,
-          isInappropriate: validation.isInappropriate,
-          needsSupport: validation.needsSupport,
-          isHelpRequest: validation.isHelpRequest
-        });
-      }
       
       // 2. CHECK FOR HELP REQUESTS OR SUPPORT NEEDS
       if (validation.isHelpRequest || validation.needsSupport) {
-        console.log(`🔍 ${field} help/support detected:`, {
-          isHelpRequest: validation.isHelpRequest,
-          needsSupport: validation.needsSupport,
-          reason: validation.reason
-        });
+
         const response = generateValidationResponse(validation, analysisContext);
         return {
           sufficient: false,
@@ -805,15 +780,12 @@ export function useOnboardingHandlers({
       
       // 3. CHECK FOR INAPPROPRIATE CONTENT
       if (validation.isInappropriate) {
-        console.log(`🔍 ${field} inappropriate content detected:`, {
-          isInappropriate: validation.isInappropriate,
-          reason: validation.reason
-        });
-        
+
+
         // Increment inappropriate content counter for escalation
         const newInappropriateCount = inappropriateContentCount + 1;
         setInappropriateContentCount(newInappropriateCount);
-        
+
         // After 3 inappropriate responses, escalate using old onboarding escalation system
         if (newInappropriateCount >= 3) {
           const description = `Onboarding stopped after ${newInappropriateCount} inappropriate content responses. ${validation.reason}`;
@@ -854,24 +826,12 @@ export function useOnboardingHandlers({
         };
       }
       
-            // Debug: Check if validation failed for other reasons
-            if (!validation.isValid) {
-              console.log(`🔍 ${field} validation failed:`, {
-                isValid: validation.isValid,
-                reason: validation.reason,
-                suggestedAction: validation.suggestedAction,
-                confidence: validation.confidence,
-                isInappropriate: validation.isInappropriate,
-                needsSupport: validation.needsSupport,
-                isHelpRequest: validation.isHelpRequest
-              });
-            }
       
       // 4. CHECK FOR ESCALATION NEEDS (skip for equipment and hourlyRate fields)
       if (!['equipment', 'hourlyRate', 'wage'].includes(field) && requiresEscalation(validation)) {
         const escalationDetails = getEscalationDetails(validation, analysisContext, trimmedValue);
-        console.log('🚨 Escalation required:', escalationDetails);
-        
+
+
         // TODO: Implement escalation handling (save to database, notify support team)
         return {
           sufficient: false,
@@ -884,7 +844,7 @@ export function useOnboardingHandlers({
       let aiSanitizedResult: any = null;
       try {
         aiSanitizedResult = await sanitizeWithAI(field, trimmedValue);
-        console.log('🔍 AI sanitization result:', aiSanitizedResult);
+
       } catch (aiError) {
         console.error('AI sanitization failed:', aiError);
       }
@@ -894,7 +854,6 @@ export function useOnboardingHandlers({
       
       // Use AI-sanitized value if available, otherwise use original trimmed value
       const valueForFieldSetter = aiSanitizedResult?.sanitized || trimmedValue;
-      console.log(`🔍 ${field} calling field setter with:`, valueForFieldSetter);
       
       // Route to appropriate field setter based on field name
       switch (field) {
@@ -1020,8 +979,6 @@ export function useOnboardingHandlers({
           validation.sanitizedInput || 
           trimmedValue;
         
-        console.log('🔍 Field setter result:', validationResult);
-        console.log('🔍 Final sanitized value:', sanitizedValue);
         extractedData = sanitizedValue;
       }
 
@@ -1045,8 +1002,7 @@ export function useOnboardingHandlers({
       })();
       
       const naturalSummary = aiSanitizedResult?.naturalSummary || fallbackSummary;
-      console.log('🔍 Natural summary being used:', naturalSummary);
-      console.log('🔍 AI sanitized result natural summary:', aiSanitizedResult?.naturalSummary);
+
       
       return {
         sufficient: true,

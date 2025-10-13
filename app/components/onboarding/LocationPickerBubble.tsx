@@ -196,7 +196,10 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({
         
         setMarker(coords);
         setFormattedAddress(place.formatted_address);
-        onChange({ lat, lng, formatted_address: place.formatted_address });
+        // Only call onChange immediately if showConfirm is true, otherwise wait for confirm
+        if (showConfirm !== false) {
+          onChange({ lat, lng, formatted_address: place.formatted_address });
+        }
       } else {
         setError('Location not found. Please try a different search term.');
       }

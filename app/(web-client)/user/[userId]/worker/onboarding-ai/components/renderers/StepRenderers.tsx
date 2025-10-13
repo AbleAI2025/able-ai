@@ -123,12 +123,7 @@ export function renderLocationStep(
           Please share your location.
         </div>
       </div>
-      <LocationPickerBubble value={value} onChange={onChange} showConfirm={false} onConfirm={onConfirm} role="GIG_WORKER" />
-      {onConfirm && (
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onConfirm} style={{ background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}>Confirm</button>
-        </div>
-      )}
+      <LocationPickerBubble value={value} onChange={onChange} showConfirm={true} onConfirm={onConfirm} role="GIG_WORKER" />
     </div>
   );
 }
@@ -510,13 +505,9 @@ export function renderSimilarSkillsConfirmationStep(
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
           <button onClick={() => {
-            console.log('🔍 Go Home button clicked');
-            console.log('🔍 handlers:', handlers);
-            console.log('🔍 handlers.onGoHome:', handlers.onGoHome);
+
             if (handlers.onGoHome) {
               handlers.onGoHome();
-            } else {
-              console.error('🔍 handlers.onGoHome is not defined!');
             }
           }} style={{ background: 'transparent', color: '#888', border: '1px solid #444', borderRadius: '8px', padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s ease' }}>
             ← Go Home
