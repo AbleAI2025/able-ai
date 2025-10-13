@@ -1,0 +1,45 @@
+'use server';
+
+import Stripe from 'stripe';
+import { headers } from 'next/headers';
+import { eq } from 'drizzle-orm';
+import { stripeApi as stripeServer } from '@/lib/stripe-server';
+import { db } from "@/lib/drizzle/db";
+import { UsersTable } from "@/lib/drizzle/schema";
+
+const stripeApi: Stripe = stripeServer;
+
+export async function createCustomerPortalSession(firebaseUid: string) {
+  const requestHeaders = await headers();
+  const originUrl = requestHeaders.get('origin') || requestHeaders.get('host');
+
+  try {
+    if (!firebaseUid) {
+      return { error: 'User ID is required.', status: 400 }
+    }
+
+    const userRecord = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.firebaseUid, firebaseUid),
+      columns: {
+        stripeCustomerId: true,
+      }
+    });
+
+    if (!userRecord) throw new Error('User not found');
+
+    if (!userRecord.stripeCustomerId) {
+      return { error: 'Stripe Connected Account ID not found for this user. Please connect your bank account first.', status: 404 };
+    }
+
+    const session = await stripeApi.billingPortal.sessions.create({
+      customer: userRecord.stripeCustomerId,
+      return_url: `${originUrl}/user/${firebaseUid}/settings`,
+    });
+
+    return { url: session.url, status: 200 }
+
+  } catch (error: any) {
+    console.error('Error creating Stripe Account Link:', error);
+    return { error: error.message, status: 500 }
+  }
+}

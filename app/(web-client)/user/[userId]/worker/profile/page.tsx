@@ -9,6 +9,7 @@ import CloseButton from "@/app/components/profile/CloseButton";
 import { useAuth } from "@/context/AuthContext";
 import { getLastRoleUsed } from "@/lib/last-role-used";
 import PublicWorkerProfile from "@/app/types/workerProfileTypes";
+import StripeConnectionGuard from "@/app/components/shared/StripeConnectionGuard";
 
 export default function WorkerOwnedProfilePage() {
   const router = useRouter();
@@ -54,13 +55,14 @@ export default function WorkerOwnedProfilePage() {
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not load your profile.");
       setProfile(null);
+      router.replace(`/user/${userId}/worker/onboarding-ai`);
     }
     setLoadingProfile(false);
   }
 
   useEffect(() => {
     if (!loadingAuth && user) {
-      if (lastRoleUsed === "GIG_WORKER" || user.claims.role === "QA") {
+      if (lastRoleUsed === "GIG_WORKER") {
         fetchUserProfile(user.token);
       } else {
         router.replace("/select-role");
@@ -76,7 +78,6 @@ export default function WorkerOwnedProfilePage() {
   if (loadingAuth || loadingProfile) {
     return (
       <div className={styles.pageLoadingContainer}>
-        {/* Using a generic Loader2 for now, ensure it's imported or replace with appropriate loader */}
         <UserCircle className="animate-spin" size={48} /> Loading Profile...
       </div>
     );
@@ -97,15 +98,17 @@ export default function WorkerOwnedProfilePage() {
   }
 
   return (
-    <div className={styles.profilePageContainer}>
-      <CloseButton />
-      <WorkerProfile
-        workerProfile={profile}
-        isSelfView={true}
-        handleAddSkill={() => {}}
-        handleSkillDetails={handleSkillDetails}
-        fetchUserProfile={fetchUserProfile}
-      />
-    </div>
+    <StripeConnectionGuard userId={userId} redirectPath={`/user/${userId}/settings`}>
+      <div className={styles.profilePageContainer}>
+        <CloseButton />
+        <WorkerProfile
+          workerProfile={profile}
+          isSelfView={true}
+          handleAddSkill={() => { }}
+          handleSkillDetails={handleSkillDetails}
+          fetchUserProfile={fetchUserProfile}
+        />
+      </div>
+    </StripeConnectionGuard>
   );
 }

@@ -1,15 +1,19 @@
 import { db } from "@/lib/drizzle/db";
-import { UsersTable } from "@/lib/drizzle/schema/users";
+import { UsersTable, GigWorkerProfilesTable } from "@/lib/drizzle/schema/users";
 import { eq } from "drizzle-orm";
 import { isUserAuthenticated } from "@/lib/user.server";
 
 export interface ExistingProfileData {
   hasLocation: boolean;
   hasAvailability: boolean;
+  hasSkills: boolean;
+  hasFullBio: boolean;
   profileData: {
     fullName?: string;
     location?: string;
     availabilityJson?: any;
+    skills?: string;
+    fullBio?: string;
   };
 }
 
@@ -41,10 +45,14 @@ export async function checkExistingProfileData(token: string): Promise<{
     }
 
     const profile = user.gigWorkerProfile;
+    const skills = profile?.skills?.map(skill => skill.name).join(', ') || '';
+    
     const profileData = {
       fullName: user.fullName,
       location: profile?.location || undefined,
-      availabilityJson: profile?.availabilityJson
+      availabilityJson: profile?.availabilityJson,
+      skills: skills || undefined,
+      fullBio: profile?.fullBio || undefined
     };
 
     const existingData: ExistingProfileData = {
@@ -52,6 +60,8 @@ export async function checkExistingProfileData(token: string): Promise<{
       hasAvailability: !!(profile?.availabilityJson && 
         Array.isArray(profile.availabilityJson) && 
         profile.availabilityJson.length > 0),
+      hasSkills: !!(skills && skills.trim().length > 0),
+      hasFullBio: !!(profile?.fullBio && profile.fullBio.trim().length > 0),
       profileData
     };
 

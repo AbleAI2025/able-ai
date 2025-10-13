@@ -44,7 +44,18 @@ export default function ReportIssuePage() {
     
     // Use simplified context parameter
     if (context.contextId) {
-      return `${baseUrl}?context=${context.contextId}`;
+      const contextParams = getContextForURL(context);
+      const queryParams = new URLSearchParams();
+      
+      // Add context ID
+      queryParams.set('context', context.contextId);
+      
+      // Add gigId if present
+      if (contextParams.gigId) {
+        queryParams.set('gigId', contextParams.gigId);
+      }
+      
+      return `${baseUrl}?${queryParams.toString()}`;
     }
     
     return baseUrl;

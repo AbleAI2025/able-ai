@@ -40,9 +40,9 @@ export async function stripeStatus(accountId: string) {
       transfersActive: transfersActive,
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching Stripe account status:', error);
 
-    return { error: error.message || 'Failed to retrieve Stripe account status.', status: 500 };
+    return { error: (error as Error).message || 'Failed to retrieve Stripe account status.', status: 500 };
   }
 }

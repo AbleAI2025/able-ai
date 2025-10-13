@@ -79,15 +79,15 @@ export async function GET(
 
     // Transform the gig data to match the expected format for the amend page
     const gigData = {
-      id: result.gig.id,
-      gigDescription: result.gig.specialInstructions || '',
-      gigDate: result.gig.date,
-      gigTime: `${result.gig.startTime} - ${result.gig.endTime}`,
-      hourlyRate: result.gig.hourlyRate,
-      location: result.gig.location,
-      statusInternal: result.gig.statusInternal,
-      buyerId: result.gig.buyerName, // This might need adjustment
-      workerId: result.gig.workerName || '', // This might need adjustment
+      id: result.data.id,
+      gigDescription: result.data.specialInstructions || '',
+      gigDate: result.data.date,
+      gigTime: `${result.data.startTime} - ${result.data.endTime}`,
+      hourlyRate: result.data.hourlyRate,
+      location: result.data.location,
+      statusInternal: result.data.statusInternal,
+      buyerId: result.data.buyerName, // This might need adjustment
+      workerId: result.data.workerName || '', // This might need adjustment
     };
 
     return NextResponse.json(gigData);

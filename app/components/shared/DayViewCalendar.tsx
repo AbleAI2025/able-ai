@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function */
+ 
 import React from 'react';
 import moment from 'moment';
 import styles from './DayViewCalendar.module.css';

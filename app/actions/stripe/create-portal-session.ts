@@ -1,12 +1,14 @@
 'use server';
 
+import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
-import { stripeApi } from '@/lib/stripe-server';
+import { stripeApi as stripeServer } from '@/lib/stripe-server';
 import { db } from "@/lib/drizzle/db";
 import { UsersTable } from "@/lib/drizzle/schema";
 
+const stripeApi: Stripe = stripeServer;
 
-export async function createPortalSession(firebaseUid: string) {
+export async function createAccountPortalSession(firebaseUid: string) {
   try {
     if (!firebaseUid) {
       return { error: 'User ID is required.', status: 400 }

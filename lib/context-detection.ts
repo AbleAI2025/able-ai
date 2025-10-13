@@ -47,6 +47,65 @@ export function detectPageContext(pathname: string): PageContext {
 
   // Gigs pages
   if (cleanPath.includes('/gigs')) {
+    // Individual gig page - extract gigId from path
+    const gigIdMatch = cleanPath.match(/\/gigs\/([^\/]+)/);
+    if (gigIdMatch) {
+      const gigId = gigIdMatch[1];
+      const isWorkerPage = cleanPath.includes('/worker/');
+      const isBuyerPage = cleanPath.includes('/buyer/');
+      
+      if (isWorkerPage) {
+        return {
+          pageType: 'gigs',
+          section: 'view-worker',
+          action: 'viewing',
+          description: `You are viewing a specific gig (ID: ${gigId}) as a worker. You can see gig details, apply if it's an offer, or manage your application.`,
+          contextId: 'gig-view-worker',
+          data: {
+            gigId: gigId,
+            availableActions: ['View gig details', 'Apply to gig', 'Save gig', 'Contact buyer', 'Report issue'],
+            gigContext: {
+              type: 'worker-view',
+              gigId: gigId
+            }
+          }
+        };
+      } else if (isBuyerPage) {
+        return {
+          pageType: 'gigs',
+          section: 'view-buyer',
+          action: 'managing',
+          description: `You are viewing your own gig (ID: ${gigId}) as a buyer. You can manage applications, edit details, or monitor progress.`,
+          contextId: 'gig-view-buyer',
+          data: {
+            gigId: gigId,
+            availableActions: ['View applications', 'Edit gig details', 'Manage workers', 'Close gig', 'Extend deadline'],
+            gigContext: {
+              type: 'buyer-view',
+              gigId: gigId
+            }
+          }
+        };
+      } else {
+        // General gig page without role context
+        return {
+          pageType: 'gigs',
+          section: 'view',
+          action: 'viewing',
+          description: `You are viewing a specific gig (ID: ${gigId}). You can see gig details and take appropriate actions based on your role.`,
+          contextId: 'gig-view',
+          data: {
+            gigId: gigId,
+            availableActions: ['View gig details', 'Apply to gig', 'Contact buyer', 'Report issue'],
+            gigContext: {
+              type: 'general-view',
+              gigId: gigId
+            }
+          }
+        };
+      }
+    }
+    
     if (cleanPath.includes('/browse')) {
       return {
         pageType: 'gigs',
@@ -241,12 +300,19 @@ Please provide helpful, context-aware assistance based on what the user is tryin
  * Gets context data that can be passed via URL parameters
  */
 export function getContextForURL(context: PageContext): Record<string, string> {
-  return {
+  const baseContext: Record<string, string> = {
     pageType: context.pageType,
     section: context.section || '',
     action: context.action || '',
     description: context.description
   };
+
+  // Add gigId if present in context data
+  if (context.data?.gigId) {
+    baseContext.gigId = context.data.gigId;
+  }
+
+  return baseContext;
 }
 
 /**
@@ -312,6 +378,36 @@ export function getContextFromId(contextId: string): PageContext | null {
       contextId: 'gigs-manage',
       data: {
         availableActions: ['View gigs', 'Create new gig', 'Manage existing gigs']
+      }
+    },
+    'gig-view-worker': {
+      pageType: 'gigs',
+      section: 'view-worker',
+      action: 'viewing',
+      description: 'You are viewing a specific gig as a worker. You can see gig details, apply if it\'s an offer, or manage your application.',
+      contextId: 'gig-view-worker',
+      data: {
+        availableActions: ['View gig details', 'Apply to gig', 'Save gig', 'Contact buyer', 'Report issue']
+      }
+    },
+    'gig-view-buyer': {
+      pageType: 'gigs',
+      section: 'view-buyer',
+      action: 'managing',
+      description: 'You are viewing your own gig as a buyer. You can manage applications, edit details, or monitor progress.',
+      contextId: 'gig-view-buyer',
+      data: {
+        availableActions: ['View applications', 'Edit gig details', 'Manage workers', 'Close gig', 'Extend deadline']
+      }
+    },
+    'gig-view': {
+      pageType: 'gigs',
+      section: 'view',
+      action: 'viewing',
+      description: 'You are viewing a specific gig. You can see gig details and take appropriate actions based on your role.',
+      contextId: 'gig-view',
+      data: {
+        availableActions: ['View gig details', 'Apply to gig', 'Contact buyer', 'Report issue']
       }
     },
     'settings': {
@@ -417,17 +513,39 @@ export function parseContextFromURL(searchParams: URLSearchParams): PageContext 
   const contextId = searchParams.get('context');
   if (contextId) {
     const context = getContextFromId(contextId);
-    if (context) return context;
+    if (context) {
+      // Add gigId if present in URL parameters
+      const gigId = searchParams.get('gigId');
+      if (gigId && context.data) {
+        context.data.gigId = gigId;
+        context.data.gigContext = {
+          type: context.data.gigContext?.type || 'general-view',
+          gigId: gigId
+        };
+      }
+      return context;
+    }
   }
 
   // Fallback to legacy parameter parsing
+  const gigId = searchParams.get('gigId');
+  const data: Record<string, any> = {
+    availableActions: searchParams.get('availableActions')?.split(',') || []
+  };
+  
+  if (gigId) {
+    data.gigId = gigId;
+    data.gigContext = {
+      type: 'general-view',
+      gigId: gigId
+    };
+  }
+
   return {
     pageType: (searchParams.get('pageType') as PageContext['pageType']) || 'unknown',
     section: searchParams.get('section') || undefined,
     action: searchParams.get('action') || undefined,
     description: searchParams.get('description') || 'General platform assistance',
-    data: {
-      availableActions: searchParams.get('availableActions')?.split(',') || []
-    }
+    data: data
   };
 }

@@ -12,14 +12,14 @@ const StripeModal = ({
   connectionStep,
   isConnectingStripe,
   handleCloseModal,
-  handleOpenStripeConnection,
+  onPrimaryAction,
 }: {
   userId: string;
   userRole: UserRole;
   connectionStep: FlowStep;
   isConnectingStripe: boolean;
   handleCloseModal: () => void;
-  handleOpenStripeConnection: () => void;
+  onPrimaryAction: () => void;
 }) => {
   return (
     <div
@@ -69,7 +69,7 @@ const StripeModal = ({
           <>
             <div className={styles.modalActions}>
               <button
-                onClick={handleOpenStripeConnection}
+                onClick={onPrimaryAction}
                 className={`${styles.stripeButton} ${userRole === 'BUYER' ? styles.buyerBtn : styles.workerBtn}`}
                 disabled={isConnectingStripe}
               >

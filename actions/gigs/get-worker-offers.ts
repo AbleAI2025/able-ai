@@ -142,7 +142,7 @@ export async function getWorkerOffers(userId: string) {
           },
         },
       },
-    });
+    }); 
 
     if (!user) {
       return { error: "User not found", status: 404 };
@@ -181,8 +181,8 @@ export async function getWorkerOffers(userId: string) {
       },
       where: and(
         eq(GigsTable.statusInternal, PENDING_WORKER_ACCEPTANCE),
-        isNull(GigsTable.workerUserId),
-        ne(GigsTable.buyerUserId, user.id),
+        isNotNull(GigsTable.workerUserId),
+        eq(GigsTable.workerUserId, user.id),
         isNotNull(GigsTable.expiresAt),
         gt(GigsTable.expiresAt, new Date())
       ),

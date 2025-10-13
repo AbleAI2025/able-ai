@@ -18,11 +18,11 @@ const spinnerStyles = `
 async function fetchBuyerGigDetails(user: User, gigId: string): Promise<GigDetails | null> {
 
   const isViewQA = false;
-  const { gig, status } = await getGigDetails({ gigId, userId: user?.uid, role: 'buyer', isViewQA });
+  const { data, status } = await getGigDetails({ gigId, userId: user?.uid, role: 'buyer', isViewQA });
 
-  if (!gig || status !== 200) return null;
+  if (!data || status !== 200) return null;
 
-  return gig;
+  return data;
 }
 
 export default function BuyerGigDetailsPage() {

@@ -1,58 +1,38 @@
-/* eslint-disable max-lines-per-function */
 "use client";
-import Link from "next/link";
 
-// --- SHARED & HELPER COMPONENTS ---
 import SkillsDisplayTable from "@/app/components/profile/SkillsDisplayTable";
-import StatisticItemDisplay from "@/app/components/profile/StatisticItemDisplay";
-import AwardDisplayBadge from "@/app/components/profile/AwardDisplayBadge";
 import styles from "./WorkerProfile.module.css";
 
-import {
-  CalendarDays,
-  BadgeCheck,
-  ThumbsUp,
-  MessageSquare,
-  Edit2,
-} from "lucide-react";
 import {
   updateSocialLinkWorkerProfileAction,
   updateVideoUrlProfileAction,
 } from "@/actions/user/gig-worker-profile";
-import { firebaseApp } from "@/lib/firebase/clientApp";
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
 
 import PublicWorkerProfile, {
   Equipment,
   Qualification,
-  Review,
 } from "@/app/types/workerProfileTypes";
 import { useAuth } from "@/context/AuthContext";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import ProfileMedia from "./ProfileMedia";
-import CancelButton from "../shared/CancelButton";
-import { BadgeIcon } from "./GetBadgeIcon";
 import Qualifications from "./Qualifications";
 import Equipments from "./Equipments";
 import UserNameModal from "./UserNameModal";
 import SocialLinkModal from "@/app/(web-client)/user/[userId]/buyer/profile/SocialLinkModal";
+import RTWPopup from "./RTWPopup";
+import UserInfoBar from "./UserInfoBar";
+import AwardsFeedbackSection from "./AwardsFeedbackSection";
+import StatisticsSection from "./StatisticsSection";
 
 const WorkerProfile = ({
   workerProfile,
   isSelfView = false,
-  // handleAddSkill,
-  handleSkillDetails, // Optional handler for skill details
+  handleSkillDetails,
   fetchUserProfile,
 }: {
   workerProfile: PublicWorkerProfile;
   handleAddSkill?: (id: string) => void;
-  handleSkillDetails: (id: string) => void; // Now optional
+  handleSkillDetails: (id: string) => void;
   fetchUserProfile: (id: string) => void;
   userId?: string;
   isSelfView: boolean;
@@ -62,65 +42,6 @@ const WorkerProfile = ({
   const [showRtwPopup, setShowRtwPopup] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
-
-  const handleVideoUpload = useCallback(
-    async (file: Blob) => {
-      if (!user) {
-        console.error("Missing required parameters for video upload");
-        toast.error("Failed to upload video. Please try again.");
-        return;
-      }
-
-      if (!file || file.size === 0) {
-        console.error("Invalid file for video upload");
-        toast.error("Invalid video file. Please try again.");
-        return;
-      }
-
-      // Check file size (limit to 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
-        toast.error("Video file too large. Please use a file smaller than 50MB.");
-        return;
-      }
-
-      try {
-        const filePath = `workers/${
-          user.uid
-        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
-        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
-        const uploadTask = uploadBytesResumable(fileStorageRef, file);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // Progress handling if needed
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            toast.error("Video upload failed. Please try again.");
-          },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {
-                updateVideoUrlProfileAction(downloadURL, user.token);
-                toast.success("Video upload successfully");
-              })
-              .catch((error) => {
-                console.error("Failed to get download URL:", error);
-                toast.error("Failed to get video URL. Please try again.");
-              });
-          }
-        );
-      } catch (error) {
-        console.error("Video upload error:", error);
-        toast.error("Failed to upload video. Please try again.");
-      }
-    },
-    [user]
-  );
 
   useEffect(() => {
     if (workerProfile && workerProfile.id) {
@@ -132,120 +53,28 @@ const WorkerProfile = ({
 
   return (
     <div className={styles.profilePageContainer}>
-      {/* Top Section (Benji Image Style - Profile Image/Video, QR, Location) */}
+      {/* Top Section */}
       <ProfileMedia
         workerProfile={workerProfile}
         isSelfView={isSelfView}
         workerLink={workerLink}
-        onVideoUpload={handleVideoUpload}
+        updateVideoUrlProfileAction={updateVideoUrlProfileAction}
+        fetchUserProfile={fetchUserProfile}
       />
-      {/* User Info Bar (Benji Image Style - Name, Handle, Calendar) */}
-      <div className={styles.userInfoBar}>
-        <div className={styles.userInfo}>
-          <h1 className={styles.workerName}>
-            <span>{workerProfile.user?.fullName ?? ""}</span>
-            {isSelfView && (
-              <button
-                className={styles.editButton}
-                type="button"
-                aria-label="Edit name"
-                onClick={() => setIsOpen(true)}
-              >
-                <Edit2 size={16} color="#ffffff" className={styles.icon} />
-              </button>
-            )}
-          </h1>
-          {workerProfile?.user?.rtwStatus === "ACCEPTED" ? (
-            <div className={styles.verifiedBadgeContainer}>
-              <BadgeCheck size={25} className={styles.verifiedBadgeWorker} />
-              <span className={styles.verifiedText}>
-                Right to work verified
-              </span>
-            </div>
-          ) : isSelfView ? (
-            <button
-              type="button"
-              className={styles.verifyRTWButton}
-              onClick={() => setShowRtwPopup(true)}
-            >
-              Verify your right to work
-            </button>
-          ) : (
-            <span className={styles.verifiedText}>
-              Right to work not verified
-            </span>
-          )}
-        </div>
-        <h3 className={styles.workerName}>
-          <span>
-            {workerProfile?.socialLink
-              ? workerProfile.socialLink
-              : isSelfView
-              ? "Add social link"
-              : "Social link not provided"}
-          </span>
-          {isSelfView && (
-            <button
-              className={styles.editButton}
-              type="button"
-              aria-label="Edit social link"
-              onClick={() => setIsSocialModalOpen(true)}
-            >
-              <Edit2 size={14} color="#ffffff" className={styles.icon} />
-            </button>
-          )}
-        </h3>
-
-        <div className={styles.workerInfo}>
-          {true && (
-            <Link
-              href={
-                isSelfView
-                  ? "calendar"
-                  : `/user/${workerProfile.userId}/worker/${workerProfile.id}/availability`
-              }
-              className={`${styles.viewCalendarLink} ${styles.rightMargin}`}
-              aria-label="View calendar"
-            >
-              <CalendarDays size={28} className={styles.calendarIcon} />
-              <span>
-                {isSelfView ? "View calendar" : "Availability calendar"}
-              </span>
-            </Link>
-          )}
-        </div>
-      </div>
+      {/* User Info Bar */}
+      <UserInfoBar
+        workerProfile={workerProfile}
+        isSelfView={isSelfView}
+        onEditName={() => setIsOpen(true)}
+        onEditSocial={() => setIsSocialModalOpen(true)}
+        onVerifyRTW={() => setShowRtwPopup(true)}
+      />
       {/* Main content wrapper */}
       <div className={styles.mainContentWrapper}>
         {/* Statistics Section */}
-        <div>
-          <h3 className={styles.contentTitle}>Statistics</h3>
-          <div className={styles.statisticsItemsContainer}>
-            <StatisticItemDisplay
-              stat={{
-                id: 1,
-                icon: ThumbsUp,
-                value: workerProfile?.responseRateInternal || 0,
-                label: `Would work with ${
-                  workerProfile?.user?.fullName?.split(" ")?.[0] ?? ""
-                } again`,
-                iconColor: "#41a1e8",
-              }}
-            />
+        <StatisticsSection workerProfile={workerProfile} />
 
-            <StatisticItemDisplay
-              stat={{
-                id: 2,
-                icon: MessageSquare,
-                value: workerProfile?.averageRating || 0,
-                label: "Response rate",
-                iconColor: "#41a1e8",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Skills Section (User Image Style - Blue Card) */}
+        {/* Skills Section */}
         {
           <SkillsDisplayTable
             skills={workerProfile?.skills}
@@ -256,41 +85,12 @@ const WorkerProfile = ({
           />
         }
 
-        {/* Awards & Feedback Section (User Image Style) */}
-        {workerProfile.awards && ( // Only show section if there are awards or feedback
-          <div className={styles.awardsFeedbackGrid}>
-            {workerProfile.awards && workerProfile.awards.length > 0 && (
-              <div>
-                <h3 className={styles.contentTitle}>Awards:</h3>
-                <div className={styles.awardsContainer}>
-                  {workerProfile.awards.map((award) => (
-                    <AwardDisplayBadge
-                      icon={award.icon as BadgeIcon}
-                      key={award.id}
-                      title={award.name}
-                      role="worker"
-                      type={award.type}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            <div>
-              <h3 className={styles.contentTitle}>Feedback</h3>
-              {workerProfile.reviews && workerProfile.reviews.length > 0 ? (
-                workerProfile.reviews.map((review: Review) => (
-                  <p key={review.id} className={styles.feedbackText}>
-                    {review.comment}
-                  </p>
-                ))
-              ) : (
-                <p className={styles.feedbackText}>No feedback available.</p>
-              )}
-            </div>
-          </div>
+        {/* Awards & Feedback Section */}
+        {workerProfile.awards && (
+          <AwardsFeedbackSection workerProfile={workerProfile} />
         )}
 
-        {/* Qualifications Section (User Image Style) */}
+        {/* Qualifications Section */}
         <Qualifications
           qualifications={
             (workerProfile.qualifications as Qualification[]) ?? []
@@ -300,7 +100,7 @@ const WorkerProfile = ({
           fetchUserProfile={fetchUserProfile}
         />
 
-        {/* Equipment Section (User Image Style) */}
+        {/* Equipment Section */}
         {
           <Equipments
             workerProfileId={workerProfile.id}
@@ -310,40 +110,12 @@ const WorkerProfile = ({
           />
         }
       </div>
-      {/* End Main Content Wrapper */}
       {/* RTW Verification Popup */}
-
       {showRtwPopup && (
-        <div className={styles.overlay}>
-          <div className={styles.popup}>
-            <div className={styles.title}>
-              To adhere to UK law, we need to confirm you have the legal right
-              to work.
-            </div>
-            <div className={styles.title}>Are you a</div>
-
-            <div className={styles.buttons}>
-              <button
-                className={styles.button}
-                onClick={() => setShowRtwPopup(false)}
-              >
-                UK national
-              </button>
-              <span className={styles.orText}>Or</span>
-              <button
-                className={styles.button}
-                onClick={() =>
-                  (window.location.href =
-                    `/user/${user?.uid}/worker/rtw`)
-                }
-              >
-                Non UK national
-              </button>
-            </div>
-
-            <CancelButton handleCancel={() => setShowRtwPopup(false)} />
-          </div>
-        </div>
+        <RTWPopup
+          onClose={() => setShowRtwPopup(false)}
+          userId={user?.uid || ""}
+        />
       )}
       {/* Edit Name Modal */}
       {isOpen && (
@@ -358,7 +130,7 @@ const WorkerProfile = ({
         <SocialLinkModal
           initialValue={workerProfile.socialLink ?? ""}
           onClose={() => setIsSocialModalOpen(false)}
-          fetchUserProfile={() => fetchUserProfile(workerProfile.id)}
+          fetchUserProfile={() => user?.token && fetchUserProfile(user.token)}
           updateAction={updateSocialLinkWorkerProfileAction}
         />
       )}

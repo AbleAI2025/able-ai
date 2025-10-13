@@ -70,7 +70,7 @@ export interface SemanticProfile {
 export default interface PublicWorkerProfile {
   id: string;
   userId?: string | undefined;
-  location: string | { formatted_address: string; [key: string]: any } | undefined;
+  location: string | { formatted_address: string; [key: string]: unknown } | undefined;
   user?: {
     fullName: string | undefined;
     rtwStatus?:
@@ -106,4 +106,31 @@ export default interface PublicWorkerProfile {
   socialLink?: string | null;
   qualifications?: Qualification[];
   recommendations?: Review[];
+}
+
+export interface OnboardingProfileData {
+  about: string;
+  experience: string;
+  skills: string;
+  qualifications?: string;
+  hourlyRate: string;
+  location: string | { formatted_address?: string; name?: string; lat?: number | null; lng?: number | null; };
+  availability:
+    | {
+        days: string[];
+        startTime: string;
+        endTime: string;
+        frequency?: string;
+        ends?: string;
+        startDate?: string;
+        endDate?: string;
+        occurrences?: number;
+      }
+    | string;
+  hashtags?: string[];
+  videoIntro: File | string;
+  jobTitle?: string;
+  equipment?: { name: string; description?: string }[];
+  experienceYears?: number;
+  experienceMonths?: number;
 }

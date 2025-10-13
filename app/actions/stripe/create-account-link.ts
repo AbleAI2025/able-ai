@@ -27,7 +27,7 @@ export async function createAccountLink(firebaseUid: string) {
     if (!stripeAccountId) {
       const account = await stripeApi.accounts.create({
         type: 'express',
-        country: 'US',
+        country: 'GB',
         email: userRecord?.email || '',
         capabilities: {
           card_payments: { requested: true },

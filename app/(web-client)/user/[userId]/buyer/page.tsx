@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Users,
-  CalendarDays,
-  CreditCard,
-  LayoutDashboard,
-} from "lucide-react";
+import { Users, CalendarDays, CreditCard, LayoutDashboard } from "lucide-react";
 
 import AiSuggestionBanner from "@/app/components/shared/AiSuggestionBanner";
 import IconGrid from "@/app/components/shared/IconGrid";
@@ -24,8 +19,11 @@ import {
 } from "@/actions/notifications/useUnreadNotifications";
 import { getAllNotificationsAction } from "@/actions/notifications/notifications";
 import ScreenHeaderWithBack from "@/app/components/layout/ScreenHeaderWithBack";
+import { useParams } from "next/navigation";
 
 export default function BuyerDashboardPage() {
+  const params = useParams();
+  const pageUserId = params.userId as string;
   const { user: userPublicProfile } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -37,6 +35,13 @@ export default function BuyerDashboardPage() {
 
     setUnreadNotifications(unreadCount);
   }
+
+  useEffect(() => {
+    if (user && user.uid !== pageUserId) {
+      // If the authenticated user's ID does not match the page's userId param, redirect to their own dashboard
+      window.location.href = `/user/${user.uid}/buyer`;
+    }
+  }, [user, pageUserId]);
 
   useEffect(() => {
     getUnreadCountFromDB().then(setUnreadCount).catch(console.error);

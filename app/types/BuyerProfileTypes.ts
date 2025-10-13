@@ -52,5 +52,5 @@ export default interface DashboardData {
   reviews: Review[];
   badges: Award[];
   skillCounts?: { name: string; value: number }[];
-  totalPayments?: { name: string; total: number }[];
+  totalPayments?: { name: string; amount: number }[];
 }

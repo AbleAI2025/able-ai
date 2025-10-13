@@ -33,8 +33,12 @@ export default function ProfileVideo({
       </div>
     ) : (
       <>
-        <p><VideoOff /></p>
-        <p className={styles.emptyMessage}>The user has not submitted the presentation</p>
+        <p>
+          <VideoOff />
+        </p>
+        <p className={styles.emptyMessage}>
+          The user has not submitted the presentation
+        </p>
       </>
     );
   }
@@ -64,15 +68,12 @@ export default function ProfileVideo({
         rel="noopener noreferrer"
         className={styles.videoLink}
       >
-        <video
-          className={styles.videoPlayer}
-          preload="metadata"
-          muted
-          poster="/video-placeholder.jpg"
-        >
+        <video key={videoUrl} className={styles.videoPlayer} preload="metadata" muted>
           <source src={videoUrl! + "#t=0.1"} type="video/webm" />
         </video>
-        {videoUrl && <MonitorPlay color="#fff" size={50} className={styles.monitorPlay} />}
+        {videoUrl && (
+          <MonitorPlay color="#fff" size={50} className={styles.monitorPlay} />
+        )}
       </Link>
       {isSelfView && videoUrl && (
         <button

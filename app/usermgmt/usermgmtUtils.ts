@@ -8,6 +8,7 @@ import {
   isSignInWithEmailLink,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
+import { toast } from "sonner";
 
 export async function handleResetPassword({
   authClient,
@@ -167,6 +168,7 @@ export async function handleVerifyEmail({
           ` You will be redirected shortly if a continue URL was provided, or click here: <a href='${currentContinueUrl}'>Continue</a>`
       );
     }
+    toast.success("Email vified successfully")
   } catch (err: unknown) {
     console.error("Error verifying email:", err);
     if (err instanceof FirebaseError) {
@@ -218,7 +220,10 @@ export async function handleSignIn({
         .then(() => {
           window.localStorage.removeItem("emailForSignIn");
         })
-        .catch(() => {});
+        .catch((error) => {
+          toast.error(error);
+          console.log(error);
+        });
     }
     setMessage("Your email address has been verified successfully!");
     setUiState("success");

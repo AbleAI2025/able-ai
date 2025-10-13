@@ -1,0 +1,286 @@
+.availabilityContainer {
+  background: #2F2F2F;
+  border: 2px solid #444444;
+  border-radius: 12px;
+  padding: 20px;
+  color: #ffffff;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.dayButton {
+  padding: 8px 12px;
+  border: 2px solid #444444;
+  border-radius: 8px;
+  background: transparent;
+  color: #a0a0a0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dayButton:hover {
+  border-color: #41a1e8;
+  color: #ffffff;
+}
+
+.dayButtonSelected {
+  background: #41a1e8;
+  border-color: #41a1e8;
+  color: #ffffff;
+}
+
+.timeRow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.timeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeLabel {
+  font-size: 12px;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.timeInput {
+  padding: 8px 12px;
+  border: 2px solid #444444;
+  border-radius: 8px;
+  background: #1A1A1A;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: #41a1e8;
+}
+
+.recurrenceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #1A1A1A;
+  border: 2px solid #444444;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recurrenceRow:hover {
+  border-color: #41a1e8;
+}
+
+.recurrenceText {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.arrow {
+  font-size: 18px;
+  color: #a0a0a0;
+  transition: transform 0.2s ease;
+}
+
+.recurrenceRow:hover .arrow {
+  transform: translateX(4px);
+}
+
+.preview {
+  background: #1A1A1A;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #444444;
+  font-size: 14px;
+  color: #a0a0a0;
+  margin-bottom: 20px;
+}
+
+.preview strong {
+  color: #ffffff;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.confirmButton {
+  background: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: var(--primary-darker-color);
+}
+
+.confirmButton:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Modal Styles */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.repeatModal {
+  background: #2F2F2F;
+  border: 2px solid #444444;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.repeatHeader {
+  margin-bottom: 20px;
+}
+
+.repeatHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.repeatContent {
+  margin-bottom: 20px;
+}
+
+.daysSection,
+.frequencySection,
+.endsSection,
+.dateSection,
+.occurrencesSection {
+  margin-bottom: 16px;
+}
+
+.sectionLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.frequencySelect,
+.endsSelect,
+.dateInput,
+.occurrencesInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #444444;
+  border-radius: 8px;
+  background: #1A1A1A;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.frequencySelect:focus,
+.endsSelect:focus,
+.dateInput:focus,
+.occurrencesInput:focus {
+  outline: none;
+  border-color: #41a1e8;
+}
+
+.summary {
+  background: #1A1A1A;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #444444;
+  font-size: 14px;
+  color: #a0a0a0;
+  text-align: center;
+}
+
+.repeatActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  background: #444444;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #555;
+}
+
+.saveButton {
+  background: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+  background: var(--primary-darker-color);
+}

@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getLastRoleUsed } from '@/lib/last-role-used';
 import BarChartComponent from '@/app/components/shared/BarChart';
 import { getWorkerEarnings, WorkerEarning } from '@/actions/earnings/get-worker-earnings';
+import StripeConnectionGuard from '@/app/components/shared/StripeConnectionGuard';
 
 interface FilterState {
   staffType: 'All' | string;
@@ -28,7 +29,6 @@ async function fetchWorkerEarnings(userId: string, filters: FilterState): Promis
 
   return allEarnings;
 }
-
 
 // Mock chart data (aggregate by month for example)
 const getEarningsChartData = (earnings: WorkerEarning[]) => {
@@ -142,78 +142,81 @@ export default function WorkerEarningsPage() {
     return <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={32} /> Loading...</div>;
   }
 
+  if (!authUserId) return null;
+
   return (
-    <div className={styles.container}>
-      <div className={styles.pageWrapper}>
-        <header className={styles.header}>
-          <button onClick={() => router.back()} className={styles.backButton}>
-            <ArrowLeft size={16} />
-          </button>
-          <h1 className={styles.pageTitle}>Earnings</h1>
-          <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
-            <Filter size={16} /> Filter
-          </button>
-        </header>
+    <StripeConnectionGuard userId={authUserId} redirectPath={`/user/${authUserId}/settings`}>
+      <div className={styles.container}>
+        <div className={styles.pageWrapper}>
+          <header className={styles.header}>
+            <button onClick={() => router.back()} className={styles.backButton}>
+              <ArrowLeft size={16} />
+            </button>
+            <h1 className={styles.pageTitle}>Earnings</h1>
+            <button onClick={() => setShowFilterModal(true)} className={styles.filterButton}>
+              <Filter size={16} /> Filter
+            </button>
+          </header>
 
-        {/* Filter Options - Simplified for this example, could be a modal */}
+          {/* Filter Options - Simplified for this example, could be a modal */}
 
-        {showFilterModal && (
-          <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <h3 className={styles.modalHeader}>Filter Earnings</h3>
-              <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
-                {gigTypes.map(type => (
-                  <label key={type} className={styles.filterOptionLabel} style={{ padding: '0.5rem 0' }}>
-                    <input
-                      type="radio"
-                      name="gigTypeModalEarningsFilter"
-                      value={type}
-                      checked={filters.staffType === type}
-                      onChange={() => { handleFilterChange('staffType', type); setShowFilterModal(false); }}
-                    />
-                    {type}
-                  </label>
-                ))}
-              </div>
-              <div className={styles.modalActions}>
-                <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
+          {showFilterModal && (
+            <div className={styles.modalOverlay} onClick={() => setShowFilterModal(false)}>
+              <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                <h3 className={styles.modalHeader}>Filter Earnings</h3>
+                <div className={styles.filterOptions} style={{ flexDirection: 'column' }}>
+                  {gigTypes.map(type => (
+                    <label key={type} className={styles.filterOptionLabel} style={{ padding: '0.5rem 0' }}>
+                      <input
+                        type="radio"
+                        name="gigTypeModalEarningsFilter"
+                        value={type}
+                        checked={filters.staffType === type}
+                        onChange={() => { handleFilterChange('staffType', type); setShowFilterModal(false); }}
+                      />
+                      {type}
+                    </label>
+                  ))}
+                </div>
+                <div className={styles.modalActions}>
+                  <button onClick={() => setShowFilterModal(false)} className={`${styles.actionButton} ${styles.secondary}`}>Close</button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {isLoadingEarnings ? (
-          <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28} /> Loading earnings...</div>
-        ) : error ? (
-          <div className={styles.emptyState}>{error}</div>
-        ) : earnings.length === 0 ? (
-          <div className={styles.emptyState}>No earnings history found {filters.staffType !== 'All' ? `for ${filters.staffType}s` : ''}.</div>
-        ) : (
-          <div className={styles.earningsList}>
-            {earnings.map(earning => (
-              <div key={earning.id} className={styles.earningItem}>
-                <div className={styles.earningDetails}>
-                  {getGigIcon(earning.gigType || '')}
-                  <div className={styles.earningHeader}>
-                    <span className={styles.earningGigInfo}>{earning.gigType}</span>
-                    {
-                      earning.paidAt ?
-                        <span className={styles.paymentDate}>{new Date(earning.paidAt).toLocaleDateString()}</span> :
-                        <>Has not been paid yet</>
-                    }
+          {isLoadingEarnings ? (
+            <div className={styles.loadingContainer}><Loader2 className="animate-spin" size={28} /> Loading earnings...</div>
+          ) : error ? (
+            <div className={styles.emptyState}>{error}</div>
+          ) : earnings.length === 0 ? (
+            <div className={styles.emptyState}>No earnings history found {filters.staffType !== 'All' ? `for ${filters.staffType}s` : ''}.</div>
+          ) : (
+            <div className={styles.earningsList}>
+              {earnings.map(earning => (
+                <div key={earning.id} className={styles.earningItem}>
+                  <div className={styles.earningDetails}>
+                    {getGigIcon(earning.gigType || '')}
+                    <div className={styles.earningHeader}>
+                      <span className={styles.earningGigInfo}>{earning.gigType}</span>
+                      {
+                        earning.paidAt ?
+                          <span className={styles.paymentDate}>{new Date(earning.paidAt).toLocaleDateString()}</span> :
+                          <>Has not been paid yet</>
+                      }
+                    </div>
                   </div>
+                  <span className={styles.amount}>£{Number(earning.totalEarnings).toFixed(2)}</span>
                 </div>
-                <span className={styles.amount}>£{Number(earning.totalEarnings).toFixed(2)}</span>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+          <div className={styles.barChartContainer}>
+            {!isLoadingEarnings &&
+              <BarChartComponent data={chartData} emptyMessage="You don't have earnings yet" />
+            }
           </div>
-        )}
-        <div className={styles.barChartContainer}>
-          {!isLoadingEarnings &&
-            <BarChartComponent data={chartData} />
-          }
-        </div>
-        {/* 
+          {/* 
         <div className={styles.barChartContainer}>
           {isLoadingEarnings ? "Loading chart data..." : earnings.length > 0 && chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -227,7 +230,9 @@ export default function WorkerEarningsPage() {
             </ResponsiveContainer>
           ) : !isLoadingEarnings ? "No earnings data available for chart." : ""}
         </div> */}
+        </div>
       </div>
-    </div>
+    </StripeConnectionGuard>
+
   );
 } 

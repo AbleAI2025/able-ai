@@ -9,6 +9,7 @@ import VideoRecorderOnboarding from "@/app/components/onboarding/VideoRecorderOn
 import LocationPickerBubble from '@/app/components/onboarding/LocationPickerBubble';
 import ManualProfileForm from "@/app/components/onboarding/ManualProfileForm";
 import Loader from "@/app/components/shared/Loader";
+import { generateHashtags as generateHashtagsService, type ProfileData } from '@/lib/services/hashtag-generation';
 
 // Typing indicator component with bouncing animation
 const TypingIndicator: React.FC = () => (
@@ -309,52 +310,13 @@ Make it conversational and engaging with emojis.`;
   return buildSpecializedPrompt('profileCreation', `Field: ${fieldName}`, `Tell me more about your ${fieldName}`);
 }
 
-// Hashtag Generation Function (from onboarding-ai)
+// Hashtag Generation Function (now using modular service)
 const generateHashtags = async (profileData: any, ai: any): Promise<string[]> => {
-  try {
-    if (!ai) {
-      throw new Error('AI not available');
-    }
-
-    const prompt = `Generate exactly 3 professional hashtags for this gig worker profile:
-
-About: ${profileData.about || 'Not provided'}
-Skills: ${profileData.skills || 'Not provided'}
-Experience: ${profileData.experience || 'Not provided'}
-
-Return 3 relevant hashtags like "#bartender", "#mixology", "#events" for hospitality/gig work.`;
-
-    const schema = TypedSchema.object({
-      properties: {
-        hashtags: TypedSchema.array({
-          items: TypedSchema.string()
-        })
-      },
-      required: ["hashtags"]
-    });
-
-    const result = await geminiAIAgent(
-      "gemini-2.0-flash",
-      { prompt, responseSchema: schema },
-      ai,
-      "gemini-2.5-flash-preview-05-20"
-    );
-
-    if (result.ok && result.data) {
-      const hashtags = (result.data as { hashtags: string[] }).hashtags;
-      return hashtags;
-    } else {
-      throw new Error('AI generation failed');
-    }
-  } catch (error) {
-    console.error('❌ Error generating hashtags:', error);
-    const fallbackHashtags = [
-      `#${profileData.skills?.split(',')[0]?.trim().toLowerCase().replace(/\s+/g, '-') || 'worker'}`,
-      '#professional',
-      '#gig-worker'
-    ];
-    return fallbackHashtags;
-  }
+  return generateHashtagsService(profileData as ProfileData, ai, {
+    maxHashtags: 3,
+    includeLocation: true,
+    fallbackStrategy: 'skills-based'
+  });
 };
 
 // AI Video Script Display Component (from onboarding-ai)

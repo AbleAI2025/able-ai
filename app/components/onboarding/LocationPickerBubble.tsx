@@ -1,9 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useJsApiLoader, GoogleMap, Marker } from '@react-google-maps/api';
 
-// FontAwesome icons (assume global or imported elsewhere)
-// fa-location-dot, fa-map-location-dot, fa-building
-
 interface LocationPickerBubbleProps {
   value?: any;
   onChange: (value: any) => void;
@@ -68,8 +65,8 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({
       autocompleteRef.current.addListener('place_changed', () => {
         const place = autocompleteRef.current?.getPlace();
         if (place && place.geometry && place.geometry.location) {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
+          const lat = place.geometry.location?.lat();
+          const lng = place.geometry.location?.lng();
           const coords = { lat, lng };
           
           // Fill the search input with the complete formatted address
@@ -92,7 +89,7 @@ const LocationPickerBubble: React.FC<LocationPickerBubbleProps> = ({
 
   // Initialize with existing value
   useEffect(() => {
-    if (value && typeof value === 'object' && 'lat' in value && 'lng' in value) {
+    if (value && typeof value === 'object' && typeof value.lat === 'number' && typeof value.lng === 'number') {
       setMarker({ lat: value.lat, lng: value.lng });
       setFormattedAddress(value.formatted_address || `Coordinates: ${value.lat.toFixed(6)}, ${value.lng.toFixed(6)}`);
     }

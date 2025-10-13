@@ -1,0 +1,358 @@
+{
+  "version": "1.0.0",
+  "description": "Central mapping configuration for page-specific modular functions",
+  "lastUpdated": "2024-01-15",
+  "pages": {
+    "onboarding-ai": {
+      "name": "AI Onboarding Page",
+      "description": "Main AI-powered onboarding flow with comprehensive validation",
+      "functions": {
+        "fieldsetters": [
+          "setSkillName",
+          "setExperience",
+          "setWage",
+          "setAddress",
+          "setAvailability",
+          "setSkillVideo",
+          "setQualifications",
+          "setEquipment",
+          "setBio",
+          "setHashtags",
+          "generateRecommendationLink"
+        ],
+        "content-filters": [
+          "checkInappropriateContent",
+          "checkOffTopicResponse"
+        ],
+        "ai-validation": [
+          "validateResponseWithAI",
+          "sanitizeResponseWithAI",
+          "processValidatedResponse"
+        ],
+        "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ]
+      },
+      "required": [
+        "setSkillName",
+        "setExperience",
+        "setBio",
+        "setWage",
+        "checkInappropriateContent",
+        "validateResponseWithAI",
+        "setLocation",
+        "setAvailability"
+      ]
+    },
+    "onboarding-manual": {
+      "name": "Manual Onboarding Page",
+      "description": "Traditional form-based onboarding with AI validation",
+      "functions": {
+        "fieldsetters": [
+          "setSkillName",
+          "setExperience",
+          "setWage",
+          "setAddress",
+          "setAvailability",
+          "setSkillVideo",
+          "setQualifications",
+          "setEquipment",
+          "setHashtags",
+          "setBio",
+          "generateRecommendationLink"
+        ],
+        "content-filters": [
+          "checkInappropriateContent",
+          "checkOffTopicResponse"
+        ],
+        "ai-validation": [
+          "validateResponseWithAI",
+          "sanitizeResponseWithAI",
+          "processValidatedResponse"
+        ],
+        "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ]
+      },
+      "required": [
+        "setSkillName",
+        "setExperience",
+        "setBio",
+        "setWage",
+        "checkInappropriateContent",
+        "validateResponseWithAI",
+        "setLocation",
+        "setAvailability"
+      ]
+    },
+    "worker-profile-edit": {
+      "name": "Worker-Profile Edit Page",
+      "description": "Edit existing user profile with validation",
+      "functions": {
+        "fieldsetters": [
+          "setName",
+          "setAddress",
+          "setAvailability",
+          "setProfileVideoWorker",
+          "setEquipment",
+          "setBio",
+          "setSocialLink",
+          "GenerateRecommendationLink"
+        ],
+        "content-filters": [
+          "checkInappropriateContent",
+          "checkOffTopicResponse"
+        ],
+        "ai-validation": [
+          "validateResponseWithAI",
+          "sanitizeResponseWithAI",
+          "processValidatedResponse"
+        ],
+        "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ]
+      },
+      "required": [
+        "setBio",
+        "checkInappropriateContent",
+        "validateResponseWithAI",
+        "setLocation",
+        "setAvailability"
+      ]
+    },
+    "buyer-profile-edit": {
+      "name": "Buyer Profile Edit Page",
+      "description": "Edit existing user profile with validation",
+      "functions": {
+        "fieldsetters": [
+          "setName",
+          "setAddress",
+          "setBusinessName",
+          "setBusinessAddress",
+          "setVideoIntro",
+          "setProfileVideoBuyer",
+          "setBio",
+          "setSocialLink"
+        ],
+        "content-filters": [
+          "checkInappropriateContent",
+          "checkOffTopicResponse"
+        ],
+        "ai-validation": [
+          "validateResponseWithAI",
+          "sanitizeResponseWithAI",
+          "processValidatedResponse"
+        ],
+        "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ]
+      },
+      "required": [
+        "setSkillName",
+        "setExperience",
+        "setBio",
+        "setWage",
+        "checkInappropriateContent",
+        "validateResponseWithAI",
+        "setLocation",
+        "setAvailability"
+      ]
+    },
+    "skill-management": {
+      "name": "Skill Management Page",
+      "description": "Add, edit, or remove user skills",
+      "functions": {
+        "fieldsetters": [
+          "setSkillName",
+          "setExperience",
+          "setQualifications",
+          "setSkillVideo",
+          "setWage",
+          "setHashtags",
+          "generateRecommendationLink"
+          
+        ],
+        "content-filters": [
+          "checkInappropriateContent",
+          "checkOffTopicResponse"
+        ]
+      },
+      "required": [
+        "setSkillName",
+        "checkInappropriateContent"
+      ],
+      "optional": [
+        "setExperience",
+        "setQualifications"
+      ]
+    },
+    "availability-management": {
+      "name": "Availability Management Page",
+      "description": "Manage user availability and scheduling",
+      "functions": {
+        "fieldsetters": [
+          "setAvailability",
+          "getGigRequests"
+        ],
+        "content-filters": [
+          "checkInappropriateContent"
+        ]
+      },
+      "required": [
+        "setAvailability"
+      ],
+      "optional": []
+    },
+    "worker-earnings-management": {
+      "name": "Worker Earnings Management Page",
+      "description": "Manage user earnings and payouts",
+      "functions": {
+        "fieldsetters": [
+          "getEarnings",
+          "getHistory"
+        ],
+        "content-filters": [
+          "checkInappropriateContent"
+        ]
+      },
+      "required": [
+        "setAvailability"
+      ],
+      "optional": []
+      
+    },
+    "buyer-payment-management": {
+      "name": "Buyer Payment Management Page",
+      "description": "Manage buyer payment methods and transactions",
+      "functions": {
+        "fieldsetters": [
+          "getPayment",
+          "getTransactionHistory"
+        ],
+        "content-filters": [
+          "checkInappropriateContent"
+        ]
+      },
+      "required": [
+        "setAvailability"
+      ],
+      "optional": []
+      
+    },
+     "Chat-With-Able": {
+      "name": "Chat With Able",
+      "description": "AI-powered chat assistance for users",
+      "functions": {
+        "fieldsetters": [
+          "getPayment",
+          "getTransactionHistory"
+        ],
+        "content-filters": [
+          "checkInappropriateContent"
+        ]
+      },
+      "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ],
+      "required": [
+        "setAvailability"
+      ],
+      "optional": []
+      
+    }
+  },
+  "functionCategories": {
+    "fieldsetters": {
+      "description": "Functions for setting and validating user input fields",
+      "functions": [
+        "setSkillName",
+        "setExperience",
+        "setWage",
+        "setAddress",
+        "setAvailability",
+        "setVideoIntro",
+        "setQualifications",
+        "setEquipment",
+        "setBio"
+      ]
+    },
+    "content-filters": {
+      "description": "Functions for filtering inappropriate and off-topic content",
+      "functions": [
+        "checkInappropriateContent",
+        "checkOffTopicResponse",
+        "validateContentWithAI"
+      ]
+    },
+    "ai-validation": {
+      "description": "AI-powered validation and sanitization functions",
+      "functions": [
+        "validateResponseWithAI",
+        "sanitizeResponseWithAI",
+        "processValidatedResponse"
+      ]
+    },
+    "support": {
+      "description": "Support and escalation functions for user assistance",
+      "functions": [
+        "saveSupportCaseToDatabase",
+        "handleUserResponseWithIntent",
+        "testHelpDetectionSystem"
+      ]
+    },
+    "worker-home": {
+      "name": "Worker Home Page",
+      "description": "Edit existing user profile with validation",
+      "functions": {
+        "fieldsetters": [
+          "generateRecommendationLink",
+          "generateWorkerSuggestions"
+        ],
+      
+        "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ]
+      }
+    },
+    "buyer-home": {
+      "name": "Buyer Home Page",
+      "description": "Edit existing buyer profile with validation",
+      "functions": {
+        "fieldsetters": [
+          "generateRecommendationLink",
+          "generateBuyerSuggestions"
+        ],
+      
+        "support": [
+          "saveSupportCaseToDatabase",
+          "handleUserResponseWithIntent"
+        ]
+      }
+    }
+  },
+
+  
+  "globalSettings": {
+    "defaultValidation": {
+      "strict": true,
+      "allowFallbacks": true,
+      "escalationEnabled": true
+    },
+    "functionRegistry": {
+      "autoLoad": true,
+      "cacheEnabled": true,
+      "validationEnabled": true
+    },
+    "errorHandling": {
+      "logErrors": true,
+      "showUserFriendlyMessages": true,
+      "escalateOnCriticalErrors": true
+    }
+  }
+}

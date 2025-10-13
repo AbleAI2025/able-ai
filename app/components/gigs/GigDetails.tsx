@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import type GigDetails from "@/app/types/GigDetailsTypes";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
-import { getLastRoleUsed } from "@/lib/last-role-used";
 import { updateGigOfferStatus } from "@/actions/gigs/update-gig-offer-status";
 import { deleteGig } from "@/actions/gigs/delete-gig";
 import { toast } from "sonner";
@@ -75,9 +74,10 @@ const GigDetailsComponent = ({
   const router = useRouter();
   const [isActionLoading, setIsActionLoading] = useState(false);
   const { user } = useAuth();
-  const lastRoleUsed = getLastRoleUsed();
   const pathname = usePathname();
   const [timeLeft, setTimeLeft] = useState("");
+
+  console.log("Rendering GigDetails with gig:", gig);
 
   useEffect(() => {
     if (!gig.expiresAt) {
@@ -120,7 +120,7 @@ const GigDetailsComponent = ({
   // Get worker name from gig data if available, otherwise use a placeholder
   const getWorkerName = () => {
     // If this is a worker viewing their own gig, use their name
-    if (lastRoleUsed === "GIG_WORKER" && role === "worker") {
+    if (role === "worker") {
       return user?.displayName?.split(" ")[0] || "Worker";
     }
     // If there's a worker assigned to the gig, use their name
@@ -153,51 +153,63 @@ const GigDetailsComponent = ({
     switch (action) {
       case "accept":
         if (status === "PENDING") {
-          return lastRoleUsed === "GIG_WORKER"
+          return role === "worker"
             ? "Accept Gig"
             : "Offer Sent - awaiting acceptance";
+        }
+        if (status === "CANCELLED") {
+          return "Declined - make another choice";
         }
         return "Gig Accepted";
 
       case "start":
         if (status === "PENDING" || status === "ACCEPTED") {
-          return lastRoleUsed === "GIG_WORKER"
+          return role === "worker"
             ? "Mark as you started the gig"
             : "Mark as started";
         }
-        return lastRoleUsed === "GIG_WORKER"
+        if (status === "CANCELLED") {
+          return "Waiting for new worker";
+        }
+        return role === "worker"
           ? "Gig Started"
           : `${workerName} has started the gig`;
       case "complete":
+        if (status === "CANCELLED") {
+          return "Waiting for new worker";
+        }
         if (
           status === "PENDING" ||
           status === "ACCEPTED" ||
           status === "IN_PROGRESS"
         ) {
-          return lastRoleUsed === "GIG_WORKER"
+          return role === "worker"
             ? "Mark as complete"
             : `Mark as complete, pay ${workerName}`;
         } else {
           // If the gig is completed, show the appropriate message
           if (gig.isWorkerSubmittedFeedback && !gig.isBuyerSubmittedFeedback) {
-            return lastRoleUsed === "GIG_WORKER"
+            return role === "worker"
               ? "Gig Completed"
               : `🕒Confirm, pay and review ${workerName}`;
           } else if (
             gig.isBuyerSubmittedFeedback &&
             !gig.isWorkerSubmittedFeedback
           ) {
-            return lastRoleUsed === "GIG_WORKER"
+            return role === "worker"
               ? "Buyer confirmed & paid: leave feedback"
               : `${workerName} has completed the gig`;
           } else {
-            return lastRoleUsed === "GIG_WORKER"
+            return role === "worker"
               ? "Gig Completed"
               : `${workerName} has completed the gig`;
           }
         }
       case "awaiting":
-        if (lastRoleUsed === "GIG_WORKER") {
+        if (status === "CANCELLED") {
+          return "Waiting for new worker";
+        }
+        if (role === "worker") {
           return !gig.isBuyerSubmittedFeedback ? (
             `Waiting for ${buyer} to confirm and pay`
           ) : (
@@ -225,7 +237,10 @@ const GigDetailsComponent = ({
 
       switch (action) {
         case "accept":
-          if (lastRoleUsed === "GIG_WORKER") {
+          if (gig.status === "CANCELLED") {
+            router.push(`/gigs/${gig.id}/delegate`);
+          }
+          if (role === "worker") {
             const result = await updateGigOfferStatus({
               gigId: gig.id,
               userUid: user?.uid || "",
@@ -277,7 +292,7 @@ const GigDetailsComponent = ({
             setGig({ ...gig, status: "COMPLETED" });
             toast.success("Gig completed successfully!");
             router.push(
-              lastRoleUsed === "GIG_WORKER"
+              role === "worker"
                 ? `/user/${user?.uid}/worker/gigs/${gig.id}/feedback`
                 : `/user/${user?.uid}/buyer/gigs/${gig.id}/feedback`
             );
@@ -291,8 +306,6 @@ const GigDetailsComponent = ({
 
         case "requestAmendment":
           if (!user?.uid || !gig.id) return;
-
-          // const userRole = lastRoleUsed === "GIG_WORKER" ? 'worker' : 'buyer';
 
           const userRole = pathname.includes("/worker/") ? "worker" : "buyer";
           const path = `/user/${user?.uid}/${userRole}/gigs/${gig.id}/amend`;
@@ -405,7 +418,7 @@ const GigDetailsComponent = ({
           </div>
           {/* Hiring Manager Info - Placeholder as it's not in current GigDetails interface */}
 
-          {lastRoleUsed === "GIG_WORKER" && (
+          {role === "worker" && (
             <div className={styles.gigDetailsRow}>
               <span className={styles.label}>Hiring manager:</span>
               <span className={styles.detailValue}>
@@ -496,8 +509,11 @@ const GigDetailsComponent = ({
           <GigActionButton
             label={getButtonLabel("accept")}
             handleGigAction={() => handleGigAction("accept")}
-            isActive={gig.status === "PENDING"}
-            isDisabled={lastRoleUsed === "BUYER" || gig.status !== "PENDING"}
+            isActive={gig.status === "PENDING" || gig.status === "CANCELLED"}
+            isDisabled={
+              (role === "worker" && gig.status !== "PENDING") ||
+              (role === "buyer" && gig.status !== "CANCELLED")
+            }
           />
 
           {/* 2. Start Gig */}
@@ -517,14 +533,12 @@ const GigDetailsComponent = ({
                 gig.status === "COMPLETED" ||
                 gig.status === "CONFIRMED" ||
                 gig.status === "AWAITING_BUYER_CONFIRMATION") &&
-              ((lastRoleUsed === "GIG_WORKER" &&
-                !gig.isWorkerSubmittedFeedback) ||
-                (lastRoleUsed === "BUYER" && !gig.isBuyerSubmittedFeedback))
+              ((role === "worker" && !gig.isWorkerSubmittedFeedback) ||
+                (role === "buyer" && !gig.isBuyerSubmittedFeedback))
             }
             isDisabled={
-              (lastRoleUsed === "GIG_WORKER" &&
-                gig.isWorkerSubmittedFeedback) ||
-              (lastRoleUsed === "BUYER" && gig.isBuyerSubmittedFeedback)
+              (role === "worker" && gig.isWorkerSubmittedFeedback) ||
+              (role === "buyer" && gig.isBuyerSubmittedFeedback)
             }
           />
 
@@ -533,9 +547,8 @@ const GigDetailsComponent = ({
           <GigStatusIndicator
             label={getButtonLabel("awaiting")}
             isActive={
-              (lastRoleUsed === "GIG_WORKER" &&
-                gig.isWorkerSubmittedFeedback) ||
-              (lastRoleUsed === "BUYER" && gig.isBuyerSubmittedFeedback)
+              (role === "worker" && gig.isWorkerSubmittedFeedback) ||
+              (role === "buyer" && gig.isBuyerSubmittedFeedback)
             }
             isDisabled={true}
           />

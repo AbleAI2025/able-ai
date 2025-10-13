@@ -34,7 +34,7 @@ async function getWorkerDetails(
 
   const result = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch worker details");
   }
 

@@ -10,7 +10,7 @@ interface SocialLinkModalProps {
   initialValue?: string;
   onClose: () => void;
   fetchUserProfile: () => void;
-  updateAction: (link: string, token?: string) => Promise<{ success: boolean; error?: string }>;
+  updateAction: (link: string, token: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const SocialLinkModal = ({ initialValue, onClose, fetchUserProfile, updateAction }: SocialLinkModalProps) => {
@@ -27,7 +27,10 @@ const SocialLinkModal = ({ initialValue, onClose, fetchUserProfile, updateAction
         setIsSavingProfile(false);
         return;
       }
-      const { success: updateSuccess, error: updateError } = await updateAction(link, user?.token);
+      if (!user?.token) {
+        throw new Error("Authentication token is required");
+      }
+      const { success: updateSuccess, error: updateError } = await updateAction(link, user.token);
 
       if (!updateSuccess) throw updateError;
 

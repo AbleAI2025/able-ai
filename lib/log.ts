@@ -34,6 +34,15 @@ export const ERROR_CODES = {
   AI_SUGGESTION_GENERATION_FAILED: { code: 10300, message: 'AI suggestion generation failed', type: 'error' as LogType },
   AI_SUGGESTION_INVALID_RESPONSE: { code: 10301, message: 'AI suggestion response is invalid', type: 'error' as LogType },
   
+  // Stripe Payment Errors (10400-10499)
+  STRIPE_API_ERROR: { code: 10400, message: 'Stripe API error', type: 'error' as LogType },
+  STRIPE_CUSTOMER_RETRIEVAL_FAILED: { code: 10401, message: 'Failed to retrieve Stripe customer', type: 'error' as LogType },
+  STRIPE_ACCOUNT_RETRIEVAL_FAILED: { code: 10402, message: 'Failed to retrieve Stripe Connect account', type: 'error' as LogType },
+  STRIPE_STATUS_UPDATE_FAILED: { code: 10403, message: 'Failed to update Stripe status in database', type: 'error' as LogType },
+  STRIPE_API_TIMEOUT: { code: 10404, message: 'Stripe API request timed out', type: 'warning' as LogType },
+  STRIPE_RATE_LIMIT_EXCEEDED: { code: 10405, message: 'Stripe API rate limit exceeded', type: 'warning' as LogType },
+  STRIPE_AUTHENTICATION_FAILED: { code: 10406, message: 'Stripe API authentication failed', type: 'critical' as LogType },
+  
   // Add more as needed, consider ranges for different modules/features
 };
 

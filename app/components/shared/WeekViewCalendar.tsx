@@ -50,22 +50,6 @@ const WeekViewCalendar: React.FC<WeekViewCalendarProps> = ({
     return eventStart.isBefore(weekEnd) && eventEnd.isAfter(weekStart);
   });
 
-  // Debug logging
-  console.log('WeekViewCalendar Debug:', {
-    totalEvents: events.length,
-    weekEvents: weekEvents.length,
-    currentDate: currentDate,
-    startOfWeek: startOfWeek.format('YYYY-MM-DD'),
-    weekEnd: moment(startOfWeek).endOf('week').format('YYYY-MM-DD'),
-    events: events.map(e => ({
-      id: e.id,
-      title: e.title,
-      start: moment(e.start).format('YYYY-MM-DD HH:mm'),
-      end: moment(e.end).format('YYYY-MM-DD HH:mm'),
-      status: e.status
-    }))
-  });
-
   const handleDateClick = (date: Date) => {
     if (onDateClick) {
       onDateClick(date);

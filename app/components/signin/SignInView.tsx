@@ -4,7 +4,7 @@ import { useState } from "react";
 import InputField from "@/app/components/form/InputField";
 import SubmitButton from "@/app/components/form/SubmitButton";
 import styles from "@/app/SignInPage.module.css";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signInWithFirebaseAction } from "@/actions/auth/singin";
 import { useFirebase } from "@/context/FirebaseContext";
@@ -16,7 +16,10 @@ interface SignInViewProps {
   onError: (error: React.ReactNode | null) => void;
 }
 
-const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) => {
+const SignInView: React.FC<SignInViewProps> = ({
+  onToggleRegister,
+  onError,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,13 +32,22 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
     onError(null);
 
     try {
-      let userCredential
+      let userCredential;
       if (authClient) {
-        userCredential = await signInWithEmailAndPassword(authClient, email, password);
+        userCredential = await signInWithEmailAndPassword(
+          authClient,
+          email,
+          password
+        );
       }
+
       const user = userCredential?.user;
 
       if (!user?.uid) throw new Error("User UID not found");
+
+      if (!user?.emailVerified) {
+        throw new Error("Email is not verified");
+      }
 
       const response = await signInWithFirebaseAction(user.uid);
 
@@ -43,9 +55,6 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
         onError(
           <>
             {response.error || "Email or password is incorrect."}
-            {/* <a href="/reset-password" className={styles.errorLink}>
-              Reset password?
-            </a> */}
           </>
         );
       } else {
@@ -57,18 +66,11 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("Login error:", err);
+        onError(<>{err.message}</>);
       } else {
         console.error("Unexpected error during login:", err);
+        onError(<>{err}</>);
       }
-      onError(
-        <>
-          {/* {err instanceof Error ? err.message : "An unexpected error occurred."} */}
-          {/* <a href="/reset-password" className={styles.errorLink}>
-            Reset password?
-          </a> */}
-          Invalid email or password. Please try again.
-        </>
-      );
     } finally {
       setLoading(false);
     }
@@ -130,4 +132,4 @@ const SignInView: React.FC<SignInViewProps> = ({ onToggleRegister, onError }) =>
   );
 };
 
-export default SignInView; 
+export default SignInView;

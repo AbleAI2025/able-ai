@@ -8,6 +8,7 @@ import {
   User as FirebaseUser,
 } from "firebase/auth";
 import { useFirebase } from "./FirebaseContext";
+import { checkEmailVerificationStatus, EmailVerificationStatus } from "@/lib/utils/emailVerification";
 
 type Claims = {
   role: string;
@@ -17,6 +18,7 @@ type Claims = {
 export type User = FirebaseUser & {
   token: string;
   claims: Claims;
+  emailVerification: EmailVerificationStatus;
 };
 
 type AuthContextType = {
@@ -38,7 +40,7 @@ async function fetchTokenResultWithPolling(
   for (let i = 0; i < MAX_POLLING_ATTEMPTS; i++) {
     const tokenResult = await getIdTokenResult(user, true);
 
-    if (tokenResult.claims?.role) {
+    if (tokenResult.claims?.email) {
       return tokenResult;
     }
 
@@ -59,10 +61,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       unsubscribe = onAuthStateChanged(authClient, async (firebaseUser) => {
       if (firebaseUser) {
         const tokenResult = await fetchTokenResultWithPolling(firebaseUser);
+        
         if (tokenResult) {
+          const emailVerification = checkEmailVerificationStatus(firebaseUser);
           const enrichedUser = Object.assign(firebaseUser, {
             token: tokenResult.token,
             claims: tokenResult.claims as Claims,
+            emailVerification,
           });
           setUser(enrichedUser);
         } else {
