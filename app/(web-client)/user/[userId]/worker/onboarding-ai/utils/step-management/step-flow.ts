@@ -497,7 +497,7 @@ export async function addNextStepSafely(
     // DISABLED: AI context-aware prompt generation due to AI not following instructions
     // The AI was generating wrong questions (location instead of skills)
     // TODO: Fix AI prompt generation or use a more reliable AI model
-    /*
+    
     try {
       // Use AI to generate contextual prompts
       let contextInfo = '';
