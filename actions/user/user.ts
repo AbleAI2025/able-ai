@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import admin from "@/lib/firebase/firebase-server";
 
+const EXPECTED_PHONE_LENGTH = 14;
 /**
  * Retrieves the complete profile of an authenticated user, including their notification preferences.
  * @param token Firebase ID token of the authenticated user.
@@ -46,7 +47,7 @@ export const updateUserProfileAction = async (
   try {
     if (!token) throw new Error("Token is required");
 
-    if (updateData.phone && updateData.phone.length !== 14) throw new Error("The phone number must be 14 characters long.")
+    if (updateData.phone && updateData.phone.length !== EXPECTED_PHONE_LENGTH) throw new Error("The phone number must be 14 characters long.")
 
     const { data, uid } = await isUserAuthenticated(token);
     if (!data) throw ERROR_CODES.UNAUTHORIZED;

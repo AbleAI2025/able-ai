@@ -54,19 +54,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch related data
-    const skills = await db.query.SkillsTable.findMany({
-      where: eq(SkillsTable.workerProfileId, workerProfile.id),
-    });
-
-    const equipment = await db.query.EquipmentTable.findMany({
-      where: eq(EquipmentTable.workerProfileId, workerProfile.id),
-    });
-
-    const qualifications = await db.query.QualificationsTable.findMany({
-      where: eq(QualificationsTable.workerProfileId, workerProfile.id),
-    });
-
     const badges = await db
       .select({
         id: UserBadgesLinkTable.id,
@@ -132,11 +119,11 @@ export async function GET(request: NextRequest) {
         workerProfile?.semanticProfileJson as SemanticProfile,
       averageRating,
       awards: badgeDetails,
-      equipment,
-      skills,
+      equipment: workerProfile?.equipment,
+      skills: workerProfile?.skills,
       reviews,
       recommendations,
-      qualifications,
+      qualifications: workerProfile?.qualifications,
       user: { fullName: workerProfile?.user?.fullName || "" },
     };
 
