@@ -2,32 +2,12 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/drizzle/db';
 import { GigWorkerProfilesTable } from '@/lib/drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { isUserAuthenticated } from '@/lib/user.server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { workerId: string } }
+  { params }: { params: Promise<{ workerId: string }> }
 ) {
   try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    const token = authHeader.substring(7);
-
-    // Verify token
-    const { uid } = await isUserAuthenticated(token);
-    if (!uid) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { workerId } = await params;
 
     if (!workerId) {

@@ -26,13 +26,8 @@ interface SkillsProps {
 
 async function getWorkerDetails(
   workerId: string,
-  token: string
 ): Promise<{ name: string; skills: SkillsProps[] } | null> {
-  const response = await fetch(`/api/workers/${workerId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(`/api/workers/${workerId}`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch worker details");
@@ -88,7 +83,7 @@ export default function PublicRecommendationPage() {
 
       try {
         setIsLoadingWorker(true);
-        const details = await getWorkerDetails(workerToRecommendId, user.token);
+        const details = await getWorkerDetails(workerToRecommendId);
         setWorkerDetails(details ?? null);
         if (!details) setError("Could not load worker details to recommend.");
       } catch (err) {

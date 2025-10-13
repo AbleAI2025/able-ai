@@ -3,7 +3,6 @@
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 
 import InputField from "@/app/components/form/InputField"; // Reusing shared InputField
 import { Send, Loader2, Star } from "lucide-react"; // Lucide icons
@@ -26,13 +25,8 @@ interface SkillsProps {
 
 async function getWorkerDetails(
   workerId: string,
-  token: string
 ): Promise<{ name: string; skills: SkillsProps[] } | null> {
-  const response = await fetch(`/api/workers/${workerId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(`/api/workers/${workerId}`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch worker details");
@@ -50,7 +44,6 @@ async function getWorkerDetails(
 export default function PublicRecommendationPage() {
   const params = useParams();
   const workerToRecommendId = params.workerId as string;
-  const { user } = useAuth();
 
   const [workerDetails, setWorkerDetails] = useState<{
     name: string;
@@ -73,9 +66,9 @@ export default function PublicRecommendationPage() {
   
   // Fetch worker details
   useEffect(() => {
-    if (workerToRecommendId && user?.token) {
+    if (workerToRecommendId) {
       setIsLoadingWorker(true);
-      getWorkerDetails(workerToRecommendId, user.token)
+      getWorkerDetails(workerToRecommendId)
         .then((details) => {
           if (details) {
             setWorkerDetails(details);
@@ -85,11 +78,11 @@ export default function PublicRecommendationPage() {
         })
         .catch((err: Error) => setError(err.message || "Error fetching worker details."))
         .finally(() => setIsLoadingWorker(false));
-    } else if (!user?.token) {
-      setError("You must be logged in to view worker recommendations.");
+    } else {
+      setError("Error getting worker profile information.");
       setIsLoadingWorker(false);
     }
-  }, [workerToRecommendId, user?.token]);
+  }, [workerToRecommendId]);
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
