@@ -160,7 +160,6 @@ export async function validateUserInput(
     // Special handling for equipment fields - be very lenient
     if (context.currentField === 'equipment') {
       // For equipment, only do basic validation, skip AI validation
-      console.log('🔍 Equipment field - skipping AI validation for leniency');
     } else {
       const aiValidation = await validateWithAI(input, context, aiService);
       if (!aiValidation.isValid) {

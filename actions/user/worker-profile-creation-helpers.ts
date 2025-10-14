@@ -172,7 +172,7 @@ export async function saveQualificationsData(
   workerProfileId: string,
   qualificationsText: string | undefined
 ) {
-  if (!qualificationsText || qualificationsText.trim().length === 0 || qualificationsText === "none") return;
+  if (!qualificationsText || qualificationsText.trim().length === 0 || qualificationsText.trim().toLowerCase() === "none") return;
 
   // Parse qualifications from the text input
   const qualificationsList = qualificationsText
