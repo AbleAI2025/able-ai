@@ -114,7 +114,6 @@ export function useOnboardingState(user: any) {
         
         // Initialize chat steps based on existing data
         const initialSteps = initializeChatSteps(result.data, existingFormData, REQUIRED_FIELDS_CONFIG, []);
-        console.log('Initial chat steps:', initialSteps);
         setChatSteps(initialSteps);
       } else {
         console.log('No existing profile data found');

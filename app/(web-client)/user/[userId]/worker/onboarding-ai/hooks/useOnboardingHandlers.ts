@@ -1193,19 +1193,13 @@ export function useOnboardingHandlers({
             });
             break;
           case "skills":
-            console.log(
-              `🔍 Processing skills field with value:`,
-              valueForFieldSetter
-            );
             validationResult = await setSkillName(valueForFieldSetter, ai);
-            console.log(`🔍 ${field} field setter result:`, validationResult);
             break;
           case "experience":
             validationResult = setExperience(valueForFieldSetter);
             break;
           case "hourlyRate":
             validationResult = setWage(valueForFieldSetter);
-            console.log(`🔍 ${field} field setter result:`, validationResult);
             // Store the wage amount as the field value
             if (validationResult.ok && validationResult.wage) {
               validationResult[field] = String(validationResult.wage.amount);

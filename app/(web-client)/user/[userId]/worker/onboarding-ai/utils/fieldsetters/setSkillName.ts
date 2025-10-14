@@ -116,7 +116,6 @@ Return only the clean profession name:`,
         .join(' ');
     }
   } else {
-    console.log('🔍 No AI service available, using fallback normalization');
     // Fallback to basic normalization if no AI service
     skillName = trimmed
       .replace(/\s+/g, ' ')
@@ -125,8 +124,6 @@ Return only the clean profession name:`,
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   }
-  
-  console.log('🔍 Final skill name:', skillName);
   
   return { 
     ok: true, 
