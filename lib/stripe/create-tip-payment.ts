@@ -24,22 +24,28 @@ export async function createTipPayment(params: PaymentTipParams) {
       currency: currency || 'gbp',
       customer: buyerStripeCustomerId,
       payment_method: savedPaymentMethodId,
-      on_behalf_of: destinationAccountId,
       confirm: true,
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: 'never',
       },
       description: description || '',
-      transfer_data: {
-        destination: destinationAccountId,
-        amount: tipAmountCents,
-      },
       metadata: {
         gigId: gigId,
         type: 'gig_tip',
         ...metadata,
       },
+      expand: ['latest_charge.balance_transaction'],
+    });
+
+    const latestCharge = tipIntent.latest_charge as Stripe.Charge;
+    
+    await stripeApi.transfers.create({
+      amount: tipAmountCents,
+      currency: currency || 'gbp',
+      destination: destinationAccountId,
+      source_transaction: latestCharge.id,
+      transfer_group: `GIG_TIP_${gigId}`
     });
 
     console.log(`Tip sent for worker ${destinationAccountId}. Total paid: ${tipAmountCents} cents.`);
