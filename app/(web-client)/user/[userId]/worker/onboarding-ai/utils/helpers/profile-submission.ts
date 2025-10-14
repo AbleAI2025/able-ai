@@ -334,7 +334,6 @@ export async function handleManualFormSubmission(
     setError(null);
 
     const requiredData = await processFormDataForSubmission(formData, ai);
-    console.log("requiredData", requiredData);
 
     // Save the profile data to database
     const result = await handleProfileSubmission(

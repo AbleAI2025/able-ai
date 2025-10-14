@@ -21,7 +21,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
   updateProfileImageAction,
-  updateVideoUrlWorkerProfileAction,
   updateVideoUrlWorkerSkillAction,
 } from "@/actions/user/gig-worker-profile";
 import ViewImageModal from "./ViewImagesModal";
@@ -97,76 +96,75 @@ const SkillSplashScreen = ({
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
+      const toastId = toast.loading("Uploading video...");
+
       try {
         if (!user) {
           console.error("Missing required parameters for video upload");
-          toast.error("Failed to upload video. Please try again.");
+          toast.error("Failed to upload video. Please try again.", { id: toastId });
           return;
         }
 
         if (!file || file.size === 0) {
           console.error("Invalid file for video upload");
-          toast.error("Invalid video file. Please try again.");
+          toast.error("Invalid video file. Please try again.", { id: toastId });
           return;
         }
 
-        // Check file size (limit to 50MB)
-        const maxSize = 50 * 1024 * 1024; // 50MB
+        const maxSize = 50 * 1024 * 1024;
         if (file.size > maxSize) {
-          toast.error(
-            "Video file too large. Please use a file smaller than 50MB."
-          );
+          toast.error("Video file too large. Please use a file smaller than 50MB.", { id: toastId });
           return;
         }
 
-        const baseName = skill?.name
-          ? encodeURIComponent(skill.name)
-          : "introduction";
+        const baseName = skill?.name ? encodeURIComponent(skill.name) : "introduction";
 
         const fileName = `workers/${
           user?.uid
         }/introVideo/${baseName}-${encodeURIComponent(
           user?.email ?? user?.uid
         )}.webm`;
-        
+
         const fileStorageRef = storageRef(getStorage(firebaseApp), fileName);
         const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
         uploadTask.on(
           "state_changed",
-          () => {
-            // Progress handling could be added here if needed
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            toast.loading(`Uploading: ${Math.round(progress)}%`, {
+              id: toastId,
+              duration: 1000,
+            });
           },
           (error) => {
             console.error("Upload failed:", error);
-            toast.error("Video upload failed. Please try again.");
+            toast.error("Video upload failed. Please try again.", { id: toastId });
           },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then(async (downloadURL) => {
-                if (!user.token) {
-                  toast.error("Authentication token is required");
-                  return;
-                }
-                await updateVideoUrlWorkerSkillAction(
-                  downloadURL,
-                  user.token,
-                  skillId
-                );
-                toast.success("Video upload successfully");
-              })
-              .catch((error) => {
-                console.error("Failed to get download URL:", error);
-                toast.error("Failed to get video URL. Please try again.");
-              });
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+              if (!user.token) {
+                toast.error("Authentication token is required", { id: toastId });
+                return;
+              }
+
+              await updateVideoUrlWorkerSkillAction(downloadURL, user.token, skillId);
+              toast.success("Video uploaded successfully!", { id: toastId });
+              fetchSkillData();
+            } catch (error) {
+              console.error("Failed to get download URL:", error);
+              toast.error("Failed to get video URL. Please try again.", { id: toastId });
+            }
           }
         );
       } catch (error) {
         console.error("Video upload error:", error);
-        toast.error("Failed to upload video. Please try again.");
+        toast.error("Failed to upload video. Please try again.", { id: toastId });
       }
     },
-    [user]
+    [user, skillId, skill]
   );
 
   const handleCopy = async () => {

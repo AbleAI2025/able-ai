@@ -93,6 +93,7 @@ import {
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import { saveWorkerProfileFromOnboardingAction } from "@/actions/user/gig-worker-profile";
 import { parseExperienceToNumeric } from "@/lib/utils/experienceParsing";
+import { toast } from "sonner";
 
 // AI Video Script Generation Function (from onboarding-ai)
 async function generateAIVideoScript(formData: FormData, ai: any): Promise<string> {
@@ -1517,70 +1518,77 @@ It's completely fine if you don't - most venues provide what's needed!`;
   };
 
   // Handle video upload
-  const handleVideoUpload = async (file: File, fieldName?: string, stepId?: number) => {
-    try {
-      setIsProcessing(true);
-      setError(null);
+const handleVideoUpload = async (file: File, fieldName?: string, stepId?: number) => {
+  const toastId = toast.loading("Uploading video...");
 
-      const storage = getStorage(firebaseApp);
-      const videoRef = storageRef(storage, `workers/${user?.uid}/introVideo/${Date.now()}-${file.name}`);
-      
-      const uploadTask = uploadBytesResumable(videoRef, file);
-      
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          // Progress tracking
-        },
-        (error) => {
-          console.error('Upload error:', error);
-          setError('Failed to upload video. Please try again.');
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            
-            // Update form data with video URL
-            setFormData(prev => ({
-              ...prev,
-              videoIntro: downloadURL
-            }));
+  try {
+    setIsProcessing(true);
+    setError(null);
 
-            // Update the video step
-            setChatSteps(prev => prev.map(step => 
-              step.id === stepId 
+    const storage = getStorage(firebaseApp);
+    const videoRef = storageRef(storage, `workers/${user?.uid}/introVideo/${Date.now()}-${file.name}`);
+    const uploadTask = uploadBytesResumable(videoRef, file);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        toast.loading(`Uploading: ${Math.round(progress)}%`, {
+          id: toastId,
+        });
+      },
+      (error) => {
+        console.error("Upload error:", error);
+        setError("Failed to upload video. Please try again.");
+        toast.error("Video upload failed. Please try again.", { id: toastId });
+      },
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+          // Actualizar form data
+          setFormData((prev) => ({
+            ...prev,
+            videoIntro: downloadURL,
+          }));
+
+          setChatSteps((prev) =>
+            prev.map((step) =>
+              step.id === stepId
                 ? { ...step, isComplete: true, sanitizedValue: downloadURL }
                 : step
-            ));
+            )
+          );
 
-            // Show completion message and finalize profile
-            const completionStep: ChatStep = {
-              id: currentStepId,
-              type: "bot",
-              content: "Perfect! Your video has been uploaded successfully. Now let's complete your profile!",
-              isNew: true
-            };
+          const completionStep: ChatStep = {
+            id: currentStepId,
+            type: "bot",
+            content:
+              "Perfect! Your video has been uploaded successfully. Now let's complete your profile!",
+            isNew: true,
+          };
 
-            setChatSteps(prev => [...prev, completionStep]);
-            setCurrentStepId(prev => prev + 1);
+          setChatSteps((prev) => [...prev, completionStep]);
+          setCurrentStepId((prev) => prev + 1);
 
-            // Finalize profile after video upload
-            await finalizeProfile();
+          await finalizeProfile();
 
-          } catch (error) {
-            console.error('Error getting download URL:', error);
-            setError('Failed to process video. Please try again.');
-          }
+          toast.success("Video uploaded successfully!", { id: toastId });
+        } catch (error) {
+          console.error("Error getting download URL:", error);
+          setError("Failed to process video. Please try again.");
+          toast.error("Failed to process video. Please try again.", { id: toastId });
+        } finally {
+          setIsProcessing(false);
         }
-      );
-
-    } catch (error) {
-      console.error('Error uploading video:', error);
-      setError('Failed to upload video. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
+      }
+    );
+  } catch (error) {
+    console.error("Error uploading video:", error);
+    setError("Failed to upload video. Please try again.");
+    toast.error("Unexpected error during upload.", { id: toastId });
+  }
+};
   // Finalize profile creation
   const finalizeProfile = async () => {
     try {

@@ -87,67 +87,75 @@ export function useBuyerProfileData() {
     }
   }, [dashboardData]);
 
-  const handleVideoUpload = useCallback(
-    async (file: Blob) => {
-      if (!user) {
-        console.error("Missing required parameters for video upload");
-        setError("Failed to upload video. Please try again.");
-        return;
-      }
+const handleVideoUpload = useCallback(
+  async (file: Blob) => {
+    if (!user) {
+      console.error("Missing required parameters for video upload");
+      setError("Failed to upload video. Please try again.");
+      return;
+    }
 
-      if (!file || file.size === 0) {
-        console.error("Invalid file for video upload");
-        setError("Invalid video file. Please try again.");
-        return;
-      }
+    if (!file || file.size === 0) {
+      console.error("Invalid file for video upload");
+      setError("Invalid video file. Please try again.");
+      return;
+    }
 
-      const maxSize = 50 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setError("Video file too large. Please use a file smaller than 50MB.");
-        return;
-      }
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError("Video file too large. Please use a file smaller than 50MB.");
+      return;
+    }
 
-      try {
-        const filePath = `buyer/${user.uid}/introVideo/introduction-${encodeURI(
-          user.email ?? user.uid
-        )}.webm`;
-        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
-        const uploadTask = uploadBytesResumable(fileStorageRef, file);
+    try {
+      const filePath = `buyer/${user.uid}/introVideo/introduction-${encodeURI(
+        user.email ?? user.uid
+      )}.webm`;
+      const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+      const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
-        uploadTask.on(
-          "state_changed",
-          () => {
-            // Progress tracking could be implemented here if needed
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            setError("Video upload failed. Please try again.");
-          },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then(async (downloadURL) => {
-                const { success, error } = await updateVideoUrlBuyerProfileAction(downloadURL, user.token);
-                if (success) {
-                  toast.success("Video upload successfully");
-                  fetchUserProfile();
-                } else {
-                  throw error || new Error("Failed to save video URL");
-                }
-              })
-              .catch((error) => {
-                console.error("Failed to get download URL or update profile:", error);
-                setError("Failed to process video upload. Please try again.");
+      const toastId = toast.loading("Uploading video...");
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          toast.loading(`Uploading: ${Math.round(progress)}%`, { id: toastId });
+        },
+        (error) => {
+          console.error("Upload failed:", error);
+          setError("Video upload failed. Please try again.");
+          toast.error("Video upload failed. Please try again.", { id: toastId });
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref)
+            .then(async (downloadURL) => {
+              const { success, error } =
+                await updateVideoUrlBuyerProfileAction(downloadURL, user.token);
+              if (success) {
+                toast.success("Video uploaded successfully", { id: toastId });
+                fetchUserProfile();
+              } else {
+                throw error || new Error("Failed to save video URL");
+              }
+            })
+            .catch((error) => {
+              console.error("Failed to get download URL or update profile:", error);
+              setError("Failed to process video upload. Please try again.");
+              toast.error("Failed to process video upload. Please try again.", {
+                id: toastId,
               });
-          }
-        );
-      } catch (error) {
-        console.error("Video upload error:", error);
-        setError("Failed to upload video. Please try again.");
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user]
-  );
+            });
+        }
+      );
+    } catch (error) {
+      console.error("Video upload error:", error);
+      setError("Failed to upload video. Please try again.");
+    }
+  },
+  [user]
+);
 
   const handleSave = async (updatedData: typeof businessInfo) => {
     try {

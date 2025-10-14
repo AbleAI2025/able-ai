@@ -56,7 +56,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
-import { updateVideoUrlWorkerProfileAction } from "@/actions/user/gig-worker-profile";
+import { toast } from "sonner";
 
 // Type definitions
 interface RequiredField {
@@ -408,90 +408,105 @@ export default function OnboardingAIPageSimplified() {
     ]
   );
 
-  const handleVideoUpload = useCallback(
-    async (file: Blob, skillName?: string, stepId?: number) => {
-      try {
-        if (!user) throw new Error("Error user not found, you must be logged");
+const handleVideoUpload = useCallback(
+  async (file: Blob, skillName?: string, stepId?: number) => {
+    const toastId = toast.loading("Uploading video...");
 
-        const storage = getStorage(firebaseApp);
+    try {
+      if (!user) throw new Error("Error: user not found, you must be logged in");
 
-        const baseName = skillName
-          ? encodeURIComponent(skillName)
-          : "introduction";
+      const storage = getStorage(firebaseApp);
 
-        const fileName = `workers/${
-          user?.uid
-        }/introVideo/${baseName}-${encodeURIComponent(
-          user?.email ?? user?.uid
-        )}.webm`;
+      const baseName = skillName
+        ? encodeURIComponent(skillName)
+        : "introduction";
 
-        const storageReference = storageRef(storage, fileName);
+      const fileName = `workers/${
+        user?.uid
+      }/introVideo/${baseName}-${encodeURIComponent(
+        user?.email ?? user?.uid
+      )}.webm`;
 
-        const uploadTask = uploadBytesResumable(storageReference, file);
+      const storageReference = storageRef(storage, fileName);
 
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            // Progress tracking could be added here
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            setError("Video upload failed. Please try again.");
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      const uploadTask = uploadBytesResumable(storageReference, file);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          // Track upload progress and update toast
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          toast.loading(`Uploading: ${Math.round(progress)}%`, {
+            id: toastId,
+          });
+        },
+        (error) => {
+          console.error("Upload failed:", error);
+          setError("Video upload failed. Please try again.");
+          toast.error("Video upload failed. Please try again.", { id: toastId });
+        },
+        async () => {
+          try {
+            // Get the download URL after upload completes
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
               // Update video URL in profile
-              if (!user?.token) {
-                throw new Error("Authentication token is required");
-              }
+            if (!user?.token) {
+              throw new Error("Authentication token is required");
+            }
 
               // Update form data
-              const updatedFormData = { ...formData, videoIntro: downloadURL };
-              setFormData(updatedFormData);
+            const updatedFormData = { ...formData, videoIntro: downloadURL };
+            setFormData(updatedFormData);
 
-              // Mark video step as complete and add sanitized confirmation step
-              setChatSteps((prev: any[]) =>
-                prev
-                  .map((step: any) =>
-                    step.id === stepId ? { ...step, isComplete: true } : step
-                  )
-                  .concat([
-                    {
-                      id: Date.now(),
-                      type: "sanitized",
-                      fieldName: "videoIntro",
-                      sanitizedValue: downloadURL,
-                      originalValue: "Video uploaded",
-                      naturalSummary: "I saved the video introduction! 🎥",
-                      extractedData: JSON.stringify({ videoIntro: downloadURL }),
-                      isComplete: false,
-                      isNew: true,
-                    },
-                  ])
-              );
-            } catch (error) {
-              console.error("Error getting download URL:", error);
-              setError("Failed to save video. Please try again.");
-            }
+            // Update chat steps:
+            // - mark the current video step as complete
+            // - add a sanitized confirmation step with extracted data
+            setChatSteps((prev: any[]) =>
+              prev
+                .map((step: any) =>
+                  step.id === stepId ? { ...step, isComplete: true } : step
+                )
+                .concat([
+                  {
+                    id: Date.now(),
+                    type: "sanitized",
+                    fieldName: "videoIntro",
+                    sanitizedValue: downloadURL,
+                    originalValue: "Video uploaded",
+                    naturalSummary: "I saved the video introduction! 🎥",
+                    extractedData: JSON.stringify({ videoIntro: downloadURL }),
+                    isComplete: false,
+                    isNew: true,
+                  },
+                ])
+            );
+
+            // Show success toast
+            toast.success("Video uploaded successfully!", { id: toastId });
+          } catch (error) {
+            console.error("Error getting download URL:", error);
+            setError("Failed to save video. Please try again.");
+            toast.error("Failed to save video. Please try again.", { id: toastId });
           }
-        );
-      } catch (error) {
-        console.error("Video upload error:", error);
-        setError("Video upload failed. Please try again.");
-      }
-    },
-    [
-      formData,
-      setFormData,
-      chatSteps,
-      setChatSteps,
-      user,
-      setError,
-      existingProfileData,
-    ]
-  );
+        }
+      );
+    } catch (error) {
+      console.error("Video upload error:", error);
+      setError("Video upload failed. Please try again.");
+      toast.error("Video upload failed. Please try again.", { id: toastId });
+    }
+  },
+  [
+    formData,
+    setFormData,
+    chatSteps,
+    setChatSteps,
+    user,
+    setError,
+    existingProfileData,
+  ]
+);
 
   const handleInputChange = useCallback(
     (name: string, value: unknown) => {

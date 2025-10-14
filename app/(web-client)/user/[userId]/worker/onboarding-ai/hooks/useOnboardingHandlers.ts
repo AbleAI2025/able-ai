@@ -162,6 +162,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
+import { toast } from "sonner";
 
 /**
  * Custom hook for managing onboarding event handlers
@@ -644,11 +645,11 @@ export function useOnboardingHandlers({
    */
   const handleVideoUpload = useCallback(
     async (file: Blob, skillName: string, stepId?: number) => {
+      const toastId = toast.loading("Uploading video...");
+
       try {
         const storage = getStorage(firebaseApp);
-        const baseName = skillName
-          ? encodeURIComponent(skillName)
-          : "introduction";
+        const baseName = skillName ? encodeURIComponent(skillName) : "introduction";
 
         const fileName = `workers/${
           user?.uid
@@ -657,31 +658,33 @@ export function useOnboardingHandlers({
         )}.webm`;
 
         const storageReference = storageRef(storage, fileName);
-
         const uploadTask = uploadBytesResumable(storageReference, file);
 
         uploadTask.on(
           "state_changed",
           (snapshot) => {
-            // Progress tracking could be added here
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            toast.loading(`Uploading: ${Math.round(progress)}%`, {
+              id: toastId,
+              duration: 1000,
+            });
           },
           (error) => {
             setError("Video upload failed. Please try again.");
+            toast.error("Video upload failed. Please try again.", { id: toastId });
           },
           async () => {
             try {
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-              // Update video URL in profile
               if (!user?.token) {
-                throw new Error("Authentication token is required");
+                toast.error("Authentication token is required", { id: toastId });
+                return;
               }
 
-              // Update form data
               const updatedFormData = { ...formData, videoIntro: downloadURL };
               setFormData(updatedFormData);
 
-              // Generate AI video script for user guidance
               let aiScript = "";
               try {
                 aiScript = await generateAIVideoScript(updatedFormData, ai);
@@ -689,7 +692,6 @@ export function useOnboardingHandlers({
                 console.error("AI script generation failed:", scriptError);
               }
 
-              // Mark video step as complete and add sanitized confirmation step
               setChatSteps((prev: any[]) =>
                 prev
                   .map((step: any) =>
@@ -702,7 +704,7 @@ export function useOnboardingHandlers({
                       fieldName: "videoIntro",
                       sanitizedValue: downloadURL,
                       originalValue: "Video uploaded",
-                      aiScript: aiScript, // Include AI-generated script
+                      aiScript: aiScript,
                       naturalSummary: "I saved the video introduction! 🎥",
                       extractedData: JSON.stringify({
                         videoIntro: downloadURL,
@@ -711,13 +713,17 @@ export function useOnboardingHandlers({
                     },
                   ])
               );
+
+              toast.success("Video uploaded successfully!", { id: toastId });
             } catch (error) {
               setError("Failed to save video. Please try again.");
+              toast.error("Failed to save video. Please try again.", { id: toastId });
             }
           }
         );
       } catch (error) {
         setError("Video upload failed. Please try again.");
+        toast.error("Video upload failed. Please try again.", { id: toastId });
       }
     },
     [formData, setFormData, chatSteps, setChatSteps, user, setError]
