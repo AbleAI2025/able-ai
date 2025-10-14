@@ -33,6 +33,7 @@ async function getPendingPaymentForGig(gigId: string) {
     where: and(eq(PaymentsTable.gigId, gigId), eq(PaymentsTable.status, 'PENDING')),
     columns: {
       id: true,
+      gigId: true,
       amountGross: true,
       stripePaymentIntentId: true,
     },
@@ -41,12 +42,13 @@ async function getPendingPaymentForGig(gigId: string) {
   return gigPayment;
 }
 
-async function markPaymentAsCompleted(paymentId: string, latestCharge: Stripe.Charge) {
+async function markPaymentAsCompleted(paymentId: string, stripeTransferId: string, latestCharge: Stripe.Charge) {
   return await db.update(PaymentsTable).set({
     paidAt: new Date(),
     status: 'COMPLETED',
     stripeChargeId: latestCharge.id,
     invoiceUrl: latestCharge.receipt_url,
+    stripeTransferIdToWorker: stripeTransferId,
   })
     .where(eq(PaymentsTable.id, paymentId))
     .returning();
@@ -60,17 +62,23 @@ async function updateGigStatus(gigId: string, status: InternalGigStatusEnumType)
     .returning();
 }
 
-async function processPendingPayment(gigPayment: GigPendingPaymentFields, originalPaymentIntentId: string, finalPrice: number, ableFeePercent: number) {
+async function processPendingPayment(
+  gigPayment: GigPendingPaymentFields,
+  originalPaymentIntentId: string,
+  finalPrice: number,
+  ableFeePercent: number,
+  destinationAccountId: string
+) {
   try {
     const paymentAmountGross = Number(gigPayment.amountGross);
     const amountToCapture = Math.min(finalPrice, paymentAmountGross);
     const ableFee = Math.round(amountToCapture * (ableFeePercent || defaultFeePercent));
+    const amountToWorker = amountToCapture - ableFee;
 
     const captureResult = await stripeApi.paymentIntents.capture(
       originalPaymentIntentId,
       {
         amount_to_capture: amountToCapture,
-        application_fee_amount: ableFee,
         expand: ['latest_charge']
       }
     );
@@ -81,11 +89,30 @@ async function processPendingPayment(gigPayment: GigPendingPaymentFields, origin
 
     const latestCharge = captureResult.latest_charge as Stripe.Charge;
 
+    const transfer = await stripeApi.transfers.create({
+      amount: amountToWorker,
+      currency: captureResult.currency,
+      destination: destinationAccountId,
+      source_transaction: latestCharge.id,
+      transfer_group: `GIG_${gigPayment.gigId}`
+    });
+
     await markPaymentAsCompleted(
       gigPayment.id,
+      transfer.id,
       latestCharge
     );
+
     console.log(`Captured ${amountToCapture} cents from PaymentIntent ${originalPaymentIntentId}.`);
+    console.log(`Transferred ${amountToWorker} cents to connected account ${destinationAccountId}.`);
+
+    return {
+      captured: true,
+      transferId: transfer.id,
+      ableFee,
+      amountToWorker
+    };
+
   } catch (error) {
     console.error(`Failed to finalize payment for payment ${originalPaymentIntentId}:`, error);
     throw error;
@@ -106,35 +133,38 @@ async function createDirectPayment(params: DirectPaymentParams) {
   } = params;
   const { gigId, payerUserId, receiverUserId } = gigPaymentInfo;
 
+  const amountToCapture = Math.round(serviceAmountInCents);
+  const ableFee = Math.round(amountToCapture * (ableFeePercent || defaultFeePercent));
+  const amountToWorker = amountToCapture - ableFee;
+
   try {
     const newPaymentResult = await stripeApi.paymentIntents.create({
-      amount: Math.round(serviceAmountInCents),
+      amount: amountToCapture,
       currency,
       customer: buyerStripeCustomerId,
-      on_behalf_of: destinationAccountId,
       payment_method: customerPaymentMethodId,
       confirm: true,
-      application_fee_amount: Math.round(serviceAmountInCents * (ableFeePercent || defaultFeePercent)),
       metadata: {
         gigId: gigId,
         type: 'gig_direct_payment',
         ...metadata,
       },
-      description: description || `direct payment to Gig ID: ${gigId}`,
+      description: description || `direct payment in Gig ID: ${gigId} - to user account: ${destinationAccountId}`,
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: 'never',
       },
-      transfer_data: {
-        destination: destinationAccountId,
-      },
       expand: ['latest_charge.balance_transaction']
     });
 
-    const appFeeAmount = newPaymentResult.application_fee_amount?.toString(10) || '';
-    const amountToWorker = newPaymentResult.transfer_data?.amount ? newPaymentResult.transfer_data?.amount :
-      newPaymentResult.amount - (newPaymentResult?.application_fee_amount || 0);
     const latestCharge = newPaymentResult.latest_charge as Stripe.Charge;
+    const transfer = await stripeApi.transfers.create({
+      amount: amountToWorker,
+      currency,
+      destination: destinationAccountId,
+      source_transaction: latestCharge.id,
+      transfer_group: `GIG_${gigId}`
+    });
 
     await db
       .insert(PaymentsTable)
@@ -145,11 +175,12 @@ async function createDirectPayment(params: DirectPaymentParams) {
         receiverUserId,
         internalNotes: description,
         amountGross: serviceAmountInCents.toString(),
-        ableFeeAmount: appFeeAmount.toString(),
+        ableFeeAmount: ableFee.toString(),
         amountNetToWorker: amountToWorker.toString(),
         stripeFeeAmount: '0',
         stripeChargeId: latestCharge.id,
         invoiceUrl: latestCharge.receipt_url,
+        stripeTransferIdToWorker: transfer.id,
         status: 'COMPLETED',
         paidAt: new Date(),
       });
@@ -199,7 +230,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
     if (finalPrice <= originalAgreedPrice) {
       const priceToPay = finalPrice === 0 ? originalAgreedPrice : finalPrice;
       const priceToPayWithDiscount = calculateAmountWithDiscount(priceToPay, discount);
-      await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPayWithDiscount, ableFeePercent);
+      await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPayWithDiscount, ableFeePercent, receiverAccountId);
       console.log(`Payment finalized for gig ${gigId}. Total captured: ${finalPrice} cents.`);
     }
     else if (finalPrice > originalAgreedPrice) {

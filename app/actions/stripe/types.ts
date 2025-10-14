@@ -31,6 +31,7 @@ export interface PaymentTipParams {
 
 export interface GigPendingPaymentFields {
   id: string;
+  gigId: string;
   amountGross: string;
   stripePaymentIntentId: string | null;
 }
