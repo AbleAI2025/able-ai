@@ -256,26 +256,12 @@ export default function OnboardingAIPageSimplified() {
       inputName: string,
       inputValue?: string
     ): Promise<boolean> => {
-      console.log(
-        "🔍 OnboardingAIPageSimplified handleInputSubmit called with:",
-        { stepId, inputName, inputValue }
-      );
-
       // Use the proper handleInputSubmit from hooks which includes similar skill checks
       const validationPassed: boolean = await handlers.handleInputSubmit(
         stepId,
         inputName,
         inputValue
       );
-
-      // Only proceed to next field if validation passed
-      if (validationPassed) {
-        console.log("🔍 Validation passed, proceeding to next field");
-        // The step-flow logic will handle adding the next field
-      } else {
-        console.log("🔍 Validation failed, staying on current field");
-        // Don't proceed to next field - stay on current field
-      }
 
       return validationPassed;
     },

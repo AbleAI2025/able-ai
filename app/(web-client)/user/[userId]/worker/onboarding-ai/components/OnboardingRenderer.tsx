@@ -201,8 +201,6 @@ export default function OnboardingRenderer({
     );
   }
 
-  console.log("formData::::::", formData);
-
   // Show manual form
   if (setupMode === 'manual') {
     return (
