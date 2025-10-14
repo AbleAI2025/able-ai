@@ -12,6 +12,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { useAuth } from "@/context/AuthContext";
+import { updateVideoUrlWorkerProfileAction } from "@/actions/user/worker-profile-updates";
 
 interface VideoSectionProps {
   videoUrl?: string | null;
@@ -78,7 +79,7 @@ export default function VideoSection({
                   toast.error("Authentication token is required", { id: toastId });
                   return;
                 }
-                await updateVideoUrlProfileAction(downloadURL, user.token);
+                await updateVideoUrlWorkerProfileAction(downloadURL, user.token);
                 toast.success("Video upload successful", { id: toastId });
                 fetchUserProfile(user.token);
               })

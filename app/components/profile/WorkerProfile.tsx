@@ -5,7 +5,7 @@ import styles from "./WorkerProfile.module.css";
 
 import {
   updateSocialLinkWorkerProfileAction,
-  updateVideoUrlProfileAction,
+  updateVideoUrlWorkerProfileAction,
 } from "@/actions/user/gig-worker-profile";
 
 import PublicWorkerProfile, {
@@ -58,7 +58,7 @@ const WorkerProfile = ({
         workerProfile={workerProfile}
         isSelfView={isSelfView}
         workerLink={workerLink}
-        updateVideoUrlProfileAction={updateVideoUrlProfileAction}
+        updateVideoUrlProfileAction={updateVideoUrlWorkerProfileAction}
         fetchUserProfile={fetchUserProfile}
       />
       {/* User Info Bar */}

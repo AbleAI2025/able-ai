@@ -1,10 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle/db";
-import {
-  GigWorkerProfilesTable,
-  UsersTable,
-} from "@/lib/drizzle/schema";
+import { GigWorkerProfilesTable, UsersTable } from "@/lib/drizzle/schema";
 
 import { ERROR_CODES } from "@/lib/responses/errors";
 import { isUserAuthenticated } from "@/lib/user.server";
@@ -17,7 +14,7 @@ import {
   extractExperienceYears,
   saveSkillsData,
   saveQualificationsData,
-  saveEquipmentData
+  saveEquipmentData,
 } from "./worker-profile-creation-helpers";
 
 export const createWorkerProfileAction = async (token: string) => {
@@ -114,14 +111,10 @@ export const saveWorkerProfileFromOnboardingAction = async (
 
     const user = await db.query.UsersTable.findFirst({
       where: eq(UsersTable.firebaseUid, uid),
+      with: { gigWorkerProfile: true },
     });
 
     if (!user) throw "User not found";
-
-    // Check if worker profile already exists
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.userId, user.id),
-    });
 
     // Validate hourly rate minimum
     const validatedHourlyRate = parseFloat(profileData.hourlyRate || "0");
@@ -135,7 +128,9 @@ export const saveWorkerProfileFromOnboardingAction = async (
     const generatedHashtags = profileData.hashtags || [];
 
     // Parse location data
-    const { latitude, longitude, locationText } = await parseLocationData(profileData);
+    const { latitude, longitude, locationText } = await parseLocationData(
+      profileData
+    );
 
     const profileUpdateData = {
       fullBio: profileData.about,
@@ -143,12 +138,6 @@ export const saveWorkerProfileFromOnboardingAction = async (
       latitude: latitude ? String(latitude) : null,
       longitude: longitude ? String(longitude) : null,
       // Remove availabilityJson - we'll save to worker_availability table instead
-      videoUrl: (() => {
-        if (typeof profileData.videoIntro === "string") {
-          return profileData.videoIntro;
-        }
-        return null;
-      })(),
       hashtags:
         generatedHashtags.length > 0
           ? generatedHashtags
@@ -185,13 +174,13 @@ export const saveWorkerProfileFromOnboardingAction = async (
     let workerProfileId: string;
 
     try {
-      if (workerProfile) {
+      if (user.gigWorkerProfile) {
         // Update existing profile
         await db
           .update(GigWorkerProfilesTable)
           .set(profileUpdateData)
           .where(eq(GigWorkerProfilesTable.userId, user.id));
-        workerProfileId = workerProfile.id;
+        workerProfileId = user.gigWorkerProfile.id;
       } else {
         // Create new profile
         const newProfile = await db
@@ -213,12 +202,18 @@ export const saveWorkerProfileFromOnboardingAction = async (
     }
 
     // Save availability data
-    await saveAvailabilityData(user.id, profileData.availability, profileData.hourlyRate);
+    await saveAvailabilityData(
+      user.id,
+      profileData.availability,
+      profileData.hourlyRate
+    );
 
     // Save skills data
     try {
       const skillName = profileData.skills || profileData.jobTitle || "";
-      const yearsOfExperience = await extractExperienceYears(profileData.experience || "");
+      const yearsOfExperience = await extractExperienceYears(
+        profileData.experience || ""
+      );
       const extractedHourlyRate = profileData.hourlyRate
         ? parseFloat(profileData.hourlyRate)
         : validatedHourlyRate;

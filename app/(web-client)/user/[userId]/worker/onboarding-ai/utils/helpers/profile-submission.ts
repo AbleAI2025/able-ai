@@ -278,8 +278,7 @@ export function processFormDataForSubmission(
           endDate: undefined,
           occurrences: undefined,
         },
-        videoIntro:
-          typeof formData.videoIntro === "string" ? formData.videoIntro : "",
+        videoIntro: formData.videoIntro,
         time: formData.time || "",
         jobTitle: formData.jobTitle || extractedJobTitle,
         experienceYears: experienceYears,

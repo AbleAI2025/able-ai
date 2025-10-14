@@ -128,7 +128,7 @@ export interface OnboardingProfileData {
       }
     | string;
   hashtags?: string[];
-  videoIntro: File | string;
+  videoIntro: string;
   jobTitle?: string;
   equipment?: { name: string; description?: string }[];
   experienceYears?: number;

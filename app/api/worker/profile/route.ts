@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/drizzle/db";
 import {
   BadgeDefinitionsTable,
-  EquipmentTable,
   GigWorkerProfilesTable,
-  QualificationsTable,
   ReviewsTable,
-  SkillsTable,
   UserBadgesLinkTable,
   UsersTable,
 } from "@/lib/drizzle/schema";

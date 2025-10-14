@@ -1048,11 +1048,6 @@ Tell me about your primary role!`;
     // Extract job title and experience
     const [standardizedTitle, needsConfirmation] = jobTitleMapper.standardizeTitle(input);
     
-    // Debug logging
-    console.log('Input:', input);
-    console.log('Standardized title:', standardizedTitle);
-    console.log('Needs confirmation:', needsConfirmation);
-    
     // Extract years of experience
     const experienceMatch = input.match(/(\d+)\s*(?:years?|yrs?)/i);
     const yearsExperience = experienceMatch ? parseInt(experienceMatch[1]) : 0;
@@ -1593,9 +1588,7 @@ It's completely fine if you don't - most venues provide what's needed!`;
       setError(null);
 
       // Parse experience to get numeric values
-      console.log('📊 Parsing experience:', formData.experience);
       const { years: experienceYears, months: experienceMonths } = parseExperienceToNumeric(formData.experience || '');
-      console.log('📊 Parsed experience:', { years: experienceYears, months: experienceMonths });
 
       const requiredData = {
         about: formData.about || formData.experienceDetails || '',
@@ -1622,31 +1615,21 @@ It's completely fine if you don't - most venues provide what's needed!`;
         experienceMonths: experienceMonths
         // hashtags are auto-generated on the server side
       };
-
-      // Save the profile data to database
-      console.log('💾 Attempting to save profile with data:', requiredData);
-      console.log('💾 User UID:', user?.uid);
       
       if (!user?.uid) {
         throw new Error('User not authenticated');
       }
       
-      // Generate hashtags before saving
-      console.log('🏷️ Generating hashtags...');
+
       const hashtags = await generateHashtags(requiredData, ai);
-      console.log('🏷️ Generated hashtags:', hashtags);
-      
+
       // Add hashtags to the data
       const dataWithHashtags = {
         ...requiredData,
         hashtags: hashtags
       };
 
-      console.log('🚀 Calling saveWorkerProfileFromOnboardingAction...');
       const result = await saveWorkerProfileFromOnboardingAction(dataWithHashtags, user.uid);
-      console.log('💾 Profile save result:', result);
-      console.log('💾 Result type:', typeof result);
-      console.log('💾 Result keys:', Object.keys(result));
       
       if (result.success && result.data) {
         console.log('✅ Profile saved successfully, workerProfileId:', result.data);

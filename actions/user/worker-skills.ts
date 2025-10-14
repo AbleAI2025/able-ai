@@ -103,7 +103,7 @@ export const getSkillDetailsWorker = async (id: string) => {
       address: workerProfile?.address || "",
       latitude: workerProfile?.latitude ?? 0,
       longitude: workerProfile?.longitude ?? 0,
-      videoUrl: workerProfile?.videoUrl || "",
+      videoUrl: skill?.skillVideoUrl || "",
       statistics: {
         reviews: Number(reviews?.length ?? 0),
         paymentsCollected: 0,

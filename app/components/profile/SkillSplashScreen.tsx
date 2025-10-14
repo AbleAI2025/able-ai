@@ -21,7 +21,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
   updateProfileImageAction,
-  updateVideoUrlProfileAction,
+  updateVideoUrlWorkerProfileAction,
+  updateVideoUrlWorkerSkillAction,
 } from "@/actions/user/gig-worker-profile";
 import ViewImageModal from "./ViewImagesModal";
 import Loader from "../shared/Loader";
@@ -74,13 +75,13 @@ async function uploadImageToFirestore(
 }
 
 const SkillSplashScreen = ({
-  profile,
+  skill,
   skillId,
   fetchSkillData,
   isSelfView,
 }: // onBackClick,
 {
-  profile: SkillProfile | null;
+  skill: SkillProfile | null;
   skillId: string;
   fetchSkillData: () => void;
   isSelfView: boolean;
@@ -96,30 +97,39 @@ const SkillSplashScreen = ({
 
   const handleVideoUpload = useCallback(
     async (file: Blob) => {
-      if (!user) {
-        console.error("Missing required parameters for video upload");
-        toast.error("Failed to upload video. Please try again.");
-        return;
-      }
-
-      if (!file || file.size === 0) {
-        console.error("Invalid file for video upload");
-        toast.error("Invalid video file. Please try again.");
-        return;
-      }
-
-      // Check file size (limit to 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
-        toast.error("Video file too large. Please use a file smaller than 50MB.");
-        return;
-      }
-
       try {
-        const filePath = `workers/${
-          user.uid
-        }/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
-        const fileStorageRef = storageRef(getStorage(firebaseApp), filePath);
+        if (!user) {
+          console.error("Missing required parameters for video upload");
+          toast.error("Failed to upload video. Please try again.");
+          return;
+        }
+
+        if (!file || file.size === 0) {
+          console.error("Invalid file for video upload");
+          toast.error("Invalid video file. Please try again.");
+          return;
+        }
+
+        // Check file size (limit to 50MB)
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (file.size > maxSize) {
+          toast.error(
+            "Video file too large. Please use a file smaller than 50MB."
+          );
+          return;
+        }
+
+        const baseName = skill?.name
+          ? encodeURIComponent(skill.name)
+          : "introduction";
+
+        const fileName = `workers/${
+          user?.uid
+        }/introVideo/${baseName}-${encodeURIComponent(
+          user?.email ?? user?.uid
+        )}.webm`;
+        
+        const fileStorageRef = storageRef(getStorage(firebaseApp), fileName);
         const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
         uploadTask.on(
@@ -138,7 +148,11 @@ const SkillSplashScreen = ({
                   toast.error("Authentication token is required");
                   return;
                 }
-                await updateVideoUrlProfileAction(downloadURL, user.token);
+                await updateVideoUrlWorkerSkillAction(
+                  downloadURL,
+                  user.token,
+                  skillId
+                );
                 toast.success("Video upload successfully");
               })
               .catch((error) => {
@@ -209,14 +223,14 @@ const SkillSplashScreen = ({
   };
 
   useEffect(() => {
-    if (profile && profile.workerProfileId) {
+    if (skill && skill.workerProfileId) {
       setLinkUrl(
-        `${window.location.origin}/worker/${profile.workerProfileId}/recommendation`
+        `${window.location.origin}/worker/${skill.workerProfileId}/recommendation`
       );
     }
-  }, [profile]);
+  }, [skill]);
 
-  if (!profile) return <p className={styles.loading}>Loading...</p>;
+  if (!skill) return <p className={styles.loading}>Loading...</p>;
 
   return (
     <div className={styles.pageWrapper}>
@@ -225,21 +239,21 @@ const SkillSplashScreen = ({
         <div className={styles.header}>
           <div className={styles.videoContainer}>
             <ProfileVideo
-              videoUrl={profile?.videoUrl}
+              videoUrl={skill.videoUrl}
               isSelfView={isSelfView}
               onVideoUpload={handleVideoUpload}
             />
           </div>
 
           <h2 className={styles.name}>
-            {profile.name?.split(" ")[0]}: {profile.title}
+            {skill.name?.split(" ")[0]}: {skill.title}
           </h2>
         </div>
 
         {/* Hashtags */}
-        {profile.hashtags && profile.hashtags.length > 0 && (
+        {skill.hashtags && skill.hashtags.length > 0 && (
           <div className={styles.hashtags}>
-            {profile.hashtags.map((tag, index) => (
+            {skill.hashtags.map((tag, index) => (
               <span key={index} className={styles.hashtag}>
                 {tag}
               </span>
@@ -263,16 +277,16 @@ const SkillSplashScreen = ({
           </thead>
           <tbody>
             <tr>
-              <td>{profile.ableGigs ?? 0}</td>
-              <td>{profile.experienceYears} years</td>
-              <td>£{profile.Eph}</td>
+              <td>{skill.ableGigs ?? 0}</td>
+              <td>{skill.experienceYears} years</td>
+              <td>£{skill.Eph}</td>
             </tr>
           </tbody>
         </table>
 
         {/* Statistics */}
         <div className={styles.section}>
-          <h3>{profile.name}’s statistics</h3>
+          <h3>{skill.name}’s statistics</h3>
           <div className={styles.statistics}>
             <div className={styles.stats}>
               <Image
@@ -282,7 +296,7 @@ const SkillSplashScreen = ({
                 height={32}
               />
               <p>
-                {profile.statistics.reviews}
+                {skill.statistics.reviews}
                 <span>Customer reviews</span>
               </p>
             </div>
@@ -294,14 +308,14 @@ const SkillSplashScreen = ({
                 height={31}
               />
               <p>
-                £{profile.statistics.paymentsCollected}
+                £{skill.statistics.paymentsCollected}
                 <span>Payments collected</span>
               </p>
             </div>
             <div className={styles.stats}>
               <Image src="/images/tips.svg" alt="Tips" width={46} height={30} />
               <p>
-                £{profile.statistics.tipsReceived}
+                £{skill.statistics.tipsReceived}
                 <span>Tips received</span>
               </p>
             </div>
@@ -313,8 +327,8 @@ const SkillSplashScreen = ({
           <h4>Images</h4>
           <div className={styles.supportingImages}>
             <div className={styles.images}>
-              {profile.supportingImages?.length ? (
-                profile.supportingImages.map((img, i) => (
+              {skill.supportingImages?.length ? (
+                skill.supportingImages.map((img, i) => (
                   <div
                     key={i}
                     onClick={() => setSelectedImage(img)}
@@ -377,8 +391,8 @@ const SkillSplashScreen = ({
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Badges Awarded</h3>
             <div className={styles.badges}>
-              {profile.badges && profile.badges.length > 0
-                ? profile.badges.map((badge) => (
+              {skill.badges && skill.badges.length > 0
+                ? skill.badges.map((badge) => (
                     <div className={styles.badge} key={badge.id}>
                       <AwardDisplayBadge
                         icon={badge.icon as BadgeIcon}
@@ -395,17 +409,17 @@ const SkillSplashScreen = ({
 
         {/* Qualifications */}
         <Qualifications
-          qualifications={profile?.qualifications || []}
+          qualifications={skill?.qualifications || []}
           isSelfView={isSelfView}
-          workerId={profile.workerProfileId || ""}
+          workerId={skill.workerProfileId || ""}
           fetchUserProfile={() => fetchSkillData()}
           skillId={skillId}
         />
         {/* Buyer Reviews */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Buyer Reviews</h3>
-          {profile?.buyerReviews && profile.buyerReviews.length > 0 ? (
-            profile.buyerReviews.map((review, index) => (
+          {skill?.buyerReviews && skill.buyerReviews.length > 0 ? (
+            skill.buyerReviews.map((review, index) => (
               <ReviewCardItem
                 key={index}
                 reviewerName={review?.author?.fullName || "Unknown"}
@@ -421,8 +435,8 @@ const SkillSplashScreen = ({
         {/* Recommendations */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Recommendations</h3>
-          {profile?.recommendations && profile.recommendations.length > 0 ? (
-            profile.recommendations.map((recommendation, index) => (
+          {skill?.recommendations && skill.recommendations.length > 0 ? (
+            skill.recommendations.map((recommendation, index) => (
               <RecommendationCardItem
                 key={index}
                 recommenderName={
@@ -441,7 +455,7 @@ const SkillSplashScreen = ({
 
         {showHashtagsModal && (
           <HashtagsModal
-            initialValue={profile.hashtags || []}
+            initialValue={skill.hashtags || []}
             fetchSkillData={() => fetchSkillData()}
             onClose={() => setShowHashtagsModal(false)}
           />

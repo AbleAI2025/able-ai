@@ -116,10 +116,7 @@ export function useOnboardingEffects({
   // Check existing data on mount
   useEffect(() => {
     if (user?.uid && user?.token && isInitialized) {
-      console.log('useOnboardingEffects - checking existing data, user:', user);
       checkExistingData();
-    } else {
-      console.log('useOnboardingEffects - user not ready yet:', user);
     }
   }, [user?.uid, user?.token, isInitialized]);
 

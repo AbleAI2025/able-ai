@@ -10,7 +10,7 @@ import Loader from "@/app/components/shared/Loader";
 export default function WorkerSkillDetailPage() {
   const params = useParams();
   const skillId = params?.skillId as string;
-  const [profile, setProfile] = useState<SkillProfile | null>(null);
+  const [skill, setSkill] = useState<SkillProfile | null>(null);
   const router = useRouter();
 
   const fetchSkillData = useCallback(async () => {
@@ -18,7 +18,7 @@ export default function WorkerSkillDetailPage() {
     try {
       const { success, data } = await getSkillDetailsWorker(skillId);
       if (success && data) {
-        setProfile(data);
+        setSkill(data);
       }
     } catch (error) {
       console.error("Error fetching skill profile:", error);
@@ -29,12 +29,12 @@ export default function WorkerSkillDetailPage() {
     fetchSkillData();
   }, [fetchSkillData]);
 
-  if (!profile) return <Loader />;
+  if (!skill) return <Loader />;
 
   return (
     <SkillSplashScreen
       skillId={skillId}
-      profile={profile}
+      skill={skill}
       fetchSkillData={fetchSkillData}
       isSelfView={true}
       onBackClick={() => router.back()}

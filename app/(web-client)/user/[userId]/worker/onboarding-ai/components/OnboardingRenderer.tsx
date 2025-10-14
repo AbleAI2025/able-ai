@@ -27,7 +27,6 @@ import {
   renderJobTitleConfirmationStep, 
   renderSimilarSkillsConfirmationStep, 
   renderHashtagGenerationStep, 
-  renderSanitizedStep, 
   renderConfirmationStep, 
   renderExistingSkillTitleConfirmationStep, 
   renderSanitizedConfirmationStep,
@@ -37,7 +36,6 @@ import {
 // Import specialized components
 import IncidentBanner from './IncidentBanner';
 import SupportOptions from './SupportOptions';
-import TypingBotMessage from './TypingBotMessage';
 import AIVideoScriptDisplay from './AIVideoScriptDisplay';
 
 // Import styles
@@ -127,7 +125,6 @@ export default function OnboardingRenderer({
   formData,
   isSubmitting,
   error,
-  isTyping,
   isReportingIncident,
   setupMode,
   showSetupChoice,
@@ -135,9 +132,6 @@ export default function OnboardingRenderer({
   existingProfileData,
   manualFormData,
   hashtagState,
-  clickedSanitizedButtons,
-  reformulateField,
-  confirmedSteps,
   isConfirming,
   supportCaseId,
   
@@ -148,10 +142,8 @@ export default function OnboardingRenderer({
   // Event handlers
   handleInputSubmit,
   handleInputChange,
-  handleSanitizedConfirm,
   handleSanitizedReformulate,
   handleSanitizedConfirmation,
-  setFormData,
   setChatSteps,
   ai,
   workerProfileId,
@@ -171,12 +163,13 @@ export default function OnboardingRenderer({
   handleExistingSkillTitleUseAnyway,
   handleExistingSkillTitleChange,
   handleProfileSubmission,
-  user,
   setSetupMode,
   setShowSetupChoice,
   setManualFormData,
   isSpecialComponentActive
 }: OnboardingRendererProps) {
+
+  const DEFAULT_SKILL_NAME = "default"
   
   // Show loading state
   if (isCheckingExistingData) {
@@ -207,6 +200,8 @@ export default function OnboardingRenderer({
       />
     );
   }
+
+  console.log("formData::::::", formData);
 
   // Show manual form
   if (setupMode === 'manual') {
@@ -510,7 +505,7 @@ export default function OnboardingRenderer({
           if (step.type === "video") {
             return renderVideoStep(
               key,
-              (file) => handleVideoUpload(file, step.inputConfig?.name, step.id),
+              (file) => handleVideoUpload(file, formData?.skills || DEFAULT_SKILL_NAME, step.id),
               <AIVideoScriptDisplay formData={formData} ai={ai} />
             );
           }

@@ -133,7 +133,7 @@ export async function saveSkillsData(
   yearsOfExperience: number,
   hourlyRate: string,
   hashtags: string[] | undefined,
-  videoIntro?: string | File
+  videoIntro?: string
 ) {
   // Check if this specific skill already exists for this worker profile to prevent exact duplicates
   const existingSkills = await db.query.SkillsTable.findMany({
@@ -154,7 +154,7 @@ export async function saveSkillsData(
         experienceMonths: 0,
         experienceYears: yearsOfExperience,
         agreedRate: hourlyRate,
-        skillVideoUrl: typeof videoIntro === "string" ? videoIntro : null,
+        skillVideoUrl: videoIntro,
         adminTags: hashtags || null,
         ableGigs: null,
         images: [],
@@ -172,7 +172,7 @@ export async function saveQualificationsData(
   workerProfileId: string,
   qualificationsText: string | undefined
 ) {
-  if (!qualificationsText || qualificationsText.trim().length === 0) return;
+  if (!qualificationsText || qualificationsText.trim().length === 0 || qualificationsText === "none") return;
 
   // Parse qualifications from the text input
   const qualificationsList = qualificationsText
