@@ -5,6 +5,8 @@ import { PaymentsTable } from "@/lib/drizzle/schema";
 
 const stripeApi:Stripe = stripeServer;
 
+const defaultFeePercent = 0.065;
+
 interface HoldGigAmountParams {
   buyerStripeCustomerId: string;
   destinationAccountId: string;
@@ -57,14 +59,13 @@ export async function holdGigAmount(params: HoldGigAmountParams) {
       type: 'initial_gig_hold',
       ...metadata,
     },
-    description: description || `Initial hold for Gig: ${gigId}`,
+    description: description || `Initial hold for Gig: ${gigId} to account: ${destinationAccountId}`,
   });
 
   console.log(`Payment Intent created (HOLD) for Gig ${gigId}: ${paymentIntent.id}, status: ${paymentIntent.status}`);
 
-  const appFeeAmount = Math.round(serviceAmountInCents * 0.065);
-  const amountToWorker = paymentIntent.transfer_data?.amount ? paymentIntent.transfer_data?.amount :
-    paymentIntent.amount - (paymentIntent?.application_fee_amount || 0);
+  const appFeeAmount = Math.round(serviceAmountInCents * defaultFeePercent);
+  const amountToWorker = paymentIntent.amount - appFeeAmount;
 
   await db
     .insert(PaymentsTable)
