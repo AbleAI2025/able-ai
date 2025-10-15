@@ -18,6 +18,14 @@ interface FinalAmounts {
   net: number;
 }
 
+interface PaymentCompletedParams {
+  paymentId: string;
+  stripeTransferId: string;
+  latestCharge: Stripe.Charge;
+  stripeFee: number;
+  finalAmounts: FinalAmounts;
+}
+
 const stripeApi: Stripe = stripeApiServer;
 
 const defaultFeePercent = 0.065;
@@ -49,11 +57,14 @@ async function getPendingPaymentForGig(gigId: string) {
   return gigPayment;
 }
 
-async function markPaymentAsCompleted(
-  paymentId: string,
-  stripeTransferId: string,
-  latestCharge: Stripe.Charge,
-  finalAmounts: FinalAmounts
+async function markPaymentAsCompleted({
+  paymentId,
+  stripeTransferId,
+  latestCharge,
+  stripeFee,
+  finalAmounts,
+
+}: PaymentCompletedParams
 ) {
   return await db.update(PaymentsTable).set({
     paidAt: new Date(),
@@ -64,6 +75,7 @@ async function markPaymentAsCompleted(
     amountGross: finalAmounts.gross.toString(),
     ableFeeAmount: finalAmounts.fee.toString(),
     amountNetToWorker: finalAmounts.net.toString(),
+    stripeFeeAmount: stripeFee.toString(),
   })
     .where(eq(PaymentsTable.id, paymentId))
     .returning();
@@ -93,7 +105,7 @@ async function processPendingPayment(
       originalPaymentIntentId,
       {
         amount_to_capture: amountToCapture,
-        expand: ['latest_charge']
+        expand: ['latest_charge.balance_transaction']
       }
     );
 
@@ -102,6 +114,7 @@ async function processPendingPayment(
     }
 
     const latestCharge = captureResult.latest_charge as Stripe.Charge;
+    const balanceTransaction = latestCharge.balance_transaction as Stripe.BalanceTransaction ;
 
     const transfer = await stripeApi.transfers.create({
       amount: amountToWorker,
@@ -117,12 +130,13 @@ async function processPendingPayment(
       net: amountToWorker,
     };
 
-    await markPaymentAsCompleted(
-      gigPayment.id,
-      transfer.id,
+    await markPaymentAsCompleted({
       latestCharge,
-      finalAmounts
-    );
+      finalAmounts,
+      paymentId: gigPayment.id,
+      stripeTransferId: transfer.id,
+      stripeFee: balanceTransaction.fee,
+    });
 
     console.log(`Captured ${amountToCapture} cents from PaymentIntent ${originalPaymentIntentId}.`);
     console.log(`Transferred ${amountToWorker} cents to connected account ${destinationAccountId}.`);
@@ -251,7 +265,7 @@ export async function processGigPayment(params: ProcessGigPaymentParams) {
       const priceToPay = finalPrice === 0 ? originalAgreedPrice : finalPrice;
       const priceToPayWithDiscount = calculateAmountWithDiscount(priceToPay, discount);
       await processPendingPayment(gigPayment, originalPaymentIntent.id, priceToPayWithDiscount, ableFeePercent, receiverAccountId);
-      console.log(`Payment finalized for gig ${gigId}. Total captured: ${finalPrice} cents.`);
+      console.log(`Payment finalized for gig ${gigId}. Total captured: ${priceToPayWithDiscount} cents.`);
     }
     else if (finalPrice > originalAgreedPrice) {
       const priceToPayWithDiscount = calculateAmountWithDiscount(finalPrice, discount);
