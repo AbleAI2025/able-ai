@@ -63,20 +63,20 @@ export const useUserProfileSettings = (user: User | null) => {
   };
 
   const handleProfileUpdate = async (event: FormEvent) => {
-    event.preventDefault();
-    const formattedPhone = formatPhoneNumber(phone);
-    if (phone && !formattedPhone) {
-      throw new Error("Invalid phone number format. Please enter a valid phone number, e.g., +1234567890");
-    }
-
-    setIsSavingProfile(true);
-
     try {
+      event.preventDefault();
+
+      const formattedPhone = formatPhoneNumber(phone);
+      if (phone && !formattedPhone) {
+        throw new Error("Invalid phone number format. Please enter a valid phone number, e.g., +1234567890");
+      }
+      setIsSavingProfile(true);
+
       const { success: updateSuccess, error: updateError } =
         await updateUserProfileAction(
           { fullName: displayName, phone: formattedPhone || phone },
           user?.token
-        );
+      );
 
       if (!updateSuccess) {
         throw new Error(updateError || "Failed to update profile.");
