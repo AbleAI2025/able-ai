@@ -10,6 +10,13 @@ import { DirectPaymentParams, ExpandedPaymentIntent, GigPendingPaymentFields, Pr
 import { createTipPayment } from '@/lib/stripe/create-tip-payment';
 import { getPaymentAccountDetailsForGig } from '@/lib/stripe/get-payment-account-details-for-gig';
 import { calculateAmountWithDiscount } from '@/lib/utils/calculate-amount-with-discount';
+import { calculatePaymentSplit } from '@/lib/utils/calculate-payment-split';
+
+interface FinalAmounts {
+  gross: number;
+  fee: number;
+  net: number;
+}
 
 const stripeApi: Stripe = stripeApiServer;
 
@@ -42,13 +49,21 @@ async function getPendingPaymentForGig(gigId: string) {
   return gigPayment;
 }
 
-async function markPaymentAsCompleted(paymentId: string, stripeTransferId: string, latestCharge: Stripe.Charge) {
+async function markPaymentAsCompleted(
+  paymentId: string,
+  stripeTransferId: string,
+  latestCharge: Stripe.Charge,
+  finalAmounts: FinalAmounts
+) {
   return await db.update(PaymentsTable).set({
     paidAt: new Date(),
     status: 'COMPLETED',
     stripeChargeId: latestCharge.id,
     invoiceUrl: latestCharge.receipt_url,
     stripeTransferIdToWorker: stripeTransferId,
+    amountGross: finalAmounts.gross.toString(),
+    ableFeeAmount: finalAmounts.fee.toString(),
+    amountNetToWorker: finalAmounts.net.toString(),
   })
     .where(eq(PaymentsTable.id, paymentId))
     .returning();
@@ -72,8 +87,7 @@ async function processPendingPayment(
   try {
     const paymentAmountGross = Number(gigPayment.amountGross);
     const amountToCapture = Math.min(finalPrice, paymentAmountGross);
-    const ableFee = Math.round(amountToCapture * (ableFeePercent || defaultFeePercent));
-    const amountToWorker = amountToCapture - ableFee;
+    const { fee: ableFee, net: amountToWorker } = calculatePaymentSplit(amountToCapture, (ableFeePercent || defaultFeePercent))
 
     const captureResult = await stripeApi.paymentIntents.capture(
       originalPaymentIntentId,
@@ -97,10 +111,17 @@ async function processPendingPayment(
       transfer_group: `GIG_${gigPayment.gigId}`
     });
 
+    const finalAmounts: FinalAmounts = {
+      gross: amountToCapture,
+      fee: ableFee,
+      net: amountToWorker,
+    };
+
     await markPaymentAsCompleted(
       gigPayment.id,
       transfer.id,
-      latestCharge
+      latestCharge,
+      finalAmounts
     );
 
     console.log(`Captured ${amountToCapture} cents from PaymentIntent ${originalPaymentIntentId}.`);
@@ -134,8 +155,7 @@ async function createDirectPayment(params: DirectPaymentParams) {
   const { gigId, payerUserId, receiverUserId } = gigPaymentInfo;
 
   const amountToCapture = Math.round(serviceAmountInCents);
-  const ableFee = Math.round(amountToCapture * (ableFeePercent || defaultFeePercent));
-  const amountToWorker = amountToCapture - ableFee;
+  const { fee: ableFee, net: amountToWorker } = calculatePaymentSplit(amountToCapture, (ableFeePercent || defaultFeePercent))
 
   try {
     const newPaymentResult = await stripeApi.paymentIntents.create({
