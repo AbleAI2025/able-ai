@@ -49,15 +49,15 @@ export async function POST(req: Request) {
       }
 
       const parsedUserId = userId;
-      // const transfersActive = account.capabilities?.transfers === 'active';
-      // const payoutsEnabled = account.payouts_enabled;
+      const transfersActive = account.capabilities?.transfers === 'active';
+      const payoutsEnabled = account.payouts_enabled;
 
       try {
         await db.update(UsersTable)
           .set({
             updatedAt: new Date(),
-            // canReceivePayouts: payoutsEnabled,
-            // stripeAccountStatus: transfersActive && payoutsEnabled? 'connected': 'incomplete',
+            canReceivePayouts: payoutsEnabled,
+            stripeAccountStatus: transfersActive && payoutsEnabled? 'connected': 'incomplete',
           })
           .where(eq(UsersTable.id, parsedUserId));
 
