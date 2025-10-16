@@ -42,6 +42,12 @@ export function getDegradationStrategy(context: DegradationContext): Degradation
         canPay: false,
         workerConnected: false,
         canEarn: false,
+        hasAccountDetails: false,
+        payoutsEnabled: false,
+        chargesEnabled: false,
+        currency: '',
+        country: '',
+        businessType: '',
       },
       userMessage: 'Payment system temporarily unavailable. Please try again later.',
       actionRequired: true,
@@ -57,11 +63,23 @@ export function getDegradationStrategy(context: DegradationContext): Degradation
         canPay: lastKnownStatus.canPay ?? false,
         workerConnected: lastKnownStatus.workerConnected ?? false,
         canEarn: lastKnownStatus.canEarn ?? false,
+        hasAccountDetails: lastKnownStatus.hasAccountDetails ?? false,
+        payoutsEnabled: lastKnownStatus.payoutsEnabled ?? false,
+        chargesEnabled: lastKnownStatus.chargesEnabled ?? false,
+        currency: lastKnownStatus.currency ?? '',
+        country: lastKnownStatus.country ?? '',
+        businessType: lastKnownStatus.businessType ?? '',
       } : {
         buyerConnected: false,
         canPay: false,
         workerConnected: false,
         canEarn: false,
+        hasAccountDetails: false,
+        payoutsEnabled: false,
+        chargesEnabled: false,
+        currency: '',
+        country: '',
+        businessType: '',
       },
       userMessage: 'Payment system is busy. Status information may be temporarily outdated.',
       actionRequired: false,
@@ -77,11 +95,23 @@ export function getDegradationStrategy(context: DegradationContext): Degradation
         canPay: lastKnownStatus.canPay ?? false,
         workerConnected: lastKnownStatus.workerConnected ?? false,
         canEarn: lastKnownStatus.canEarn ?? false,
+        hasAccountDetails: lastKnownStatus.hasAccountDetails ?? false,
+        payoutsEnabled: lastKnownStatus.payoutsEnabled ?? false,
+        chargesEnabled: lastKnownStatus.chargesEnabled ?? false,
+        currency: lastKnownStatus.currency ?? '',
+        country: lastKnownStatus.country ?? '',
+        businessType: lastKnownStatus.businessType ?? '',
       } : {
         buyerConnected: false,
         canPay: false,
         workerConnected: false,
         canEarn: false,
+        hasAccountDetails: false,
+        payoutsEnabled: false,
+        chargesEnabled: false,
+        currency: '',
+        country: '',
+        businessType: '',
       },
       userMessage: 'Connection to payment system interrupted. Showing last known status.',
       actionRequired: false,
@@ -97,6 +127,12 @@ export function getDegradationStrategy(context: DegradationContext): Degradation
         canPay: false,
         workerConnected: false,
         canEarn: false,
+        hasAccountDetails: false,
+        payoutsEnabled: false,
+        chargesEnabled: false,
+        currency: '',
+        country: '',
+        businessType: '',
       },
       userMessage: 'Payment account access restricted. Please contact support.',
       actionRequired: true,
@@ -110,6 +146,12 @@ export function getDegradationStrategy(context: DegradationContext): Degradation
       canPay: false,
       workerConnected: false,
       canEarn: false,
+      hasAccountDetails: false,
+      payoutsEnabled: false,
+      chargesEnabled: false,
+      currency: '',
+      country: '',
+      businessType: '',
     },
     userMessage: 'Payment status temporarily unavailable. Please refresh the page.',
     actionRequired: false,
@@ -126,7 +168,7 @@ export function shouldAttemptRecovery(
 ): boolean {
   const now = Date.now();
   const timeSinceLastDegradation = (now - lastDegradationTime) / 1000; // seconds
-  
+
   return timeSinceLastDegradation >= retryAfter;
 }
 
@@ -138,11 +180,11 @@ export function getUserFriendlyMessage(
   strategy: DegradationStrategy
 ): string {
   const { userRole } = context;
-  
+
   let roleSpecificMessage = '';
-  
+
   if (userRole === 'BUYER') {
-    roleSpecificMessage = strategy.actionRequired 
+    roleSpecificMessage = strategy.actionRequired
       ? ' You may not be able to make payments until this is resolved.'
       : ' Payment functionality may be limited.';
   } else if (userRole === 'GIG_WORKER') {
@@ -176,12 +218,12 @@ export class StripeCircuitBreaker {
   private failureCount = 0;
   private lastFailureTime = 0;
   private state: 'closed' | 'open' | 'half-open' = 'closed';
-  
+
   constructor(
     private readonly failureThreshold = 5,
     private readonly recoveryTimeout = 60000, // 1 minute
     private readonly operation = 'stripe-operation'
-  ) {}
+  ) { }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {
@@ -203,7 +245,7 @@ export class StripeCircuitBreaker {
 
     try {
       const result = await operation();
-      
+
       if (this.state === 'half-open') {
         this.reset();
         logServer({
@@ -215,7 +257,7 @@ export class StripeCircuitBreaker {
           },
         });
       }
-      
+
       return result;
     } catch (error) {
       this.recordFailure();
@@ -226,7 +268,7 @@ export class StripeCircuitBreaker {
   private recordFailure(): void {
     this.failureCount++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failureCount >= this.failureThreshold) {
       this.state = 'open';
       logServer({

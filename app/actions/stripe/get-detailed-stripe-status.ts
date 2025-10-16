@@ -141,6 +141,13 @@ async function checkWorkerStatus(
     const transfersActive = accountResult.data.capabilities?.transfers === 'active';
     const payoutsEnabled = accountResult.data.payouts_enabled;
 
+    status.businessType = accountResult.data.business_type || '';
+    status.country = accountResult.data.country || '';
+    status.currency = accountResult.data.default_currency || '';
+    status.chargesEnabled = accountResult.data.charges_enabled;
+    status.hasAccountDetails = accountResult.data.details_submitted;
+    status.payoutsEnabled = payoutsEnabled;
+
     // Worker can earn if they have active transfers and payouts enabled
     status.canEarn = transfersActive && payoutsEnabled;
 
@@ -200,6 +207,12 @@ export async function getDetailedStripeStatus(
     canPay: false,
     workerConnected: false,
     canEarn: false,
+    hasAccountDetails: false,
+    payoutsEnabled: false,
+    chargesEnabled: false,
+    currency: '',
+    country: '',
+    businessType: '',
   };
 
   try {

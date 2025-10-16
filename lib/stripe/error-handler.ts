@@ -227,6 +227,12 @@ export function getGracefulDefaults(context: DegradationContext): {
   canPay: boolean;
   workerConnected: boolean;
   canEarn: boolean;
+  currency: string;
+  country: string;
+  businessType: string;
+  hasAccountDetails: boolean;
+  payoutsEnabled: boolean;
+  chargesEnabled: boolean;
 } {
   const strategy = getDegradationStrategy(context);
 
