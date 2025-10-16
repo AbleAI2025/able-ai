@@ -25,6 +25,13 @@ export interface UserSettingsData {
   workerConnected?: boolean;  // Connect account exists  
   canEarn?: boolean;          // Connect account can receive transfers
 
+  currency?: string;
+  country?: string;
+  businessType?: string;
+  hasAccountDetails?: boolean;
+  payoutsEnabled?: boolean;
+  chargesEnabled?: boolean;
+
   lastRole: UserRole;
   notificationPreferences: {
     email: {

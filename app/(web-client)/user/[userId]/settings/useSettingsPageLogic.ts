@@ -67,8 +67,13 @@ export const useSettingsPageLogic = () => {
           workerConnected: detailedStatus.workerConnected,
           canEarn: detailedStatus.canEarn,
           lastRole: roleToCheck,
+          currency: detailedStatus.currency,
+          country: detailedStatus.country,
+          businessType: detailedStatus.businessType,
+          hasAccountDetails: detailedStatus.hasAccountDetails,
+          payoutsEnabled: detailedStatus.payoutsEnabled,
+          chargesEnabled: detailedStatus.chargesEnabled,
         });
-
 
       }
     } catch (err: unknown) {

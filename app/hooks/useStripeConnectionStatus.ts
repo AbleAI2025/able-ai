@@ -9,6 +9,12 @@ interface StripeStatus {
   error: string | null;
   canPay?: boolean;
   canEarn?: boolean;
+  currency?: string;
+  country?: string;
+  businessType?: string;
+  hasAccountDetails?: boolean;
+  payoutsEnabled?: boolean;
+  chargesEnabled?: boolean;
   buyerConnected?: boolean;
   workerConnected?: boolean;
 }
@@ -39,7 +45,7 @@ export const useStripeStatus = (userId: string): StripeStatus => {
 
         // Determine connection status based on role and capabilities
         let isConnected = false;
-        
+
         if (roleToCheck === 'BUYER') {
           // For buyers, they're connected if they have a customer account
           // They don't need to be able to pay immediately (can set up payment method later)

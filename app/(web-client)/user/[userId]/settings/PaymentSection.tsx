@@ -19,11 +19,9 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   generateCustomerPortalSession,
 }) => {
   // Determine connection status based on role and enhanced status fields
-  const isConnected = userLastRole === "BUYER" 
+  const isConnected = userLastRole === "BUYER"
     ? userSettings?.buyerConnected ?? false
     : userSettings?.workerConnected ?? false;
-
-
 
   // Determine capability status for warnings
   const hasCapabilityIssue = userLastRole === "BUYER"
@@ -62,16 +60,15 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           >
             {isConnectingStripe
               ? "Redirecting..."
-              : `Set up ${
-                  userLastRole === "BUYER" ? "Customer" : "Stripe Connect"
-                } Account`}
+              : `Set up ${userLastRole === "BUYER" ? "Customer" : "Stripe Connect"
+              } Account`}
           </button>
         </div>
       ) : (
         <div>
           {hasCapabilityIssue ? (
             <div className={styles.stripeStatusBannerWarning}>
-              <AlertTriangle size={20} /> 
+              <AlertTriangle size={20} />
               {getCapabilityWarningMessage()}
               <button
                 className={styles.button}
@@ -84,8 +81,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
             </div>
           ) : (
             <div className={styles.stripeStatusBannerConnected}>
-              <CheckCircle size={20} /> 
-              {userLastRole === "BUYER" 
+              <CheckCircle size={20} />
+              {userLastRole === "BUYER"
                 ? "Stripe account is connected and ready for payments."
                 : "Stripe account is connected and can receive payouts."}
               <button
@@ -98,7 +95,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
               </button>
             </div>
           )}
-          
+
           {/* Payment Method Availability Indicators */}
           <div className={styles.paymentCapabilities}>
             <h3 className={styles.capabilitiesTitle}>Payment Capabilities</h3>
@@ -107,17 +104,15 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                 <>
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Make Payments:</span>
-                    <span className={`${styles.capabilityStatus} ${
-                      userSettings?.canPay ? styles.statusEnabled : styles.statusDisabled
-                    }`}>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.canPay ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
                       {userSettings?.canPay ? "Available" : "Restricted"}
                     </span>
                   </div>
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Payment Methods:</span>
-                    <span className={`${styles.capabilityStatus} ${
-                      userSettings?.canPay ? styles.statusEnabled : styles.statusDisabled
-                    }`}>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.canPay ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
                       {userSettings?.canPay ? "Cards & Bank Transfers" : "Not Available"}
                     </span>
                   </div>
@@ -126,17 +121,15 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                 <>
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Receive Earnings:</span>
-                    <span className={`${styles.capabilityStatus} ${
-                      userSettings?.canEarn ? styles.statusEnabled : styles.statusDisabled
-                    }`}>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.canEarn ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
                       {userSettings?.canEarn ? "Available" : "Restricted"}
                     </span>
                   </div>
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Payout Methods:</span>
-                    <span className={`${styles.capabilityStatus} ${
-                      userSettings?.canEarn ? styles.statusEnabled : styles.statusDisabled
-                    }`}>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.canEarn ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
                       {userSettings?.canEarn ? "Bank Transfer" : "Not Available"}
                     </span>
                   </div>
@@ -144,6 +137,61 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
               )}
             </div>
           </div>
+
+          {userLastRole === "GIG_WORKER" &&
+            <>
+              <div className={styles.paymentCapabilities}>
+                <h3 className={styles.capabilitiesTitle}>Account Information</h3>
+                <div className={styles.capabilityList}>
+                  <div className={styles.capabilityItem}>
+                    <span className={styles.capabilityLabel}>Charges Enabled:</span>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.chargesEnabled ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
+                      {userSettings?.chargesEnabled ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <div className={styles.capabilityItem}>
+                    <span className={styles.capabilityLabel}>Payouts Enabled:</span>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.payoutsEnabled ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
+                      {userSettings?.payoutsEnabled ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <div className={styles.capabilityItem}>
+                    <span className={styles.capabilityLabel}>Account Details:</span>
+                    <span className={`${styles.capabilityStatus} ${userSettings?.hasAccountDetails ? styles.statusEnabled : styles.statusDisabled
+                      }`}>
+                      {userSettings?.hasAccountDetails ? "Complete" : "Incomplete"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.paymentCapabilities}>
+                <h3 className={styles.capabilitiesTitle}>Account Status</h3>
+                <div className={styles.capabilityList}>
+                  <div className={styles.capabilityItem}>
+                    <span className={styles.capabilityLabel}>Country:</span>
+                    <span>
+                      {userSettings?.country}
+                    </span>
+                  </div>
+                  <div className={styles.capabilityItem}>
+                    <span className={styles.capabilityLabel}>Currency:</span>
+                    <span className={styles.capabilityLabelInfo}>
+                      {userSettings?.currency}
+                    </span>
+                  </div>
+                  <div className={styles.capabilityItem}>
+                    <span className={styles.capabilityLabel}>Business Type:</span>
+                    <span>
+                      {userSettings?.businessType}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </>
+          }
         </div>
       )}
     </section>

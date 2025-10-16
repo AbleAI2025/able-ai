@@ -54,4 +54,10 @@ export interface DetailedStripeStatus {
   canPay: boolean;
   workerConnected: boolean;
   canEarn: boolean;
+  currency: string;
+  country: string;
+  businessType: string;
+  hasAccountDetails: boolean;
+  payoutsEnabled: boolean;
+  chargesEnabled: boolean;
 }
