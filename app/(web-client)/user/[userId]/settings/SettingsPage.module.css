@@ -727,10 +727,6 @@
     font-weight: 500;
 }
 
-.capabilityLabelInfo {
-  text-transform: uppercase;
-}
-
 .capabilityStatus {
     font-size: 0.875rem;
     font-weight: 600;

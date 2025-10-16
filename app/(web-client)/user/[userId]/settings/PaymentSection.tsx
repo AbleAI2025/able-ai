@@ -143,27 +143,18 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
               <div className={styles.paymentCapabilities}>
                 <h3 className={styles.capabilitiesTitle}>Account Information</h3>
                 <div className={styles.capabilityList}>
-                  <div className={styles.capabilityItem}>
-                    <span className={styles.capabilityLabel}>Charges Enabled:</span>
-                    <span className={`${styles.capabilityStatus} ${userSettings?.chargesEnabled ? styles.statusEnabled : styles.statusDisabled
-                      }`}>
-                      {userSettings?.chargesEnabled ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className={styles.capabilityItem}>
-                    <span className={styles.capabilityLabel}>Payouts Enabled:</span>
-                    <span className={`${styles.capabilityStatus} ${userSettings?.payoutsEnabled ? styles.statusEnabled : styles.statusDisabled
-                      }`}>
-                      {userSettings?.payoutsEnabled ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className={styles.capabilityItem}>
-                    <span className={styles.capabilityLabel}>Account Details:</span>
-                    <span className={`${styles.capabilityStatus} ${userSettings?.hasAccountDetails ? styles.statusEnabled : styles.statusDisabled
-                      }`}>
-                      {userSettings?.hasAccountDetails ? "Complete" : "Incomplete"}
-                    </span>
-                  </div>
+                  {[
+                    { label: 'Charges Enabled', value: userSettings?.chargesEnabled, enabledText: 'Active', disabledText: 'Inactive' },
+                    { label: 'Payouts Enabled', value: userSettings?.payoutsEnabled, enabledText: 'Active', disabledText: 'Inactive' },
+                    { label: 'Account Details', value: userSettings?.hasAccountDetails, enabledText: 'Complete', disabledText: 'Incomplete' },
+                  ].map(({ label, value, enabledText, disabledText }) => (
+                    <div className={styles.capabilityItem} key={label}>
+                      <span className={styles.capabilityLabel}>{label}:</span>
+                      <span className={`${styles.capabilityStatus} ${value ? styles.statusEnabled : styles.statusDisabled}`}>
+                        {value ? enabledText : disabledText}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -173,19 +164,23 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Country:</span>
                     <span>
-                      {userSettings?.country}
+                      {userSettings?.country || 'N/A'}
                     </span>
                   </div>
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Currency:</span>
-                    <span className={styles.capabilityLabelInfo}>
-                      {userSettings?.currency}
+                    <span>
+                      {userSettings?.currency?.toLocaleUpperCase() || 'N/A'}
                     </span>
                   </div>
                   <div className={styles.capabilityItem}>
                     <span className={styles.capabilityLabel}>Business Type:</span>
                     <span>
-                      {userSettings?.businessType}
+                      {
+                        userSettings?.businessType ?
+                          userSettings.businessType.charAt(0).toUpperCase() + userSettings.businessType.slice(1) :
+                          'N/A'
+                      }
                     </span>
                   </div>
                 </div>
