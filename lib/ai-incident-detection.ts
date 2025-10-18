@@ -4,6 +4,7 @@
  */
 
 import { geminiAIAgent } from '@/lib/firebase/ai';
+import { getAI } from '@firebase/ai';
 import { Schema } from '@firebase/ai';
 
 export interface AIIncidentDetectionResult {

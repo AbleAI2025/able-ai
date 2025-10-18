@@ -75,14 +75,35 @@ export default function ProfileVideo({
           <MonitorPlay color="#fff" size={50} className={styles.monitorPlay} />
         )}
       </Link>
-      {isSelfView && videoUrl && (
-        <button
-          onClick={() => setIsEditingVideo(true)}
-          className={styles.editIconButton}
-          aria-label="Edit video"
-        >
-          <Pencil size={18} />
-        </button>
+
+      {isSelfView && (
+        <div style={{ marginTop: "8px" }}>
+          <button
+            onClick={() => setIsEditingVideo(true)}
+            style={{
+              padding: "6px 12px",
+              backgroundColor: "#0070f3",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Re-SHOOT
+          </button>
+        </div>
+      )}
+
+      {isEditingVideo && (
+        <div style={{ marginTop: "12px" }}>
+          <VideoRecorderBubble
+            key={2}
+            onVideoRecorded={(video) => {
+              onVideoUpload(video);
+              setIsEditingVideo(false);
+            }}
+          />
+        </div>
       )}
     </div>
   );

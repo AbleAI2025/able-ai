@@ -1,6 +1,5 @@
-import { parseLocationData } from '../locationUtils';
-import { generateContextAwarePrompt, sanitizeWithAI, extractSkillName } from '../ai-systems/ai-utils';
-// import { buildConversationContext, generateMemoryAwarePrompt, generateAlternativePhrasing } from '../ai-systems/conversation-memory';
+import { generateContextAwarePrompt, generateConversationAwarePrompt, sanitizeWithAI, extractSkillName } from '../ai-systems/ai-utils';
+import { buildConversationContext, generateMemoryAwarePrompt, generateAlternativePhrasing } from '../ai-systems/conversation-memory';
 import { buildRecommendationLink } from '../helpers/helpers';
 import { buildJobTitleConfirmationStep, buildSimilarSkillsConfirmationStep } from './step-builders';
 import { checkExistingSimilarSkill, interpretJobTitle } from '../ai-systems/ai-utils';
@@ -78,27 +77,31 @@ const specialFields: RequiredField[] = SPECIAL_FIELDS_CONFIG;
 /**
  * Get the next required field that hasn't been filled
  */
-export function getNextRequiredField(formData: FormData, existingProfileData?: any): RequiredField | undefined {
+export function getNextRequiredField(
+  formData: FormData, 
+  existingProfileData?: any,
+  customRequiredFields?: RequiredField[],
+  customSpecialFields?: RequiredField[]
+): RequiredField | undefined {
+  // Use custom fields if provided, otherwise fall back to default
+  const fieldsToUse = customRequiredFields || requiredFields;
+  const specialFieldsToUse = customSpecialFields || specialFields;
+  
   // First, find the first required field that hasn't been filled in formData
-
-
-  let nextField = requiredFields.find((f: RequiredField) => !formData[f.name]);
+  let nextField = fieldsToUse.find((f: RequiredField) => !formData[f.name]);
   
   // Special handling: if qualifications is the next field but user has provided bio with qualifications info,
   // skip to video step to avoid asking for redundant information
   if (nextField?.name === 'qualifications' && formData.about && formData.about.length > 50) {
-
     // Find the next field after qualifications
-    const qualificationsIndex = requiredFields.findIndex(f => f.name === 'qualifications');
-    nextField = requiredFields[qualificationsIndex + 1];
+    const qualificationsIndex = fieldsToUse.findIndex(f => f.name === 'qualifications');
+    nextField = fieldsToUse[qualificationsIndex + 1];
   }
   
   // If no required field is missing, check special fields
   if (!nextField) {
-
-    nextField = specialFields.find((f: RequiredField) => !formData[f.name]);
+    nextField = specialFieldsToUse.find((f: RequiredField) => !formData[f.name]);
   }
-
   
   return nextField;
 }
@@ -106,13 +109,12 @@ export function getNextRequiredField(formData: FormData, existingProfileData?: a
 /**
  * Check if all required fields are completed
  */
-export function areAllRequiredFieldsCompleted(formData: FormData): boolean {
-  const allFieldsCompleted = requiredFields.every(field => {
+export function areAllRequiredFieldsCompleted(formData: FormData, customRequiredFields?: RequiredField[]): boolean {
+  const fieldsToCheck = customRequiredFields || requiredFields;
+  const allFieldsCompleted = fieldsToCheck.every(field => {
     const hasValue = !!formData[field.name];
-
     return hasValue;
   });
-
   return allFieldsCompleted;
 }
 
@@ -196,14 +198,15 @@ export async function addNextStepSafely(
   chatSteps: ChatStep[],
   setChatSteps: (steps: ChatStep[] | ((prev: ChatStep[]) => ChatStep[])) => void,
   workerProfileId: string | null,
-  existingProfileData?: any
+  existingProfileData?: any,
+  customRequiredFields?: RequiredField[],
+  customSpecialFields?: RequiredField[]
 ): Promise<void> {
-  const nextField = getNextRequiredField(formData, existingProfileData);
+  const nextField = getNextRequiredField(formData, existingProfileData, customRequiredFields, customSpecialFields);
   
   if (!nextField) {
     // Check if all required fields are completed - if so, show references step
-    if (areAllRequiredFieldsCompleted(formData)) {
-
+    if (areAllRequiredFieldsCompleted(formData, customRequiredFields)) {
       
       // Use existing worker profile ID
       if (!workerProfileId) {
@@ -250,6 +253,21 @@ export async function addNextStepSafely(
               type: "bot",
               content: "Please check out your gigfolio and share with your network\n\nif your connections make a hire on Able you get £5!",
               isNew: true,
+            },
+            // Fourth message: Stripe connection
+            {
+              id: Date.now() + 5,
+              type: "bot",
+              content: "Follow this link to connect to Stripe so you can be paid at the end of your shift",
+              isNew: true,
+            },
+            // Fifth message: Stripe link
+            {
+              id: Date.now() + 6,
+              type: "shareLink",
+              linkUrl: "https://connect.stripe.com/oauth/authorize?response_type=code&client_id=YOUR_STRIPE_CLIENT_ID&scope=read_write",
+              linkText: "Connect to Stripe",
+              isNew: true,
             }
           ];
         });
@@ -257,35 +275,32 @@ export async function addNextStepSafely(
       
       // After references, show AI-generated summary first
       setTimeout(async () => {
-
-
+        
         // Generate AI summary with timeout
         let aiSummary = '';
         try {
-
-
+          
           // Add timeout to prevent hanging
           const summaryPromise = (async () => {
             const { geminiAIAgent } = await import('@/lib/firebase/ai');
-            const { humanReadableLocation: locationForPrompt } = parseLocationData(formData.location);
-
+            
             const summaryPrompt = `Create a personalized summary of this worker's profile based on their onboarding information:
 
-      Profile Information:
-      - About: ${formData.about || 'Not provided'}
-      - Skills/Profession: ${formData.skills || 'Not provided'}
-      - Experience: ${formData.experience || 'Not provided'}
-      - Qualifications: ${formData.qualifications || 'Not provided'}
-      - Equipment: ${formData.equipment || 'Not provided'}
-      - Hourly Rate: ${formData.hourlyRate || 'Not provided'}
-      - Location: ${locationForPrompt}
+Profile Information:
+- About: ${formData.about || 'Not provided'}
+- Skills/Profession: ${formData.skills || 'Not provided'}
+- Experience: ${formData.experience || 'Not provided'}
+- Qualifications: ${formData.qualifications || 'Not provided'}
+- Equipment: ${formData.equipment || 'Not provided'}
+- Hourly Rate: ${formData.hourlyRate || 'Not provided'}
+- Location: ${formData.location || 'Not provided'}
 
-      Create a warm, professional summary that highlights their key strengths and experience. Make it personal and engaging, like you're introducing them to potential clients. Keep it concise but comprehensive.
+Create a warm, professional summary that highlights their key strengths and experience. Make it personal and engaging, like you're introducing them to potential clients. Keep it concise but comprehensive.
 
-      Example format:
-      "Meet [Name], a skilled [profession] with [experience] of experience. [He/She] specializes in [key skills] and brings [qualifications] to every project. Based in [location], [he/she] is available at [hourly rate] and is equipped with [equipment]. [Personal touch about their background]."
+Example format:
+"Meet [Name], a skilled [profession] with [experience] of experience. [He/She] specializes in [key skills] and brings [qualifications] to every project. Based in [location], [he/she] is available at [hourly rate] and is equipped with [equipment]. [Personal touch about their background]."
 
-      Generate a summary:`;
+Generate a summary:`;
 
             const { Schema } = await import('@firebase/ai');
             
@@ -320,7 +335,7 @@ export async function addNextStepSafely(
           if (!aiSummary) {
             throw new Error('AI summary generation failed');
           }
-
+          
         } catch (error) {
           console.error('AI summary generation failed:', error);
           // Fallback summary
@@ -343,7 +358,6 @@ export async function addNextStepSafely(
         
         // After AI summary, show final summary component
         setTimeout(() => {
-
           setChatSteps((prev: ChatStep[]) => {
             const filtered = prev.filter(s => s.type !== 'typing');
             const newSteps = [...filtered, {
@@ -352,7 +366,6 @@ export async function addNextStepSafely(
               summaryData: formData,
               isNew: true,
             }];
-
             return newSteps;
           });
         }, 3000); // Wait 3 seconds after AI summary to show final summary
@@ -391,7 +404,6 @@ export async function addNextStepSafely(
 
   // Check if all required fields are completed - if so, show references step
   if (areAllRequiredFieldsCompleted(formData)) {
-
     
     // Use existing worker profile ID
     if (!workerProfileId) {
@@ -438,6 +450,21 @@ export async function addNextStepSafely(
             type: "bot",
             content: "Please check out your gigfolio and share with your network\n\nif your connections make a hire on Able you get £5!",
             isNew: true,
+          },
+          // Fourth message: Stripe connection
+          {
+            id: Date.now() + 5,
+            type: "bot",
+            content: "Follow this link to connect to Stripe so you can be paid at the end of your shift",
+            isNew: true,
+          },
+          // Fifth message: Stripe link
+          {
+            id: Date.now() + 6,
+            type: "shareLink",
+            linkUrl: "https://connect.stripe.com/oauth/authorize?response_type=code&client_id=YOUR_STRIPE_CLIENT_ID&scope=read_write",
+            linkText: "Connect to Stripe",
+            isNew: true,
           }
         ];
       });
@@ -445,7 +472,6 @@ export async function addNextStepSafely(
     
     // After references, proceed to summary step
     setTimeout(() => {
-
       setChatSteps((prev: ChatStep[]) => {
         const filtered = prev.filter(s => s.type !== 'typing');
         const newSteps = [...filtered, {
@@ -454,7 +480,6 @@ export async function addNextStepSafely(
           summaryData: formData,
           isNew: true,
         }];
-
         return newSteps;
       });
     }, 3000); // Wait 3 seconds after the last message
@@ -492,12 +517,12 @@ export async function addNextStepSafely(
   // Replace typing indicator with intelligent bot message and input step after delay
   setTimeout(async () => {
     // Use default prompt directly - AI context-aware generation is unreliable
-    let intelligentPrompt = nextField.defaultPrompt;
-
+    const intelligentPrompt = nextField.defaultPrompt;
+    
     // DISABLED: AI context-aware prompt generation due to AI not following instructions
     // The AI was generating wrong questions (location instead of skills)
     // TODO: Fix AI prompt generation or use a more reliable AI model
-    
+    /*
     try {
       // Use AI to generate contextual prompts
       let contextInfo = '';
@@ -531,9 +556,25 @@ export async function addNextStepSafely(
       console.error('AI prompt generation failed:', error);
       // Fallback to default prompt
     }
+    */
 
     setChatSteps((prev) => {
       const filtered = prev.filter(s => s.type !== 'typing');
+      
+      // For 'about' field (venue experience), only add bot message - use chat input at bottom
+      if (nextField.name === 'about') {
+        return [
+          ...filtered,
+          {
+            id: Date.now() + 2,
+            type: "bot",
+            content: intelligentPrompt,
+            isNew: true,
+          },
+        ];
+      }
+      
+      // For all other fields, add both bot message and input field
       return [
         ...filtered,
         {
@@ -616,8 +657,7 @@ export async function handleInputSubmission(
     // Extract skill name using AI before checking for similar skills
     const skillExtractionResult = await extractSkillName(valueToUse, ai);
     const skillNameToSearch = skillExtractionResult?.skillName || valueToUse;
-
-
+    
     // Check for similar skills using the extracted skill name
     const similarSkillsResult = await checkExistingSimilarSkill(skillNameToSearch, workerProfileId || '');
     
@@ -941,19 +981,23 @@ export function initializeChatSteps(
   }
   
   if (firstMissingField) {
-
+    console.log('First missing field:', firstMissingField.name);
+    console.log('Existing data:', existingData);
+    console.log('Should show confirmation:', existingData && shouldShowExistingDataConfirmation(firstMissingField.name, existingData));
+    
     // Check if we have existing data for this field and need to show confirmation
     if (existingData && shouldShowExistingDataConfirmation(firstMissingField.name, existingData)) {
       const existingValue = getExistingDataValue(firstMissingField.name, existingData);
-
+      console.log('Existing value for', firstMissingField.name, ':', existingValue);
+      
       // Add confirmation step for existing data
       steps.push({
         id: steps.length + 1,
         type: "confirmation",
         content: `I can see you already have ${firstMissingField.name} information. Would you like to use your existing ${firstMissingField.name} or create a new one?`,
         confirmationConfig: {
-          type: firstMissingField.name === 'location' ? 'location' :
-                firstMissingField.name === 'availability' ? 'availability' :
+          type: firstMissingField.name === 'location' ? 'location' : 
+                firstMissingField.name === 'availability' ? 'availability' : 
                 firstMissingField.name === 'skills' ? 'skills' : 'bio',
           existingValue: existingValue,
           fieldName: firstMissingField.name
@@ -962,16 +1006,11 @@ export function initializeChatSteps(
         isNew: true,
       });
     } else {
-      // Add the question as a bot message first
-      steps.push({
-        id: steps.length + 1,
-        type: "bot",
-        content: firstMissingField.defaultPrompt,
-        isComplete: true,
-        isNew: true,
-      });
+      // DISABLED: Don't add the question here - let the step flow handle it
+      // The step flow system will add the next step automatically
+      // This prevents duplication between initialization and step flow systems
     }
-
+    
     // Don't add input step - let the chat input handle the flow naturally
     // The user will type in the chat input and we'll process it
   }

@@ -115,6 +115,13 @@ export function renderLocationStep(
   onChange: (v: any) => void,
   onConfirm?: () => void
 ) {
+  // Wrapper to match LocationPickerBubble's onConfirm signature
+  const handleLocationConfirm = (address: string, coord: { lat: number; lng: number }) => {
+    if (onConfirm) {
+      onConfirm();
+    }
+  };
+  
   return (
     <div key={key} className={styles.locationComponent} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -123,7 +130,7 @@ export function renderLocationStep(
           Please share your location.
         </div>
       </div>
-      <LocationPickerBubble value={value} onChange={onChange} showConfirm={true} onConfirm={onConfirm} role="GIG_WORKER" />
+      <LocationPickerBubble value={value} onChange={onChange} showConfirm={true} onConfirm={handleLocationConfirm} role="GIG_WORKER" />
     </div>
   );
 }
@@ -270,6 +277,8 @@ export function renderInputStep(
     );
   }
 
+  // Render only the bot message with the prompt
+  // The user will respond using the chat input at the bottom, not a separate input field
   return (
     <div key={key} className="messageWrapper alignBot" data-role="GIG_WORKER" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '1rem' }}>
       <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
@@ -505,7 +514,6 @@ export function renderSimilarSkillsConfirmationStep(
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
           <button onClick={() => {
-
             if (handlers.onGoHome) {
               handlers.onGoHome();
             }

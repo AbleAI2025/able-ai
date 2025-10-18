@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { useFirebase } from '@/context/FirebaseContext';
 import { Schema } from '@firebase/ai';
@@ -83,6 +83,8 @@ export type OnboardingFlowReturn = OnboardingState & OnboardingActions;
 const AI_TIMEOUT_MS = 5000;
 const AI_MAX_RETRIES = 2;
 const AI_RETRY_DELAY_MS = 1000;
+const TYPING_DELAY_MS = 700;
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================

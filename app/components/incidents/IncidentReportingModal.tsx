@@ -27,7 +27,7 @@ export default function IncidentReportingModal({
   userRole,
   ai,
   incidentType,
-  // initialMessage
+  initialMessage
 }: IncidentReportingModalProps) {
   const [userInput, setUserInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

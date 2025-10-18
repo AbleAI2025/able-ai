@@ -1,6 +1,16 @@
 /**
  * Escalation Detection Utility
  * Detects when AI chat interactions should be escalated to human support
+ * 
+ * ⚠️ DEPRECATION NOTICE (2025-01-16):
+ * The hardcoded ESCALATION_KEYWORDS (especially profanity patterns) are being
+ * phased out in favor of AI-powered escalation detection.
+ * 
+ * For content moderation specifically, use:
+ * - app/(web-client)/user/[userId]/worker/onboarding-ai/utils/validation/unified-validation.ts
+ * 
+ * This file should focus on legitimate escalation triggers (human support requests,
+ * technical issues, urgent requests) and NOT duplicate content moderation logic.
  */
 
 export interface EscalationTrigger {
@@ -59,19 +69,14 @@ const ESCALATION_KEYWORDS: EscalationKeywords = {
   safety_concerns: {
     keywords: [
       'unsafe', 'dangerous', 'threat', 'harassment', 'abuse',
-      'inappropriate', 'scam', 'fraud', 'fake', 'suspicious'
+      'scam', 'fraud', 'fake', 'suspicious'
     ],
     issueType: 'safety_concern',
     priority: 'high'
   },
-  profanity: {
-    keywords: [
-      'fuck', 'shit', 'damn', 'bitch', 'asshole', 'crap', 'piss', 'hell',
-      'bloody', 'bugger', 'sod', 'twat', 'wanker', 'nigga', 'nigger'
-    ],
-    issueType: 'inappropriate_content',
-    priority: 'high'
-  },
+  // ⚠️ REMOVED: Profanity category deleted - now handled by AI in unified-validation.ts
+  // Inappropriate content detection is no longer an escalation trigger here
+  // It's handled separately by the AI validation system with counters
   urgent_requests: {
     keywords: [
       'urgent', 'emergency', 'asap', 'immediately', 'right now',

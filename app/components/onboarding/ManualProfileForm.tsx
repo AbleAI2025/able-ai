@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getPrivateWorkerProfileAction } from '@/actions/user/gig-worker-profile';
 import { checkExistingProfileDataAction } from '@/actions/user/check-existing-profile-data-action';
 import { useAuth } from '@/context/AuthContext';
 import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
@@ -6,20 +7,19 @@ import styles from './ManualProfileForm.module.css';
 import LocationPickerBubble from './LocationPickerBubble';
 import VideoRecorderOnboarding from './VideoRecorderOnboarding';
 import DataReviewModal from './DataReviewModal';
-import { ExistingData } from './DataToggleOptions';
+import DataToggleOptions, { ExistingData } from './DataToggleOptions';
 import InlineDataToggle from './InlineDataToggle';
 import OnboardingAvailabilityStep from '@/app/(web-client)/user/[userId]/worker/onboarding-ai/components/OnboardingAvailabilityStep';
 import { AvailabilityFormData } from '@/app/types/AvailabilityTypes';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, getStorage } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, getStorage } from "firebase/storage";
 import { firebaseApp } from "@/lib/firebase/clientApp";
 import { geminiAIAgent } from '@/lib/firebase/ai';
 import { getAI } from '@firebase/ai';
 import { Schema } from '@firebase/ai';
 import { parseExperienceToNumeric } from '@/lib/utils/experienceParsing';
-import { toast } from 'sonner';
 
 function buildRecommendationLink(workerProfileId: string | null): string {
-  const origin = window.location.origin ?? 'http://localhost:3000';
+  const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000';
   
   if (!workerProfileId) {
     throw new Error('Worker profile ID is required to build recommendation link');
@@ -102,13 +102,13 @@ export const validateWorkerProfileData = (formData: FormData, workerProfileId?: 
         }
         break;
       case 'location':
-        if (!value) {
+        if (!value || !value.lat || !value.lng) {
           errors.location = 'Please select your location';
           isValid = false;
         }
         break;
       case 'availability':
-        if (!value.length) {
+        if (!value || !value.days || value.days.length === 0) {
           errors.availability = 'Please select at least one day of availability';
           isValid = false;
         }
@@ -785,13 +785,8 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     const fetchExistingProfile = async () => {
       if (user?.claims?.role === "GIG_WORKER" && user?.token && !formData.references) {
         try {
-          const response = await fetch('/api/worker/profile', {
-            headers: {
-              'Authorization': `Bearer ${user.token}`,
-            },
-          });
-          const result = await response.json();
-          if (response.ok && result.success && result.data?.id) {
+          const result = await getPrivateWorkerProfileAction(user.token);
+          if (result.success && result.data?.id) {
             // User already has a worker profile, build the recommendation link
             try {
               const recommendationLink = buildRecommendationLink(result.data.id as string);
@@ -1035,83 +1030,53 @@ const ManualProfileForm: React.FC<ManualProfileFormProps> = ({
     }
   };
 
-const handleVideoRecorded = async (blob: Blob) => {
-  const toastId = toast.loading("Uploading video...");
-
-  try {
+  const handleVideoRecorded = async (blob: Blob) => {
     if (!user) {
-      console.error("User not authenticated for video upload");
-      toast.error("You must be logged in to upload a video.", { id: toastId });
+      console.error('User not authenticated for video upload');
       return;
     }
 
-    // Create a File object from the recorded Blob
-    const file = new File([blob], "video-intro.webm", { type: "video/webm" });
+    try {
+      // Upload video to Firebase Storage
+      const file = new File([blob], 'video-intro.webm', { type: 'video/webm' });
+      const filePath = `workers/${user.uid}/introVideo/introduction-${encodeURI(user.email ?? user.uid)}.webm`;
+      const fileStorageRef = ref(getStorage(firebaseApp), filePath);
+      const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
-    // Use videoIntro as base name if it exists, otherwise fallback to "introduction"
-    const baseName = formData?.videoIntro
-      ? encodeURIComponent(formData.videoIntro)
-      : "introduction";
+      // Wait for upload to complete and get download URL
+      const downloadURL = await new Promise<string>((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log("Video upload progress:", progress + "%");
+          },
+          (error) => {
+            console.error("Video upload failed:", error);
+            reject(error);
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then((url) => {
+                console.log("Video uploaded successfully:", url);
+                resolve(url);
+              })
+              .catch(reject);
+          }
+        );
+      });
 
-    // Build a unique and encoded file path for Firebase Storage
-    const fileName = `workers/${
-      user?.uid
-    }/introVideo/${baseName}-${encodeURIComponent(
-      user?.email ?? user?.uid
-    )}.webm`;
+      // Store the Firebase download URL instead of the File object
+      setFormData(prev => ({ ...prev, videoIntro: downloadURL }));
+      
+      // Clear any existing video validation errors
+      setErrors(prev => ({ ...prev, videoIntro: '' }));
+    } catch (error) {
+      console.error("Video upload error:", error);
+      setErrors(prev => ({ ...prev, videoIntro: 'Video upload failed. Please try again.' }));
+    }
+  };
 
-    const fileStorageRef = storageRef(getStorage(firebaseApp), fileName);
-    const uploadTask = uploadBytesResumable(fileStorageRef, file);
-
-    // Wait for upload completion and listen to progress changes
-    const downloadURL = await new Promise<string>((resolve, reject) => {
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-
-          // Update toast with current upload progress
-          toast.loading(`Uploading: ${Math.round(progress)}%`, {
-            id: toastId,
-          });
-        },
-        (error) => {
-          console.error("Video upload failed:", error);
-          toast.error("Video upload failed. Please try again.", { id: toastId });
-          reject(error);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref)
-            .then((url) => {
-              toast.success("Video uploaded successfully!", { id: toastId });
-              resolve(url);
-            })
-            .catch((error) => {
-              console.error("Failed to get video URL:", error);
-              toast.error("Failed to get video URL. Please try again.", { id: toastId });
-              reject(error);
-            });
-        }
-      );
-    });
-
-    // Save the Firebase download URL in the form data
-    setFormData((prev) => ({ ...prev, videoIntro: downloadURL }));
-
-    // Clear any previous validation errors
-    setErrors((prev) => ({ ...prev, videoIntro: "" }));
-
-  } catch (error) {
-    console.error("Video upload error:", error);
-    toast.error("Unexpected error during upload.", { id: toastId });
-
-    // Update form error state for UI feedback
-    setErrors((prev) => ({
-      ...prev,
-      videoIntro: "Video upload failed. Please try again.",
-    }));
-  }
-};
 
   // AI Content Validation function - rejects inappropriate content
   const validateContentWithAI = async (field: string, value: string): Promise<{ isValid: boolean; error?: string; sanitized?: string }> => {
@@ -1236,7 +1201,7 @@ const handleVideoRecorded = async (blob: Blob) => {
     try {
       const ai = getAI();
       if (!ai) {
-  // AI not available; returning original value
+        console.log('AI not available, returning original value');
         return { sanitized: value };
       }
 
@@ -1543,8 +1508,6 @@ Qualifications: "${value}"`;
       });
     } catch (error) {
       console.error('Form submission error:', error);
-      // Set error state to show user
-      setErrors(prev => ({ ...prev, submit: 'Failed to submit form. Please try again.' }));
       // Set error state to show user
       setErrors(prev => ({ ...prev, submit: 'Failed to submit form. Please try again.' }));
     } finally {
@@ -1891,12 +1854,6 @@ Qualifications: "${value}"`;
 
         {/* Submit Button */}
         <div className={styles.formActions}>
-          {errors.submit && (
-            <div className={styles.errorMessage}>
-              {errors.submit}
-            </div>
-          )}
-          
           {errors.submit && (
             <div className={styles.errorMessage}>
               {errors.submit}

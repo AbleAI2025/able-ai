@@ -29,7 +29,6 @@ const RoleToggle: React.FC<{ lastViewVisited?: string }> = ({
     try {
       if (newRole === "GIG_WORKER" && !userHasWorkerRole) {
         toast.error("You cannot switch to worker mode, please complete onboarding first.");
-        await setLastRoleUsed(newRole);
         router.push(`/user/${user?.uid}/worker/onboarding-ai`);
         return;
       }

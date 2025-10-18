@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/drizzle/db';
-import { GigWorkerProfilesTable } from '@/lib/drizzle/schema';
+import { UsersTable, GigWorkerProfilesTable, SkillsTable } from '@/lib/drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ workerId: string }> }
 ) {
   try {
@@ -17,42 +17,44 @@ export async function GET(
       );
     }
 
-    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
-      where: eq(GigWorkerProfilesTable.id, workerId),
-      with: {
-        user: {
-          columns: {
-            fullName: true,
-          },
-        },
-        skills: {
-          columns: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+    // Get worker user details
+    const user = await db.query.UsersTable.findFirst({
+      where: eq(UsersTable.id, workerId),
+      columns: {
+        id: true,
+        fullName: true,
+        email: true,
+      }
     });
 
-    if (!workerProfile) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Worker profile not found' },
+        { error: 'Worker not found' },
         { status: 404 }
       );
     }
 
-    if (!workerProfile.user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
+    // Get worker profile
+    const workerProfile = await db.query.GigWorkerProfilesTable.findFirst({
+      where: eq(GigWorkerProfilesTable.userId, user.id),
+    });
+
+    // Get primary skill (first skill or default)
+    const skills = await db.query.SkillsTable.findMany({
+      where: eq(SkillsTable.workerProfileId, workerProfile?.id || ''),
+      limit: 1,
+    });
+
+    const primarySkill = skills[0]?.name || 'Professional';
 
     return NextResponse.json({
       success: true,
       data: {
-        name: workerProfile.user.fullName,
-        skills: workerProfile.skills,
+        id: user.id,
+        name: user.fullName || 'Unknown Worker',
+        email: user.email,
+        primarySkill,
+        bio: workerProfile?.fullBio,
       }
     });
 

@@ -3,8 +3,8 @@
   height: 2.8rem;
   border: 0;
   border-radius: 1.5rem;
-  background-color: #c7c7c7;
-  color: #0f0f0f;
+  background: #808080;
+  color: var(--text-white);
   font-size: 0.85rem;
   font-family: var(--font-family);
   line-height: 16px;
@@ -12,18 +12,22 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: all 0.3s ease;
 }
 
 .activeWorker {
   cursor: pointer;
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-darker-color) 100%);
+  color: var(--text-white);
 }
 
 .activeBuyer {
   cursor: pointer;
-  background-color: var(--secondary-color);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-darker-color) 100%);
+  color: var(--text-dark);
 }
 
 .disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }

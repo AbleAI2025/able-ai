@@ -1,6 +1,19 @@
 /**
  * Comprehensive content moderation utilities
  * Multi-layered defense against inappropriate content
+ * 
+ * ⚠️ DEPRECATION NOTICE (2025-01-16):
+ * The hardcoded BLACKLIST_PATTERNS in this file are being phased out in favor of
+ * AI-powered content moderation via unified-validation.ts which uses Gemini 2.0 Flash.
+ * 
+ * The AI validation provides:
+ * - Context-aware detection (understands "Asperger's" vs "assburgers")
+ * - Adaptive learning without hardcoded rules
+ * - Better handling of edge cases and creative misspellings
+ * 
+ * This file remains for backwards compatibility but should not be the primary
+ * validation method. New features should use:
+ * - app/(web-client)/user/[userId]/worker/onboarding-ai/utils/validation/unified-validation.ts
  */
 
 export interface ContentModerationResult {
@@ -28,93 +41,9 @@ export interface ChatContext {
   sessionDuration?: number;
 }
 
-// Comprehensive blacklist patterns
-const BLACKLIST_PATTERNS = {
-  // Video game characters and references
-  videoGames: [
-    'mario', 'luigi', 'peach', 'bowser', 'yoshi', 'toad', 'wario', 'waluigi',
-    'sonic', 'tails', 'knuckles', 'eggman', 'robotnik',
-    'link', 'zelda', 'ganon', 'ganondorf', 'hyrule',
-    'pikachu', 'pokemon', 'ash', 'misty', 'brock',
-    'donkey kong', 'diddy kong', 'cranky kong',
-    'samus', 'metroid', 'ridley',
-    'kirby', 'dedede', 'meta knight',
-    'fox', 'falco', 'star fox',
-    'pac-man', 'pacman', 'ghost', 'inky', 'blinky', 'pinky', 'clyde',
-    'tetris', 'pong', 'space invaders',
-    'minecraft', 'steve', 'alex', 'creeper', 'enderman',
-    'fortnite', 'battle royale', 'victory royale',
-    'among us', 'impostor', 'sus',
-    'fall guys', 'bean', 'jelly bean'
-  ],
-  
-  // Fictional characters
-  fictional: [
-    'batman', 'superman', 'wonder woman', 'spiderman', 'spider-man',
-    'iron man', 'thor', 'hulk', 'captain america', 'black widow',
-    'wolverine', 'deadpool', 'storm', 'cyclops', 'jean grey',
-    'harry potter', 'hermione', 'ron', 'voldemort', 'dumbledore',
-    'frodo', 'gandalf', 'aragorn', 'legolas', 'gimli',
-    'luke skywalker', 'darth vader', 'yoda', 'leia', 'han solo',
-    'sherlock holmes', 'watson', 'moriarty',
-    'james bond', '007', 'q', 'moneypenny',
-    'gandalf', 'sauron', 'gollum', 'smeagol'
-  ],
-  
-  // Memes and internet culture
-  memes: [
-    'its a me mario', 'hello there', 'general kenobi', 'this is fine',
-    'distracted boyfriend', 'woman yelling at cat', 'drake pointing',
-    'change my mind', 'nobody:', 'me:', 'pikachu face',
-    'rick roll', 'never gonna give you up', 'rick astley',
-    'all your base are belong to us', 'leeroy jenkins',
-    'pepe', 'wojak', 'chad', 'virgin', 'stacy', 'becky',
-    'ok boomer', 'no cap', 'bet', 'yeet', 'oof', 'big oof',
-    'poggers', 'pog', 'monkaS', '5head', 'big brain',
-    'this is the way', 'mandalorian', 'baby yoda',
-    'among us', 'sus', 'impostor', 'vent', 'tasks'
-  ],
-  
-  // Nonsense and gibberish patterns
-  nonsense: [
-    'asdf', 'qwerty', 'zxcv', 'hjkl', 'fdsa', 'ytrewq',
-    'blah blah', 'random text', 'test test', 'lorem ipsum',
-    'abc def', '123 456', 'xyz', 'qwe', 'rty', 'uio',
-    'jkl', 'asd', 'fgh', 'zxc', 'vbn', 'mno',
-    'poggers', 'omegalul', 'kekw', 'monkas', 'pepega',
-    'cringe', 'based', 'redpilled', 'bluepilled'
-  ],
-  
-  // Jokes and humor that should be rejected
-  jokes: [
-    'i am the best at nothing', 'i can fly', 'i am a wizard',
-    'i am batman', 'i am spiderman', 'i am superman',
-    'i am a jedi', 'i am a sith', 'i am a hobbit',
-    'i am a pokemon trainer', 'i am a ninja turtle',
-    'i am a power ranger', 'i am a transformer',
-    'i am a robot', 'i am an alien', 'i am a ghost',
-    'i am invisible', 'i can read minds', 'i can see the future',
-    'i am immortal', 'i am invincible', 'i am perfect',
-    'i am the chosen one', 'i am the messiah', 'i am god',
-    'i am the best', 'i am amazing', 'i am awesome',
-    'i am incredible', 'i am fantastic', 'i am wonderful',
-    'i am the greatest', 'i am number one', 'i am the king',
-    'i am the queen', 'i am the boss', 'i am the master',
-    'i am unstoppable', 'i am unbeatable', 'i am legendary',
-    'i am epic', 'i am cool', 'i am the coolest',
-    'i am the man', 'i am the woman', 'i am the best ever'
-  ],
-  
-  // Inappropriate content
-  inappropriate: [
-    'fuck', 'shit', 'damn', 'hell', 'bitch', 'ass', 'asshole',
-    'stupid', 'idiot', 'moron', 'retard', 'gay', 'fag',
-    'nigger', 'nazi', 'hitler', 'kill', 'die', 'death',
-    'sex', 'sexual', 'porn', 'pornography', 'nude', 'naked',
-    'drug', 'cocaine', 'heroin', 'marijuana', 'weed',
-    'alcohol', 'drunk', 'high', 'stoned'
-  ]
-};
+// ⚠️ REMOVED: BLACKLIST_PATTERNS deleted - now using AI-powered validation
+// Hardcoded patterns cannot handle context, misspellings, or edge cases
+// All content moderation now uses unified-validation.ts with Gemini AI
 
 // Professional content patterns that should be accepted
 const PROFESSIONAL_PATTERNS = {
@@ -260,13 +189,14 @@ export function preValidateContentWithContext(input: string, context?: ChatConte
 
 /**
  * Pre-validation keyword filtering
- * Catches obvious inappropriate content before AI processing
+ * ⚠️ DEPRECATED: This function now passes everything through.
+ * Use unified-validation.ts for AI-powered content moderation instead.
  */
 export function preValidateContent(input: string): ContentModerationResult {
   const normalizedInput = input.toLowerCase().trim();
   
   // Check for empty or very short input
-  if (!normalizedInput || normalizedInput.length < 1) {
+  if (!normalizedInput || normalizedInput.length < 2) {
     return {
       isAppropriate: false,
       confidence: 1.0,
@@ -276,24 +206,36 @@ export function preValidateContent(input: string): ContentModerationResult {
     };
   }
   
-  // Check against blacklist patterns
-  for (const [category, patterns] of Object.entries(BLACKLIST_PATTERNS)) {
-    for (const pattern of patterns) {
-      if (normalizedInput.includes(pattern.toLowerCase())) {
-        return {
-          isAppropriate: false,
-          confidence: 0.9,
-          reason: `Contains ${category}: "${pattern}"`,
-          category: category as any,
-          suggestedAction: 'reject'
-        };
-      }
-    }
-  }
+  // ⚠️ REMOVED: Hardcoded blacklist pattern checking deleted
+  // All content is now validated by AI in unified-validation.ts
+  // This function is kept for backwards compatibility only
   
   // Check for common bypass attempts
   const bypassAttempts = [
-    { pattern: /(\bor\s+\d+\s*=\s*\d+|union\s+select|--|#|\/\*|\*\/)/gi, reason: 'Potential SQL injection attempt' },
+    // Leet speak variations
+    { pattern: /m4r10|m4rio|m4r1o/gi, reason: 'Leet speak variation of "mario"' },
+    { pattern: /l00igi|l00gi|lu1gi/gi, reason: 'Leet speak variation of "luigi"' },
+    { pattern: /p34ch|p3ach|pe4ch/gi, reason: 'Leet speak variation of "peach"' },
+    { pattern: /b0w53r|b0wser|b0ws3r/gi, reason: 'Leet speak variation of "bowser"' },
+    
+    // Spacing variations
+    { pattern: /m\s*a\s*r\s*i\s*o/gi, reason: 'Spaced variation of "mario"' },
+    { pattern: /l\s*u\s*i\s*g\s*i/gi, reason: 'Spaced variation of "luigi"' },
+    { pattern: /p\s*e\s*a\s*c\s*h/gi, reason: 'Spaced variation of "peach"' },
+    
+    // Character substitution
+    { pattern: /m@rio|m@r10/gi, reason: 'Character substitution for "mario"' },
+    { pattern: /l@igi|l@1gi/gi, reason: 'Character substitution for "luigi"' },
+    { pattern: /p@ach|p@3ach/gi, reason: 'Character substitution for "peach"' },
+    
+    // Common meme phrases with variations
+    { pattern: /its\s*a\s*me/gi, reason: 'Mario catchphrase variation' },
+    { pattern: /hello\s*there/gi, reason: 'Star Wars meme reference' },
+    { pattern: /general\s*kenobi/gi, reason: 'Star Wars meme reference' },
+    
+    // Nonsense patterns
+    { pattern: /^[a-z]{1,2}\s*[a-z]{1,2}\s*[a-z]{1,2}$/gi, reason: 'Random character sequence' },
+    { pattern: /^[0-9]{1,2}\s*[0-9]{1,2}\s*[0-9]{1,2}$/gi, reason: 'Random number sequence' }
   ];
   
   for (const attempt of bypassAttempts) {

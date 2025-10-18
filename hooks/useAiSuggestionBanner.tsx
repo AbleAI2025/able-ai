@@ -115,7 +115,7 @@ export function useAiSuggestionBanner({
     setIsLoading, setError, setSuggestions, setCurrentIndex
   ]);
 
-  // Load initial batch and index from session storage, or fetch if not available
+  // Load initial batch and index from session storage
   useEffect(() => {
     if (typeof window === 'undefined' || !enabled || !userId || isLongTermDismissed) {
       if(isLongTermDismissed || !enabled || !userId) setIsLoading(false); // Ensure loading stops if conditions not met
@@ -141,10 +141,22 @@ export function useAiSuggestionBanner({
         // Fall through to fetch if parsing failed
       }
     }
-    // If not in session storage or parsing failed, fetch new suggestions
-    fetchSuggestions(); // Now fetchSuggestions is defined
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // If not in session storage or parsing failed, we'll fetch in a separate effect
+    console.log('No valid batch in session, will fetch suggestions in separate effect.');
   }, [enabled, userId, isLongTermDismissed]);
+
+  // Separate effect to handle initial fetch when no session data is available
+  useEffect(() => {
+    if (typeof window === 'undefined' || !enabled || !userId || isLongTermDismissed) {
+      return;
+    }
+
+    // Only fetch if we don't have suggestions yet
+    if (suggestions.length === 0) {
+      console.log('No suggestions available, fetching from AI...');
+      fetchSuggestions();
+    }
+  }, [enabled, userId, isLongTermDismissed, suggestions.length, fetchSuggestions]);
 
   // Update long-term dismissed state if key changes
   useEffect(() => {

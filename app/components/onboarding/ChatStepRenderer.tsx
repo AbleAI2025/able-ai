@@ -5,6 +5,7 @@ import InputBubble from './InputBubble';
 import LocationPickerBubble from './LocationPickerBubble';
 import CalendarPickerBubble from './CalendarPickerBubble';
 import { ChatStep } from '@/app/hooks';
+import { StepInputConfig } from '@/app/types';
 import { VALIDATION_CONSTANTS } from '@/app/constants/validation';
 
 
